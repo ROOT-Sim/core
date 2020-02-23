@@ -1,4 +1,4 @@
-#include <test/integration_serial/application.h>
+#include <test/integration/application.h>
 
 #include <string.h>
 #include <stdio.h>

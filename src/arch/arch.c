@@ -1,15 +1,5 @@
 #include <arch/arch.h>
 
-#include <core/intrinsics.h>
-
-__thread unsigned tid;
-
-void arch_thread_setup(void)
-{
-	static unsigned tid_helper = 0;
-	tid = FETCH_AND_ADD(&tid_helper, 1);
-}
-
 #if defined(OS_LINUX)
 
 #include <sched.h>

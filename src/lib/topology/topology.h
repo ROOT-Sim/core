@@ -2,8 +2,6 @@
 
 #include <datatypes/bitmap.h>
 
-
-
 /// this is used to store the common characteristics of the topology
 extern struct _topology_global_t {
 	unsigned directions;			/**< the number of valid directions in the topology */
@@ -14,9 +12,3 @@ extern struct _topology_global_t {
 
 // this initializes the topology environment
 void topology_init(void);
-
-//used internally (also in abm_layer module) to schedule our reserved events TODO: move in a more system-like module
-void UncheckedScheduleNewEvent(unsigned int gid_receiver, simtime_t timestamp, unsigned int event_type, void *event_content, unsigned int event_size);
-
-// if the model is using a topology this gets called instead of the plain ProcessEvent
-void ProcessEventTopology(void);

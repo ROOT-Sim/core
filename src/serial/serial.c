@@ -9,19 +9,12 @@
 
 #define cmp_msgs(a, b) (a->destination_time < b->destination_time)
 
-unsigned n_prc_tot;
-
 static binary_heap(lp_msg *) queue;
 static uint64_t terminating_total;
+static struct serial_lp *lp_serial;
 
-static struct {
-	struct lib_state lib_state;
-	void *user_state;
-#if LOG_DEBUG >= LOG_LEVEL
-	simtime_t last_evt_time;
-#endif
-	bool terminating;
-} *lp_serial, *current_lp;
+struct serial_lp *current_lp;
+unsigned n_prc_tot;
 
 static void serial_simulation_init(void)
 {
@@ -64,9 +57,13 @@ void serial_simulation_run(void)
 
 #if LOG_DEBUG >= LOG_LEVEL
 		if(log_is_lvl(LOG_DEBUG)) {
-			if(current_msg->destination_time ==
-				current_lp->last_evt_time)
-				log_log(LOG_DEBUG, "LP %u got two consecutive events with same timestamp %lf", current_msg->destination, current_msg->destination_time);
+			if(current_msg->destination_time == current_lp->last_evt_time)
+				log_log(
+					LOG_DEBUG,
+					"LP %u got two consecutive events with same timestamp %lf",
+					current_msg->destination,
+					current_msg->destination_time
+				);
 			current_lp->last_evt_time = current_msg->destination_time;
 		}
 #endif

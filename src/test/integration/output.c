@@ -1,4 +1,4 @@
-#include <test/integration_serial/output.h>
+#include <test/integration/output.h>
 
 const char expected_output[686] =
 "1007022094\n"

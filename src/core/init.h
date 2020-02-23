@@ -16,4 +16,4 @@ typedef struct {
 
 extern simulation_configuration global_config;
 
-extern void parse_args(int argc, char **argv);
+extern void init_args_parse(int argc, char **argv);

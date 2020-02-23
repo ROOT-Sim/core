@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#include <test/integration_serial/application.h>
-#include <test/integration_serial/output.h>
+#include <test/integration/application.h>
+#include <test/integration/output.h>
 
 static const char *test_arguments[] = {
 	"--lp",

@@ -1,6 +1,7 @@
 #include "ROOT-Sim.h"
 
-void ProcessEvent(unsigned me, simtime_t now, unsigned event_type, void *content, unsigned size, unsigned *state){
+void ProcessEvent(unsigned me, simtime_t now, unsigned event_type,
+	void *content, unsigned size, unsigned *state){
 	if(event_type == INIT){
 		unsigned *new_state = malloc(sizeof(unsigned));
 		*new_state = 0;

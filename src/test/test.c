@@ -22,10 +22,14 @@ static void* test_run_stub(void* arg)
 }
 
 int __attribute__((weak)) main(int argc, char **argv)
-{	(void)argc; (void)argv;
+{
+	(void)argc; (void)argv;
 	int ret = 0;
 	pthread_t threads[test_config.threads_count];
 	struct stub_arguments args[test_config.threads_count];
+
+	if(test_config.test_init_fnc && (ret = test_config.test_init_fnc()))
+		return ret;
 
 	for(unsigned i = 0; i < test_config.threads_count; ++i){
 		args[i].test_fnc = test_config.test_fnc;
@@ -39,6 +43,9 @@ int __attribute__((weak)) main(int argc, char **argv)
 		if((intptr_t)ret_r < ret)
 			ret = (int)(intptr_t)ret_r;
 	}
+
+	if(test_config.test_fini_fnc)
+		ret = test_config.test_fini_fnc();
 
 	return ret;
 }

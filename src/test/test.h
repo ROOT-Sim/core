@@ -7,6 +7,8 @@
 #define TEST_FAIL_EXIT_CODE 99
 
 extern struct _test_config_t {
+	int (*test_init_fnc)(void);
+	int (*test_fini_fnc)(void);
 	int (*test_fnc)(unsigned);
 	unsigned threads_count;
 	const char *expected_output;

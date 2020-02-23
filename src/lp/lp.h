@@ -13,7 +13,9 @@ enum lp_state {
 
 struct _lp_id { // BIG TODO: study layout id
 	unsigned node_id : 16;
-	unsigned lp_id : 32;
+	unsigned x : 16;
+	unsigned y : 16;
+	unsigned z : 16;
 };
 
 struct _lp_struct {
@@ -28,5 +30,7 @@ struct _lp_struct {
 typedef struct _lp_struct lp_struct;
 
 extern __thread lp_struct *current_lp;
+extern lp_struct *lps;
+extern uint64_t lps_count;
 
 

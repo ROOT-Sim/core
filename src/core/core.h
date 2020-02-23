@@ -12,11 +12,11 @@
 /// Correct way to inform the compiler of a cast
 #define UNION_CAST(x, destType) (((union {__typeof__(x) a; destType b;})x).b)
 
-#define max(a, b) 			\
-	__extension__({			\
-		__typeof__ (a) _a = (a);\
-		__typeof__ (b) _b = (b);\
-		_a > _b ? _a : _b;	\
+#define max(a, b) 				\
+	__extension__({				\
+		__typeof__ (a) _a = (a);	\
+		__typeof__ (b) _b = (b);	\
+		_a > _b ? _a : _b;		\
 	})
 
 /// Optimize the branch as likely taken
@@ -28,5 +28,11 @@ typedef uint64_t lp_id_t;
 /// The type used to represent time in the simulation, we use fixed point numbers
 typedef double simtime_t;
 
-extern void ProcessEvent(unsigned me, simtime_t now, unsigned event_type, const void *content, unsigned size, void *state);
-extern bool OnGVT	(unsigned me, void *state);
+#ifndef NEUROME_SERIAL
+extern __thread unsigned tid;
+extern void core_thread_id_assign(void);
+#endif
+
+extern void ProcessEvent(unsigned me, simtime_t now, unsigned event_type,
+	const void *content, unsigned size, void *state);
+extern bool OnGVT(unsigned me, void *state);

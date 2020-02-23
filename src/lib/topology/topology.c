@@ -1,5 +1,7 @@
 #include <lib/topology/topology.h>
 
+#include <lib/lib_internal.h>
+
 #include <math.h>
 
 struct _topology_global_t topology_global;
@@ -205,7 +207,8 @@ unsigned int GetReceiver(unsigned int from, direction_t direction)
 	return DIRECTION_INVALID;
 }
 
-unsigned int FindReceiver(void)
+unsigned FindReceiver(void)
 {
+
 	return receiver;
 }
