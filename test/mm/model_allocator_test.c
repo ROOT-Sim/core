@@ -1,5 +1,5 @@
-#include <test/test.h>
-#include <test/test_rng.h>
+#include <test.h>
+#include <test_rng.h>
 #include <mm/model_allocator.h>
 #include <lp/lp.h>
 

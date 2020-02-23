@@ -1,4 +1,4 @@
-#include <test/test.h>
+#include <test.h>
 #include <mm/msg_allocator.h>
 
 static int msg_allocator_test(unsigned thread_id)

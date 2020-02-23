@@ -1,4 +1,4 @@
-#include <test/integration/application.h>
+#include <integration/application.h>
 
 #include <string.h>
 #include <stdio.h>

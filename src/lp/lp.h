@@ -20,10 +20,12 @@ struct _lp_id { // BIG TODO: study layout id
 
 struct _lp_struct {
 	lp_id_t id;			//!< The LP unique id in the simulation
-	enum lp_state state;		//!< The LP state
 	void *user_state;		//!< A pointer to the user status (changeable with a call to SetState())
-	dyn_array(lp_msg *) past_msgs;	//!< todo documentation
+	enum lp_state state;		//!< The LP state
 	dyn_array(lp_id_t) destinations;//!< todo documentation
+	dyn_array(lp_msg *) past_msgs;	//!< todo documentation
+	dyn_array(lp_msg *) sent_msgs;	//!< todo documentation
+	dyn_array(mm_checkpoint *) logs;//!< todo documentation
 	mm_state mm_state;		//!< The memory allocator state for this LP
 };
 
@@ -33,4 +35,5 @@ extern __thread lp_struct *current_lp;
 extern lp_struct *lps;
 extern uint64_t lps_count;
 
-
+extern void lp_global_init(uint64_t lp_cnt);
+extern void lp_global_fini(void);

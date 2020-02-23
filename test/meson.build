@@ -1,5 +1,6 @@
+src_dir = '../src/'
 # main include directory
-incdir = include_directories('..')
+incdir = include_directories(src_dir)
 # Declare test dependencies
 serial_lib_dep = declare_dependency(link_with: neurome_serial_library)
 thread_lib_dep = dependency('threads')
@@ -10,7 +11,7 @@ tests_specs = {
     'sources' : [
       'test.c',
       'mm/msg_allocator_test.c', 
-      '../mm/msg_allocator.c'
+      src_dir + 'mm/msg_allocator.c'
     ],
     'dependencies' : [ thread_lib_dep ]
   },
@@ -18,8 +19,8 @@ tests_specs = {
     'sources' : [
       'test.c',
       'mm/model_allocator_test.c',
-      '../mm/model_allocator.c',
-      '../lp/lp.c'
+      src_dir + 'mm/model_allocator.c',
+      src_dir + 'lp/lp.c'
     ],
     'dependencies' : [ thread_lib_dep ]
   },
@@ -27,8 +28,8 @@ tests_specs = {
     'sources' : [
       'test.c',
       'datatypes/msg_queue_test.c', 
-      '../datatypes/msg_queue.c',
-      '../core/core.c'
+      src_dir + 'datatypes/msg_queue.c',
+      src_dir + 'core/core.c'
     ],
     'dependencies' : [ thread_lib_dep ]
   },

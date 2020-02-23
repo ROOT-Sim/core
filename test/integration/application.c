@@ -1,11 +1,11 @@
-#include <test/test.h>
+#include <test.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
 
-#include <test/integration/application.h>
-#include <test/integration/output.h>
+#include <integration/application.h>
+#include <integration/output.h>
 
 static const char *test_arguments[] = {
 	"--lp",

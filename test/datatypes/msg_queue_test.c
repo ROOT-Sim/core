@@ -1,5 +1,5 @@
-#include <test/test.h>
-#include <test/test_rng.h>
+#include <test.h>
+#include <test_rng.h>
 #include <datatypes/msg_queue.h>
 #include <lp/lp.h>
 
@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <pthread.h>
 
-#define THREAD_REPS 1000000
+#define THREAD_REPS 100000
 
 static pthread_barrier_t t_barrier;
 static __thread uint128_t rng_state;
