@@ -84,7 +84,7 @@ unsigned int DirectionsCount(void)
 	return topology_global.directions;
 }
 
-unsigned int GetReceiver(unsigned int from, direction_t direction)
+unsigned int GetReceiver(lp_id_t from, direction_t direction)
 {
 	const unsigned sender = from;
 	const unsigned edge = topology_global.edge;

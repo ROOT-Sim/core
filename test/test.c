@@ -6,6 +6,8 @@
 #include <stdint.h>
 
 FILE *test_output_file;
+static char **test_argv;
+static char *test_output;
 
 struct stub_arguments {
 	int (*test_fnc)(unsigned);
@@ -86,8 +88,6 @@ int __wrap_main(void)
 	int ret = TEST_FAIL_EXIT_CODE;
 	int test_ret = -1;
 	int test_argc = 0;
-	char **test_argv = NULL;
-	char *test_output = NULL;
 	size_t test_output_size = 0;
 
 	printf("Starting %s test\n", test_config.test_name);
@@ -125,4 +125,13 @@ int __wrap_main(void)
 	free(test_output);
 
 	return ret;
+}
+
+void abort_test(void)
+{
+	free(test_argv);
+	if(test_output_file)
+		fclose(test_output_file);
+	free(test_output);
+	exit(TEST_FAIL_EXIT_CODE);
 }

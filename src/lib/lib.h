@@ -1,15 +1,20 @@
 #pragma once
 
+#include <NeuRome.h>
+
 #include <argp.h>
 
 #include <lib/random/random.h>
 #include <lib/topology/topology.h>
+#include <lib/state/state.h>
 
 extern const struct argp lib_argp;
 
 struct lib_state_managed {
 	// random library
-	uint128_t rng_state;
+	uint64_t rng_s[4];
+	// state library
+	void *state_s;
 };
 
 struct lib_state {
@@ -35,6 +40,7 @@ struct lib_state {
 
 #define lib_init(state, lp_id) 			\
 	__extension__({				\
+						\
 	})
 
 #define lib_fini(state)				\

@@ -20,16 +20,15 @@ tests_specs = {
       'test.c',
       'mm/model_allocator_test.c',
       src_dir + 'mm/model_allocator.c',
-      src_dir + 'lp/lp.c'
     ],
     'dependencies' : [ thread_lib_dep ]
   },
   'msg_queue' : {
     'sources' : [
       'test.c',
-      'datatypes/msg_queue_test.c', 
+      'datatypes/msg_queue_test.c',
+      src_dir + 'core/core.c',
       src_dir + 'datatypes/msg_queue.c',
-      src_dir + 'core/core.c'
     ],
     'dependencies' : [ thread_lib_dep ]
   },

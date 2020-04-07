@@ -8,6 +8,8 @@
 
 static __thread uint128_t rng_state;
 
+__thread lp_struct *current_lp; // needed by the model allocator
+
 static int block_size_test(unsigned b_exp)
 {
 	int ret = -1;
@@ -73,7 +75,7 @@ static int model_allocator_test(unsigned thread_id)
 	int ret = -1;
 
 	current_lp = malloc(sizeof(*current_lp));
-	model_memory_init();
+	model_memory_lp_init();
 	lcg_init(rng_state, (thread_id + 1) * 1713);
 
 	for (unsigned j = B_BLOCK_EXP; j < B_TOTAL_EXP; ++j) {
@@ -83,7 +85,7 @@ static int model_allocator_test(unsigned thread_id)
 
 	ret = 0;
 	error:
-	model_memory_fini();
+	model_memory_lp_fini();
 	free(current_lp);
 	return ret;
 }

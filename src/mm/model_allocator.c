@@ -13,9 +13,9 @@
 #define is_power_of_2(i) (!((i) & ((i) - 1)))
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - SAFE_CLZ(i))
 
-void model_memory_init(void)
+void model_memory_lp_init(void)
 {
-	mm_state *self = &current_lp->mm_state;
+	struct mm_state *self = &current_lp->mm_state;
 	uint8_t node_size = B_TOTAL_EXP;
 
 	for (uint32_t i = 0; i < sizeof(self->longest); ++i) {
@@ -27,7 +27,7 @@ void model_memory_init(void)
 	self->base_mem = malloc(1 << B_TOTAL_EXP);
 }
 
-void model_memory_fini(void)
+void model_memory_lp_fini(void)
 {
 	free(current_lp->mm_state.base_mem);
 }
@@ -37,7 +37,7 @@ void *model_alloc(size_t req_size)
 	if(unlikely(!req_size))
 		return NULL;
 
-	mm_state *self = &current_lp->mm_state;
+	struct mm_state *self = &current_lp->mm_state;
 
 	uint8_t req_blks = max(next_exp_of_2(req_size - 1), B_BLOCK_EXP);
 
@@ -49,8 +49,11 @@ void *model_alloc(size_t req_size)
 	/* search recursively for the child */
 	uint8_t node_size;
 	uint32_t i;
-	for (i = 0, node_size = B_TOTAL_EXP;
-		node_size > req_blks; --node_size) {
+	for (
+		i = 0, node_size = B_TOTAL_EXP;
+		node_size > req_blks;
+		--node_size
+	) {
 		/* choose the child with smaller longest value which
 		 * is still large at least *size* */
 		i = left_child(i);
@@ -79,7 +82,7 @@ void model_free(void *ptr)
 	if(unlikely(!ptr))
 		return;
 
-	mm_state *self = &current_lp->mm_state;
+	struct mm_state *self = &current_lp->mm_state;
 	uint8_t node_size = B_BLOCK_EXP;
 	uint32_t i = (((char *)ptr - (char *)self->base_mem) >> B_BLOCK_EXP) +
 				(1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
@@ -121,7 +124,7 @@ void *model_realloc(void *ptr, size_t req_size)
 
 mm_checkpoint *model_checkpoint_take(void)
 {
-	mm_state *self = &current_lp->mm_state;
+	struct mm_state *self = &current_lp->mm_state;
 	mm_checkpoint *ret;
 	//if(self->used_mem > FULL_LOG_THRESHOLD * (1 << B_TOTAL_EXP)){
 		ret = malloc(
@@ -138,7 +141,7 @@ mm_checkpoint *model_checkpoint_take(void)
 
 void model_checkpoint_restore(mm_checkpoint *ckp)
 {
-	mm_state *self = &current_lp->mm_state;
+	struct mm_state *self = &current_lp->mm_state;
 	//if(ckp->used_mem > FULL_LOG_THRESHOLD * (1 << B_TOTAL_EXP)){
 		self->used_mem = ckp->used_mem;
 		memcpy(self->longest, ckp->longest, sizeof(ckp->longest));

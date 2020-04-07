@@ -4,30 +4,32 @@
 #include <memory.h>
 #include <sys/wait.h>
 
-#define GCC_CMD "/usr/bin/gcc"
+#ifndef CC_CMD
+#define CC_CMD "/usr/bin/gcc"
+#endif
+
+#ifndef NEUROME_LIBS_PATH
+#define NEUROME_LIBS_PATH "/usr/lib/"
+#endif
 
 extern char **environ;
 
-static const char * const additional_args[] = {
+static const char *const additional_args[] = {
 	"-lm",
 	NULL
 };
 
 static int child_proc(int argc, char **argv, char **environment)
 {
-	char **new_argv = malloc(sizeof(*new_argv) * argc + sizeof(additional_args));
+	char **new_argv = malloc(
+		sizeof(*new_argv) * argc + sizeof(additional_args));
 	memcpy(new_argv, argv, sizeof(*new_argv) * argc);
 	memcpy(new_argv + argc, additional_args, sizeof(additional_args));
 
-	unsigned i = 0;
-	while(environment[i])
-		puts(environment[i++]);
-	i = 0;
-	while(new_argv[i])
-		puts(new_argv[i++]);
+	argv[0] = CC_CMD;
 
-	if(execve(GCC_CMD, argv, environment)){
-		fprintf(stderr, "Unable to run " GCC_CMD);
+	if (execv(CC_CMD, argv)) {
+		fprintf(stderr, "Unable to run " CC_CMD);
 		return -1;
 	}
 	return 0;
@@ -36,12 +38,13 @@ static int child_proc(int argc, char **argv, char **environment)
 int main(int argc, char **argv)
 {
 	pid_t child_pid;
-	if(!(child_pid = fork())){
+	if (!(child_pid = fork())) {
 		return child_proc(argc, argv, environ);
 	}
 	int child_status = -1;
-	while(wait(&child_status) != child_pid){
+	while (wait(&child_status) != child_pid) {
 		sleep(1);
 	}
+	return child_status;
 }
 

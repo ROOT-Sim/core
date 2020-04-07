@@ -1,4 +1,5 @@
 #pragma once
+
 #define SAFE_CTZ(x)	(\
 		__builtin_choose_expr( \
 		__builtin_types_compatible_p (__typeof__ (x), unsigned), __builtin_ctz(x),\
@@ -26,4 +27,3 @@
 		__builtin_types_compatible_p (__typeof__ (x), unsigned long long), __builtin_popcountll(x),\
 		(void)0))))
 
-#define FETCH_AND_ADD(x_ptr, increment) __sync_fetch_and_add(x_ptr, increment)

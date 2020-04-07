@@ -2,6 +2,7 @@
 
 #include <memory.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define arr_realloc realloc
 #define arr_alloc malloc
@@ -9,10 +10,13 @@
 
 #define INIT_SIZE_ARRAY 8U
 
+typedef uint_fast32_t array_count_t;
+
 #define dyn_array(type)					\
 		struct {				\
 			type *items;			\
-			unsigned count, capacity;	\
+			array_count_t count;		\
+			array_count_t capacity;		\
 		}
 
 // you can use the array to directly index items, but do at your risk and peril
@@ -24,7 +28,7 @@
 //this isn't checked CARE!
 #define array_peek(self) (array_items(self)[array_count(self) - 1])
 //this isn't checked CARE!
-#define array_get_at(self, i) (array_items(self)[i])
+#define array_get_at(self, i) (array_items(self)[(i)])
 
 #define array_is_empty(self) (array_count(self) == 0)
 
@@ -45,10 +49,11 @@
 #define array_init(self)					\
 	__extension__({						\
 		array_capacity(self) = INIT_SIZE_ARRAY;		\
-		array_items(self) =				\
-			arr_alloc(array_capacity(self) *	\
-			sizeof(*array_items(self))		\
-		);						\
+		array_items(self) = 				\
+			arr_alloc(				\
+				array_capacity(self) *		\
+				sizeof(*array_items(self))	\
+			);					\
 		array_count(self) = 0;				\
 	})
 
@@ -80,8 +85,7 @@
 			&(array_items(self)[(i)+1]),		\
 			&(array_items(self)[(i)]),		\
 			sizeof(*array_items(self)) *		\
-				(array_count(self)-(i)		\
-			)					\
+			(array_count(self)-(i))			\
 		);						\
 		array_items(self)[(i)] = (elem);		\
 		array_count(self)++;				\
@@ -114,24 +118,13 @@
 		__rmval;					\
 	})
 
-#define array_remove(self, elem)				\
-	__extension__({						\
-		typeof(array_count(self)) __cntr = 		\
-			array_count(self);			\
-		while(__cntr--){				\
-			if(array_items(self)[__cntr] == (elem)){\
-				array_remove_at(self, __cntr);	\
-				break;				\
-			}					\
-		}						\
-	})
-
 #define array_dump_size(self)					\
 	__extension__({						\
 		sizeof(array_count(self)) +			\
 		array_count(self) * sizeof(*array_items(self));	\
 	})
 
+// TODO format 80 lines crap
 #define array_dump(self, mem_area) \
 	__extension__({ \
 		memcpy((mem_area), &array_count(self), sizeof(array_count(self))); \
@@ -160,7 +153,7 @@
 
 #define array_expand(self) \
 	__extension__({ \
-		if(unlikely(array_count(self) >= array_capacity(self))){\
+		if (unlikely(array_count(self) >= array_capacity(self))) {\
 			array_capacity(self) *= 2; \
 			array_items(self) = arr_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self))); \
 		} \

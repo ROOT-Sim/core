@@ -18,3 +18,5 @@ extern struct _test_config_t {
 } test_config;
 
 extern FILE *test_output_file;
+
+extern void abort_test(void);

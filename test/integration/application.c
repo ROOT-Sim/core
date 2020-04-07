@@ -57,7 +57,7 @@ void ProcessEvent(unsigned me, simtime_t now, unsigned event_type, unsigned *eve
 		case LOOP:
 			state->events++;
 			ScheduleNewEvent(me, now + do_random() * 10, LOOP, NULL, 0);
-			unsigned dest = n_prc_tot * do_random();
+			unsigned dest = n_lps * do_random();
 			if(do_random() < 0.5 && dest != me)
 				ScheduleNewEvent(dest, now + do_random() * 10, LOOP, NULL, 0);
 			
@@ -79,7 +79,7 @@ void ProcessEvent(unsigned me, simtime_t now, unsigned event_type, unsigned *eve
 				unsigned i = do_random() * state->buffer_count;
 				buffer *to_send = get_buffer(state->head, i);
 
-				ScheduleNewEvent(do_random() * n_prc_tot, now + do_random() * 10, RECEIVE, to_send->data, to_send->count * sizeof(uint64_t));
+				ScheduleNewEvent(do_random() * n_lps, now + do_random() * 10, RECEIVE, to_send->data, to_send->count * sizeof(uint64_t));
 
 				state->head = deallocate_buffer(state->head, i);
 				state->buffer_count--;
@@ -95,6 +95,7 @@ void ProcessEvent(unsigned me, simtime_t now, unsigned event_type, unsigned *eve
 
 		default:
 			printf("[ERR] Requested to process an unknown event\n");
+			abort_test();
 			break;
 	}
 }

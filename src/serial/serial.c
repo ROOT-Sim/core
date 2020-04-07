@@ -1,118 +1,106 @@
 #include <serial/serial.h>
 #include <stdlib.h>
 
+#include <core/core.h>
 #include <core/init.h>
-#include <datatypes/heap.h>
-#include <lp/message.h>
 #include <mm/msg_allocator.h>
-#include <lib/lib.h>
 
-#define cmp_msgs(a, b) (a->destination_time < b->destination_time)
+struct serial_lp *cur_lp;
 
 static binary_heap(lp_msg *) queue;
-static uint64_t terminating_total;
-static struct serial_lp *lp_serial;
-
-struct serial_lp *current_lp;
-unsigned n_prc_tot;
+static struct serial_lp *lps;
 
 static void serial_simulation_init(void)
 {
-	n_prc_tot = global_config.lps_cnt;
-	lp_serial = malloc(sizeof(*lp_serial) * global_config.lps_cnt);
-	memset(lp_serial, 0, sizeof(*lp_serial) * global_config.lps_cnt);
+	lps = malloc(sizeof(*lps) * n_lps);
+	memset(lps, 0, sizeof(*lps) * n_lps);
 	msg_allocator_init();
+
 	heap_init(queue);
 
-	for(uint64_t i = 0; i < global_config.lps_cnt; ++i){
-		lib_init(&(lp_serial[i]->lib_state), i);
+	for(uint64_t i = 0; i < n_lps; ++i){
+		lib_init(&(lps_serial[i]->ls), i);
 #if LOG_DEBUG >= LOG_LEVEL
-		lp_serial[i].last_evt_time = -1;
+		lps[i].last_evt_time = -1;
 #endif
+
 		ScheduleNewEvent(i, 0, 0, NULL, 0);
 	}
 }
 
 static void serial_simulation_fini(void)
 {
-	for(unsigned i = 0; i < heap_count(queue); ++i){
-		msg_free(heap_items(queue)[i]);
+	for(uint64_t i = 0; i < n_lps; ++i){
+		ProcessEvent(i, 0, UINT_MAX, NULL, 0, lps[i].lsm.state_s);
+		lib_fini(&(lps_serial[i]->ls));
 	}
 
-	for(uint64_t i = 0; i < global_config.lps_cnt; ++i){
-		ProcessEvent(i, 0, UINT_MAX, NULL, 0, lp_serial[i].user_state);
-		lib_fini(&(lp_serial[i]->lib_state));
+	for(array_count_t i = 0; i < array_count(queue); ++i){
+		msg_allocator_free(array_get_at(queue, i));
 	}
 
 	heap_fini(queue);
 	msg_allocator_fini();
-	free(lp_serial);
+	free(lps);
 }
 
 void serial_simulation_run(void)
 {
+	uint64_t to_terminate = n_lps;
+
 	while(likely(!heap_is_empty(queue))) {
-		const lp_msg *current_msg = heap_min(queue);
-		current_lp = &lp_serial[current_msg->destination];
+		const lp_msg *cur_msg = heap_min(queue);
+		cur_lp = &lps[cur_msg->dest];
 
 #if LOG_DEBUG >= LOG_LEVEL
 		if(log_is_lvl(LOG_DEBUG)) {
-			if(current_msg->destination_time == current_lp->last_evt_time)
+			if(cur_msg->dest_t == cur_lp->last_evt_time)
 				log_log(
 					LOG_DEBUG,
 					"LP %u got two consecutive events with same timestamp %lf",
-					current_msg->destination,
-					current_msg->destination_time
+					cur_msg->dest,
+					cur_msg->dest_t
 				);
-			current_lp->last_evt_time = current_msg->destination_time;
+			cur_lp->last_evt_time = cur_msg->dest_t;
 		}
 #endif
 
 		ProcessEvent(
-			current_msg->destination,
-			current_msg->destination_time,
-			*((unsigned *) current_msg->payload),
-			&current_msg->payload[sizeof(unsigned)],
-			current_msg->payload_size - sizeof(unsigned),
-			current_lp->user_state
+			cur_msg->dest,
+			cur_msg->dest_t,
+			*((unsigned *) cur_msg->pl),
+			&cur_msg->pl[sizeof(unsigned)],
+			cur_msg->pl_size - sizeof(unsigned),
+			cur_lp->lsm.state_s
 		);
 
-		bool onGVTres = OnGVT(
-			current_msg->destination, current_lp->user_state);
+		bool onGVTres = OnGVT(cur_msg->dest, cur_lp->lsm.state_s);
 
-		if(onGVTres != current_lp->terminating) {
-			current_lp->terminating = onGVTres;
-			terminating_total += ((int)onGVTres * 2) - 1;
+		if(onGVTres != cur_lp->terminating) {
+			cur_lp->terminating = onGVTres;
+			to_terminate += 1 - ((int)onGVTres * 2);
 
-			if(unlikely(onGVTres &&
-				terminating_total >= global_config.lps_cnt)) {
+			if(unlikely(onGVTres && !to_terminate)) {
 				break;
 			}
 		}
-		msg_free(heap_extract(queue, cmp_msgs));
+
+		msg_allocator_free(heap_extract(queue, msg_is_before));
 	}
 }
 
 void ScheduleNewEvent(unsigned receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size)
 {
-	lp_msg *msg = msg_alloc(payload_size + sizeof(unsigned));
-	msg->destination = receiver;
-	msg->destination_time = timestamp;
-	*((unsigned *) msg->payload) = event_type;
-	memcpy(&msg->payload[sizeof(unsigned)], payload, payload_size);
+	lp_msg *msg = msg_allocator_pack(
+		receiver, timestamp, event_type, payload, payload_size);
 
-	heap_insert(queue, cmp_msgs, msg);
-}
-
-void SetState(void *state)
-{
-	current_lp->user_state = state;
+	heap_insert(queue, msg_is_before, msg);
 }
 
 int main(int argc, char **argv)
 {
-	parse_args(argc, argv);
+	init_args_parse(argc, argv);
 	log_log(LOG_INFO, "Initializing serial simulation");
 	serial_simulation_init();
 	log_log(LOG_INFO, "Starting simulation");

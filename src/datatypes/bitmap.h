@@ -2,7 +2,6 @@
 
 #include <limits.h>		// for CHAR_BIT
 #include <memory.h>		// for memset()
-#include <core/core.h>		// for UNION_CAST()
 
 /// This defines a generic bitmap.
 typedef unsigned char block_bitmap;
@@ -10,7 +9,7 @@ typedef unsigned char block_bitmap;
 /* macros for internal use */
 #define B_BLOCK_TYPE unsigned
 #define B_BLOCK_SIZE ((unsigned)sizeof(B_BLOCK_TYPE))
-#define B_BITS_PER_BLOCK (B_BLOCK_SIZE*CHAR_BIT)
+#define B_BITS_PER_BLOCK (B_BLOCK_SIZE * CHAR_BIT)
 #define B_MASK ((B_BLOCK_TYPE)1U)
 #define B_UNION_CAST(bitmap) ((B_BLOCK_TYPE*)(bitmap))
 
@@ -35,7 +34,11 @@ typedef unsigned char block_bitmap;
  *
  * 	Care to avoid side effects in the arguments because they may be evaluated more than once
  */
-#define bitmap_required_size(requested_bits) ((((requested_bits)/B_BITS_PER_BLOCK) + (B_MOD_OF_BPB(requested_bits) != 0))*B_BLOCK_SIZE)
+#define bitmap_required_size(requested_bits)				\
+	((								\
+		((requested_bits) / B_BITS_PER_BLOCK) + 		\
+		(B_MOD_OF_BPB(requested_bits) != 0)			\
+	) * B_BLOCK_SIZE)
 
 /*!
  * @brief This initializes the bitmap at @a memory_pointer containing @a requested_bits entries.
@@ -50,7 +53,8 @@ typedef unsigned char block_bitmap;
  *
  * 	Care to avoid side effects in the arguments because they may be evaluated more than once
  */
-#define bitmap_initialize(memory_pointer, requested_bits)  (memset(memory_pointer, 0, bitmap_required_size(requested_bits)))
+#define bitmap_initialize(memory_pointer, requested_bits)		\
+	memset(memory_pointer, 0, bitmap_required_size(requested_bits))
 
 /*!
  * @brief This sets the bit with index @a bit_index of the bitmap @a bitmap
@@ -59,7 +63,8 @@ typedef unsigned char block_bitmap;
  *
  * 	Care to avoid side effects in the arguments because they may be evaluated more than once
  */
-#define bitmap_set(bitmap, bit_index) (B_SET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
+#define bitmap_set(bitmap, bit_index)					\
+	(B_SET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
 
 /*!
  * @brief This resets the bit with index @a bit_index of the bitmap @a bitmap
@@ -68,7 +73,8 @@ typedef unsigned char block_bitmap;
  *
  * 	Care to avoid side effects in the arguments because they may be evaluated more than once
  */
-#define bitmap_reset(bitmap, bit_index) (B_RESET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
+#define bitmap_reset(bitmap, bit_index)					\
+	(B_RESET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
 
 /*!
  * @brief This checks if the bit with index @a bit_index of the bitmap @a bitmap is set or unset.
@@ -78,7 +84,8 @@ typedef unsigned char block_bitmap;
  *
  * 	Care to avoid side effects in the arguments because they may be evaluated more than once
  */
-#define bitmap_check(bitmap, bit_index) (B_CHECK_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))) != 0)
+#define bitmap_check(bitmap, bit_index)					\
+	(B_CHECK_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))) != 0)
 
 /*!
  * @brief This counts the occurrences of cleared bits in the bitmap @a bitmap.
@@ -90,16 +97,18 @@ typedef unsigned char block_bitmap;
  *	This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
  * 	Care to avoid side effects in the arguments because they may be evaluated more than once
  */
-#define bitmap_count_reset(bitmap, bitmap_size) ({				\
-		unsigned __i, __blocks = bitmap_size / B_BLOCK_SIZE;		\
-		unsigned __ret = bitmap_size * CHAR_BIT;			\
-		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);	\
-		for(__i = 0; __i < __blocks; ++__i){				\
-			if((__cur_block = __block_b[__i])){			\
-				__ret -= B_POPC(__cur_block);			\
-			}							\
-		}								\
-		__ret; 								\
+#define bitmap_count_reset(bitmap, bitmap_size)				\
+	__extension__({							\
+		unsigned __i, __blocks = bitmap_size / B_BLOCK_SIZE;	\
+		unsigned __ret = bitmap_size * CHAR_BIT;		\
+		B_BLOCK_TYPE __cur_block,				\
+			*__block_b = B_UNION_CAST(bitmap);		\
+		for(__i = 0; __i < __blocks; ++__i){			\
+			if((__cur_block = __block_b[__i])){		\
+				__ret -= B_POPC(__cur_block);		\
+			}						\
+		}							\
+		__ret; 							\
 	})
 
 /*!
@@ -112,17 +121,19 @@ typedef unsigned char block_bitmap;
  *	This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
  * 	Care to avoid side effects in the arguments because they may be evaluated more than once
  */
-#define bitmap_first_reset(bitmap, bitmap_size)	({				\
-		unsigned __i, __blocks = bitmap_size / B_BLOCK_SIZE;		\
-		unsigned __ret = UINT_MAX;					\
-		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);	\
-		for(__i = 0; __i < __blocks; ++__i){				\
-			if((__cur_block = ~__block_b[__i])){			\
-				__ret = B_CTZ(__cur_block);			\
-				break;						\
-			}							\
-		}								\
-		__ret; 								\
+#define bitmap_first_reset(bitmap, bitmap_size)				\
+	__extension__({							\
+		unsigned __i, __blocks = bitmap_size / B_BLOCK_SIZE;	\
+		unsigned __ret = UINT_MAX;				\
+		B_BLOCK_TYPE __cur_block,				\
+			*__block_b = B_UNION_CAST(bitmap);		\
+		for(__i = 0; __i < __blocks; ++__i){			\
+			if((__cur_block = ~__block_b[__i])){		\
+				__ret = B_CTZ(__cur_block);		\
+				break;					\
+			}						\
+		}							\
+		__ret; 							\
 	})
 
 /*!

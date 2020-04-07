@@ -1,9 +1,10 @@
 #pragma once
 
-#include <limits.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include <argp.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #define INIT	0
 #define DEINIT	UINT_MAX
@@ -12,7 +13,7 @@ typedef double simtime_t;
 
 __attribute((weak)) extern struct argp model_argp;
 
-extern unsigned n_prc_tot;
+extern uint64_t n_lps;
 
 extern void ScheduleNewEvent(unsigned receiver, simtime_t timestamp, unsigned event_type, const void *event_content, unsigned event_size);
 extern void SetState(void *new_state);

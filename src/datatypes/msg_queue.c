@@ -1,74 +1,117 @@
 #include <datatypes/msg_queue.h>
 
-#include <arch/arch.h>
-#include <datatypes/heap.h>
+#include <core/core.h>
 #include <core/sync.h>
+#include <datatypes/heap.h>
+#include <lp/lp.h>
 
-#include <assert.h>
-#include <stddef.h>
+#define inner_queue {			\
+	binary_heap(lp_msg *) q;	\
+	spinlock_t lck;			\
+}
 
-#define CORES_PER_QUEUE 2
-#define cmp_msgs(a, b) ((a)->destination_time < (b)->destination_time)
+struct queue_t {
+	struct inner_queue;
+	unsigned char padding[CACHE_LINE_SIZE - sizeof(struct inner_queue)];
+};
 
-#define _inner_queue 				\
-	{					\
-		spinlock_t lock;		\
-		binary_heap(lp_msg *) queue;	\
-	}
+#define mqueue(from, to) queues[to * n_threads + from]
 
-typedef struct {
-	struct _inner_queue;
-	const char padding[CACHE_LINE_SIZE - sizeof(struct _inner_queue)];
-} msg_queue;
+static struct queue_t *queues;
 
-static_assert(
-	sizeof(msg_queue) == CACHE_LINE_SIZE, "msg_queue not cache aligned");
-
-static msg_queue *queues;
-static unsigned queues_count;
-
-void msg_queue_global_init(unsigned threads_cnt)
+void msg_queue_global_init(void)
 {
-	queues_count = threads_cnt / CORES_PER_QUEUE +
-			(threads_cnt % CORES_PER_QUEUE > 0);
-	queues = malloc(sizeof(msg_queue) * queues_count);
-	for(unsigned i = 0; i < queues_count; ++i){
-		spin_init(&queues[i].lock);
-		heap_init(queues[i].queue);
+	queues = malloc(
+		n_threads *
+		n_threads *
+		sizeof(*queues)
+	);
+}
+
+void msg_queue_init(void)
+{
+	unsigned i = n_threads;
+	while(i--) {
+		heap_init(mqueue(i, rid).q);
+		spin_init(&(mqueue(i, rid).lck));
+	}
+}
+
+void msg_queue_fini(void)
+{
+	unsigned i = n_threads;
+	while(i--) {
+		heap_fini(mqueue(i, rid).q);
 	}
 }
 
 void msg_queue_global_fini(void)
 {
-	for(unsigned i = 0; i < queues_count; ++i){
-		heap_fini(queues[i].queue);
-	}
 	free(queues);
 }
 
-lp_msg* msg_queue_extract(void)
+void msg_queue_extract(void)
 {
-	for(unsigned i = tid / CORES_PER_QUEUE; ; i = (i + 1) % queues_count){
-		msg_queue* this_q = &queues[i];
-		if(likely(spin_trylock(&this_q->lock))){
-			if(likely(!heap_is_empty(this_q->queue))){
-				lp_msg *msg = heap_extract(this_q->queue, cmp_msgs);
-				spin_unlock(&this_q->lock);
-				return msg;
-			}
-			spin_unlock(&this_q->lock);
+	struct queue_t *bid_q = &mqueue(rid, rid);
+	lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
+
+	for(unsigned i = 0; i < n_threads; ++i){
+		struct queue_t *this_q = &mqueue(i, rid);
+		if(!spin_trylock(&this_q->lck))
+			continue;
+		if (heap_count(this_q->q) &&
+			(!msg || msg_is_before(heap_min(this_q->q), msg))) {
+			msg = heap_min(this_q->q);
+			bid_q = this_q;
 		}
+		spin_unlock(&this_q->lck);
 	}
+
+	spin_lock(&bid_q->lck);
+
+	if(heap_count(bid_q->q)){
+		msg = heap_extract(bid_q->q, msg_is_before);
+		spin_unlock(&bid_q->lck);
+		current_lp = &lps[lp_id_to_lid(msg->dest)];
+	} else {
+		spin_unlock(&bid_q->lck);
+		current_msg = NULL;
+		current_lp = NULL;
+	}
+}
+
+simtime_t msg_queue_time_peek(void)
+{
+	const unsigned t_cnt = n_threads;
+	simtime_t t_min = MAX_SIMTIME_T;
+	unsigned remainings = t_cnt;
+	bool done[t_cnt];
+	memset(done, 0, sizeof(done));
+
+	for(unsigned i = 0; remainings; i = (i + 1) % t_cnt){
+		if(done[i])
+			continue;
+
+		struct queue_t *this_q = &mqueue(i, rid);
+		if(!spin_trylock(&this_q->lck))
+			continue;
+
+		done[i] = true;
+		remainings--;
+		if (heap_count(this_q->q) && t_min >
+			heap_min(this_q->q)->dest_t) {
+			t_min = heap_min(this_q->q)->dest_t;
+		}
+		spin_unlock(&this_q->lck);
+	}
+	return t_min;
 }
 
 void msg_queue_insert(lp_msg *msg)
 {
-	for(unsigned i = tid / CORES_PER_QUEUE; ; i = (i + 1) % queues_count){
-		msg_queue* this_q = &queues[i];
-		if(likely(spin_trylock(&this_q->lock))){
-			heap_insert(this_q->queue, cmp_msgs, msg);
-			spin_unlock(&this_q->lock);
-			return;
-		}
-	}
+	unsigned dest_rid = lid_to_rid[lp_id_to_lid(msg->dest)];
+	struct queue_t *this_q = &mqueue(rid, dest_rid);
+	spin_lock(&this_q->lck);
+	heap_insert(this_q->q, msg_is_before, msg);
+	spin_unlock(&this_q->lck);
 }

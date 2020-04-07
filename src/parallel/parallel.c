@@ -7,7 +7,12 @@
 
 void parallel_thread_run(void *unused)
 {
-	core_thread_id_assign();
+	sync_init();
+
+	while(1){
+		msg_queue_extract();
+
+	}
 
 }
 
@@ -22,30 +27,22 @@ void parallel_global_init(void)
 
 void parallel_global_fini(void)
 {
-	msg_queue_global_fini();
 	lib_global_fini();
+	msg_queue_global_fini();
 	// TODO
 }
 
 int main(int argc, char **argv)
 {
+#ifdef HAVE_MPI
+	mpi_global_init(&argc, &argv);
+#endif
+
 	init_args_parse(argc, argv);
 
 	parallel_global_init();
 
-	arch_thread_init(global_config.threads_cnt - 1, parallel_thread_run, NULL);
+	arch_thread_init(n_threads, parallel_thread_run, NULL);
 
-	parallel_thread_run(NULL);
-}
-
-void ScheduleNewEvent(unsigned receiver, simtime_t timestamp,
-	unsigned event_type, const void *payload, unsigned payload_size)
-{
-	lp_msg *msg = msg_alloc(payload_size + sizeof(unsigned));
-	msg->destination = receiver;
-	msg->destination_time = timestamp;
-	*((unsigned *) msg->payload) = event_type;
-	memcpy(&msg->payload[sizeof(unsigned)], payload, payload_size);
-
-	msg_queue_insert(msg);
+	sleep(100);
 }
