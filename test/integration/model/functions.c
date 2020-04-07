@@ -1,4 +1,4 @@
-#include <integration/application.h>
+#include <integration/model/application.h>
 
 #include <string.h>
 #include <stdio.h>

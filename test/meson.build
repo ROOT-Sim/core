@@ -2,8 +2,9 @@ src_dir = '../src/'
 # main include directory
 incdir = include_directories(src_dir)
 # Declare test dependencies
-serial_lib_dep = declare_dependency(link_with: neurome_serial_library)
-thread_lib_dep = dependency('threads')
+serial_dep = declare_dependency(link_whole: neurome_serial_lib)
+parallel_dep = declare_dependency(link_whole: neurome_parallel_lib, 
+  link_args: '-Wl,--wrap=malloc,--wrap=realloc,--wrap=free')
 
 # Tests names and sources
 tests_specs = {
@@ -13,7 +14,25 @@ tests_specs = {
       'mm/msg_allocator_test.c', 
       src_dir + 'mm/msg_allocator.c'
     ],
-    'dependencies' : [ thread_lib_dep ]
+    'dependencies' : [ threads_dep ]
+  },
+  'gvt' : {
+    'sources' : [
+      'test.c',
+      'gvt/gvt_test.c', 
+      src_dir + 'core/core.c',
+      src_dir + 'gvt/gvt.c'
+    ],
+    'dependencies' : [ threads_dep ]
+  },
+  'lp' : {
+    'sources' : [
+      'test.c',
+      'lp/lp_test.c', 
+      src_dir + 'core/core.c',
+      src_dir + 'lp/lp.c'
+    ],
+    'dependencies' : [ threads_dep ]
   },
   'model_allocator' : {
     'sources' : [
@@ -21,7 +40,7 @@ tests_specs = {
       'mm/model_allocator_test.c',
       src_dir + 'mm/model_allocator.c',
     ],
-    'dependencies' : [ thread_lib_dep ]
+    'dependencies' : [ threads_dep ]
   },
   'msg_queue' : {
     'sources' : [
@@ -30,28 +49,48 @@ tests_specs = {
       src_dir + 'core/core.c',
       src_dir + 'datatypes/msg_queue.c',
     ],
-    'dependencies' : [ thread_lib_dep ]
+    'dependencies' : [ threads_dep ]
   },
   'integration_serial' : {
     'sources' : [
       'test.c',
-      'integration/application.c', 
-      'integration/functions.c',
-      'integration/output.c'
+      'integration/integration_serial.c', 
+      'integration/model/application.c', 
+      'integration/model/functions.c',
+      'integration/model/output.c'
     ],
-    'dependencies' : [ thread_lib_dep, serial_lib_dep ]
+    'dependencies' : [ threads_dep, serial_dep ]
+  },
+  'integration_parallel_single' : {
+    'sources' : [
+      'test.c',
+      'integration/integration_parallel_single.c',
+      'integration/model/application.c', 
+      'integration/model/functions.c',
+      'integration/model/output.c'
+    ],
+    'dependencies' : [ threads_dep, parallel_dep ]
+  },
+  'integration_parallel_multi' : {
+    'sources' : [
+      'test.c',
+      'integration/integration_parallel_multi.c',
+      'integration/model/application.c', 
+      'integration/model/functions.c',
+      'integration/model/output.c'
+    ],
+    'dependencies' : [ threads_dep, parallel_dep ]
   }
 }
 
 # Actual build of the tests
 i = 1
 foreach test_name, test_specs : tests_specs
-  sources_arr = test_specs.get('sources')
-  dependencies_arr = test_specs.get('dependencies')
   e = executable(
     'test_' + test_name, 
-    sources : sources_arr, 
+    sources : test_specs.get('sources'), 
     dependencies : test_specs.get('dependencies'), 
+    c_args : ['-DNEUROME_TEST'],
     link_args : '-Wl,--wrap=main', 
     include_directories : incdir
   )

@@ -5,6 +5,8 @@
 #include <lp/msg.h>
 #include <mm/msg_allocator.h>
 
+#ifdef HAVE_MPI
+
 #include <mpi.h>
 
 #define MPI_SIM_MSG_TAG 123
@@ -38,17 +40,18 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 
 	if (thread_lvl < MPI_THREAD_MULTIPLE) {
 		if (thread_lvl < MPI_THREAD_SERIALIZED) {
-			rootsim_error(true, "The MPI implementation does not support threads [current thread level support: %d]\n", thread_lvl);
+			log_log(LOG_FATAL, "This MPI implementation does not support threads\n");
+			goto error;
 		} else {
 #ifndef HAVE_MPI_SERIALIZABLE
 			mpi_serialize = true;
 			spin_init(&mpi_spinlock);
 #else
-			rootsim_error(true, "The MPI implementation does not support threads [current thread level support: %d]\n", mpi_thread_lvl_provided);
+			log_log(LOG_FATAL, "This MPI implementation only supports serialized calls: you need to compile NeuRome with --enable-serialized-mpi\n");
+			goto error;
 #endif
 		}
 	}
-
 
 	MPI_Errhandler err_handler;
 	if (MPI_Comm_create_errhandler(comm_error_handler, &err_handler))
@@ -62,8 +65,7 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 
 	return;
 	error:
-	//todo initial error handling
-	;
+	abort();
 }
 
 void mpi_global_fini(void)
@@ -127,3 +129,5 @@ lp_msg* mpi_remote_msg_rcv(void)
 
 	return ret;
 }
+
+#endif

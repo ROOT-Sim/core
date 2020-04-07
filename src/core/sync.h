@@ -12,7 +12,7 @@ typedef atomic_uint_fast8_t spinlock_t;
 	__extension__({							\
 		while(							\
 			atomic_exchange_explicit(			\
-				(lck_p),					\
+				(lck_p),				\
 				1U,					\
 				memory_order_relaxed			\
 			)						\

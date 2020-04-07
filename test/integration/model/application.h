@@ -1,6 +1,7 @@
 #include <NeuRome.h>
 
 #include <test_rng.h>
+
 #include <memory.h>
 
 #define MAX_BUFFERS 256

@@ -15,8 +15,12 @@ __attribute((weak)) extern struct argp model_argp;
 
 extern uint64_t n_lps;
 
-extern void ScheduleNewEvent(unsigned receiver, simtime_t timestamp, unsigned event_type, const void *event_content, unsigned event_size);
+extern void ScheduleNewEvent(unsigned receiver, simtime_t timestamp,
+	unsigned event_type, const void *event_content, unsigned event_size);
 extern void SetState(void *new_state);
+
+extern double Random(void);
+extern uint64_t RandomU64(void);
 
 enum _topology_geometry_t {
 	TOPOLOGY_HEXAGON,	//!< hexagonal grid topology

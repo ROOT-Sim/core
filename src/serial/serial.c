@@ -3,6 +3,7 @@
 
 #include <core/core.h>
 #include <core/init.h>
+#include <log/stats.h>
 #include <mm/msg_allocator.h>
 
 struct serial_lp *cur_lp;
@@ -12,27 +13,29 @@ static struct serial_lp *lps;
 
 static void serial_simulation_init(void)
 {
-	lps = malloc(sizeof(*lps) * n_lps);
+	lps = mm_alloc(sizeof(*lps) * n_lps);
 	memset(lps, 0, sizeof(*lps) * n_lps);
 	msg_allocator_init();
 
 	heap_init(queue);
 
 	for(uint64_t i = 0; i < n_lps; ++i){
-		lib_init(&(lps_serial[i]->ls), i);
+		cur_lp = &lps[i];
+		lib_lp_init(i);
 #if LOG_DEBUG >= LOG_LEVEL
 		lps[i].last_evt_time = -1;
 #endif
 
-		ScheduleNewEvent(i, 0, 0, NULL, 0);
+		ProcessEvent(i, 0, INIT, NULL, 0, lps[i].lsm.state_s);
 	}
 }
 
 static void serial_simulation_fini(void)
 {
 	for(uint64_t i = 0; i < n_lps; ++i){
+		cur_lp = &lps[i];
 		ProcessEvent(i, 0, UINT_MAX, NULL, 0, lps[i].lsm.state_s);
-		lib_fini(&(lps_serial[i]->ls));
+		lib_lp_fini();
 	}
 
 	for(array_count_t i = 0; i < array_count(queue); ++i){
@@ -41,7 +44,7 @@ static void serial_simulation_fini(void)
 
 	heap_fini(queue);
 	msg_allocator_fini();
-	free(lps);
+	mm_free(lps);
 }
 
 void serial_simulation_run(void)
@@ -50,7 +53,8 @@ void serial_simulation_run(void)
 
 	while(likely(!heap_is_empty(queue))) {
 		const lp_msg *cur_msg = heap_min(queue);
-		cur_lp = &lps[cur_msg->dest];
+		struct serial_lp *this_lp = &lps[cur_msg->dest];
+		cur_lp = this_lp;
 
 #if LOG_DEBUG >= LOG_LEVEL
 		if(log_is_lvl(LOG_DEBUG)) {
@@ -65,28 +69,34 @@ void serial_simulation_run(void)
 		}
 #endif
 
+		stats_time_start(STATS_MSG_PROCESSED);
+
 		ProcessEvent(
 			cur_msg->dest,
 			cur_msg->dest_t,
-			*((unsigned *) cur_msg->pl),
-			&cur_msg->pl[sizeof(unsigned)],
-			cur_msg->pl_size - sizeof(unsigned),
+			cur_msg->m_type,
+			cur_msg->pl,
+			cur_msg->pl_size,
 			cur_lp->lsm.state_s
 		);
 
-		bool onGVTres = OnGVT(cur_msg->dest, cur_lp->lsm.state_s);
+		bool can_end = CanEnd(cur_msg->dest, cur_lp->lsm.state_s);
 
-		if(onGVTres != cur_lp->terminating) {
-			cur_lp->terminating = onGVTres;
-			to_terminate += 1 - ((int)onGVTres * 2);
+		stats_time_take(STATS_MSG_PROCESSED);
 
-			if(unlikely(onGVTres && !to_terminate)) {
+		if(can_end != cur_lp->terminating) {
+			cur_lp->terminating = can_end;
+			to_terminate += 1 - ((int)can_end * 2);
+
+			if(unlikely(can_end && !to_terminate)) {
 				break;
 			}
 		}
 
 		msg_allocator_free(heap_extract(queue, msg_is_before));
 	}
+
+	stats_dump();
 }
 
 void ScheduleNewEvent(unsigned receiver, simtime_t timestamp,
@@ -94,7 +104,6 @@ void ScheduleNewEvent(unsigned receiver, simtime_t timestamp,
 {
 	lp_msg *msg = msg_allocator_pack(
 		receiver, timestamp, event_type, payload, payload_size);
-
 	heap_insert(queue, msg_is_before, msg);
 }
 

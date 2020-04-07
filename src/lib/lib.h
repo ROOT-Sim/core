@@ -18,31 +18,10 @@ struct lib_state_managed {
 };
 
 struct lib_state {
+	unsigned fake_member;
 	// topology
 };
 
-#define lib_checkpoint()			\
-	__extension__({				\
-	})
+extern void lib_lp_init(uint64_t llid);
 
-#define lib_restore()				\
-	__extension__({				\
-	})
-
-#define lib_global_init()			\
-	__extension__({				\
-		topology_init();		\
-	})
-
-#define lib_global_fini()			\
-	__extension__({				\
-	})
-
-#define lib_init(state, lp_id) 			\
-	__extension__({				\
-						\
-	})
-
-#define lib_fini(state)				\
-	__extension__({				\
-	})
+extern void lib_lp_fini(void);

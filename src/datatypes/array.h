@@ -1,12 +1,11 @@
 #pragma once
 
-#include <memory.h>
-#include <stdlib.h>
+#include <mm/mm.h>
 #include <stdint.h>
 
-#define arr_realloc realloc
-#define arr_alloc malloc
-#define arr_free free
+#define arr_realloc mm_realloc
+#define arr_alloc mm_alloc
+#define arr_free mm_free
 
 #define INIT_SIZE_ARRAY 8U
 

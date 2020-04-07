@@ -12,14 +12,12 @@
 #define NEUROME_LIBS_PATH "/usr/lib/"
 #endif
 
-extern char **environ;
-
 static const char *const additional_args[] = {
 	"-lm",
 	NULL
 };
 
-static int child_proc(int argc, char **argv, char **environment)
+static int child_proc(int argc, char **argv)
 {
 	char **new_argv = malloc(
 		sizeof(*new_argv) * argc + sizeof(additional_args));
@@ -39,7 +37,7 @@ int main(int argc, char **argv)
 {
 	pid_t child_pid;
 	if (!(child_pid = fork())) {
-		return child_proc(argc, argv, environ);
+		return child_proc(argc, argv);
 	}
 	int child_status = -1;
 	while (wait(&child_status) != child_pid) {

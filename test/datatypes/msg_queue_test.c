@@ -1,32 +1,29 @@
 #include <test.h>
 #include <test_rng.h>
+
 #include <datatypes/msg_queue.h>
 #include <lp/lp.h>
 
-#include <stdlib.h>
+#include <stdatomic.h>
 #include <stdint.h>
-#include <pthread.h>
+#include <stdlib.h>
 
 #define THREAD_CNT 6
-#define THREAD_REPS 1000000
+#define THREAD_REPS 100000
 
 static __thread uint128_t rng_state;
-static pthread_barrier_t t_barrier;
-static unsigned lid_to_rid_m[] = {0, 1, 2, 3, 0, 1, 2, 3};
+static unsigned lid_to_rid_m[] = {0, 1, 2, 3, 0, 1, 2, 3, 5, 4, 4, 5};
 static lp_struct lps_m[THREAD_CNT];
+static atomic_uint msg_missing = THREAD_REPS * THREAD_CNT;
 
 __thread lp_msg *current_msg;
 __thread lp_struct *current_lp;
-unsigned n_threads = THREAD_CNT;
 unsigned *lid_to_rid = lid_to_rid_m;
 lp_struct *lps = lps_m;
 
 static int msg_queue_test_init(void)
 {
-	int ret;
-	if((ret = pthread_barrier_init(&t_barrier, NULL, test_config.threads_count))){
-		return ret;
-	}
+	n_threads = THREAD_CNT;
 	msg_queue_global_init();
 	return 0;
 }
@@ -34,7 +31,7 @@ static int msg_queue_test_init(void)
 static int msg_queue_test_fini(void)
 {
 	msg_queue_global_fini();
-	return pthread_barrier_destroy(&t_barrier);
+	return -msg_missing;
 }
 
 static int msg_queue_test(unsigned thread_id)
@@ -44,7 +41,7 @@ static int msg_queue_test(unsigned thread_id)
 	core_init();
 	msg_queue_init();
 
-	pthread_barrier_wait(&t_barrier);
+	test_thread_barrier();
 
 	unsigned i = THREAD_REPS;
 	while(i--){
@@ -58,7 +55,7 @@ static int msg_queue_test(unsigned thread_id)
 		msg_queue_insert(msg);
 	}
 
-	pthread_barrier_wait(&t_barrier);
+	test_thread_barrier();
 
 	lp_msg *msg;
 	simtime_t last_time = 0.0;
@@ -69,14 +66,15 @@ static int msg_queue_test(unsigned thread_id)
 			--ret;
 		last_time = msg->dest_t;
 		free(msg);
+		msg_queue_extract();
+		atomic_fetch_sub_explicit(&msg_missing, 1U, memory_order_relaxed);
 	}
 
 	msg_queue_fini();
 	return ret;
 }
 
-
-struct _test_config_t test_config = {
+const struct _test_config_t test_config = {
 	.test_name = "msg queue",
 	.threads_count = THREAD_CNT,
 	.test_init_fnc = msg_queue_test_init,

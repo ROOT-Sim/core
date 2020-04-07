@@ -16,7 +16,7 @@ void msg_allocator_init(void)
 void msg_allocator_fini(void)
 {
 	while(!array_is_empty(free_list)){
-		free(array_pop(free_list));
+		mm_free(array_pop(free_list));
 	}
 	array_fini(free_list);
 }
@@ -25,7 +25,7 @@ lp_msg* msg_allocator_alloc(unsigned payload_size)
 {
 	lp_msg *ret;
 	if(unlikely(payload_size > BASE_PAYLOAD_SIZE)){
-		ret = malloc(
+		ret = mm_alloc(
 			offsetof(lp_msg, extra_pl) +
 			(payload_size - BASE_PAYLOAD_SIZE)
 		);
@@ -33,7 +33,7 @@ lp_msg* msg_allocator_alloc(unsigned payload_size)
 		return ret;
 	}
 	if(unlikely(array_is_empty(free_list))){
-		ret = malloc(sizeof(lp_msg));
+		ret = mm_alloc(sizeof(lp_msg));
 		ret->pl_size = payload_size;
 		return ret;
 	}
@@ -45,7 +45,7 @@ void msg_allocator_free(lp_msg *msg)
 	if(likely(msg->pl_size <= BASE_PAYLOAD_SIZE))
 		array_push(free_list, msg);
 	else
-		free(msg);
+		mm_free(msg);
 }
 
 extern lp_msg* msg_allocator_pack(unsigned receiver, simtime_t timestamp,

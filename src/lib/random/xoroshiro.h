@@ -1,34 +1,35 @@
 #pragma once
 
+#include <math.h>
 #include <stdint.h>
 
-#define rotl(x, k) ((x << k) | (x >> (64 - k)))
+#define rotl(x, k) (((x) << (k)) | ((x) >> (64 - (k))))
 
 #define random_u64(rng_s)						\
 	__extension__ ({						\
-		const uint64_t __res = rotl(rng_s[1] * 5, 7) * 9;	\
-		const uint64_t __t = rng_s[1] << 17;			\
+		const uint64_t __res = rotl((rng_s)[1] * 5, 7) * 9;	\
+		const uint64_t __t = (rng_s)[1] << 17;			\
 									\
-		rng_s[2] ^= rng_s[0];					\
-		rng_s[3] ^= rng_s[1];					\
-		rng_s[1] ^= rng_s[2];					\
-		rng_s[0] ^= rng_s[3];					\
-		rng_s[2] ^= t;						\
-		rng_s[3] = rotl(rng_s[3], 45);				\
+		(rng_s)[2] ^= (rng_s)[0];				\
+		(rng_s)[3] ^= (rng_s)[1];				\
+		(rng_s)[1] ^= (rng_s)[2];				\
+		(rng_s)[0] ^= (rng_s)[3];				\
+		(rng_s)[2] ^= __t;					\
+		(rng_s)[3] = rotl((rng_s)[3], 45);			\
 									\
 		__res;							\
 	})
 
 // fixme this is a very poor way to seed the generator
-#define random_init(rng_s, lp_id)					\
+#define random_init(rng_s, llid)					\
 	__extension__ ({						\
-		rng_s[0] = lp_id;					\
-		rng_s[1] = lp_id;					\
-		rng_s[2] = lp_id;					\
-		rng_s[3] = lp_id;					\
-		__i = 1024;						\
-		for(__i--)						\
-			random_u64(rng_s);				\
+		(rng_s)[0] = (llid + 1) * UINT64_C(16232384076195101791);\
+		(rng_s)[1] = (llid + 1) * UINT64_C(13983006573105492179);\
+		(rng_s)[2] = (llid + 1) * UINT64_C(10204677566545858177);\
+		(rng_s)[3] = (llid + 1) * UINT64_C(14539058011249359317);\
+		unsigned __i = 1024;					\
+		while (__i--)						\
+			random_u64((rng_s));				\
 	})
 
 
@@ -46,7 +47,7 @@
 		}							\
 									\
 		unsigned __shf = __builtin_clzll(__mant);		\
-		if (__shf != 0) {					\
+		if (__shf != 0){					\
 			__exp -= __shf;					\
 			__mant <<= __shf;				\
 			__mant |= (random_u64(rng_s) >> (64 - __shf));	\

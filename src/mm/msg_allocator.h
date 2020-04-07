@@ -13,15 +13,12 @@ extern void msg_allocator_free(lp_msg *);
 inline lp_msg* msg_allocator_pack(unsigned receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size)
 {
-	lp_msg *msg = msg_allocator_alloc(payload_size + sizeof(unsigned));
+	lp_msg *msg = msg_allocator_alloc(payload_size);
 
 	msg->dest = receiver;
 	msg->dest_t = timestamp;
-#ifndef NEUROME_SERIAL
-	msg->sender = current_msg->dest;
-#endif
-	*((unsigned *) msg->pl) = event_type;
-	memcpy(&msg->pl[sizeof(unsigned)], payload, payload_size);
-
+	msg->m_type = event_type;
+	msg->pl_size = payload_size;
+	memcpy(msg->pl, payload, payload_size);
 	return msg;
 }

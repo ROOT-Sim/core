@@ -1,14 +1,14 @@
 #define NEUROME_LOG_INTERNAL
 #include <log/log.h>
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <time.h>
 
 int log_level = LOG_LEVEL;
-
+_Bool log_colored;
 static FILE *log_file;
 
 static const struct {
@@ -33,15 +33,25 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 
 	strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", loc_t);
 	time_buffer[sizeof(time_buffer) - 1] = '\0';
-	fprintf(
-		stderr,
-		"%s %s%-5s\x1b[0m \x1b[90m%s:%u:\x1b[0m ",
-		time_buffer,
-		levels[level].color,
-		levels[level].name,
-		file,
-		line
-	);
+	if(log_colored)
+		fprintf(
+			stderr,
+			"%s %s%-5s\x1b[0m \x1b[90m%s:%u:\x1b[0m ",
+			time_buffer,
+			levels[level].color,
+			levels[level].name,
+			file,
+			line
+		);
+	else
+		fprintf(
+			stderr,
+			"%s %-5s %s:%u: ",
+			time_buffer,
+			levels[level].name,
+			file,
+			line
+		);
 
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
@@ -72,8 +82,15 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 
 void log_logo_print()
 {
-      fprintf(stderr, "\x1b[94m    \x1b[90m         \x1b[94m _ \x1b[90m               \n");
-      fprintf(stderr, "\x1b[94m|\\ |\x1b[90m  _      \x1b[94m|_)\x1b[90m  _  ._ _   _  \n");
-      fprintf(stderr, "\x1b[94m| \\|\x1b[90m (/_ |_| \x1b[94m| \\\x1b[90m (_) | | | (/_ \n");
-      fprintf(stderr, "\x1b[0m\n");
+	if(log_colored){
+		fprintf(stderr, "\x1b[94m    \x1b[90m         \x1b[94m _ \x1b[90m               \n");
+		fprintf(stderr, "\x1b[94m|\\ |\x1b[90m  _      \x1b[94m|_)\x1b[90m  _  ._ _   _  \n");
+		fprintf(stderr, "\x1b[94m| \\|\x1b[90m (/_ |_| \x1b[94m| \\\x1b[90m (_) | | | (/_ \n");
+		fprintf(stderr, "\x1b[0m\n");
+	} else {
+		fprintf(stderr, "              _                 \n");
+		fprintf(stderr, "|\\ |  _      |_)  _  ._ _   _  \n");
+		fprintf(stderr, "| \\| (/_ |_| | \\ (_) | | | (/_ \n");
+		fprintf(stderr, "\n");
+	}
 }

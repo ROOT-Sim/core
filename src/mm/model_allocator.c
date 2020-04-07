@@ -16,30 +16,30 @@
 void model_memory_lp_init(void)
 {
 	struct mm_state *self = &current_lp->mm_state;
-	uint8_t node_size = B_TOTAL_EXP;
+	uint_fast8_t node_size = B_TOTAL_EXP;
 
-	for (uint32_t i = 0; i < sizeof(self->longest); ++i) {
+	for (uint_fast32_t i = 0; i < sizeof(self->longest); ++i) {
 		self->longest[i] = node_size;
 		node_size -= is_power_of_2(i + 2);
 	}
 
 	self->used_mem = 0;
-	self->base_mem = malloc(1 << B_TOTAL_EXP);
+	self->base_mem = mm_alloc(1 << B_TOTAL_EXP);
 }
 
 void model_memory_lp_fini(void)
 {
-	free(current_lp->mm_state.base_mem);
+	mm_free(current_lp->mm_state.base_mem);
 }
 
-void *model_alloc(size_t req_size)
+void *__wrap_malloc(size_t req_size)
 {
 	if(unlikely(!req_size))
 		return NULL;
 
 	struct mm_state *self = &current_lp->mm_state;
 
-	uint8_t req_blks = max(next_exp_of_2(req_size - 1), B_BLOCK_EXP);
+	uint_fast8_t req_blks = max(next_exp_of_2(req_size - 1), B_BLOCK_EXP);
 
 	if (self->longest[0] < req_blks) {
 		errno = ENOMEM;
@@ -47,8 +47,8 @@ void *model_alloc(size_t req_size)
 	}
 
 	/* search recursively for the child */
-	uint8_t node_size;
-	uint32_t i;
+	uint_fast8_t node_size;
+	uint_fast32_t i;
 	for (
 		i = 0, node_size = B_TOTAL_EXP;
 		node_size > req_blks;
@@ -64,7 +64,7 @@ void *model_alloc(size_t req_size)
 	self->longest[i] = 0;
 	self->used_mem += 1 << node_size;
 
-	uint32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
+	uint_fast32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
 
 	while (i) {
 		i = parent(i);
@@ -77,15 +77,16 @@ void *model_alloc(size_t req_size)
 	return ((char *)self->base_mem) + offset;
 }
 
-void model_free(void *ptr)
+void __wrap_free(void *ptr)
 {
 	if(unlikely(!ptr))
 		return;
 
 	struct mm_state *self = &current_lp->mm_state;
-	uint8_t node_size = B_BLOCK_EXP;
-	uint32_t i = (((char *)ptr - (char *)self->base_mem) >> B_BLOCK_EXP) +
-				(1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
+	uint_fast8_t node_size = B_BLOCK_EXP;
+	uint_fast32_t i =
+		(((char *)ptr - (char *)self->base_mem) >> B_BLOCK_EXP) +
+		(1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
 	for (; self->longest[i]; i = parent(i)) {
 		++node_size;
@@ -97,8 +98,8 @@ void model_free(void *ptr)
 	while (i) {
 		i = parent(i);
 
-		uint32_t left_longest = self->longest[left_child(i)];
-		uint32_t right_longest = self->longest[right_child(i)];
+		uint_fast8_t left_longest = self->longest[left_child(i)];
+		uint_fast8_t right_longest = self->longest[right_child(i)];
 
 		if (left_longest == node_size && right_longest == node_size) {
 			self->longest[i] = node_size + 1;
@@ -109,16 +110,17 @@ void model_free(void *ptr)
 	}
 }
 
-void *model_realloc(void *ptr, size_t req_size)
+void *__wrap_realloc(void *ptr, size_t req_size)
 {
 	if(!req_size){
-		model_free(ptr);
+		__wrap_free(ptr);
 		return NULL;
 	}
 	if(!ptr){
-		return model_alloc(req_size);
+		return __wrap_malloc(req_size);
 	}
-	// TODO actual realloc
+
+	abort();
 	return NULL;
 }
 
@@ -127,7 +129,7 @@ mm_checkpoint *model_checkpoint_take(void)
 	struct mm_state *self = &current_lp->mm_state;
 	mm_checkpoint *ret;
 	//if(self->used_mem > FULL_LOG_THRESHOLD * (1 << B_TOTAL_EXP)){
-		ret = malloc(
+		ret = mm_alloc(
 			offsetof(mm_checkpoint, base_mem) + (1 << B_TOTAL_EXP));
 		ret->used_mem = self->used_mem;
 		memcpy(ret->longest, self->longest, sizeof(ret->longest));
@@ -153,5 +155,5 @@ void model_checkpoint_restore(mm_checkpoint *ckp)
 
 void model_checkpoint_free(mm_checkpoint *ckp)
 {
-	free(ckp);
+	mm_free(ckp);
 }

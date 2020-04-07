@@ -15,8 +15,9 @@ struct process_data {
 
 #define process_is_silent() (current_lp->state == LP_STATE_SILENT)
 
-extern void process_init(void);
-extern void process_fini(void);
+extern void process_lp_init(void);
+extern void process_lp_deinit(void);
+extern void process_lp_fini(void);
 
 extern void process_msg(void);
 extern void process_msg_sent(lp_msg *msg);

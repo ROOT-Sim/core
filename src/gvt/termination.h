@@ -1,10 +1,13 @@
 #pragma once
 
-struct termination_data {
-	simtime_t terminated;
-};
+#include <stdatomic.h>
 
-#define termination_can_exit()
+extern atomic_uint thr_to_end;
 
-extern void termination_lp_init();
-extern void termination_processed_msg();
+#define termination_cant_end() atomic_load_explicit(&thr_to_end, memory_order_relaxed)
+
+extern void termination_global_init(void);
+extern void termination_lp_init(void);
+extern void termination_on_msg_process(void);
+extern void termination_on_gvt(void);
+extern void termination_on_lp_rollback(void);

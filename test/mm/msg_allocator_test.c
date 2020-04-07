@@ -13,7 +13,7 @@ static int msg_allocator_test(unsigned thread_id)
 	return 0;
 }
 
-struct _test_config_t test_config = {
+const struct _test_config_t test_config = {
 	.test_name = "message allocator",
 	.threads_count = 4,
 	.test_fnc = msg_allocator_test

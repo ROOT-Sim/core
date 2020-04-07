@@ -10,18 +10,14 @@
 #define msg_bare_size(msg) (offsetof(lp_msg, pl) + (msg)->pl_size)
 
 #ifndef NEUROME_SERIAL
-#define msg_is_anti(msg) 	((msg)->sender->metadata & (1 << 15))
-#define msg_is_external(msg) 	((msg)->sender->metadata & (1 << 15))
-#define msg_sender(msg) 	((msg)->sender & ~(UINT64_C(1) << UINT64_C(63)))
-#define msg_set_anti(msg) 	((msg)->sender |= (UINT64_C(1) << UINT64_C(63)))
+#define msg_is_anti(msg) 	((msg)->m_type & (UINT64_C(1) << UINT64_C(32)))
+#define msg_set_anti(msg) 	((msg)->m_type |= (UINT64_C(1) << UINT64_C(32)))
 #endif
 
 struct _lp_msg {
 	lp_id_t dest;
-#ifndef NEUROME_SERIAL
-	lp_id_t sender;
-#endif
 	simtime_t dest_t;
+	uint_fast32_t m_type;
 	uint_fast32_t pl_size;
 	unsigned char pl[BASE_PAYLOAD_SIZE];
 	unsigned char extra_pl[];

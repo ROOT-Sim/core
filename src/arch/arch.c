@@ -2,9 +2,32 @@
 
 #if defined(__linux__)
 
-#include <sched.h>
-#include <unistd.h>
+#define _GNU_SOURCE
+#include <core/core.h>
 #include <pthread.h>
+#include <sched.h>
+#include <signal.h>
+#include <unistd.h>
+
+static pthread_t *ptids;
+
+void arch_signal_ignore(void)
+{
+	sigset_t mask, old_mask;
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGINT);
+	pthread_sigmask(SIG_BLOCK, &mask, &old_mask);
+}
+
+bool arch_signal_want_end(void)
+{
+	struct timespec timeout = { .tv_sec = 0, .tv_nsec = 0 };
+	sigset_t mask;
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGINT);
+
+	return sigtimedwait(&mask, NULL, &timeout) == SIGINT;
+}
 
 unsigned arch_core_count(void)
 {
@@ -12,58 +35,68 @@ unsigned arch_core_count(void)
 	return ret < 1 ? 1 : (unsigned)ret;
 }
 
-void arch_thread_init(
-	unsigned thread_count,
-	void *(*thread_fnc)(void *),
-	void *thread_fnc_arg
+void arch_thread_create(
+	unsigned t_cnt,
+	bool affinity,
+	void *(*t_fnc)(void *),
+	void *t_fnc_arg
 ){
-	pthread_t thread_id;
-	while(thread_count--){
-		pthread_create(&thread_id, NULL, thread_fnc, thread_fnc_arg);
+	ptids = mm_alloc(sizeof(*ptids) * t_cnt);
+
+	pthread_attr_t t_attr;
+	pthread_attr_init(&t_attr);
+
+	while(t_cnt--){
+		cpu_set_t c_set;
+
+		CPU_ZERO(&c_set);
+		CPU_SET(t_cnt, &c_set);
+
+		if(affinity)
+			pthread_attr_setaffinity_np(
+				&t_attr, sizeof(c_set), &c_set);
+
+		pthread_create(&ptids[t_cnt], &t_attr, t_fnc, t_fnc_arg);
 	}
+
+	pthread_attr_destroy(&t_attr);
 }
 
-void arch_affinity_set(unsigned thread_id)
+void arch_thread_wait(unsigned t_cnt)
 {
-	cpu_set_t cpuset;
-	CPU_ZERO(&cpuset);
-	CPU_SET(thread_id, &cpuset);
-	// 0 is the current thread
-	sched_setaffinity(0, sizeof(cpuset), &cpuset);
+	while(t_cnt--){
+		pthread_join(ptids[t_cnt], NULL);
+	}
+
+	mm_free(ptids);
 }
 
 #elif defined(_WIN64)
 
+#define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x0400
 #include <windows.h>
 
 unsigned arch_core_count(void)
 {
-	SYSTEM_INFO _sysinfo;
-	GetSystemInfo(&_sysinfo);
-	return _sysinfo.dwNumberOfProcessors;
+	SYSTEM_INFO sys_info;
+	GetSystemInfo(&sys_info);
+	return sys_info.dwNumberOfProcessors;
 }
 
 void arch_thread_init(
 	unsigned thread_count,
+	bool set_affinity,
 	void *(*thread_fnc)(void *),
 	void *thread_fnc_arg
 ){
-	DWORD thread_id;
 	while (thread_count--) {
-		CreateThread(
-			NULL,
-			0,
-			thread_fnc,
-			thread_fnc_arg,
-			0,
-			&thread_id
-		);
-	}
-}
+		HANDLE t_new = CreateThread(NULL, 0, thread_fnc, thread_fnc_arg,
+			0, NULL);
 
-void arch_affinity_set(unsigned thread_id)
-{
-	SetThreadAffinityMask(GetCurrentThread(), 1 << thread_id); // TODO handle processor groups bulls**t
+		if(set_affinity)
+			SetThreadAffinityMask(t_new, 1 << thread_count);
+	}
 }
 
 #else /* OS_LINUX || OS_WINDOWS */

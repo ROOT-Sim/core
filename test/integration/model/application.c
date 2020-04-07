@@ -1,30 +1,16 @@
+#include <integration/model/application.h>
+
 #include <test.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
 
-#include <integration/application.h>
-#include <integration/output.h>
-
-static const char *test_arguments[] = {
-	"--lp",
-	"64",
-	NULL
-};
-
-struct _test_config_t test_config = {
-	.test_name = "integration serial",
-	.test_arguments = test_arguments,
-	.expected_output = expected_output,
-	.expected_output_size = sizeof(expected_output)
-};
-
 #define do_random() (lcg_random(state->rng_state))
 
 void ProcessEvent(unsigned me, simtime_t now, unsigned event_type, unsigned *event_content, unsigned event_size, lp_state_t *state)
 {
-	if(state && state->events >= COMPLETE_EVENTS){
+	if (state && state->events >= COMPLETE_EVENTS){
 		if(event_type == DEINIT){
 			fprintf(test_output_file, "%" PRIu32 "\n", state->total_checksum);
 			while(state->head)
@@ -46,7 +32,7 @@ void ProcessEvent(unsigned me, simtime_t now, unsigned event_type, unsigned *eve
                         SetState(state);
 
 			unsigned buffers_to_allocate = do_random() * MAX_BUFFERS;
-			for (unsigned i = 0; i < buffers_to_allocate; i++) {
+			for (unsigned i = 0; i < buffers_to_allocate; ++i) {
 				state->head = allocate_buffer(state, NULL, do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t));
 				state->buffer_count++;
 			}
@@ -95,12 +81,12 @@ void ProcessEvent(unsigned me, simtime_t now, unsigned event_type, unsigned *eve
 
 		default:
 			printf("[ERR] Requested to process an unknown event\n");
-			abort_test();
+			abort();
 			break;
 	}
 }
 
-bool OnGVT(unsigned me, lp_state_t *snapshot)
+bool CanEnd(unsigned me, lp_state_t *snapshot)
 {
 	(void)me;
 	return snapshot->events >= COMPLETE_EVENTS;

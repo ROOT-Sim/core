@@ -1,4 +1,4 @@
-#include <integration/output.h>
+#include <integration/model/output.h>
 
 const char expected_output[686] =
 "1007022094\n"
@@ -18,7 +18,7 @@ const char expected_output[686] =
 "2248050621\n"
 "57275805\n"
 "4158007774\n"
-"2268665989\n"
+"3025125689\n"
 "2081384038\n"
 "159480003\n"
 "251004007\n"

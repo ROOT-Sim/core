@@ -45,7 +45,7 @@ static void compute_edge(void)
 			edge = sqrt(lp_cnt);
 			// we make sure there are no "lonely" LPs
 			if(edge * edge != lp_cnt)
-				rootsim_error(true, "Invalid number of regions for this topology geometry (must be a square number)\n");
+				log_log(LOG_FATAL, "Invalid number of regions for this topology geometry (must be a square number)\n");
 			break;
 		default:
 			// the edge value is actually unused

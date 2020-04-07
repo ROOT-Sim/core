@@ -5,10 +5,10 @@
 
 #define N_THREADS 3
 
-static simtime_t bound_values[N_THREADS][4] = {
-	{1.3, 4.1, 6.7, 7.0},
-	{2.0, 3.4, 6.5, 6.5},
-	{1.2, 3.5, 6.4, 6.3},
+static simtime_t bound_values[N_THREADS][6] = {
+	{1.1, 4.1, 6.7, 7.0, 9.8, 10.0},
+	{2.0, 3.4, 6.5, 6.5, 9.6, 11.0},
+	{1.2, 3.5, 6.4, 6.3, 9.7, 10.5},
 };
 static __thread unsigned b_i = 0;
 
@@ -38,12 +38,16 @@ static int gvt_test_fini(void)
 static int gvt_test(unsigned thread_id)
 {
 	core_init();
-	while(gvt_msg_processed(0.0));
-	if(current_gvt != 1.2)
+	while(!gvt_msg_processed());
+	if(current_gvt != 1.1)
 		return -1;
 
-	while(gvt_msg_processed(0.0));
+	while(!gvt_msg_processed());
 	if(current_gvt != 6.3)
+		return -1;
+
+	while(!gvt_msg_processed());
+	if(current_gvt != 9.6)
 		return -1;
 	return 0;
 }

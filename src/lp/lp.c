@@ -1,69 +1,115 @@
 #include <lp/lp.h>
 
+#include <core/sync.h>
 #include <distributed/mpi.h>
 
 __thread lp_struct *current_lp;
 lp_struct *lps;
 unsigned *lid_to_rid;
 
-static uint64_t n_lps_node;
-
-static void lp_start_end(uint64_t *start_p, uint64_t *end_p)
-{
-	const unsigned this_t = rid;
-	const unsigned thds_cnt = n_threads;
-	const uint64_t lps_cnt = n_lps_node;
-	const bool big = (this_t < (lps_cnt % thds_cnt));
-
-	const uint64_t start = big ?
-		lps_cnt - ((lps_cnt / thds_cnt + 1) * (thds_cnt - this_t)) :
-		((lps_cnt / thds_cnt) * this_t);
-	*start_p = start;
-	*end_p = (lps_cnt / thds_cnt) + big + start;
+#define lps_offset_count(id, units_cnt, lps_cnt, out_offset, out_cnt)	\
+{									\
+	const unsigned __i = id;					\
+	const unsigned __ucnt = units_cnt;				\
+	const uint64_t __lpscnt = lps_cnt;				\
+	const bool __big = __i >= (__ucnt - (__lpscnt % __ucnt));	\
+									\
+	out_offset = __big ?						\
+		__lpscnt - ((__lpscnt / __ucnt + 1) * (__ucnt - __i)) : \
+		((__lpscnt / __ucnt) * __i);				\
+	out_cnt	= (__lpscnt / __ucnt) + __big;				\
 }
 
 void lp_global_init(void)
 {
-	uint64_t count = n_lps;
-
 #ifdef HAVE_MPI
-	count = (count / n_nodes) + 1 - (nid < (count % n_nodes));
+	uint64_t lps_offset, lps_cnt;
+	lps_offset_count(nid, n_nodes, n_lps, lps_offset, lps_cnt);
+#else
+	uint64_t lps_cnt = n_lps;
 #endif
 
-	lps = malloc(sizeof(*lps) * count);
-	lid_to_rid = malloc(sizeof(*lid_to_rid) * count);
-	n_lps_node = count;
+	lps = mm_alloc(sizeof(*lps) * lps_cnt);
+	lid_to_rid = mm_alloc(sizeof(*lid_to_rid) * lps_cnt);
+
+#ifdef HAVE_MPI
+	lps -= lps_offset;
+	lid_to_rid -= lps_offset;
+#endif
 }
 
 void lp_global_fini(void)
 {
-	free(lps);
-	free(lid_to_rid);
+
+#ifdef HAVE_MPI
+	uint64_t lps_offset, lps_cnt;
+	lps_offset_count(nid, n_nodes, n_lps, lps_offset, lps_cnt);
+	lps += lps_offset;
+	lid_to_rid += lps_offset;
+#endif
+
+	mm_free(lps);
+	mm_free(lid_to_rid);
 }
 
 void lp_init(void)
 {
-	uint64_t start, i;
-	lp_start_end(&start, &i);
+	uint64_t i, lps_cnt;
+#ifdef HAVE_MPI
+	lps_offset_count(nid, n_nodes, n_lps, i, lps_cnt);
+	lps_offset_count(rid, n_threads, lps_cnt, i, lps_cnt);
+#else
+	lps_offset_count(rid, n_threads, n_lps, i, lps_cnt);
+#endif
 
-	while(i-- != start){
+	uint64_t i_b = i, lps_cnt_b = lps_cnt;
+	while(lps_cnt_b--){
+		lid_to_rid[i_b] = rid;
+
+		i_b++;
+	}
+
+	sync_thread_barrier();
+
+	while(lps_cnt--){
 		current_lp = &lps[i];
 		current_lp->state = LP_STATE_RUNNING;
-		lid_to_rid[i] = rid;
+
 		model_memory_lp_init();
+		lib_lp_init(i);
 		process_lp_init();
+		termination_lp_init();
+
+		i++;
 	}
 }
 
 void lp_fini(void)
 {
-	uint64_t start, i;
-	lp_start_end(&start, &i);
+	uint64_t i = 0, lps_cnt = n_lps;
+#ifdef HAVE_MPI
+	lps_offset_count(nid, n_nodes, n_lps, i, lps_cnt);
+#endif
+	sync_thread_barrier();
 
-	while(i-- != start){
+	if(!rid){
+		for(uint64_t j = 0; j < lps_cnt; ++j){
+			current_lp = &lps[j + i];
+			process_lp_deinit();
+		}
+	}
+
+	sync_thread_barrier();
+
+	lps_offset_count(rid, n_threads, lps_cnt, i, lps_cnt);
+
+	while(lps_cnt--){
 		current_lp = &lps[i];
 
 		process_lp_fini();
+		lib_lp_fini();
 		model_memory_lp_fini();
+
+		i++;
 	}
 }

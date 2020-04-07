@@ -21,7 +21,7 @@ static struct queue_t *queues;
 
 void msg_queue_global_init(void)
 {
-	queues = malloc(
+	queues = mm_alloc(
 		n_threads *
 		n_threads *
 		sizeof(*queues)
@@ -47,7 +47,7 @@ void msg_queue_fini(void)
 
 void msg_queue_global_fini(void)
 {
-	free(queues);
+	mm_free(queues);
 }
 
 void msg_queue_extract(void)
@@ -72,6 +72,7 @@ void msg_queue_extract(void)
 	if(heap_count(bid_q->q)){
 		msg = heap_extract(bid_q->q, msg_is_before);
 		spin_unlock(&bid_q->lck);
+		current_msg = msg;
 		current_lp = &lps[lp_id_to_lid(msg->dest)];
 	} else {
 		spin_unlock(&bid_q->lck);
@@ -83,7 +84,7 @@ void msg_queue_extract(void)
 simtime_t msg_queue_time_peek(void)
 {
 	const unsigned t_cnt = n_threads;
-	simtime_t t_min = MAX_SIMTIME_T;
+	simtime_t t_min = SIMTIME_MAX;
 	unsigned remainings = t_cnt;
 	bool done[t_cnt];
 	memset(done, 0, sizeof(done));

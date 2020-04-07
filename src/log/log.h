@@ -5,6 +5,7 @@
 #endif
 
 extern int log_level;
+extern _Bool log_colored;
 
 #define LOG_TRACE 	0
 #define LOG_DEBUG 	1
@@ -15,10 +16,10 @@ extern int log_level;
 
 #define log_is_lvl(level) ((level) >= LOG_LEVEL && (level) >= log_level)
 
-#define log_log(level, ...)							\
-	do {									\
-		if(log_is_lvl(level))					\
-			_log_log(level, __FILE__, __LINE__, __VA_ARGS__);	\
+#define log_log(lvl, ...)						\
+	do {								\
+		if(log_is_lvl(lvl))					\
+			_log_log(lvl, __FILE__, __LINE__, __VA_ARGS__);	\
 	} while(0)
 
 void _log_log(int level, const char *file, unsigned line, const char *fmt, ...);

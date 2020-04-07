@@ -7,6 +7,7 @@
 
 typedef struct {
 	int verbosity;
+//	simtime_t termination_time;
 #ifndef NEUROME_SERIAL
 	unsigned gvt_period;
 #endif

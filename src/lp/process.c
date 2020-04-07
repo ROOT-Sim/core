@@ -1,5 +1,6 @@
 #include <lp/process.h>
 
+#include <datatypes/msg_queue.h>
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
@@ -12,7 +13,6 @@ void ScheduleNewEvent(unsigned receiver, simtime_t timestamp,
 
 	lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type,
 		payload, payload_size);
-
 	msg_queue_insert(msg);
 	array_push(this_lp->p.sent_msgs, msg);
 }
@@ -31,14 +31,7 @@ void process_lp_init(void)
 	current_msg = this_msg;
 
 	array_push(proc_p->sent_msgs, NULL);
-	ProcessEvent(
-		this_msg->dest,
-		this_msg->dest_t,
-		*((unsigned *) this_msg->pl),
-		&this_msg->pl[sizeof(unsigned)],
-		this_msg->pl_size - sizeof(unsigned),
-		this_lp->lsm.state_s
-	);
+	ProcessEvent(this_lp - lps, 0, INIT, NULL, 0, NULL);
 
 	struct log_entry entry = {
 		.i_past_msg = 0,
@@ -47,6 +40,12 @@ void process_lp_init(void)
 	array_push(proc_p->logs, entry);
 
 	array_push(proc_p->past_msgs, this_msg);
+}
+
+void process_lp_deinit(void)
+{
+	lp_struct *this_lp = current_lp;
+	ProcessEvent(this_lp - lps, 0, DEINIT, NULL, 0, this_lp->lsm.state_s);
 }
 
 void process_lp_fini(void)
@@ -86,9 +85,9 @@ static void silent_execution(array_count_t past_i)
 		ProcessEvent(
 			this_msg->dest,
 			this_msg->dest_t,
-			*((unsigned *) this_msg->pl),
-			&this_msg->pl[sizeof(unsigned)],
-			this_msg->pl_size - sizeof(unsigned),
+			this_msg->m_type,
+			this_msg->pl,
+			this_msg->pl_size,
 			this_lp->lsm.state_s
 		);
 	}
@@ -132,7 +131,7 @@ static void reinsert_invalid_past_messages(array_count_t past_i)
 	array_count(proc_p->past_msgs) = past_i + 1;
 }
 
-static unsigned handle_rollback(void)
+static void handle_rollback(void)
 {
 	lp_msg *this_msg = current_msg;
 	struct process_data *proc_p = &current_lp->p;
@@ -147,6 +146,7 @@ static unsigned handle_rollback(void)
 	silent_execution(past_i);
 	send_anti_messages(past_i);
 	reinsert_invalid_past_messages(past_i);
+	termination_on_lp_rollback();
 }
 
 void process_msg(void)
@@ -155,20 +155,26 @@ void process_msg(void)
 	lp_msg *this_msg = current_msg;
 	struct process_data *proc_p = &this_lp->p;
 
+	if(unlikely(!this_msg))
+		return;
+
 	if(unlikely(msg_is_before(this_msg, array_peek(proc_p->past_msgs))))
 		handle_rollback();
+
+	if(unlikely(msg_is_anti(this_msg)))
+		return;
 
 	array_push(proc_p->sent_msgs, NULL);
 	ProcessEvent(
 		this_msg->dest,
 		this_msg->dest_t,
-		*((unsigned *) this_msg->pl),
-		&this_msg->pl[sizeof(unsigned)],
-		this_msg->pl_size - sizeof(unsigned),
+		this_msg->m_type,
+		this_msg->pl,
+		this_msg->pl_size,
 		this_lp->lsm.state_s
 	);
 
-	if (array_peek(proc_p->logs).i_past_msg + 20 <
+	if (array_peek(proc_p->logs).i_past_msg + 1000 <
 		array_count(proc_p->past_msgs)) {
 		struct log_entry entry = {
 			.i_past_msg = array_count(proc_p->past_msgs),
@@ -178,4 +184,6 @@ void process_msg(void)
 	}
 
 	array_push(proc_p->past_msgs, this_msg);
+
+	termination_on_msg_process();
 }

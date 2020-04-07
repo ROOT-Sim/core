@@ -18,6 +18,7 @@ enum _opt_codes{
 
 	OPT_NPRC,
 	OPT_LOG,
+	OPT_CLOG,
 #ifndef NEUROME_SERIAL
 	OPT_NP,
 	OPT_GVT,
@@ -98,6 +99,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 #ifndef NEUROME_SERIAL
 		n_threads = arch_core_count();
 #endif
+		log_colored = isatty(STDERR_FILENO);
 		// Store the predefined values, before reading any overriding one
 		// TODO
 		break;
@@ -149,7 +151,8 @@ static struct argp_child argp_child[] = {
 		{0}
 };
 
-static const struct argp argp = {argp_options, parse_opt, args_doc, doc, argp_child, 0, 0};
+static const struct argp argp = {
+	argp_options, parse_opt, args_doc, doc, argp_child, 0, 0};
 
 void init_args_parse(int argc, char **argv)
 {

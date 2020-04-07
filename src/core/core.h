@@ -2,8 +2,10 @@
 
 #include <NeuRome.h>
 #include <log/log.h>
+#include <mm/mm.h>
 
 #include <assert.h>
+#include <float.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -34,7 +36,7 @@ __extension__({				\
 /// The type used to represent time in the simulation, we use fixed point numbers
 typedef double simtime_t;
 //  FIXME
-#define MAX_SIMTIME_T 1000
+#define SIMTIME_MAX DBL_MAX
 
 #define lp_id_to_lid(lp_id) ((lp_id) & ((UINT64_C(1) << UINT64_C(48)) - 1U))
 #define lp_id_to_nid(lp_id) ((unsigned)((lp_id) >> UINT64_C(48)))
@@ -51,9 +53,9 @@ extern unsigned n_nodes;
 extern __thread rid_t rid;
 extern nid_t nid;
 
-
+extern void core_global_init(void);
 extern void core_init(void);
 
 extern void ProcessEvent(unsigned me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, void *state);
-extern bool OnGVT(unsigned me, const void *state);
+extern bool CanEnd(unsigned me, const void *state);

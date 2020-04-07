@@ -1,11 +1,12 @@
 #include <test.h>
 
 #include <pthread.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 
 FILE *test_output_file;
+static pthread_barrier_t t_barrier;
 static char **test_argv;
 static char *test_output;
 
@@ -14,16 +15,30 @@ struct stub_arguments {
 	unsigned tid;
 };
 
+__attribute__((weak)) void* __real_malloc(size_t mem_size);
+__attribute__((weak)) void __real_free(void *ptr);
+
+void* test_malloc(size_t mem_size)
+{
+	return __real_malloc ? __real_malloc(mem_size) : malloc(mem_size);
+}
+
+void test_free(void *ptr)
+{
+	__real_free ? __real_free(ptr) : free(ptr);
+}
+
+
 int __real_main(int argc, char **argv);
 
 static void* test_run_stub(void* arg)
 {
 	struct stub_arguments *args = arg;
 	int ret = args->test_fnc(args->tid);
-	return (void *)(intptr_t)ret;
+	pthread_exit((void *)(intptr_t)ret);
 }
 
-int __attribute__((weak)) main(int argc, char **argv)
+__attribute__((weak)) int main(int argc, char **argv)
 {
 	(void)argc; (void)argv;
 	int ret = 0;
@@ -46,9 +61,10 @@ int __attribute__((weak)) main(int argc, char **argv)
 			ret = (int)(intptr_t)ret_r;
 	}
 
-	if(test_config.test_fini_fnc)
-		ret = test_config.test_fini_fnc();
-
+	if(test_config.test_fini_fnc){
+		int aux = test_config.test_fini_fnc();
+		ret = ret < aux ? ret : aux;
+	}
 	return ret;
 }
 
@@ -62,7 +78,7 @@ static int init_arguments(int *argc_p, char ***argv_p)
 	}
 	++argc;
 
-	char **argv = malloc(sizeof(*argv) * (argc + 1));
+	char **argv = test_malloc(sizeof(*argv) * (argc + 1));
 	if(argv == NULL)
 		return -1;
 
@@ -83,6 +99,15 @@ static int init_arguments(int *argc_p, char ***argv_p)
 	return 0;
 }
 
+static void test_atexit(void)
+{
+	test_free(test_argv);
+	if(test_output_file)
+		fclose(test_output_file);
+	test_free(test_output);
+	pthread_barrier_destroy(&t_barrier);
+}
+
 int __wrap_main(void)
 {
 	int ret = TEST_FAIL_EXIT_CODE;
@@ -91,6 +116,12 @@ int __wrap_main(void)
 	size_t test_output_size = 0;
 
 	printf("Starting %s test\n", test_config.test_name);
+
+	atexit(test_atexit);
+
+	if(pthread_barrier_init(&t_barrier, NULL,
+		test_config.threads_count ? test_config.threads_count : 1))
+		goto out;
 
 	if(init_arguments(&test_argc, &test_argv) == -1)
 		goto out;
@@ -112,26 +143,19 @@ int __wrap_main(void)
 			test_output_size != test_config.expected_output_size ||
 			memcmp(test_output, test_config.expected_output, test_output_size)
 		)
-	)
+	){
+		printf("%s", test_output);
 		goto out;
+	}
 
 	printf("Successfully run %s test\n", test_config.test_name);
 	ret = test_ret;
 
 	out:
-	free(test_argv);
-	if(test_output_file)
-		fclose(test_output_file);
-	free(test_output);
-
 	return ret;
 }
 
-void abort_test(void)
+int test_thread_barrier(void)
 {
-	free(test_argv);
-	if(test_output_file)
-		fclose(test_output_file);
-	free(test_output);
-	exit(TEST_FAIL_EXIT_CODE);
+	return pthread_barrier_wait(&t_barrier) == PTHREAD_BARRIER_SERIAL_THREAD;
 }

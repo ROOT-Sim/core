@@ -6,7 +6,7 @@
 
 #define TEST_FAIL_EXIT_CODE 99
 
-extern struct _test_config_t {
+extern const struct _test_config_t {
 	int (*test_init_fnc)(void);
 	int (*test_fini_fnc)(void);
 	int (*test_fnc)(unsigned);
@@ -19,4 +19,5 @@ extern struct _test_config_t {
 
 extern FILE *test_output_file;
 
-extern void abort_test(void);
+extern void test_abort(void);
+extern int test_thread_barrier(void);

@@ -21,7 +21,7 @@ static int block_size_test(unsigned b_exp)
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		allocations[i] = model_alloc(block_size);
+		allocations[i] = __wrap_malloc(block_size);
 
 		if (allocations[i] == NULL)
 			goto error;
@@ -48,7 +48,7 @@ static int block_size_test(unsigned b_exp)
 				goto error;
 		}
 
-		model_free(allocations[i]);
+		__wrap_free(allocations[i]);
 	}
 
 	model_checkpoint_restore(ckp2);
@@ -59,7 +59,7 @@ static int block_size_test(unsigned b_exp)
 				goto error;
 		}
 
-		model_free(allocations[i]);
+		__wrap_free(allocations[i]);
 	}
 
 	ret = 0;
@@ -90,7 +90,7 @@ static int model_allocator_test(unsigned thread_id)
 	return ret;
 }
 
-struct _test_config_t test_config = {
+const struct _test_config_t test_config = {
 	.test_name = "model allocator",
 	.threads_count = 4,
 	.test_fnc = model_allocator_test

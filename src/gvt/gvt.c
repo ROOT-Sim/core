@@ -2,7 +2,6 @@
 
 #include <core/init.h>
 #include <core/timer.h>
-#include <datatypes/array.h>
 #include <datatypes/msg_queue.h>
 
 #include <stdatomic.h>
@@ -27,13 +26,13 @@ __thread simtime_t current_gvt;
 
 void gvt_global_init(void)
 {
-	reducing_p = malloc(n_threads * sizeof(*reducing_p));
+	reducing_p = mm_alloc(n_threads * sizeof(*reducing_p));
 	last_gvt = timer_new();
 }
 
 void gvt_global_fini(void)
 {
-	free(reducing_p);
+	mm_free(reducing_p);
 }
 
 static inline void reduce_thread_gvt(void)
@@ -44,17 +43,16 @@ static inline void reduce_thread_gvt(void)
 
 static inline void reduce_node_gvt(void)
 {
-	unsigned i = n_nodes - 1;
-	simtime_t candidate = reducing_p[0];
+	unsigned i = n_threads - 1;
+	simtime_t candidate = reducing_p[i];
 	while(i--){
 		candidate = min(reducing_p[i], candidate);
 	}
 	current_gvt = candidate;
 }
 
-void gvt_msg_processed(simtime_t msg_timestamp)
+bool gvt_msg_processed(void)
 {
-	(void) msg_timestamp;
 	switch (thread_phase) {
 	case tphase_idle:
 		if(rid){
@@ -69,7 +67,7 @@ void gvt_msg_processed(simtime_t msg_timestamp)
 		}
 		__attribute__ ((fallthrough));
 	case tphase_A:
-		reducing = MAX_SIMTIME_T;
+		reducing = SIMTIME_MAX;
 		reduce_thread_gvt();
 		thread_phase = tphase_B;
 		atomic_fetch_add_explicit(&counter_A, 1U, memory_order_relaxed);
@@ -102,7 +100,9 @@ void gvt_msg_processed(simtime_t msg_timestamp)
 			if(!rid){
 				last_gvt = timer_new();
 			}
+			return true;
 		}
 		break;
 	}
+	return false;
 }
