@@ -42,6 +42,13 @@ lp_msg* msg_allocator_alloc(unsigned payload_size)
 
 void msg_allocator_free(lp_msg *msg)
 {
+	if(msg_check_flag(msg, MSG_FLAG_ANTI)){
+		if(!msg_check_flag(msg, MSG_FLAG_ANTI_FREED)){
+			msg_set_flag(msg, MSG_FLAG_ANTI_FREED);
+			return;
+		}
+	}
+
 	if(likely(msg->pl_size <= BASE_PAYLOAD_SIZE))
 		array_push(free_list, msg);
 	else

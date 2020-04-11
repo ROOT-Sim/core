@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define B_TOTAL_EXP 18U
+#define B_TOTAL_EXP 19U
 #define B_BLOCK_EXP 6U
 
 struct mm_state { // todo incremental checkpoints
@@ -27,6 +27,7 @@ extern void model_memory_lp_init(void);
 extern void model_memory_lp_fini(void);
 
 extern void* __wrap_malloc(size_t req_size);
+extern void *__wrap_calloc(size_t nmemb, size_t size);
 extern void __wrap_free(void *ptr);
 extern void* __wrap_realloc(void *ptr, size_t req_size);
 

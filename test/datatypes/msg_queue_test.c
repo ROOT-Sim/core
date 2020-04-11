@@ -21,6 +21,11 @@ __thread lp_struct *current_lp;
 unsigned *lid_to_rid = lid_to_rid_m;
 lp_struct *lps = lps_m;
 
+void msg_allocator_free(lp_msg *msg)
+{
+	free(msg);
+}
+
 static int msg_queue_test_init(void)
 {
 	n_threads = THREAD_CNT;

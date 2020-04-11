@@ -4,10 +4,19 @@ incdir = include_directories(src_dir)
 # Declare test dependencies
 serial_dep = declare_dependency(link_whole: neurome_serial_lib)
 parallel_dep = declare_dependency(link_whole: neurome_parallel_lib, 
-  link_args: '-Wl,--wrap=malloc,--wrap=realloc,--wrap=free')
+  link_args: '-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc')
 
 # Tests names and sources
 tests_specs = {
+  'sync' : {
+    'sources' : [
+      'test.c',
+      'core/sync_test.c', 
+      src_dir + 'core/core.c',
+      src_dir + 'core/sync.c'
+    ],
+    'dependencies' : [ threads_dep ]
+  },
   'msg_allocator' : {
     'sources' : [
       'test.c',

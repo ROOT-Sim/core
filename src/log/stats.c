@@ -7,6 +7,8 @@
 #include <stdatomic.h>
 #include <stdint.h>
 
+extern __thread simtime_t current_gvt;
+
 struct stats_info {
 	uint64_t count;
 	uint64_t sum_t;
@@ -31,7 +33,7 @@ static struct stats_info *to_aggregate;
 
 void stats_global_init(void)
 {
-	to_aggregate = malloc(sizeof(thread_stats) * n_threads);
+	to_aggregate = mm_alloc(sizeof(thread_stats) * n_threads);
 }
 
 #endif
@@ -62,6 +64,16 @@ void stats_dump(void)
 	log_log(LOG_INFO, "Average message processing rate %" PRIu64, 1000 * s_info->count / s_info->sum_t);
 	log_log(LOG_INFO, "Average message process time variance %" PRIu64, s_info->var_t);
 }
+
+#ifndef NEUROME_SERIAL
+void stats_progress_print(void)
+{
+	if(!rid){
+		printf("\rGVT %lf", current_gvt);
+		fflush(stdout);
+	}
+}
+#endif
 
 /*
 static void stats_threads_reduce(void)

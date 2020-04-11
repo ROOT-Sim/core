@@ -3,7 +3,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-typedef unsigned timer;
+typedef uint_fast64_t timer;
 
 #define timer_new()							\
 __extension__({								\

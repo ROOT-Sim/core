@@ -4,6 +4,7 @@
 #include <core/sync.h>
 #include <datatypes/heap.h>
 #include <lp/lp.h>
+#include <mm/msg_allocator.h>
 
 #define inner_queue {			\
 	binary_heap(lp_msg *) q;	\
@@ -41,7 +42,12 @@ void msg_queue_fini(void)
 {
 	unsigned i = n_threads;
 	while(i--) {
-		heap_fini(mqueue(i, rid).q);
+		struct queue_t *this_q = &mqueue(i, rid);
+		array_count_t j = heap_count(this_q->q);
+		while(j--) {
+			msg_allocator_free(heap_items(this_q->q)[j]);
+		}
+		heap_fini(this_q->q);
 	}
 }
 
@@ -52,10 +58,11 @@ void msg_queue_global_fini(void)
 
 void msg_queue_extract(void)
 {
+	const unsigned t_cnt = n_threads;
 	struct queue_t *bid_q = &mqueue(rid, rid);
 	lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
 
-	for(unsigned i = 0; i < n_threads; ++i){
+	for(unsigned i = 0; i < t_cnt; ++i){
 		struct queue_t *this_q = &mqueue(i, rid);
 		if(!spin_trylock(&this_q->lck))
 			continue;

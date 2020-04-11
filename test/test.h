@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stddef.h>
-#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 
 #define TEST_FAIL_EXIT_CODE 99

@@ -19,7 +19,7 @@ uint32_t read_buffer(buffer *head, unsigned i)
 	return super_fast_hash((char *)head->data, head->count * sizeof(uint64_t));
 }
 
-buffer* allocate_buffer(lp_state_t *state, unsigned *data, unsigned count)
+buffer* allocate_buffer(lp_state_t *state, const unsigned *data, unsigned count)
 {
 
 	buffer *new = malloc(sizeof(buffer) + count * sizeof(uint64_t));

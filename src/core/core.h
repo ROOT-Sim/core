@@ -2,6 +2,7 @@
 
 #include <NeuRome.h>
 #include <log/log.h>
+#include <log/stats.h>
 #include <mm/mm.h>
 
 #include <assert.h>
@@ -40,7 +41,7 @@ typedef double simtime_t;
 
 #define lp_id_to_lid(lp_id) ((lp_id) & ((UINT64_C(1) << UINT64_C(48)) - 1U))
 #define lp_id_to_nid(lp_id) ((unsigned)((lp_id) >> UINT64_C(48)))
-#define nid_lid_to_lp_id(nid, lid) (((nid) << UINT64_C(48)) | (lid))
+#define nid_lid_to_lp_id(nid, lid) ((((uint64_t)(nid)) << UINT64_C(48)) | (lid))
 
 /// The type used to uniquely identify LPs in the simulation
 typedef uint64_t lp_id_t;

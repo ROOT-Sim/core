@@ -6,6 +6,7 @@
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <lp/lp.h>
+#include <mm/msg_allocator.h>
 #include <gvt/gvt.h>
 #include <gvt/termination.h>
 #include <lib/lib.h>
@@ -15,6 +16,7 @@
 void *parallel_thread_run(void *unused)
 {
 	core_init();
+	msg_allocator_init();
 	msg_queue_init();
 	sync_thread_barrier();
 	lp_init();
@@ -24,13 +26,14 @@ void *parallel_thread_run(void *unused)
 		msg_queue_extract();
 		process_msg();
 		if(gvt_msg_processed()){
-			printf("%lf barrier\n", current_gvt);
 			termination_on_gvt();
+			stats_progress_print();
 		}
 	}
 
 	lp_fini();
 	msg_queue_fini();
+	msg_allocator_fini();
 	return NULL;
 }
 
@@ -40,9 +43,6 @@ void parallel_global_init(void)
 	msg_queue_global_init();
 	termination_global_init();
 	gvt_global_init();
-	sync_global_init();
-
-	// TODO
 }
 
 void parallel_global_fini(void)
@@ -50,7 +50,6 @@ void parallel_global_fini(void)
 	gvt_global_fini();
 	msg_queue_global_fini();
 	lp_global_fini();
-	// TODO
 }
 
 int main(int argc, char **argv)

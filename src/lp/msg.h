@@ -9,10 +9,16 @@
 
 #define msg_bare_size(msg) (offsetof(lp_msg, pl) + (msg)->pl_size)
 
-#ifndef NEUROME_SERIAL
-#define msg_is_anti(msg) 	((msg)->m_type & (UINT64_C(1) << UINT64_C(32)))
-#define msg_set_anti(msg) 	((msg)->m_type |= (UINT64_C(1) << UINT64_C(32)))
-#endif
+enum {
+	MSG_FLAG_ANTI = 16,
+	MSG_FLAG_ANTI_FREED
+};
+
+#define msg_check_flag(msg, flag) 	((msg)->m_type & (1U << (flag)))
+#define msg_set_flag(msg, flag) 	((msg)->m_type |= (1U << (flag)))
+#define msg_reset_flag(msg, flag) 	((msg)->m_type &= ~(1U << (flag)))
+
+#define msg_user_type(msg) 		((msg)->m_type & ((1U << 16U) - 1U))
 
 struct _lp_msg {
 	lp_id_t dest;

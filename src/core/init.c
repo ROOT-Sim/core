@@ -98,6 +98,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 		memset(&global_config, 0, sizeof(global_config));
 #ifndef NEUROME_SERIAL
 		n_threads = arch_core_count();
+		global_config.gvt_period = 100000;
 #endif
 		log_colored = isatty(STDERR_FILENO);
 		// Store the predefined values, before reading any overriding one

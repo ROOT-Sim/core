@@ -61,7 +61,8 @@ bool gvt_msg_processed(void)
 				break;
 			}
 		} else {
-			if (global_config.gvt_period > timer_value(last_gvt)){
+			if (global_config.gvt_period > timer_value(last_gvt) ||
+				atomic_load_explicit(&counter_B, memory_order_relaxed)){
 				break;
 			}
 		}

@@ -19,6 +19,7 @@ inline lp_msg* msg_allocator_pack(unsigned receiver, simtime_t timestamp,
 	msg->dest_t = timestamp;
 	msg->m_type = event_type;
 	msg->pl_size = payload_size;
-	memcpy(msg->pl, payload, payload_size);
+	if(payload_size)
+		memcpy(msg->pl, payload, payload_size);
 	return msg;
 }

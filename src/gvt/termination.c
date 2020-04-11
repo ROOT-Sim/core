@@ -34,14 +34,12 @@ void termination_on_msg_process(void)
 
 void termination_on_gvt(void)
 {
-	if(unlikely(current_gvt == SIMTIME_MAX)){
-		atomic_store_explicit(&thr_to_end, 0U, memory_order_relaxed);
-	} else {
-		atomic_fetch_sub_explicit(
-			&thr_to_end,
-			!lps_to_end && max_t <= current_gvt,
-			memory_order_relaxed
-		);
+	if(
+		unlikely(max_t < current_gvt &&
+		(!lps_to_end || current_gvt == SIMTIME_MAX))
+	){
+		max_t = SIMTIME_MAX;
+		atomic_fetch_sub_explicit(&thr_to_end, 1U, memory_order_relaxed);
 	}
 }
 

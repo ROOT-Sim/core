@@ -42,7 +42,7 @@ typedef enum _direction_t {
 	DIRECTION_NW,	//!< DIRECTION_NW
 	DIRECTION_SE,	//!< DIRECTION_SE
 
-	DIRECTION_INVALID = UINT_MAX	//!< A generic invalid direction
+	DIRECTION_INVALID = INT_MAX	//!< A generic invalid direction
 } direction_t;
 
 __attribute((weak)) extern struct _topology_settings_t {

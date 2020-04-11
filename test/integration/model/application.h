@@ -32,5 +32,5 @@ typedef struct _lp_state_type {
 
 buffer* get_buffer(buffer *head, unsigned i);
 uint32_t read_buffer(buffer *head, unsigned i);
-buffer* allocate_buffer(lp_state_t *state, unsigned *data, unsigned count);
+buffer* allocate_buffer(lp_state_t *state, const unsigned *data, unsigned count);
 buffer* deallocate_buffer(buffer *head, unsigned i);

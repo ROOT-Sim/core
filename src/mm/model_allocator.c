@@ -2,14 +2,17 @@
 
 #include <lp/lp.h>
 #include <core/intrinsics.h>
+
 #include <stdlib.h>
 #include <errno.h>
 
+#include <inttypes.h> // remove
+
 #define FULL_LOG_THRESHOLD 0.7
 
-#define left_child(i) (((i) << 1) + 1)
-#define right_child(i) (((i) << 1) + 2)
-#define parent(i) ((((i) + 1) >> 1) - 1)
+#define left_child(i) (((i) << 1U) + 1U)
+#define right_child(i) (((i) << 1U) + 2U)
+#define parent(i) ((((i) + 1) >> 1U) - 1U)
 #define is_power_of_2(i) (!((i) & ((i) - 1)))
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - SAFE_CLZ(i))
 
@@ -18,7 +21,8 @@ void model_memory_lp_init(void)
 	struct mm_state *self = &current_lp->mm_state;
 	uint_fast8_t node_size = B_TOTAL_EXP;
 
-	for (uint_fast32_t i = 0; i < sizeof(self->longest); ++i) {
+	for (uint_fast32_t i = 0;
+		i < sizeof(self->longest) / sizeof(*self->longest); ++i) {
 		self->longest[i] = node_size;
 		node_size -= is_power_of_2(i + 2);
 	}
@@ -77,6 +81,17 @@ void *__wrap_malloc(size_t req_size)
 	return ((char *)self->base_mem) + offset;
 }
 
+void *__wrap_calloc(size_t nmemb, size_t size)
+{
+	size_t tot = nmemb * size;
+	void *ret = __wrap_malloc(tot);
+
+	if(ret)
+		memset(ret, 0, tot);
+
+	return ret;
+}
+
 void __wrap_free(void *ptr)
 {
 	if(unlikely(!ptr))
@@ -85,7 +100,7 @@ void __wrap_free(void *ptr)
 	struct mm_state *self = &current_lp->mm_state;
 	uint_fast8_t node_size = B_BLOCK_EXP;
 	uint_fast32_t i =
-		(((char *)ptr - (char *)self->base_mem) >> B_BLOCK_EXP) +
+		(((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP) +
 		(1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
 	for (; self->longest[i]; i = parent(i)) {

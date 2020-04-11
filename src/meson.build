@@ -41,6 +41,7 @@ parallel_srcs = [
   'gvt/gvt.c',
   'gvt/termination.c',
   'log/log.c',
+  'log/stats.c',
   'lp/lp.c',
   'lp/msg.c',
   'lp/process.c',
