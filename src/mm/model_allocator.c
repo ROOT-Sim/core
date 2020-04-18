@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include <inttypes.h> // remove
-
 #define FULL_LOG_THRESHOLD 0.7
 
 #define left_child(i) (((i) << 1U) + 1U)
@@ -15,6 +13,12 @@
 #define parent(i) ((((i) + 1) >> 1U) - 1U)
 #define is_power_of_2(i) (!((i) & ((i) - 1)))
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - SAFE_CLZ(i))
+
+#ifdef HAVE_COVERAGE
+extern void *__real_malloc(size_t mem_size);
+extern void *__real_realloc(void *ptr, size_t mem_size);
+extern void __real_free(void *ptr);
+#endif
 
 void model_memory_lp_init(void)
 {
@@ -40,6 +44,12 @@ void *__wrap_malloc(size_t req_size)
 {
 	if(unlikely(!req_size))
 		return NULL;
+
+#ifdef HAVE_COVERAGE
+	if(unlikely(!current_lp)){
+		return __real_malloc(req_size);
+	}
+#endif
 
 	struct mm_state *self = &current_lp->mm_state;
 
@@ -96,6 +106,13 @@ void __wrap_free(void *ptr)
 {
 	if(unlikely(!ptr))
 		return;
+
+#ifdef HAVE_COVERAGE
+	if(unlikely(!current_lp)){
+		__real_free(ptr);
+		return;
+	}
+#endif
 
 	struct mm_state *self = &current_lp->mm_state;
 	uint_fast8_t node_size = B_BLOCK_EXP;

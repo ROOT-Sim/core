@@ -90,8 +90,9 @@ void ProcessEvent(unsigned me, simtime_t now, unsigned event_type, const void *e
 	}
 }
 
-bool CanEnd(unsigned me, lp_state_t *snapshot)
+bool CanEnd(unsigned me, const void *snapshot)
 {
 	(void)me;
-	return snapshot->events >= COMPLETE_EVENTS;
+	const lp_state_t *state = snapshot;
+	return state->events >= COMPLETE_EVENTS;
 }

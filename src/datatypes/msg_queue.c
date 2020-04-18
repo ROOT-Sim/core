@@ -40,12 +40,16 @@ void msg_queue_init(void)
 
 void msg_queue_fini(void)
 {
+	log_log(LOG_TRACE, "[T %u] msg queue fini", rid);
 	unsigned i = n_threads;
 	while(i--) {
 		struct queue_t *this_q = &mqueue(i, rid);
 		array_count_t j = heap_count(this_q->q);
 		while(j--) {
-			msg_allocator_free(heap_items(this_q->q)[j]);
+			lp_msg *msg = heap_items(this_q->q)[j];
+			if(!(atomic_load_explicit(
+				&msg->flags, memory_order_relaxed) & MSG_FLAG_ANTI))
+				msg_allocator_free(msg);
 		}
 		heap_fini(this_q->q);
 	}
@@ -58,14 +62,15 @@ void msg_queue_global_fini(void)
 
 void msg_queue_extract(void)
 {
-	const unsigned t_cnt = n_threads;
+	unsigned i = n_threads;
 	struct queue_t *bid_q = &mqueue(rid, rid);
 	lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
 
-	for(unsigned i = 0; i < t_cnt; ++i){
+	while(i--) {
 		struct queue_t *this_q = &mqueue(i, rid);
 		if(!spin_trylock(&this_q->lck))
 			continue;
+
 		if (heap_count(this_q->q) &&
 			(!msg || msg_is_before(heap_min(this_q->q), msg))) {
 			msg = heap_min(this_q->q);
@@ -92,11 +97,10 @@ simtime_t msg_queue_time_peek(void)
 {
 	const unsigned t_cnt = n_threads;
 	simtime_t t_min = SIMTIME_MAX;
-	unsigned remainings = t_cnt;
 	bool done[t_cnt];
 	memset(done, 0, sizeof(done));
 
-	for(unsigned i = 0; remainings; i = (i + 1) % t_cnt){
+	for(unsigned i = 0, r = t_cnt; r; i = (i + 1) % t_cnt){
 		if(done[i])
 			continue;
 
@@ -105,7 +109,7 @@ simtime_t msg_queue_time_peek(void)
 			continue;
 
 		done[i] = true;
-		remainings--;
+		--r;
 		if (heap_count(this_q->q) && t_min >
 			heap_min(this_q->q)->dest_t) {
 			t_min = heap_min(this_q->q)->dest_t;

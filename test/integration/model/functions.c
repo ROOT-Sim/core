@@ -65,38 +65,16 @@ buffer* deallocate_buffer(buffer *head, unsigned i)
 
 static uint32_t super_fast_hash(const char *data, unsigned len)
 {
-	uint32_t hash = len, tmp;
-	unsigned rem;
-
-	rem = len & 3;
+	uint32_t hash = len;
 	len >>= 2;
 
 	/* Main loop */
 	while(len--) {
 		hash  += get16bits(data);
-		tmp    = (get16bits(data + 2) << 11) ^ hash;
+		uint32_t tmp = (get16bits(data + 2) << 11) ^ hash;
 		hash   = (hash << 16) ^ tmp;
 		data  += 2 * sizeof(uint16_t);
 		hash  += hash >> 11;
-	}
-
-	/* Handle end cases */
-	switch (rem) {
-		case 3:
-			hash += get16bits (data);
-			hash ^= hash << 16;
-			hash ^= data[sizeof(uint16_t)] << 18;
-			hash += hash >> 11;
-			break;
-		case 2:
-			hash += get16bits(data);
-			hash ^= hash << 11;
-			hash += hash >> 17;
-			break;
-		case 1:
-			hash += *data;
-			hash ^= hash << 10;
-			hash += hash >> 1;
 	}
 
 	/* Force "avalanching" of final 127 bits */

@@ -49,10 +49,12 @@ typedef unsigned rid_t;
 typedef unsigned nid_t;
 
 extern uint64_t n_lps;
-extern unsigned n_threads;
+
 extern unsigned n_nodes;
-extern __thread rid_t rid;
 extern nid_t nid;
+
+extern unsigned n_threads;
+extern __thread rid_t rid;
 
 extern void core_global_init(void);
 extern void core_init(void);

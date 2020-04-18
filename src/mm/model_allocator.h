@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define B_TOTAL_EXP 19U
+#define B_TOTAL_EXP 18U
 #define B_BLOCK_EXP 6U
 
 struct mm_state { // todo incremental checkpoints

@@ -27,8 +27,6 @@ static __thread struct stats_info thread_stats[STATS_NUM];
 
 static __thread uint64_t last_ts[STATS_NUM];
 
-static struct stats_info node_stats[STATS_NUM];
-
 static struct stats_info *to_aggregate;
 
 void stats_global_init(void)
@@ -59,22 +57,25 @@ void stats_time_take(enum stats_time_t this_stat)
 
 void stats_dump(void)
 {
-	struct stats_info *s_info = &thread_stats[STATS_MSG_PROCESSED];
-	log_log(LOG_INFO, "Processed %" PRIu64 " messages", s_info->count);
-	log_log(LOG_INFO, "Average message processing rate %" PRIu64, 1000 * s_info->count / s_info->sum_t);
-	log_log(LOG_INFO, "Average message process time variance %" PRIu64, s_info->var_t);
+#ifndef NEUROME_SERIAL
+	if(!rid){
+#else
+	{
+#endif
+		printf("\n");
+		log_log(LOG_INFO, "Simulation completed!");
+	}
 }
 
 #ifndef NEUROME_SERIAL
 void stats_progress_print(void)
 {
 	if(!rid){
-		printf("\rGVT %lf", current_gvt);
+		printf("\rVirtual time: %lf", current_gvt);
 		fflush(stdout);
 	}
 }
 #endif
-
 /*
 static void stats_threads_reduce(void)
 {

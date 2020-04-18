@@ -24,7 +24,6 @@ simulation_configuration global_config = {
 
 static int gvt_test_init(void)
 {
-	n_threads = N_THREADS;
 	gvt_global_init();
 	return 0;
 }
@@ -35,21 +34,20 @@ static int gvt_test_fini(void)
 	return 0;
 }
 
-static int gvt_test(unsigned thread_id)
+static int gvt_test(void)
 {
-	core_init();
-	while(!gvt_msg_processed());
-	if(current_gvt != 1.1)
-		return -1;
+	int ret = 0;
 
 	while(!gvt_msg_processed());
-	if(current_gvt != 6.3)
-		return -1;
+	ret -= current_gvt != 1.1;
 
 	while(!gvt_msg_processed());
-	if(current_gvt != 9.6)
-		return -1;
-	return 0;
+	ret -= current_gvt != 6.3;
+
+	while(!gvt_msg_processed());
+	ret -= current_gvt != 9.6;
+
+	return ret;
 }
 
 const struct _test_config_t test_config = {

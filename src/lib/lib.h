@@ -22,6 +22,8 @@ struct lib_state {
 	// topology
 };
 
-extern void lib_lp_init(uint64_t llid);
+extern void lib_global_init(void);
+extern void lib_global_fini(void);
 
+extern void lib_lp_init(void);
 extern void lib_lp_fini(void);

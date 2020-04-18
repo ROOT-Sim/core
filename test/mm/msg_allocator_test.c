@@ -3,10 +3,10 @@
 
 static lp_msg current_test_msg;
 __thread lp_msg *current_msg = &current_test_msg;
+__thread simtime_t current_gvt;
 
-static int msg_allocator_test(unsigned thread_id)
+static int msg_allocator_test(void)
 {
-	(void)thread_id;
 	msg_allocator_init();
 	// TODO ACTUAL TEST
 	msg_allocator_fini();

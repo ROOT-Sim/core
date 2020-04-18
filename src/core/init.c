@@ -7,6 +7,7 @@
 #include <argp.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <memory.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -57,7 +58,7 @@ static void print_config(){
 
 #define malformed_option_failure() argp_error(state, "invalid value \"%s\" in %s option.\nAborting!", arg, state->argv[state->next -1 -(arg != NULL)])
 
-#define parse_ullong_limits(low, high) 					\
+#define parse_ullong_limits(low, high)					\
 	__extension__({							\
 		unsigned long long int __value;				\
 		char *__endptr;						\
@@ -121,16 +122,6 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 				n_threads,
 				arch_core_count()
 			);
-
-		if(n_lps < n_threads){ // fixme this sucks ass in distributed
-			log_log(
-				LOG_WARN,
-				"The simulation will run with %u threads instead of %u",
-				n_lps / n_nodes,
-				n_threads
-			);
-			n_threads = n_lps / n_nodes;
-		}
 #endif
 
 		log_logo_print();

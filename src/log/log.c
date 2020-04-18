@@ -9,7 +9,6 @@
 
 int log_level = LOG_LEVEL;
 _Bool log_colored;
-static FILE *log_file;
 
 static const struct {
 	const char *name;
@@ -19,8 +18,8 @@ static const struct {
 	[LOG_DEBUG] = {.name = "DEBUG", .color = "\x1b[36m"},
 	[LOG_INFO] = {.name = "INFO", .color = "\x1b[32m"},
 	[LOG_WARN] = {.name = "WARN", .color = "\x1b[33m"},
-	[LOG_ERROR] = {.name = "FATAL", .color = "\x1b[31m"},
-	[LOG_FATAL] = {.name = "TRACE", .color = "\x1b[35m"}
+	[LOG_ERROR] = {.name = "ERROR", .color = "\x1b[31m"},
+	[LOG_FATAL] = {.name = "FATAL", .color = "\x1b[35m"}
 };
 
 
@@ -58,26 +57,6 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 	va_end(args);
 	fprintf(stderr, "\n");
 	fflush(stderr);
-
-	if(!log_file)
-		return;
-
-	strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%d %H:%M:%S", loc_t);
-	time_buffer[sizeof(time_buffer) - 1] = '\0';
-	fprintf(
-		log_file,
-		"%s %-5s %s:%u: ",
-		time_buffer,
-		levels[level].name,
-		file,
-		line
-	);
-
-	va_start(args, fmt);
-	vfprintf(log_file, fmt, args);
-	va_end(args);
-	fprintf(log_file, "\n");
-	fflush(log_file);
 }
 
 void log_logo_print()

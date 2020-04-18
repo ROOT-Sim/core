@@ -26,6 +26,4 @@ typedef atomic_uint_fast8_t spinlock_t;
 #define spin_unlock(lck_p)						\
 	atomic_store_explicit((lck_p), 0U, memory_order_release)
 
-extern void sync_global_init(void);
 extern bool sync_thread_barrier(void);
-

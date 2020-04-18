@@ -1,32 +1,74 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <memory.h>
+#include <string.h>
 #include <sys/wait.h>
 
 #ifndef CC_CMD
 #define CC_CMD "/usr/bin/gcc"
 #endif
 
-#ifndef NEUROME_LIBS_PATH
-#define NEUROME_LIBS_PATH "/usr/lib/"
+#ifndef NEUROME_LIB_DIR
+#define NEUROME_LIB_DIR "/usr/lib/"
 #endif
 
-static const char *const additional_args[] = {
-	"-lm",
-	NULL
+#ifndef NEUROME_INC_DIR
+#define NEUROME_INC_DIR "/usr/include/"
+#endif
+
+static const char *add_args_serial = {
+	"-o "
+	"model_serial "
+	"-O3 "
+	"-I"NEUROME_INC_DIR" "
+	NEUROME_LIB_DIR"libneurome-serial.a "
+	"-lm"
 };
 
-static int child_proc(int argc, char **argv)
+static const char *add_args_parallel = {
+	"-o "
+	"model_parallel "
+	"-O3 "
+	"-I"NEUROME_INC_DIR" "
+	NEUROME_LIB_DIR"libneurome-parallel.a "
+	"-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc "
+	"-lpthread "
+	"-lm"
+};
+
+static int child_proc(int argc, char **argv, const char *add_args)
 {
-	char **new_argv = malloc(
-		sizeof(*new_argv) * argc + sizeof(additional_args));
-	memcpy(new_argv, argv, sizeof(*new_argv) * argc);
-	memcpy(new_argv + argc, additional_args, sizeof(additional_args));
+	size_t tot_size = strlen(CC_CMD) + argc + strlen(add_args) + 1;
+	unsigned i = 1;
+	while(argv[i]){
+		tot_size += strlen(argv[i]);
+		++i;
+	}
 
-	argv[0] = CC_CMD;
+	char *cmd_line = malloc(tot_size);
+	if (cmd_line == NULL){
+		fprintf(stderr, "Unable to allocate memory!");
+		return -1;
+	}
 
-	if (execv(CC_CMD, argv)) {
+	char *ptr = cmd_line;
+	strcpy(ptr, CC_CMD);
+	ptr += strlen(CC_CMD);
+	*ptr = ' ';
+	++ptr;
+
+	i = 1;
+	while(argv[i]){
+		strcpy(ptr, argv[i]);
+		ptr += strlen(argv[i]);
+		*ptr = ' ';
+		++ptr;
+		++i;
+	}
+
+	strcpy(ptr, add_args);
+
+	if (system(cmd_line)) {
 		fprintf(stderr, "Unable to run " CC_CMD);
 		return -1;
 	}
@@ -35,14 +77,24 @@ static int child_proc(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	pid_t child_pid;
-	if (!(child_pid = fork())) {
-		return child_proc(argc, argv);
+	pid_t this_pid;
+	int s_stat = -1, p_stat = -1;
+	if (!(this_pid = fork())) {
+		return child_proc(argc, argv, add_args_serial);
 	}
-	int child_status = -1;
-	while (wait(&child_status) != child_pid) {
+
+	while (waitpid(this_pid, &s_stat, 0) != this_pid) {
 		sleep(1);
 	}
-	return child_status;
+
+	if (!(this_pid = fork())) {
+		return child_proc(argc, argv, add_args_parallel);
+	}
+
+	while (waitpid(this_pid, &p_stat, 0) != this_pid) {
+		sleep(1);
+	}
+
+	return s_stat + p_stat;
 }
 

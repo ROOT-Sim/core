@@ -15,6 +15,7 @@ static __thread uint128_t rng_state;
 static unsigned lid_to_rid_m[] = {0, 1, 2, 3, 0, 1, 2, 3, 5, 4, 4, 5};
 static lp_struct lps_m[THREAD_CNT];
 static atomic_uint msg_missing = THREAD_REPS * THREAD_CNT;
+static atomic_uint msg_to_free = THREAD_CNT;
 
 __thread lp_msg *current_msg;
 __thread lp_struct *current_lp;
@@ -23,12 +24,12 @@ lp_struct *lps = lps_m;
 
 void msg_allocator_free(lp_msg *msg)
 {
+	atomic_fetch_sub_explicit(&msg_to_free, 1U, memory_order_relaxed);
 	free(msg);
 }
 
 static int msg_queue_test_init(void)
 {
-	n_threads = THREAD_CNT;
 	msg_queue_global_init();
 	return 0;
 }
@@ -36,14 +37,13 @@ static int msg_queue_test_init(void)
 static int msg_queue_test_fini(void)
 {
 	msg_queue_global_fini();
-	return -msg_missing;
+	return -(atomic_load(&msg_missing) | atomic_load(&msg_to_free));
 }
 
-static int msg_queue_test(unsigned thread_id)
+static int msg_queue_test(void)
 {
 	int ret = 0;
-	lcg_init(rng_state, (thread_id + 1) * 1713);
-	core_init();
+	lcg_init(rng_state, (rid + 1) * 1713);
 	msg_queue_init();
 
 	test_thread_barrier();
@@ -74,6 +74,14 @@ static int msg_queue_test(unsigned thread_id)
 		msg_queue_extract();
 		atomic_fetch_sub_explicit(&msg_missing, 1U, memory_order_relaxed);
 	}
+
+	test_thread_barrier();
+	// to test msg cleanup
+	msg = malloc(sizeof(*msg));
+	memset(msg, 0, sizeof(*msg));
+	msg_queue_insert(msg);
+
+	test_thread_barrier();
 
 	msg_queue_fini();
 	return ret;

@@ -45,7 +45,7 @@ void process_lp_init(void)
 void process_lp_deinit(void)
 {
 	lp_struct *this_lp = current_lp;
-	ProcessEvent(this_lp - lps, 0, DEINIT, NULL, 0, this_lp->lsm.state_s);
+	ProcessEvent(this_lp - lps, 0, DEINIT, NULL, 0, this_lp->lsm_p->state_s);
 }
 
 void process_lp_fini(void)
@@ -96,10 +96,10 @@ static inline void silent_execution(array_count_t past_i)
 		ProcessEvent(
 			this_msg->dest,
 			this_msg->dest_t,
-			msg_user_type(this_msg),
+			this_msg->m_type,
 			this_msg->pl,
 			this_msg->pl_size,
-			this_lp->lsm.state_s
+			this_lp->lsm_p->state_s
 		);
 	}
 
@@ -122,8 +122,11 @@ static inline void send_anti_messages(array_count_t past_i)
 		if(!msg)
 			continue;
 
-		msg_set_flag(msg, MSG_FLAG_ANTI);
-		msg_queue_insert(msg);
+		unsigned msg_status = atomic_fetch_or_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
+		if(msg_status & MSG_FLAG_PROCESSED)
+			msg_queue_insert(msg);
+		else
+			msg_allocator_free_at_gvt(msg);
 	}
 
 	array_count(proc_p->sent_msgs) = sent_i + 1;
@@ -134,7 +137,10 @@ static inline void reinsert_invalid_past_messages(array_count_t past_i)
 	struct process_data *proc_p = &current_lp->p;
 	for (array_count_t i = past_i + 1; i < array_count(proc_p->past_msgs); ++i){
 		lp_msg *msg = array_get_at(proc_p->past_msgs, i);
-		if(likely(!msg_check_flag(msg, MSG_FLAG_ANTI)))
+		unsigned msg_status = atomic_fetch_and_explicit(&msg->flags, ~MSG_FLAG_PROCESSED, memory_order_relaxed);
+		if(msg_status & MSG_FLAG_ANTI)
+			msg_allocator_free_at_gvt(msg);
+		else
 			msg_queue_insert(msg);
 	}
 
@@ -161,27 +167,32 @@ static void handle_rollback(void)
 
 void process_msg(void)
 {
-	lp_struct *this_lp = current_lp;
 	lp_msg *this_msg = current_msg;
+	lp_struct *this_lp = current_lp;
 	struct process_data *proc_p = &this_lp->p;
 
 	if (unlikely(!this_msg))
 		return;
 
+	unsigned msg_status = atomic_fetch_or_explicit(&this_msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
+
+	if(unlikely(msg_status) & MSG_FLAG_ANTI){
+		if(unlikely(msg_status & MSG_FLAG_PROCESSED))
+			handle_rollback();
+		return;
+	}
+
 	if (unlikely(!msg_is_before(array_peek(proc_p->past_msgs), this_msg)))
 		handle_rollback();
-
-	if (unlikely(msg_check_flag(this_msg, MSG_FLAG_ANTI)))
-		return;
 
 	array_push(proc_p->sent_msgs, NULL);
 	ProcessEvent(
 		this_msg->dest,
 		this_msg->dest_t,
-		msg_user_type(this_msg),
+		this_msg->m_type,
 		this_msg->pl,
 		this_msg->pl_size,
-		this_lp->lsm.state_s
+		this_lp->lsm_p->state_s
 	);
 
 	if (array_peek(proc_p->logs).i_past_msg + 1000 <

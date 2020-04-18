@@ -2,23 +2,24 @@
 
 #include <core/core.h>
 #include <core/sync.h>
-#include <lp/msg.h>
+#include <datatypes/array.h>
+#include <datatypes/msg_queue.h>
+#include <gvt/gvt.h>
+#include <gvt/termination.h>
 #include <mm/msg_allocator.h>
 
 #ifdef HAVE_MPI
 
 #include <mpi.h>
 
-#define MPI_SIM_MSG_TAG 123
-
 #ifndef HAVE_MPI_SERIALIZABLE
+
+static bool mpi_serialize;
+static spinlock_t mpi_spinlock;
 
 #define mpi_lock() 	if (mpi_serialize) spin_lock(&mpi_spinlock)
 #define mpi_unlock() 	if (mpi_serialize) spin_unlock(&mpi_spinlock)
 #define mpi_trylock() 	(!mpi_serialize || spin_trylock(&mpi_spinlock))
-
-static bool mpi_serialize;
-static spinlock_t mpi_spinlock;
 
 #else
 
@@ -77,57 +78,74 @@ void mpi_global_fini(void)
 	MPI_Finalize();
 }
 
-void mpi_remote_msg_send(const lp_msg *msg)
+void mpi_remote_msg_send(lp_msg *msg)
 {
 	mpi_lock();
 	MPI_Request req;
-	MPI_Isend(
-		msg,
-		msg_bare_size(msg),
-		MPI_BYTE,
-		lp_id_to_nid(msg->dest),
-		MPI_SIM_MSG_TAG,
-		MPI_COMM_WORLD,
-		&req
-	);
+	MPI_Issend(msg, msg_bare_size(msg), MPI_BYTE, lp_id_to_nid(msg->dest),
+		0, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
+	mpi_unlock();
+	msg_allocator_free_at_gvt(msg);
+}
+
+void mpi_control_msg_broadcast(enum _msg_ctrl ctrl)
+{
+	mpi_lock();
+	MPI_Request req;
+	unsigned i = n_nodes;
+	while(i--){
+		if(i == nid)
+			continue;
+		MPI_Issend(NULL, 0, MPI_BYTE, i, 0, MPI_COMM_WORLD, &req);
+		MPI_Request_free(&req);
+	}
 	mpi_unlock();
 }
 
-lp_msg* mpi_remote_msg_rcv(void)
+void mpi_remote_msg_handle(void)
 {
 	int pending;
 	MPI_Message mpi_msg;
 	MPI_Status status;
 
-	if(!mpi_trylock())
-		return NULL;
+	do{
+		if(!mpi_trylock())
+			return;
 
-	MPI_Improbe(
-		MPI_ANY_SOURCE,
-		MPI_SIM_MSG_TAG,
-		MPI_COMM_WORLD,
-		&pending,
-		&mpi_msg,
-		&status
-	);
+		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
+			&pending, &mpi_msg, &status);
 
-	if (!pending){
-		mpi_unlock();
-		return NULL;
-	}
+		if (!pending){
+			mpi_unlock();
+			return;
+		}
 
-	int size;
-	MPI_Get_count(&status, MPI_BYTE, &size);
-	mpi_unlock();
+		if(unlikely(status.MPI_TAG)){
+			MPI_Mrecv(NULL, 0, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			mpi_unlock();
+			if(status.MPI_TAG){
+			case MSG_CTRL_GVT:
+				gvt_on_ctrl_msg();
+				break;
+			case MSG_CTRL_TERMINATION:
+				termination_on_ctrl_msg();
+				break;
+			}
+		} else {
+			int size;
+			MPI_Get_count(&status, MPI_BYTE, &size);
+			mpi_unlock();
 
-	lp_msg *ret = msg_allocator_alloc(size);
+			lp_msg *msg = msg_allocator_alloc(size);
 
-	mpi_lock();
-	MPI_Mrecv(ret, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-	mpi_unlock();
+			mpi_lock();
+			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			mpi_unlock();
 
-	return ret;
+			msg_queue_insert(msg);
+		}
+	} while(1);
 }
 
 #endif

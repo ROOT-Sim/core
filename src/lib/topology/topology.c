@@ -2,50 +2,46 @@
 
 #include <lib/lib_internal.h>
 
+#include <core/core.h>
+#include <core/intrinsics.h>
+
 #include <math.h>
+#include <memory.h>
 
-struct _topology_global_t topology_global;
-
-/**
- * Utility function which returns the expected number of neighbours
- * depending on the geometry of the topology.
- */
-static unsigned directions_count(void)
-{
-	switch (topology_global.geometry) {
-		case TOPOLOGY_MESH:
-			return topology_global.regions_cnt - 1;
-		case TOPOLOGY_HEXAGON:
-			return 6;
-		case TOPOLOGY_TORUS:
-		case TOPOLOGY_SQUARE:
-			return 4;
-		case TOPOLOGY_STAR:
-			return 2;
-		case TOPOLOGY_RING:
-			return 1;
-		case TOPOLOGY_BIDRING:
-			return 2;
-	}
-	return UINT_MAX;
-}
+/// this is used to store the common characteristics of the topology
+struct {
+	unsigned edge; 				/**< the pre-computed edge length (if it makes sense for the current topology geometry) */
+	uint64_t regions_cnt; 			/**< the number of LPs involved in the topology */
+	enum _topology_geometry_t geometry;	/**< the topology geometry (see ROOT-Sim.h) */
+} topology_global;
 
 /**
- * This pre-computes the edge of the topology;
- * the <sqrt>"()" is expensive and so we cache its value
+ * Initialize the topology module for each LP hosted on the machine.
+ * This needs to be called right after LP basic initialization before starting to process events.
  */
-static void compute_edge(void)
+void topology_global_init(void)
 {
+	if(!&topology_settings)
+		// the weak symbol isn't defined: we aren't needed
+		return;
+
+	// set default values
+	const uint64_t regions_cnt = n_lps - topology_settings.out_of_topology;
+	topology_global.regions_cnt = regions_cnt;
+	topology_global.geometry = topology_settings.default_geometry;
+	// compute the edge value for topologies it makes sense for
 	unsigned edge;
-	const unsigned lp_cnt = topology_global.regions_cnt;
+
 	switch (topology_global.geometry) {
 		case TOPOLOGY_SQUARE:
 		case TOPOLOGY_HEXAGON:
 		case TOPOLOGY_TORUS:
-			edge = sqrt(lp_cnt);
+			edge = sqrt(regions_cnt);
 			// we make sure there are no "lonely" LPs
-			if(edge * edge != lp_cnt)
+			if(edge * edge != regions_cnt){
 				log_log(LOG_FATAL, "Invalid number of regions for this topology geometry (must be a square number)\n");
+				exit(-1);
+			}
 			break;
 		default:
 			// the edge value is actually unused
@@ -56,35 +52,32 @@ static void compute_edge(void)
 	topology_global.edge = edge;
 }
 
-/**
- * Initialize the topology module for each LP hosted on the machine.
- * This needs to be called right after LP basic initialization before starting to process events.
- */
-void topology_global_init(uint64_t lp_cnt)
-{
-	if(!&topology_settings)
-		// the weak symbol isn't defined: we aren't needed
-		return;
-
-	// set default values
-	topology_global.regions_cnt = lp_cnt - topology_settings.out_of_topology;
-	topology_global.geometry = topology_settings.default_geometry;
-	topology_global.directions = directions_count();
-	// compute the edge value for topologies it makes sense for
-	compute_edge();
-}
-
-unsigned int RegionsCount(void)
+__attribute__ ((pure)) unsigned RegionsCount(void)
 {
 	return topology_global.regions_cnt;
 }
 
-unsigned int DirectionsCount(void)
+__attribute__ ((pure)) unsigned DirectionsCount(void)
 {
-	return topology_global.directions;
+	switch (topology_global.geometry) {
+	case TOPOLOGY_MESH:
+		return topology_global.regions_cnt - 1;
+	case TOPOLOGY_HEXAGON:
+		return 6;
+	case TOPOLOGY_TORUS:
+	case TOPOLOGY_SQUARE:
+		return 4;
+	case TOPOLOGY_STAR:
+		return 2;
+	case TOPOLOGY_RING:
+		return 1;
+	case TOPOLOGY_BIDRING:
+		return 2;
+	}
+	return UINT_MAX;
 }
 
-unsigned int GetReceiver(lp_id_t from, direction_t direction)
+__attribute__ ((pure)) unsigned GetReceiver(unsigned from, direction_t direction)
 {
 	const unsigned sender = from;
 	const unsigned edge = topology_global.edge;
@@ -96,119 +89,133 @@ unsigned int GetReceiver(lp_id_t from, direction_t direction)
 
 	switch (topology_global.geometry) {
 
-		case TOPOLOGY_HEXAGON:
-			y = sender / edge;
-			x = sender - y * edge;
+	case TOPOLOGY_HEXAGON:
+		y = sender / edge;
+		x = sender - y * edge;
 
-			switch (direction) {
-				case DIRECTION_NW:
-					x += (y & 1U) - 1;
-					y -= 1;
-					break;
-				case DIRECTION_NE:
-					x += (y & 1U);
-					y -= 1;
-					break;
-				case DIRECTION_SW:
-					x += (y & 1U) - 1;
-					y += 1;
-					break;
-				case DIRECTION_SE:
-					x += (y & 1U);
-					y += 1;
-					break;
-				case DIRECTION_E:
-					x += 1;
-					break;
-				case DIRECTION_W:
-					x -= 1;
-					break;
-				default:
-					return DIRECTION_INVALID;
-			}
-			return (x < edge && y < edge) ? y * edge + x : DIRECTION_INVALID;
-
-		case TOPOLOGY_SQUARE:
-			y = sender / edge;
-			x = sender - y * edge;
-
-			switch (direction) {
-				case DIRECTION_N:
-					y -= 1;
-					break;
-				case DIRECTION_S:
-					y += 1;
-					break;
-				case DIRECTION_E:
-					x += 1;
-					break;
-				case DIRECTION_W:
-					x -= 1;
-					break;
-				default:
-					return DIRECTION_INVALID;
-			}
-			return (x < edge && y < edge) ? y * edge + x : DIRECTION_INVALID;
-
-		case TOPOLOGY_TORUS:
-			y = sender / edge;
-			x = sender - y * edge;
-
-			switch (direction) {
-				case DIRECTION_N:
-					y += edge - 1;
-					y %= edge;
-					break;
-				case DIRECTION_S:
-					y += 1;
-					y %= edge;
-					break;
-				case DIRECTION_E:
-					x += 1;
-					x %= edge;
-					break;
-				case DIRECTION_W:
-					x += edge - 1;
-					x %= edge;
-					break;
-				default:
-					return DIRECTION_INVALID;
-			}
-			return y * edge + x;
-
-		case TOPOLOGY_MESH:
-			return likely(direction < regions_cnt) ? direction : DIRECTION_INVALID;
-
-		case TOPOLOGY_BIDRING:
-			switch (direction) {
-				case DIRECTION_E:
-					return (sender + 1) % regions_cnt;
-				case DIRECTION_W:
-					return (sender + regions_cnt - 1) % regions_cnt;
-				default:
-			}
-			return DIRECTION_INVALID;
-
-		case TOPOLOGY_RING:
-			return likely(direction == DIRECTION_E) < regions_cnt ? direction : DIRECTION_INVALID;
-
-		case TOPOLOGY_STAR:
-			if(sender) {
-				if(!direction)
-					return 0;
-			} else {
-				if(direction + 1 < regions_cnt)
-					return direction + 1;
-			}
-			return DIRECTION_INVALID;
-
+		switch (direction) {
+		case DIRECTION_NW:
+			x += (y & 1U) - 1;
+			y -= 1;
+			break;
+		case DIRECTION_NE:
+			x += (y & 1U);
+			y -= 1;
+			break;
+		case DIRECTION_SW:
+			x += (y & 1U) - 1;
+			y += 1;
+			break;
+		case DIRECTION_SE:
+			x += (y & 1U);
+			y += 1;
+			break;
+		case DIRECTION_E:
+			x += 1;
+			break;
+		case DIRECTION_W:
+			x -= 1;
+			break;
 		default:
+			return DIRECTION_INVALID;
+		}
+		return (x < edge && y < edge) ? y * edge + x : DIRECTION_INVALID;
+
+	case TOPOLOGY_SQUARE:
+		y = sender / edge;
+		x = sender - y * edge;
+
+		switch (direction) {
+		case DIRECTION_N:
+			y -= 1;
+			break;
+		case DIRECTION_S:
+			y += 1;
+			break;
+		case DIRECTION_E:
+			x += 1;
+			break;
+		case DIRECTION_W:
+			x -= 1;
+			break;
+		default:
+			return DIRECTION_INVALID;
+		}
+		return (x < edge && y < edge) ? y * edge + x : DIRECTION_INVALID;
+
+	case TOPOLOGY_TORUS:
+		y = sender / edge;
+		x = sender - y * edge;
+
+		switch (direction) {
+		case DIRECTION_N:
+			y += edge - 1;
+			y %= edge;
+			break;
+		case DIRECTION_S:
+			y += 1;
+			y %= edge;
+			break;
+		case DIRECTION_E:
+			x += 1;
+			x %= edge;
+			break;
+		case DIRECTION_W:
+			x += edge - 1;
+			x %= edge;
+			break;
+		default:
+			return DIRECTION_INVALID;
+		}
+		return y * edge + x;
+
+	case TOPOLOGY_MESH:
+		return likely(direction < regions_cnt) ? direction : DIRECTION_INVALID;
+
+	case TOPOLOGY_BIDRING:
+		switch (direction) {
+			case DIRECTION_N:
+				return (sender + 1) % regions_cnt;
+			case DIRECTION_S:
+				return (sender + regions_cnt - 1) % regions_cnt;
+			default:
+				return DIRECTION_INVALID;
+		}
+	case TOPOLOGY_RING:
+		return likely(direction == DIRECTION_N) < regions_cnt ? direction : DIRECTION_INVALID;
+
+	case TOPOLOGY_STAR:
+		if(sender) {
+			if(!direction)
+				return 0;
+		} else {
+			if(direction + 1 < regions_cnt)
+				return direction + 1;
+		}
 	}
 	return DIRECTION_INVALID;
 }
 
 unsigned FindReceiver(void)
 {
+	const uint64_t dir_cnt = DirectionsCount();
+	const unsigned bits = 64 - SAFE_CLZ(dir_cnt);
+	uint64_t rnd = RandomU64();
+	unsigned i = 64;
+	do {
+		unsigned dir = rnd & ((UINT64_C(1) << bits) - 1);
+		if(dir < dir_cnt){
+			dir += 2 * (topology_global.geometry == TOPOLOGY_HEXAGON);
+			const unsigned ret = GetReceiver(current_lid, dir);
+			if (ret != DIRECTION_INVALID)
+				return ret;
+		}
 
-	return receiver;
+		if((i -= bits) < bits){
+			rnd = RandomU64();
+			i = 64;
+		} else {
+			rnd >>= bits;
+		}
+	} while(1);
 }

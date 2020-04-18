@@ -1,7 +1,10 @@
-#include "ROOT-Sim.h"
+#include "NeuRome.h"
 
 void ProcessEvent(unsigned me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, unsigned *state){
+	(void)me;
+	(void)content;
+	(void)size;
 	switch (event_type) {
 	case DEINIT:
 		free(state);
@@ -20,5 +23,6 @@ void ProcessEvent(unsigned me, simtime_t now, unsigned event_type,
 }
 
 bool CanEnd(unsigned me, const unsigned *state){
-	return *state > 100;
+	(void)me;
+	return *state > 1000;
 }

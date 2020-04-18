@@ -7,7 +7,7 @@ uint64_t n_lps;
 
 #ifndef NEUROME_SERIAL
 
-unsigned n_nodes;
+unsigned n_nodes = 1;
 unsigned n_threads;
 nid_t nid;
 __thread rid_t rid;

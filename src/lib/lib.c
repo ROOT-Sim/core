@@ -12,16 +12,29 @@ static const struct argp_option argp_options[] = {
 
 static error_t parse_opt (int key, char *arg, struct argp_state *state)
 {
+	(void)key;
+	(void)arg;
+	(void)state;
+	// TODO parsing options for model's library
 	return ARGP_ERR_UNKNOWN;
 }
 
 const struct argp lib_argp = {argp_options, parse_opt, args_doc, doc, 0, 0, 0};
 
-
-void lib_lp_init(uint64_t llid)
+void lib_global_init(void)
 {
-	random_lib_lp_init(llid);
-	state_lib_lp_init(llid);
+	topology_global_init();
+}
+
+void lib_global_fini(void)
+{
+
+}
+
+void lib_lp_init(void)
+{
+	random_lib_lp_init();
+	state_lib_lp_init();
 }
 
 void lib_lp_fini(void)

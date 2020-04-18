@@ -14,6 +14,7 @@ struct serial_lp {
 	bool terminating;
 };
 
+extern struct serial_lp *lps;
 extern struct serial_lp *cur_lp;
 
 extern int main(int argc, char **argv);

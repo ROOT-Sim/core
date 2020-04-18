@@ -1,52 +1,51 @@
 #include <lp/lp.h>
 
 #include <core/sync.h>
-#include <distributed/mpi.h>
+#include <core/timer.h>
+#include <gvt/fossil.h>
 
 __thread lp_struct *current_lp;
 lp_struct *lps;
 unsigned *lid_to_rid;
-
-#define lps_offset_count(id, units_cnt, lps_cnt, out_offset, out_cnt)	\
-{									\
-	const unsigned __i = id;					\
-	const unsigned __ucnt = units_cnt;				\
-	const uint64_t __lpscnt = lps_cnt;				\
-	const bool __big = __i >= (__ucnt - (__lpscnt % __ucnt));	\
-									\
-	out_offset = __big ?						\
-		__lpscnt - ((__lpscnt / __ucnt + 1) * (__ucnt - __i)) : \
-		((__lpscnt / __ucnt) * __i);				\
-	out_cnt	= (__lpscnt / __ucnt) + __big;				\
-}
+uint64_t n_lps_node;
 
 void lp_global_init(void)
 {
-#ifdef HAVE_MPI
-	uint64_t lps_offset, lps_cnt;
-	lps_offset_count(nid, n_nodes, n_lps, lps_offset, lps_cnt);
-#else
-	uint64_t lps_cnt = n_lps;
-#endif
+	n_lps_node = n_lps / n_nodes;
 
-	lps = mm_alloc(sizeof(*lps) * lps_cnt);
-	lid_to_rid = mm_alloc(sizeof(*lid_to_rid) * lps_cnt);
+	// does the last node get more or less LPs than the other ones?
+	double ratio_a =
+		((double)n_lps_node + 1) /
+		(n_lps - (n_lps_node + 1)* (n_nodes - 1));
+	double ratio_b =
+		(n_lps - n_lps_node * (n_nodes - 1)) /
+		((double)n_lps_node);
 
-#ifdef HAVE_MPI
+	n_lps_node += ratio_b > ratio_a;
+
+	if(n_lps_node < n_threads){
+		log_log(
+			LOG_WARN,
+			"The simulation will run with %u threads instead of %u",
+			n_lps_node,
+			n_threads
+		);
+		n_threads = n_lps_node;
+	}
+
+	lps = mm_alloc(sizeof(*lps) * n_lps_node);
+	lid_to_rid = mm_alloc(sizeof(*lid_to_rid) * n_lps_node);
+
+	uint64_t lps_offset = n_lps_node * nid;
 	lps -= lps_offset;
 	lid_to_rid -= lps_offset;
-#endif
 }
 
 void lp_global_fini(void)
 {
-
-#ifdef HAVE_MPI
-	uint64_t lps_offset, lps_cnt;
-	lps_offset_count(nid, n_nodes, n_lps, lps_offset, lps_cnt);
+	uint64_t lps_offset = n_lps_node * nid;
 	lps += lps_offset;
 	lid_to_rid += lps_offset;
-#endif
 
 	mm_free(lps);
 	mm_free(lid_to_rid);
@@ -55,12 +54,8 @@ void lp_global_fini(void)
 void lp_init(void)
 {
 	uint64_t i, lps_cnt;
-#ifdef HAVE_MPI
-	lps_offset_count(nid, n_nodes, n_lps, i, lps_cnt);
-	lps_offset_count(rid, n_threads, lps_cnt, i, lps_cnt);
-#else
-	lps_offset_count(rid, n_threads, n_lps, i, lps_cnt);
-#endif
+
+	lps_iter_init(i, lps_cnt);
 
 	uint64_t i_b = i, lps_cnt_b = lps_cnt;
 	while(lps_cnt_b--){
@@ -76,7 +71,9 @@ void lp_init(void)
 		current_lp->state = LP_STATE_RUNNING;
 
 		model_memory_lp_init();
-		lib_lp_init(i);
+
+		current_lp->lsm_p = __wrap_malloc(sizeof(*current_lp->lsm_p));
+		lib_lp_init();
 		process_lp_init();
 		termination_lp_init();
 
@@ -86,10 +83,11 @@ void lp_init(void)
 
 void lp_fini(void)
 {
-	uint64_t i = 0, lps_cnt = n_lps;
-#ifdef HAVE_MPI
-	lps_offset_count(nid, n_nodes, n_lps, i, lps_cnt);
-#endif
+	uint64_t lps_cnt = n_lps, i = n_lps * nid;
+
+	if(nid + 1 == n_nodes)
+		lps_cnt = n_lps - n_lps_node * (n_nodes - 1);
+
 	sync_thread_barrier();
 
 	if(!rid){
@@ -101,7 +99,7 @@ void lp_fini(void)
 
 	sync_thread_barrier();
 
-	lps_offset_count(rid, n_threads, lps_cnt, i, lps_cnt);
+	lps_iter_init(i, lps_cnt);
 
 	while(lps_cnt--){
 		current_lp = &lps[i];
@@ -112,4 +110,6 @@ void lp_fini(void)
 
 		i++;
 	}
+
+	current_lp = NULL;
 }

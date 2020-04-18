@@ -22,6 +22,8 @@ static timer last_gvt;
 static simtime_t *reducing_p;
 static __thread simtime_t reducing;
 
+static atomic_uint red_phase = 0;
+
 __thread simtime_t current_gvt;
 
 void gvt_global_init(void)
@@ -65,8 +67,8 @@ bool gvt_msg_processed(void)
 				atomic_load_explicit(&counter_B, memory_order_relaxed)){
 				break;
 			}
-		}
-		__attribute__ ((fallthrough));
+		} // @suppress("No break at end of case")
+		/* fall through */
 	case tphase_A:
 		reducing = SIMTIME_MAX;
 		reduce_thread_gvt();
@@ -107,3 +109,9 @@ bool gvt_msg_processed(void)
 	}
 	return false;
 }
+
+void gvt_on_ctrl_msg(void)
+{
+	atomic_fetch_xor_explicit(&red_phase, true, memory_order_relaxed);
+}
+

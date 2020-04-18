@@ -3,13 +3,14 @@
 
 #include <core/core.h>
 #include <core/init.h>
+#include <core/timer.h>
 #include <log/stats.h>
 #include <mm/msg_allocator.h>
 
+struct serial_lp *lps;
 struct serial_lp *cur_lp;
 
 static binary_heap(lp_msg *) queue;
-static struct serial_lp *lps;
 
 static void serial_simulation_init(void)
 {
@@ -19,9 +20,11 @@ static void serial_simulation_init(void)
 
 	heap_init(queue);
 
+	lib_global_init();
+
 	for(uint64_t i = 0; i < n_lps; ++i){
 		cur_lp = &lps[i];
-		lib_lp_init(i);
+		lib_lp_init();
 #if LOG_DEBUG >= LOG_LEVEL
 		lps[i].last_evt_time = -1;
 #endif
@@ -42,6 +45,8 @@ static void serial_simulation_fini(void)
 		msg_allocator_free(array_get_at(queue, i));
 	}
 
+	lib_global_fini();
+
 	heap_fini(queue);
 	msg_allocator_fini();
 	mm_free(lps);
@@ -49,6 +54,7 @@ static void serial_simulation_fini(void)
 
 void serial_simulation_run(void)
 {
+	timer last_vt = timer_new();
 	uint64_t to_terminate = n_lps;
 	while(likely(!heap_is_empty(queue))) {
 		const lp_msg *cur_msg = heap_min(queue);
@@ -90,6 +96,12 @@ void serial_simulation_run(void)
 			if(unlikely(can_end && !to_terminate)) {
 				break;
 			}
+		}
+
+		if(100000 <= timer_value(last_vt)){
+			printf("\rVirtual time: %lf", cur_msg->dest_t);
+			fflush(stdout);
+			last_vt = timer_new();
 		}
 
 		msg_allocator_free(heap_extract(queue, msg_is_before));

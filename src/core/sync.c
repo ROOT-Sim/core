@@ -6,7 +6,11 @@ static atomic_uint barr_in;
 static atomic_uint barr_out;
 static atomic_uint barr_cr;
 
+#ifdef NEUROME_TEST
+#define BARRIER_IN_THRESHOLD (1024)
+#else
 #define BARRIER_IN_THRESHOLD (UINT_MAX/2)
+#endif
 
 bool sync_thread_barrier(void)
 {
@@ -21,7 +25,7 @@ bool sync_thread_barrier(void)
 	unsigned cr = atomic_load_explicit(&barr_cr, memory_order_relaxed);
 
 	bool leader = i == cr + count;
-	if (leader){
+	if (leader) {
 		atomic_store_explicit(
 			&barr_cr, cr + count, memory_order_release);
 	} else {
