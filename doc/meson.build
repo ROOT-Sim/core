@@ -1,82 +1,50 @@
-prg_install = find_program('install')
+sphinx = find_program('sphinx-build', required : false, disabler : true)
 
-doxygen = find_program('doxygen', required : false)
-if not doxygen.found()
-  error('Program "doxygen" not found or not executable. Try building with -Ddocumentation=false')
-endif
-dot = find_program('dot', required : false)
-if not dot.found()
-  error('Program "dot" not found or not executable. Try building with -Ddocumentation=false')
-endif
-
-doxygen_version_cmd = run_command(doxygen.path(), '--version')
-if doxygen_version_cmd.returncode() != 0
-  error('Command "doxygen --version" failed.')
-endif
-doxygen_version = doxygen_version_cmd.stdout()
-if doxygen_version.version_compare('< 1.8.3')
-  error('doxygen needs to be at least version 1.8.3 (have @0@)'.format(doxygen_version))
-endif
-grep = find_program('grep')
-dot_version_cmd = run_command(dot.path(), '-V')
-if dot_version_cmd.returncode() != 0
-  error('Command "dot -V" failed.')
-endif
-# dot -V output is (to stderr):
-# 	dot - graphviz version 2.38.0 (20140413.2041)
-dot_version = dot_version_cmd.stderr().split(' ')[4]
-if dot_version.version_compare('< 2.26')
-  error('Graphviz dot needs to be at least version 2.26 (have @0@)'.format(dot_version))
-endif
-
-mainpage = vcs_tag(command : ['git', 'log', '-1', '--format=%h'],
-		 fallback : 'unknown',
-		 input : 'mainpage.dox',
-		 output : 'mainpage.dox',
-		 replace_string: '__GIT_VERSION__')
-
-src_doxygen = files(
-  # source files
-  join_paths(meson.source_root(), 'src', 'libinput.h'),
-  # style files
-  'style/header.html',
-  'style/footer.html',
-  'style/customdoxygen.css',
-  'style/bootstrap.css',
-  'style/libinputdoxygen.css'
+sphinx_conf = configure_file(input: 'conf.py.in', output : 'conf.py',
+  configuration : {
+    'DOC_STATIC_PATH': meson.current_source_dir() / 'static',
+    'PROJECT_NAME': meson.project_name(),
+    'PROJECT_VERSION': meson.project_version()
+  }
 )
 
-config_noop = configuration_data()
-# Set a dummy replacement to silence meson warnings:
-# meson.build:487: WARNING: Got an empty configuration_data() object and
-# 		   found no substitutions in the input file 'foo'. If you
-# 		   want to copy a file to the build dir, use the 'copy:'
-# 		   keyword argument added in 0.47.0
-config_noop.set('dummy', 'dummy')
+sphinx_files = files(
+  'first_steps.rst',
+  'index.rst',
+  'intro.rst',
+  'installing.rst'
+)
 
-doxyfiles = []
-foreach f : src_doxygen
-	df = configure_file(input: f,
-			    output: '@PLAINNAME@',
-			    configuration : config_noop,
-			    install : false)
-	doxyfiles += [ df ]
-endforeach
+doc_static_files = files(
+  'static' / 'logo_doc.png',
+  'static' / 'logo.png',
+  'static' / 'title.png'
+)
 
-doc_config = configuration_data()
-doc_config.set('PACKAGE_NAME', meson.project_name())
-doc_config.set('PACKAGE_VERSION', meson.project_version())
-doc_config.set('builddir', meson.current_build_dir())
+doc_target = custom_target('sphinx', output : 'built',
+  input : [sphinx_conf] + sphinx_files + doc_static_files, 
+  command : [
+    sphinx, 
+    meson.current_source_dir(), 
+    meson.current_build_dir() / 'built',
+    '-c', meson.current_build_dir()
+  ]
+)
 
-doxyfile = configure_file(input : 'libinput.doxygen.in',
-			  output : 'libinput.doxygen',
-			  configuration : doc_config,
-			  install : false)
+run_target('doc', command : '', depends : doc_target)
 
-custom_target('doxygen',
-	      input : [ doxyfiles, doxyfile, mainpage ] + src_doxygen,
-	      output : [ '.' ],
-	      command : [ doxygen, doxyfile ],
-	      install : false,
-	      depends: [ mainpage ],
-	      build_by_default : true)
+# mainpage = vcs_tag(command : ['git', 'log', '-1', '--format=%h'],
+#		 fallback : 'unknown',
+#		 input : 'mainpage.dox',
+#		 output : 'mainpage.dox',
+#		 replace_string: '__GIT_VERSION__')
+
+# doc_config = configuration_data()
+# doc_config.set('PACKAGE_NAME', )
+# doc_config.set('PACKAGE_VERSION', meson.project_version())
+# doc_config.set('builddir', meson.current_build_dir())
+
+# doxyfile = configure_file(input : 'libinput.doxygen.in',
+#			  output : 'libinput.doxygen',
+#			  configuration : doc_config,
+#			  install : false)
