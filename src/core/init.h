@@ -9,7 +9,8 @@ typedef struct {
 	int verbosity;
 //	simtime_t termination_time;
 #ifndef NEUROME_SERIAL
-	unsigned gvt_period;
+	unsigned gvt_period; // expressed in microseconds
+	bool core_binding;
 #endif
 } simulation_configuration;
 

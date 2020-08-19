@@ -81,7 +81,7 @@ struct argp model_argp = {model_options, model_parse, NULL, NULL, NULL, NULL, NU
 
 struct _topology_settings_t topology_settings = {.default_geometry = TOPOLOGY_HEXAGON};
 
-void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_type *event_content, unsigned int size, void *ptr) {
+void ProcessEvent(lp_id_t me, simtime_t now, int event_type, event_content_type *event_content, unsigned int size, void *ptr) {
 	(void)size;
 	
 	unsigned int w;
@@ -300,14 +300,14 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 		case DEINIT:
 			break;
 		default:
-			fprintf(stdout, "PCS: Unknown event type! (me = %d - event type = %d)\n", me, event_type);
+			fprintf(stdout, "PCS: Unknown event type! (me = %d - event type = %d)\n", (unsigned)me, event_type);
 			abort();
 
 	}
 }
 
 
-bool CanEnd(unsigned int me, lp_state_type *snapshot) {
+bool CanEnd(lp_id_t me, lp_state_type *snapshot) {
 	(void)me;
 	
 	if (snapshot->complete_calls < complete_calls)

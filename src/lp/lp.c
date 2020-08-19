@@ -7,21 +7,11 @@
 __thread lp_struct *current_lp;
 lp_struct *lps;
 unsigned *lid_to_rid;
-uint64_t n_lps_node;
+lp_id_t n_lps_node;
 
 void lp_global_init(void)
 {
-	n_lps_node = n_lps / n_nodes;
-
-	// does the last node get more or less LPs than the other ones?
-	double ratio_a =
-		((double)n_lps_node + 1) /
-		(n_lps - (n_lps_node + 1)* (n_nodes - 1));
-	double ratio_b =
-		(n_lps - n_lps_node * (n_nodes - 1)) /
-		((double)n_lps_node);
-
-	n_lps_node += ratio_b > ratio_a;
+	n_lps_node = (n_lps + n_nodes - 1) / n_nodes;
 
 	if(n_lps_node < n_threads){
 		log_log(
@@ -68,9 +58,8 @@ void lp_init(void)
 
 	while(lps_cnt--){
 		current_lp = &lps[i];
-		current_lp->state = LP_STATE_RUNNING;
 
-		model_memory_lp_init();
+		model_allocator_lp_init();
 
 		current_lp->lsm_p = __wrap_malloc(sizeof(*current_lp->lsm_p));
 		lib_lp_init();
@@ -83,7 +72,7 @@ void lp_init(void)
 
 void lp_fini(void)
 {
-	uint64_t lps_cnt = n_lps, i = n_lps * nid;
+	uint64_t lps_cnt = n_lps_node, i = n_lps_node * nid;
 
 	if(nid + 1 == n_nodes)
 		lps_cnt = n_lps - n_lps_node * (n_nodes - 1);
@@ -106,7 +95,7 @@ void lp_fini(void)
 
 		process_lp_fini();
 		lib_lp_fini();
-		model_memory_lp_fini();
+		model_allocator_lp_fini();
 
 		i++;
 	}

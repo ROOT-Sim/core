@@ -1,8 +1,6 @@
 #include <lib/topology/topology.h>
 
 #include <lib/lib_internal.h>
-
-#include <core/core.h>
 #include <core/intrinsics.h>
 
 #include <math.h>
@@ -10,8 +8,8 @@
 
 /// this is used to store the common characteristics of the topology
 struct {
-	unsigned edge; 				/**< the pre-computed edge length (if it makes sense for the current topology geometry) */
-	uint64_t regions_cnt; 			/**< the number of LPs involved in the topology */
+	lp_id_t regions_cnt; 			/**< the number of LPs involved in the topology */
+	uint32_t edge; 				/**< the pre-computed edge length (if it makes sense for the current topology geometry) */
 	enum _topology_geometry_t geometry;	/**< the topology geometry (see ROOT-Sim.h) */
 } topology_global;
 
@@ -26,7 +24,7 @@ void topology_global_init(void)
 		return;
 
 	// set default values
-	const uint64_t regions_cnt = n_lps - topology_settings.out_of_topology;
+	const lp_id_t regions_cnt = n_lps - topology_settings.out_of_topology;
 	topology_global.regions_cnt = regions_cnt;
 	topology_global.geometry = topology_settings.default_geometry;
 	// compute the edge value for topologies it makes sense for
@@ -52,12 +50,12 @@ void topology_global_init(void)
 	topology_global.edge = edge;
 }
 
-__attribute__ ((pure)) unsigned RegionsCount(void)
+__attribute__ ((pure)) uint64_t RegionsCount(void)
 {
 	return topology_global.regions_cnt;
 }
 
-__attribute__ ((pure)) unsigned DirectionsCount(void)
+__attribute__ ((pure)) uint64_t DirectionsCount(void)
 {
 	switch (topology_global.geometry) {
 	case TOPOLOGY_MESH:
@@ -77,11 +75,11 @@ __attribute__ ((pure)) unsigned DirectionsCount(void)
 	return UINT_MAX;
 }
 
-__attribute__ ((pure)) unsigned GetReceiver(unsigned from, direction_t direction)
+__attribute__ ((pure)) uint64_t GetReceiver(uint64_t from, enum _direction_t direction)
 {
-	const unsigned sender = from;
-	const unsigned edge = topology_global.edge;
-	const unsigned regions_cnt = topology_global.regions_cnt;
+	const lp_id_t sender = from;
+	const uint32_t edge = topology_global.edge;
+	const lp_id_t regions_cnt = topology_global.regions_cnt;
 	unsigned x, y;
 
 	if(unlikely(regions_cnt <= from))
@@ -182,7 +180,7 @@ __attribute__ ((pure)) unsigned GetReceiver(unsigned from, direction_t direction
 				return DIRECTION_INVALID;
 		}
 	case TOPOLOGY_RING:
-		return likely(direction == DIRECTION_N) < regions_cnt ? direction : DIRECTION_INVALID;
+		return likely(direction == DIRECTION_N) ? direction : DIRECTION_INVALID;
 
 	case TOPOLOGY_STAR:
 		if(sender) {
@@ -196,7 +194,7 @@ __attribute__ ((pure)) unsigned GetReceiver(unsigned from, direction_t direction
 	return DIRECTION_INVALID;
 }
 
-unsigned FindReceiver(void)
+uint64_t FindReceiver(void)
 {
 	const uint64_t dir_cnt = DirectionsCount();
 	const unsigned bits = 64 - SAFE_CLZ(dir_cnt);
@@ -206,16 +204,16 @@ unsigned FindReceiver(void)
 		unsigned dir = rnd & ((UINT64_C(1) << bits) - 1);
 		if(dir < dir_cnt){
 			dir += 2 * (topology_global.geometry == TOPOLOGY_HEXAGON);
-			const unsigned ret = GetReceiver(current_lid, dir);
+			const uint64_t ret = GetReceiver(current_lid, dir);
 			if (ret != DIRECTION_INVALID)
 				return ret;
 		}
 
-		if((i -= bits) < bits){
+		if (likely((i -= bits) >= bits)){
+			rnd >>= bits;
+		} else {
 			rnd = RandomU64();
 			i = 64;
-		} else {
-			rnd >>= bits;
 		}
 	} while(1);
 }

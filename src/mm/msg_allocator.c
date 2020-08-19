@@ -63,17 +63,20 @@ void msg_allocator_free(lp_msg *msg)
 		mm_free(msg);
 }
 
-#ifndef NEUROME_SERIAL
+#ifdef NEUROME_MPI
 void msg_allocator_free_at_gvt(lp_msg *msg)
 {
 	array_push(free_gvt_list, msg);
 }
 
-void msg_allocator_fossil_collect(void)
+void msg_allocator_fossil_collect(simtime_t current_gvt)
 {
 	array_count_t j = 0;
 	for(array_count_t i = 0; i < array_count(free_gvt_list); ++i){
 		lp_msg *msg = array_get_at(free_gvt_list, i);
+		// xxx this could need to check the actual sending time instead
+		// of the destination time in order to avoid a pseudo memory
+		// leak for LPs which send messages distant in logical time.
 		if(current_gvt > msg->dest_t){
 			msg_allocator_free(msg);
 		} else {
@@ -85,5 +88,5 @@ void msg_allocator_fossil_collect(void)
 }
 #endif
 
-extern lp_msg* msg_allocator_pack(unsigned receiver, simtime_t timestamp,
+extern lp_msg* msg_allocator_pack(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size);

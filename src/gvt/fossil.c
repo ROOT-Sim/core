@@ -8,43 +8,29 @@
 
 #include <memory.h>
 
-#define FOSSIL_CALLS 10
+#define cant_discard_ref_i(ref_i) \
+	array_get_at(proc_p->past_msgs, ref_i)->dest_t >= current_gvt
 
-static __thread unsigned fossil_calls;
-
-static inline void fossil_lp_collect(struct process_data *proc_p)
+static inline array_count_t first_discardable_ref(simtime_t current_gvt,
+	struct process_data *proc_p)
 {
-	array_count_t log_i = array_count(proc_p->logs) - 1;
-	simtime_t gvt = current_gvt;
-
-	while(
-		array_get_at(proc_p->past_msgs,
-			array_get_at(proc_p->logs, log_i).i_past_msg
-		)->dest_t > gvt
-	){
-		--log_i;
-	}
-
-	if(!log_i)
-		return;
-
-	array_count_t past_i = array_get_at(proc_p->logs, log_i).i_past_msg;
-	array_count_t j = array_count(proc_p->logs);
-	while(j > log_i){
+	array_count_t j = array_count(proc_p->past_msgs) - 1;
+	while(cant_discard_ref_i(j)){
 		--j;
-		array_get_at(proc_p->logs, j).i_past_msg -= past_i;
 	}
+	return j;
+}
 
-	while(j--){
-		model_checkpoint_free(array_get_at(proc_p->logs, j).chkp);
-	}
-	array_truncate_first(proc_p->logs, log_i);
-
+static inline void fossil_lp_collect(simtime_t current_gvt)
+{
+	struct process_data *proc_p = &current_lp->p;
+	array_count_t past_i = first_discardable_ref(current_gvt, proc_p);
+	past_i = model_allocator_fossil_lp_collect(past_i);
 	array_count_t sent_i = array_count(proc_p->sent_msgs);
-	j = array_count(proc_p->past_msgs);
+	array_count_t j = array_count(proc_p->past_msgs);
 	do{
 		--sent_i;
-		j -= array_get_at(proc_p->sent_msgs, sent_i) == NULL;
+		j -= (array_get_at(proc_p->sent_msgs, sent_i) == NULL);
 	} while(j > past_i);
 	array_truncate_first(proc_p->sent_msgs, sent_i);
 
@@ -54,21 +40,19 @@ static inline void fossil_lp_collect(struct process_data *proc_p)
 	array_truncate_first(proc_p->past_msgs, past_i);
 }
 
-void fossil_collect(void)
+void fossil_collect(simtime_t current_gvt)
 {
-	fossil_calls++;
-	if(fossil_calls < FOSSIL_CALLS)
-		return;
+#ifdef NEUROME_MPI
+	remote_msg_map_fossil_collect(current_gvt);
+	msg_allocator_fossil_collect(current_gvt);
+#endif
 
 	uint64_t i, lps_cnt;
 	lps_iter_init(i, lps_cnt);
 
 	while(lps_cnt--){
-		fossil_lp_collect(&lps[i].p);
+		current_lp = &lps[i];
+		fossil_lp_collect(current_gvt);
 		i++;
 	}
-
-	msg_allocator_fossil_collect();
-
-	fossil_calls = 0;
 }

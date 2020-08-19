@@ -23,6 +23,7 @@ enum _opt_codes{
 #ifndef NEUROME_SERIAL
 	OPT_NP,
 	OPT_GVT,
+	OPT_BIND,
 #endif
 	OPT_LAST
 };
@@ -47,13 +48,15 @@ static const struct argp_option argp_options[] = {
 	{"verbose", 	OPT_LOG, "TYPE",	OPTION_ALIAS, NULL, 0},
 #ifndef NEUROME_SERIAL
 	{"wt", 		OPT_NP, "VALUE",	0, "Number of total cores being used by the simulation", 0},
-	{"gvt", 	OPT_GVT, "VALUE",	0, "Time between two GVT reductions (in milliseconds)", 0},
+	{"gvt-period", 	OPT_GVT, "VALUE",	0, "Time between two GVT reductions (in milliseconds)", 0},
+	{"no-bind", 	OPT_BIND, NULL,		0, "Disables thread to core binding", 0},
 #endif
 	{0}
 };
 
-static void print_config(){
-
+static void print_config(void)
+{
+	//TODO
 }
 
 #define malformed_option_failure() argp_error(state, "invalid value \"%s\" in %s option.\nAborting!", arg, state->argv[state->next -1 -(arg != NULL)])
@@ -91,7 +94,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 		break;
 
 	case OPT_GVT:
-		global_config.gvt_period = parse_ullong_limits(1, 10000);
+		global_config.gvt_period = parse_ullong_limits(1, 10000) * 1000;
+		break;
+
+	case OPT_BIND:
+		global_config.core_binding = false;
 		break;
 #endif
 
@@ -99,7 +106,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 		memset(&global_config, 0, sizeof(global_config));
 #ifndef NEUROME_SERIAL
 		n_threads = arch_core_count();
-		global_config.gvt_period = 100000;
+		global_config.gvt_period = 200000;
+		global_config.core_binding = true;
 #endif
 		log_colored = isatty(STDERR_FILENO);
 		// Store the predefined values, before reading any overriding one
@@ -139,7 +147,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 
 static struct argp_child argp_child[] = {
 		{&lib_argp, 0, "Model library options", 0},
-		{0, 0, "Model specific options", 0}, // todo try without direct assignment
+		{&model_argp, 0, "Model specific options", 0},
 		{0}
 };
 
@@ -148,6 +156,5 @@ static const struct argp argp = {
 
 void init_args_parse(int argc, char **argv)
 {
-	argp_child[1].argp = &model_argp;
 	argp_parse (&argp, argc, argv, 0, NULL, NULL);
 }

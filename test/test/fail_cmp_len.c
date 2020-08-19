@@ -1,6 +1,9 @@
 #include <test.h>
 
-int main(void){
+int main(int argc, char **argv)
+{
+	(void) argc;
+	(void) argv;
 	fprintf(test_output_file, "aa");
 	return 0;
 }

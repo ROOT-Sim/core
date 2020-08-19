@@ -28,7 +28,6 @@ static void serial_simulation_init(void)
 #if LOG_DEBUG >= LOG_LEVEL
 		lps[i].last_evt_time = -1;
 #endif
-
 		ProcessEvent(i, 0, INIT, NULL, 0, lps[i].lsm.state_s);
 	}
 }
@@ -98,7 +97,7 @@ void serial_simulation_run(void)
 			}
 		}
 
-		if(100000 <= timer_value(last_vt)){
+		if(200000 <= timer_value(last_vt)){
 			printf("\rVirtual time: %lf", cur_msg->dest_t);
 			fflush(stdout);
 			last_vt = timer_new();
@@ -110,7 +109,7 @@ void serial_simulation_run(void)
 	stats_dump();
 }
 
-void ScheduleNewEvent(unsigned receiver, simtime_t timestamp,
+void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size)
 {
 	lp_msg *msg = msg_allocator_pack(

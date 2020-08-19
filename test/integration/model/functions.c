@@ -1,9 +1,10 @@
 #include <integration/model/application.h>
 
+#include <stdatomic.h>
 #include <string.h>
 #include <stdio.h>
 
-static uint32_t super_fast_hash(const char *data, unsigned len);
+uint32_t crc_update(const uint64_t *buf, size_t n, uint32_t crc);
 
 buffer* get_buffer(buffer *head, unsigned i)
 {
@@ -13,15 +14,14 @@ buffer* get_buffer(buffer *head, unsigned i)
 	return head;
 }
 
-uint32_t read_buffer(buffer *head, unsigned i)
+uint32_t read_buffer(buffer *head, unsigned i, uint32_t old_crc)
 {
 	head = get_buffer(head, i);
-	return super_fast_hash((char *)head->data, head->count * sizeof(uint64_t));
+	return crc_update(head->data, head->count, old_crc);
 }
 
 buffer* allocate_buffer(lp_state_t *state, const unsigned *data, unsigned count)
 {
-
 	buffer *new = malloc(sizeof(buffer) + count * sizeof(uint64_t));
 	new->next = state->head;
 	new->count = count;
@@ -58,32 +58,40 @@ buffer* deallocate_buffer(buffer *head, unsigned i)
 	return prev;
 }
 
-// The following code is a stripped version of the one found in http://www.azillionmonkeys.com/qed/hash.html
-// Provided by Paul Hsieh under license LGPL 2.1 http://www.gnu.org/licenses/lgpl-2.1.txt
+static uint32_t crc_table[256];
 
-#define get16bits(d) (*((const uint16_t *) (d)))
-
-static uint32_t super_fast_hash(const char *data, unsigned len)
+void crc_table_init(void)
 {
-	uint32_t hash = len;
-	len >>= 2;
+	static atomic_flag done = ATOMIC_FLAG_INIT;
 
-	/* Main loop */
-	while(len--) {
-		hash  += get16bits(data);
-		uint32_t tmp = (get16bits(data + 2) << 11) ^ hash;
-		hash   = (hash << 16) ^ tmp;
-		data  += 2 * sizeof(uint16_t);
-		hash  += hash >> 11;
+	if(atomic_flag_test_and_set_explicit(&done, memory_order_relaxed))
+		return;
+
+	int k;
+	uint32_t c, n = 256;
+	while(n--) {
+		c = n;
+		k = 8;
+		while(k--) {
+			if (c & 1) {
+				c = 0xedb88320UL ^ (c >> 1);
+			} else {
+				c = c >> 1;
+			}
+		}
+		crc_table[n] = c;
 	}
+}
 
-	/* Force "avalanching" of final 127 bits */
-	hash ^= hash << 3;
-	hash += hash >> 5;
-	hash ^= hash << 4;
-	hash += hash >> 17;
-	hash ^= hash << 25;
-	hash += hash >> 6;
-
-	return hash;
+uint32_t crc_update(const uint64_t *buf, size_t n, uint32_t crc)
+{
+	uint32_t c = crc ^ 0xffffffffUL;
+	while (n--) {
+		unsigned k = 64;
+		do {
+			k -= 8;
+			c = crc_table[(c ^ (buf[n] >> k)) & 0xff] ^ (c >> 8);
+		} while(k);
+	}
+	return c ^ 0xffffffffUL;
 }

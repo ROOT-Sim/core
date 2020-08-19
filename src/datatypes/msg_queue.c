@@ -48,7 +48,7 @@ void msg_queue_fini(void)
 		while(j--) {
 			lp_msg *msg = heap_items(this_q->q)[j];
 			if(!(atomic_load_explicit(
-				&msg->flags, memory_order_relaxed) & MSG_FLAG_ANTI))
+				&msg->flags, memory_order_relaxed) & MSG_FLAG_PROCESSED))
 				msg_allocator_free(msg);
 		}
 		heap_fini(this_q->q);
@@ -60,7 +60,7 @@ void msg_queue_global_fini(void)
 	mm_free(queues);
 }
 
-void msg_queue_extract(void)
+lp_msg *msg_queue_extract(void)
 {
 	unsigned i = n_threads;
 	struct queue_t *bid_q = &mqueue(rid, rid);
@@ -81,16 +81,13 @@ void msg_queue_extract(void)
 
 	spin_lock(&bid_q->lck);
 
-	if(heap_count(bid_q->q)){
+	if(likely(heap_count(bid_q->q)))
 		msg = heap_extract(bid_q->q, msg_is_before);
-		spin_unlock(&bid_q->lck);
-		current_msg = msg;
-		current_lp = &lps[lp_id_to_lid(msg->dest)];
-	} else {
-		spin_unlock(&bid_q->lck);
-		current_msg = NULL;
-		current_lp = NULL;
-	}
+	else
+		msg = NULL;
+
+	spin_unlock(&bid_q->lck);
+	return msg;
 }
 
 simtime_t msg_queue_time_peek(void)
@@ -116,12 +113,13 @@ simtime_t msg_queue_time_peek(void)
 		}
 		spin_unlock(&this_q->lck);
 	}
+
 	return t_min;
 }
 
 void msg_queue_insert(lp_msg *msg)
 {
-	unsigned dest_rid = lid_to_rid[lp_id_to_lid(msg->dest)];
+	unsigned dest_rid = lid_to_rid[msg->dest];
 	struct queue_t *this_q = &mqueue(rid, dest_rid);
 	spin_lock(&this_q->lck);
 	heap_insert(this_q->q, msg_is_before, msg);

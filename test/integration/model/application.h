@@ -1,7 +1,7 @@
+#pragma once
+
 #include <NeuRome.h>
-
 #include <test_rng.h>
-
 #include <memory.h>
 
 #define MAX_BUFFERS 256
@@ -31,6 +31,7 @@ typedef struct _lp_state_type {
 } lp_state_t;
 
 buffer* get_buffer(buffer *head, unsigned i);
-uint32_t read_buffer(buffer *head, unsigned i);
+uint32_t read_buffer(buffer *head, unsigned i, uint32_t old_crc);
 buffer* allocate_buffer(lp_state_t *state, const unsigned *data, unsigned count);
 buffer* deallocate_buffer(buffer *head, unsigned i);
+void crc_table_init(void);

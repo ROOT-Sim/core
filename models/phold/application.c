@@ -1,7 +1,8 @@
 #include "NeuRome.h"
 
-void ProcessEvent(unsigned me, simtime_t now, unsigned event_type,
-	const void *content, unsigned size, unsigned *state){
+void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
+	const void *content, unsigned size, unsigned *state)
+{
 	(void)me;
 	(void)content;
 	(void)size;
@@ -22,7 +23,8 @@ void ProcessEvent(unsigned me, simtime_t now, unsigned event_type,
 	ScheduleNewEvent(Random() * n_lps, now + Random() * 5.0, 1, NULL, 0);
 }
 
-bool CanEnd(unsigned me, const unsigned *state){
+bool CanEnd(lp_id_t me, const unsigned *state)
+{
 	(void)me;
 	return *state > 1000;
 }

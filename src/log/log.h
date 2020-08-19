@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 #ifndef LOG_LEVEL
 #define LOG_LEVEL LOG_TRACE
 #endif
@@ -33,7 +35,3 @@ extern _Bool log_colored;
 void _log_log(int level, const char *file, unsigned line, const char *fmt, ...);
 
 void log_logo_print(void);
-
-#ifndef NEUROME_LOG_INTERNAL
-#pragma GCC poison _log_log
-#endif

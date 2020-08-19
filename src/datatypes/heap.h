@@ -33,13 +33,13 @@ __extension__({								\
 	__typeof(*array_items(self)) __ret_h = array_items(self)[0];	\
 	__typeof(*array_items(self)) __last_h = array_pop(self);	\
 	__typeof(array_count(self)) __i_h = 1U;				\
-	while (__i_h < array_count(self)){				\
+	while (__i_h < array_count(self)) {				\
 		__i_h += __i_h + 1 < array_count(self) &&		\
 			cmp_f(						\
 				array_items(self)[__i_h + 1U],		\
 				array_items(self)[__i_h]		\
 			);						\
-		if (!cmp_f(array_items(self)[__i_h], __last_h)){	\
+		if (!cmp_f(array_items(self)[__i_h], __last_h)) {	\
 			break;						\
 		}							\
 		array_items(self)[(__i_h - 1U) / 2U] =			\

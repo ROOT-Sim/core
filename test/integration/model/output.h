@@ -1,3 +1,3 @@
 #pragma once
 
-extern const char expected_output[686];
+extern const char expected_output[679];

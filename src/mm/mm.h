@@ -5,77 +5,59 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-extern void *__real_malloc(size_t mem_size);
-extern void *__real_realloc(void *ptr, size_t mem_size);
-extern void __real_free(void *ptr);
+#ifdef NEUROME_SERIAL
 
 #define __mm_alloc malloc
 #define __mm_realloc realloc
 #define __mm_free free
 
-#if defined(NEUROME_TEST)
+#else
 
-#define mm_alloc(mem_size) malloc(mem_size);
+extern void *__real_malloc(size_t mem_size);
+extern void *__real_realloc(void *ptr, size_t mem_size);
+extern void __real_free(void *ptr);
 
-#define mm_realloc(ptr, mem_size) realloc(ptr, mem_size)
+#define __mm_alloc __real_malloc
+#define __mm_realloc __real_realloc
+#define __mm_free __real_free
 
-#define mm_free(ptr) free(ptr)
+#endif
 
-#elif defined(NEUROME_SERIAL)
+#ifdef NEUROME_TEST
 
-#define mm_alloc(mem_size) 				\
-__extension__({						\
-	size_t __m_size = mem_size;			\
-	void *__ret = __mm_alloc(__m_size);		\
-	if(unlikely((__m_size) != 0 && !__ret)){	\
-		log_log(LOG_FATAL, "Out of memory!");	\
-		abort();				\
-	}						\
-	__ret;						\
-})
-
-#define mm_realloc(ptr, mem_size) 			\
-__extension__({						\
-	size_t __m_size = mem_size;			\
-	void *__ret = __mm_realloc(ptr, __m_size);	\
-	if(unlikely((__m_size) != 0 && !__ret)){	\
-		log_log(LOG_FATAL, "Out of memory!");	\
-		abort();				\
-	}						\
-	__ret;						\
-})
-
-#define mm_free(ptr) __mm_free(ptr)
-
-#pragma GCC poison malloc realloc free
+#define mm_alloc malloc
+#define mm_realloc realloc
+#define mm_free free
 
 #else
 
-// todo improve the abortion mechanism or even try to recover
-#define mm_alloc(mem_size) 				\
-__extension__({						\
-	size_t __m_size = mem_size;			\
-	void *__ret = __real_malloc(__m_size);		\
-	if (unlikely((__m_size) != 0 && !__ret)){	\
-		log_log(LOG_FATAL, "Out of memory!");	\
-		abort();				\
-	}						\
-	__ret;						\
-})
-
-#define mm_realloc(ptr, mem_size) 			\
-__extension__({						\
-	size_t __m_size = mem_size;			\
-	void *__ret = __real_realloc(ptr, __m_size);	\
-	if (unlikely((__m_size) != 0 && !__ret)){	\
-		log_log(LOG_FATAL, "Out of memory!");	\
-		abort();				\
-	}						\
-	__ret;						\
-})
-
-#define mm_free(ptr) __real_free(ptr)
-
 #pragma GCC poison malloc realloc free
+
+inline void *mm_alloc(size_t mem_size)
+{
+	void *ret = __mm_alloc(mem_size);
+
+	if (__builtin_expect(mem_size && !ret, 0)) {
+		log_log(LOG_FATAL, "Out of memory!");
+		abort();
+	}
+	return ret;
+}
+
+inline void *mm_realloc(void *ptr, size_t mem_size)
+{
+	void *ret = __mm_realloc(ptr, mem_size);
+
+	if(__builtin_expect(mem_size && !ret, 0)) {
+		log_log(LOG_FATAL, "Out of memory!");
+		abort();
+	}
+	return ret;
+}
+
+inline void mm_free(void *ptr)
+{
+	__mm_free(ptr);
+}
 
 #endif

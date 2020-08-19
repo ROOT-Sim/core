@@ -4,6 +4,7 @@
 #include <datatypes/msg_queue.h>
 #include <lp/lp.h>
 
+#include <memory.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -17,8 +18,6 @@ static lp_struct lps_m[THREAD_CNT];
 static atomic_uint msg_missing = THREAD_REPS * THREAD_CNT;
 static atomic_uint msg_to_free = THREAD_CNT;
 
-__thread lp_msg *current_msg;
-__thread lp_struct *current_lp;
 unsigned *lid_to_rid = lid_to_rid_m;
 lp_struct *lps = lps_m;
 
@@ -64,14 +63,12 @@ static int msg_queue_test(void)
 
 	lp_msg *msg;
 	simtime_t last_time = 0.0;
-	msg_queue_extract();
 
-	while((msg = current_msg)){
+	while((msg = msg_queue_extract())){
 		if(msg->dest_t < last_time)
 			--ret;
 		last_time = msg->dest_t;
 		free(msg);
-		msg_queue_extract();
 		atomic_fetch_sub_explicit(&msg_missing, 1U, memory_order_relaxed);
 	}
 

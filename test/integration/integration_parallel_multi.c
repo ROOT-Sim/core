@@ -7,8 +7,6 @@
 static const char *test_arguments[] = {
 	"--lp",
 	"64",
-	"--wt",
-	"2",
 	NULL
 };
 

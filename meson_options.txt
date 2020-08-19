@@ -1,0 +1,4 @@
+option('memory_allocator', type : 'combo', choices : ['buddy', 'minimal'], value : 'buddy', description :
+  'selects the memory allocator')
+option('incremental_state_saving', type : 'feature', value : 'disabled', description : '')
+option('mpi', type : 'feature', value : 'auto', description : '')

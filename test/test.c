@@ -10,8 +10,9 @@ static pthread_barrier_t t_barrier;
 static char **test_argv;
 static char *test_output;
 
-__attribute__((weak)) unsigned n_nodes = 1;
-__attribute__((weak)) unsigned n_threads;
+__attribute__((weak)) lp_id_t n_lps;
+__attribute__((weak)) nid_t n_nodes = 1;
+__attribute__((weak)) rid_t n_threads;
 __attribute__((weak)) nid_t nid;
 __attribute__((weak)) __thread rid_t rid;
 
@@ -39,8 +40,6 @@ void test_free(void *ptr)
 		free(ptr);
 }
 
-int __real_main(int argc, char **argv);
-
 static void* test_run_stub(void* arg)
 {
 	struct stub_arguments *args = arg;
@@ -49,34 +48,46 @@ static void* test_run_stub(void* arg)
 	return (void *)(intptr_t)ret;
 }
 
-__attribute__((weak)) int main(int argc, char **argv)
+int __real_main(int argc, char **argv);
+int __attribute__((weak, alias ("test_main"))) main(int argc, char **argv);
+
+int test_main(int argc, char **argv)
 {
 	(void)argc; (void)argv;
 	int ret = 0;
 	pthread_t threads[test_config.threads_count];
 	struct stub_arguments args[test_config.threads_count];
 
-	if(test_config.test_init_fnc && (ret = test_config.test_init_fnc()))
+	if(test_config.test_init_fnc && (ret = test_config.test_init_fnc())){
+		printf("Test initialization failed with code %d\n", ret);
 		return ret;
+	}
 
 	for(unsigned i = 0; i < test_config.threads_count; ++i){
 		args[i].test_fnc = test_config.test_fnc;
 		args[i].tid = i;
-		pthread_create(&threads[i], NULL, test_run_stub, &args[i]);
+		if(pthread_create(&threads[i], NULL, test_run_stub, &args[i])) {
+			return TEST_BAD_FAIL_EXIT_CODE;
+		}
 	}
 
 	for(unsigned i = 0; i < test_config.threads_count; ++i){
-		void* ret_r = NULL;
-		pthread_join(threads[i], &ret_r);
-		if((intptr_t)ret_r < ret)
-			ret = (int)(intptr_t)ret_r;
+		void *ret_tv = NULL;
+		if(pthread_join(threads[i], &ret_tv)) {
+			return TEST_BAD_FAIL_EXIT_CODE;
+		}
+		if((ret = (intptr_t)ret_tv)) {
+			printf("Thread %u failed the test with code %d\n", i, ret);
+			return ret;
+		}
 	}
 
-	if(test_config.test_fini_fnc){
-		int aux = test_config.test_fini_fnc();
-		ret = ret < aux ? ret : aux;
+	if(test_config.test_fini_fnc && (ret = test_config.test_fini_fnc())){
+		printf("Test finalization failed with code %d\n", ret);
+		return ret;
 	}
-	return ret;
+
+	return 0;
 }
 
 static int init_arguments(int *argc_p, char ***argv_p)
@@ -141,7 +152,7 @@ int __wrap_main(void)
 		return TEST_BAD_FAIL_EXIT_CODE;
 
 	int test_ret = __real_main(test_argc, test_argv);
-	if(test_ret < 0){
+	if(test_ret){
 		return test_ret;
 	}
 
@@ -153,7 +164,9 @@ int __wrap_main(void)
 			memcmp(test_output, test_config.expected_output, test_output_size)
 		)
 	){
-		return -1;
+		printf("Test failed: output is different from the expected one\n");
+		printf("%s", test_output);
+		return 1;
 	}
 
 	printf("Successfully run %s test\n", test_config.test_name);

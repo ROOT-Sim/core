@@ -69,7 +69,7 @@ __extension__({								\
 	array_count(self)++;						\
 })
 
-#define array_lazy_remove_at(self, i)					\
+#define array_remove_at_lazy(self, i)					\
 __extension__({								\
 	__typeof__(*array_items(self)) __rmval;				\
 	array_count(self)--;						\

@@ -28,12 +28,6 @@ static int gvt_test_init(void)
 	return 0;
 }
 
-static int gvt_test_fini(void)
-{
-	gvt_global_fini();
-	return 0;
-}
-
 static int gvt_test(void)
 {
 	int ret = 0;
@@ -54,7 +48,6 @@ const struct _test_config_t test_config = {
 	.test_name = "gvt",
 	.threads_count = N_THREADS,
 	.test_init_fnc = gvt_test_init,
-	.test_fini_fnc = gvt_test_fini,
 	.test_fnc = gvt_test
 };
 

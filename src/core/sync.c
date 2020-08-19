@@ -31,6 +31,7 @@ bool sync_thread_barrier(void)
 	} else {
 		while (i > cr) {
 			cr = atomic_load_explicit (&barr_cr, memory_order_relaxed);
+			spin_pause();
 		}
 	}
 	atomic_thread_fence(memory_order_acquire);

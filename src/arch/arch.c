@@ -11,22 +11,13 @@
 
 static pthread_t *ptids;
 
-void arch_signal_ignore(void)
+static void signal_mask_set(bool ignore_sigint)
 {
 	sigset_t mask, old_mask;
 	sigemptyset(&mask);
-	sigaddset(&mask, SIGINT);
+	if (ignore_sigint)
+		sigaddset(&mask, SIGINT);
 	pthread_sigmask(SIG_BLOCK, &mask, &old_mask);
-}
-
-bool arch_signal_want_end(void)
-{
-	struct timespec timeout = { .tv_sec = 0, .tv_nsec = 0 };
-	sigset_t mask;
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGINT);
-
-	return sigtimedwait(&mask, NULL, &timeout) == SIGINT;
 }
 
 unsigned arch_core_count(void)
@@ -46,6 +37,8 @@ void arch_thread_create(
 	pthread_attr_t t_attr;
 	pthread_attr_init(&t_attr);
 
+	signal_mask_set(true);
+
 	while(t_cnt--){
 		cpu_set_t c_set;
 
@@ -60,6 +53,8 @@ void arch_thread_create(
 	}
 
 	pthread_attr_destroy(&t_attr);
+
+	signal_mask_set(false);
 }
 
 void arch_thread_wait(unsigned t_cnt)

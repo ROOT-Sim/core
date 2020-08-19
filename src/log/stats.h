@@ -13,5 +13,5 @@ enum stats_time_t {
 
 extern void stats_time_start(enum stats_time_t this_stat);
 extern void stats_time_take(enum stats_time_t this_stat);
-extern void stats_progress_print(void);
+extern void stats_progress_print(simtime_t current_gvt);
 extern void stats_dump(void);

@@ -68,7 +68,7 @@ void stats_dump(void)
 }
 
 #ifndef NEUROME_SERIAL
-void stats_progress_print(void)
+void stats_progress_print(simtime_t current_gvt)
 {
 	if(!rid){
 		printf("\rVirtual time: %lf", current_gvt);

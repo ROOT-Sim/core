@@ -4,8 +4,8 @@
 #include <string.h>
 #include <sys/wait.h>
 
-#ifndef CC_CMD
-#define CC_CMD "/usr/bin/gcc"
+#ifndef NEUROME_CC
+#define NEUROME_CC "/usr/bin/mpicc"
 #endif
 
 #ifndef NEUROME_LIB_DIR
@@ -16,16 +16,16 @@
 #define NEUROME_INC_DIR "/usr/include/"
 #endif
 
-static const char *add_args_serial = {
+static const char *add_args_serial =
 	"-o "
 	"model_serial "
 	"-O3 "
 	"-I"NEUROME_INC_DIR" "
 	NEUROME_LIB_DIR"libneurome-serial.a "
 	"-lm"
-};
+;
 
-static const char *add_args_parallel = {
+static const char *add_args_parallel =
 	"-o "
 	"model_parallel "
 	"-O3 "
@@ -33,12 +33,16 @@ static const char *add_args_parallel = {
 	NEUROME_LIB_DIR"libneurome-parallel.a "
 	"-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc "
 	"-lpthread "
-	"-lm"
-};
+	"-lm "
+#ifdef NEUROME_INCREMENTAL
+//	"-Xclang -load "
+//	"-Xclang "NEUROME_LIB_DIR"libneurome-llvm.so"
+#endif
+;
 
 static int child_proc(int argc, char **argv, const char *add_args)
 {
-	size_t tot_size = strlen(CC_CMD) + argc + strlen(add_args) + 1;
+	size_t tot_size = strlen(NEUROME_CC) + argc + strlen(add_args) + 1;
 	unsigned i = 1;
 	while(argv[i]){
 		tot_size += strlen(argv[i]);
@@ -52,8 +56,8 @@ static int child_proc(int argc, char **argv, const char *add_args)
 	}
 
 	char *ptr = cmd_line;
-	strcpy(ptr, CC_CMD);
-	ptr += strlen(CC_CMD);
+	strcpy(ptr, NEUROME_CC);
+	ptr += strlen(NEUROME_CC);
 	*ptr = ' ';
 	++ptr;
 
@@ -69,9 +73,11 @@ static int child_proc(int argc, char **argv, const char *add_args)
 	strcpy(ptr, add_args);
 
 	if (system(cmd_line)) {
-		fprintf(stderr, "Unable to run " CC_CMD);
+		free(cmd_line);
+		fprintf(stderr, "Unable to run " NEUROME_CC);
 		return -1;
 	}
+	free(cmd_line);
 	return 0;
 }
 
