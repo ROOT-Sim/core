@@ -13,6 +13,7 @@ extern const struct argp lib_argp;
 struct lib_state_managed {
 	// random library
 	uint64_t rng_s[4];
+	double unif;
 	// todo remove
 	void *state_s;
 };

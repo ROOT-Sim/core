@@ -20,7 +20,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 		break;
 	}
 
-	ScheduleNewEvent(Random() * n_lps, now + Random() * 5.0, 1, NULL, 0);
+	ScheduleNewEvent(Random() * n_lps, now + Normal() * 5.0 + 20.0, 1, NULL, 0);
 }
 
 bool CanEnd(lp_id_t me, const unsigned *state)

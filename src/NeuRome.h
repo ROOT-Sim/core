@@ -24,6 +24,7 @@ extern void SetState(void *new_state);
 extern double Random(void);
 extern uint64_t RandomU64(void);
 extern double Expent(double mean);
+extern double Normal(void);
 
 enum _topology_geometry_t {
 	TOPOLOGY_HEXAGON,	//!< hexagonal grid topology

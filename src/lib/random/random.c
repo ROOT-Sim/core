@@ -11,7 +11,9 @@
 void random_lib_lp_init(void)
 {
 	uint64_t lid = current_lid;
-	random_init(l_s_m_p->rng_s, lid);
+	struct lib_state_managed *lsm = l_s_m_p;
+	random_init(lsm->rng_s, lid);
+	lsm->unif = NAN;
 }
 
 double Random(void)
@@ -48,3 +50,29 @@ double Expent(double mean)
 	}
 	return -mean * log(1 - Random());
 }
+
+double Normal(void)
+{
+	struct lib_state_managed *lsm = l_s_m_p;
+	if (isnan(lsm->unif)) {
+		double v1, v2, rsq;
+		do {
+			v1 = 2.0 * Random() - 1.0;
+			v2 = 2.0 * Random() - 1.0;
+			rsq = v1 * v1 + v2 * v2;
+		} while (rsq >= 1.0 || rsq == 0);
+
+		double fac = sqrt(-2.0 * log(rsq) / rsq);
+
+		// Perform Box-Muller transformation to get two normal deviates. Return one
+		// and save the other for next time.
+		lsm->unif = v1 * fac;
+		return v2 * fac;
+	} else {
+		// A deviate is already available
+		double ret = lsm->unif;
+		lsm->unif = NAN;
+		return ret;
+	}
+}
+

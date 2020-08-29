@@ -35,7 +35,7 @@ before_install:
 script:
   - export PATH=~/.local/bin:/usr/local/gcc8/bin/:$PATH
   - export GCOV=gcov-8
-  - env CC=gcc-8 meson build_dbg -Db_coverage=true -Dbuild_type=debug
+  - env CC=gcc-8 meson build_dbg -Db_coverage=true -Dbuildtype=debug
   - cd build_dbg
   - ninja
   - ninja test
