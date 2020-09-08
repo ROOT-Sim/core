@@ -1,0 +1,14 @@
+comment: no
+
+coverage:
+  range: 70..90
+
+  status:
+    project:
+      enabled: yes
+      target: auto
+      threshold: 3%
+
+    patch: no
+    changes: no
+
