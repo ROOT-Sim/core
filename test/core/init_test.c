@@ -47,6 +47,17 @@ char *args_gvt[] = {
 	NULL
 };
 
+char *args_termination[] = {
+	"init_test",
+	"--wt",
+	"2",
+	"--lp",
+	"64",
+	"--time",
+	"1437.23",
+	NULL
+};
+
 #define TEST_INIT(args_arr, cond) 					\
 __extension__({								\
 	init_args_parse(sizeof(args_arr) / sizeof(*(args_arr)) - 1,	\
@@ -60,7 +71,8 @@ int main(int argc, char **argv)
 	(void) argv;
 	TEST_INIT(args_lp_wt_1,
 		n_lps == 64 && n_threads == 2 && global_config.core_binding
-		&& global_config.gvt_period == 200000);
+		&& global_config.gvt_period == 200000
+		&& global_config.termination_time == SIMTIME_MAX);
 
 	TEST_INIT(args_lp_wt_2,
 		n_lps == 80 && n_threads == 1 && global_config.core_binding);
@@ -71,6 +83,12 @@ int main(int argc, char **argv)
 	TEST_INIT(args_gvt,
 		n_lps == 40 && n_threads == 10 && global_config.core_binding
 		&& global_config.gvt_period == 500000);
+
+	TEST_INIT(args_termination,
+		n_lps == 64 && n_threads == 2 && global_config.core_binding
+		&& global_config.gvt_period == 200000
+		&& global_config.termination_time == 1437.23);
+
 	return 0;
 }
 

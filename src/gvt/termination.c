@@ -1,5 +1,6 @@
 #include <gvt/termination.h>
 
+#include <core/init.h>
 #include <distributed/mpi.h>
 #include <gvt/gvt.h>
 #include <lp/lp.h>
@@ -41,8 +42,8 @@ void termination_on_ctrl_msg(void)
 
 void termination_on_gvt(simtime_t current_gvt)
 {
-	if(unlikely(max_t < current_gvt &&
-		(!lps_to_end || current_gvt == SIMTIME_MAX))){
+	if (unlikely((max_t < current_gvt && !lps_to_end) ||
+			current_gvt >= global_config.termination_time)) {
 		max_t = SIMTIME_MAX;
 		unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U,
 			memory_order_relaxed) - 1;

@@ -20,9 +20,10 @@ enum _opt_codes{
 	OPT_NPRC,
 	OPT_LOG,
 	OPT_CLOG,
+	OPT_SIMT,
+	OPT_GVT,
 #ifndef NEUROME_SERIAL
 	OPT_NP,
-	OPT_GVT,
 	OPT_BIND,
 #endif
 	OPT_LAST
@@ -46,9 +47,10 @@ static const struct argp_option argp_options[] = {
 	{"lp", 		OPT_NPRC, "VALUE", 	0, "Total number of Logical Processes being launched at simulation startup", 0},
 	{"log-level", 	OPT_LOG, "TYPE",	0, "Logging level", 0},
 	{"verbose", 	OPT_LOG, "TYPE",	OPTION_ALIAS, NULL, 0},
+	{"time", 	OPT_SIMT, "VALUE",	0, "Logical time at which the simulation will be considered completed", 0},
+	{"gvt-period", 	OPT_GVT, "VALUE",	0, "Time between two GVT reductions (in milliseconds)", 0},
 #ifndef NEUROME_SERIAL
 	{"wt", 		OPT_NP, "VALUE",	0, "Number of total cores being used by the simulation", 0},
-	{"gvt-period", 	OPT_GVT, "VALUE",	0, "Time between two GVT reductions (in milliseconds)", 0},
 	{"no-bind", 	OPT_BIND, NULL,		0, "Disables thread to core binding", 0},
 #endif
 	{0}
@@ -76,6 +78,21 @@ static void print_config(void)
 		__value;						\
 	})
 
+#define parse_ldouble_limits(low, high)					\
+	__extension__({							\
+		long double __value;					\
+		char *__endptr;						\
+		__value = strtold(arg, &__endptr);			\
+		if(							\
+			*arg == '\0' 		||			\
+			*__endptr != '\0' 	||			\
+			__value < low 		||			\
+			__value > high) {				\
+			malformed_option_failure();			\
+		}							\
+		__value;						\
+	})
+
 static error_t parse_opt (int key, char *arg, struct argp_state *state)
 {
 	switch (key) {
@@ -88,13 +105,18 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 		// TODO
 		break;
 
-#ifndef NEUROME_SERIAL
-	case OPT_NP:
-		n_threads = parse_ullong_limits(1, UINT_MAX);
+	case OPT_SIMT:
+		global_config.termination_time = parse_ldouble_limits(0,
+			SIMTIME_MAX);
 		break;
 
 	case OPT_GVT:
 		global_config.gvt_period = parse_ullong_limits(1, 10000) * 1000;
+		break;
+
+#ifndef NEUROME_SERIAL
+	case OPT_NP:
+		n_threads = parse_ullong_limits(1, UINT_MAX);
 		break;
 
 	case OPT_BIND:
@@ -106,9 +128,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 		memset(&global_config, 0, sizeof(global_config));
 #ifndef NEUROME_SERIAL
 		n_threads = arch_core_count();
-		global_config.gvt_period = 200000;
 		global_config.core_binding = true;
 #endif
+		global_config.gvt_period = 200000;
+		global_config.termination_time = SIMTIME_MAX;
 		log_colored = isatty(STDERR_FILENO);
 		// Store the predefined values, before reading any overriding one
 		// TODO

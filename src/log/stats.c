@@ -48,7 +48,8 @@ void stats_time_take(enum stats_time_t this_stat)
 
 	if(s_info->count){
 		const int64_t num = (t * s_info->count - s_info->sum_t);
-		s_info->var_t += (num * num) / (s_info->count * (s_info->count + 1));
+		s_info->var_t += (num * num) / (s_info->count *
+			(s_info->count + 1));
 	}
 
 	s_info->sum_t += t;

@@ -4,7 +4,9 @@
 #include <core/core.h>
 #include <core/init.h>
 #include <core/timer.h>
+#include <datatypes/heap.h>
 #include <log/stats.h>
+#include <lp/msg.h>
 #include <mm/msg_allocator.h>
 
 struct serial_lp *lps;
@@ -22,7 +24,7 @@ static void serial_simulation_init(void)
 
 	lib_global_init();
 
-	for(uint64_t i = 0; i < n_lps; ++i){
+	for (uint64_t i = 0; i < n_lps; ++i) {
 		cur_lp = &lps[i];
 		lib_lp_init();
 #if LOG_DEBUG >= LOG_LEVEL
@@ -34,13 +36,13 @@ static void serial_simulation_init(void)
 
 static void serial_simulation_fini(void)
 {
-	for(uint64_t i = 0; i < n_lps; ++i){
+	for (uint64_t i = 0; i < n_lps; ++i) {
 		cur_lp = &lps[i];
 		ProcessEvent(i, 0, UINT_MAX, NULL, 0, lps[i].lsm.state_s);
 		lib_lp_fini();
 	}
 
-	for(array_count_t i = 0; i < array_count(queue); ++i){
+	for (array_count_t i = 0; i < array_count(queue); ++i) {
 		msg_allocator_free(array_get_at(queue, i));
 	}
 
@@ -88,18 +90,20 @@ void serial_simulation_run(void)
 
 		stats_time_take(STATS_MSG_PROCESSED);
 
-		if(can_end != cur_lp->terminating) {
+		if (can_end != cur_lp->terminating) {
 			cur_lp->terminating = can_end;
 			to_terminate += 1 - ((int)can_end * 2);
 
-			if(unlikely(can_end && !to_terminate)) {
+			if (unlikely(!to_terminate))
 				break;
-			}
 		}
 
-		if(200000 <= timer_value(last_vt)){
+		if (global_config.gvt_period <= timer_value(last_vt)) {
 			printf("\rVirtual time: %lf", cur_msg->dest_t);
 			fflush(stdout);
+			if (unlikely(cur_msg->dest_t >=
+				global_config.termination_time))
+				break;
 			last_vt = timer_new();
 		}
 

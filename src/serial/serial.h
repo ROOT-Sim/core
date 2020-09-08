@@ -1,9 +1,7 @@
 #pragma once
 
 #include <core/core.h>
-#include <datatypes/heap.h>
 #include <lib/lib.h>
-#include <lp/msg.h>
 
 struct serial_lp {
 	struct lib_state ls;
