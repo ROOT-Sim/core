@@ -74,11 +74,15 @@ enum _msg_colours {
  * using the enum @ref _msg_colours.
  */
 #define is_red_colour(c) ( (bool) (c & 0x1) )
+<<<<<<< HEAD
 
 /// Tells whether the current thread is in red phase
 #define in_red_phase() ( is_red_colour(threads_phase_colour[local_tid]) )
 
 /// Tells what is the next colour, using simple arithmetics
+=======
+#define in_red_phase() ( is_red_colour(threads_phase_colour[tid]) )
+>>>>>>> origin/power
 #define next_colour(c) ( ((c)+1) & 0x3 )
 
 extern phase_colour *threads_phase_colour;

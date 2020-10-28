@@ -38,6 +38,7 @@
 #include <arch/thread.h>
 #include <arch/atomic.h>
 #include <core/init.h>
+<<<<<<< HEAD
 #include <mm/mm.h>
 #include <src/scheduler/scheduler.h>
 
@@ -50,6 +51,10 @@
  * we don't care at all.
  */
 tid_t os_tid;
+=======
+#include <mm/dymelor.h>
+#include <scheduler/scheduler.h>
+>>>>>>> origin/power
 
 
 /**
@@ -61,6 +66,7 @@ tid_t os_tid;
  *       go away.
  */
 __thread unsigned int tid;
+<<<<<<< HEAD
 
 
 /**
@@ -73,8 +79,11 @@ __thread unsigned int tid;
  *       go away.
  */
 __thread unsigned int local_tid;
+=======
+>>>>>>> origin/power
 
 
+<<<<<<< HEAD
 /**
  * The thread counter is a global variable which is incremented atomically
  * to assign a unique thread ID. Each spawned thread will compete using a
@@ -85,6 +94,8 @@ __thread unsigned int local_tid;
  */
 static volatile unsigned int thread_counter = 0;
 
+=======
+>>>>>>> origin/power
 /// Thread Control Blocks
 Thread_State **Threads;
 
@@ -110,7 +121,7 @@ static void *__helper_create_thread(void *arg)
 
 	struct _helper_thread *real_arg = (struct _helper_thread *)arg;
 
-	// Get a unique local thread id...
+	// Uniquely pick a TCB across the ones which have been previously created
 	unsigned int old_counter;
 	unsigned int _local_tid;
 
@@ -121,11 +132,22 @@ static void *__helper_create_thread(void *arg)
 			break;
 		}
 	}
+<<<<<<< HEAD
 	local_tid = _local_tid;
 
 	// ...and make it globally unique
 	tid = to_global_tid(kid, _local_tid);
 
+=======
+
+	// I'm the _local_tid-th thread
+	tid = Threads[_local_tid]->tid;
+
+	// Set the affinity on a CPU core, for increased performance
+	if(rootsim_config.core_binding)
+		set_affinity(tid);
+
+>>>>>>> origin/power
 	// Now get into the real thread's entry point
 	real_arg->start_routine(real_arg->arg);
 
@@ -134,6 +156,12 @@ static void *__helper_create_thread(void *arg)
 	return NULL;
 }
 
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> origin/power
 /**
 * This function creates n threads, all having the same entry point and
 * the same arguments.
@@ -171,6 +199,11 @@ void create_threads(unsigned short int n, void *(*start_routine)(void *), void *
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> origin/power
 /**
 * This function initializes a thread barrier. If more than the hereby specified
 * number of threads try to synchronize on the barrier, the behaviour is undefined.
@@ -357,5 +390,85 @@ void threads_init(void) {
 
 
 
+<<<<<<< HEAD
 =======
 >>>>>>> origin/atomic
+=======
+void threads_init(void) {
+	unsigned int i;
+	unsigned int curr_ct = 0;
+
+	// Check if we have enough threads to run an asymmetric simulation
+	if(rootsim_config.num_controllers > n_cores / 2) {
+		fprintf(stderr, "Running with %d threads, asked for %d controllers: there won't be enough PTs!\n", n_cores, rootsim_config.num_controllers);
+		exit(EXIT_FAILURE);
+	}
+
+	// Initialize Thread Control Blocks
+	Threads = rsalloc(sizeof(Thread_State *) * n_cores);
+	bzero(Threads, sizeof(Thread_State *) * n_cores);
+
+	for(i = 0; i < n_cores; i++) {
+		Threads[i] = rsalloc(sizeof(Thread_State));
+		bzero(Threads[i], sizeof(Thread_State));
+
+		// TODO: we should find a new way to orchestrate symmetric, controlling, and processing threads altogether!
+		if(rootsim_config.num_controllers == 0)
+			Threads[i]->incarnation = THREAD_SYMMETRIC;
+		else if(i < rootsim_config.num_controllers)
+			Threads[i]->incarnation = THREAD_CONTROLLER;
+		else
+			Threads[i]->incarnation = THREAD_PROCESSING;
+
+		// Initialize thread ports
+		Threads[i]->input_port[PORT_PRIO_HI] = init_channel();
+		Threads[i]->input_port[PORT_PRIO_LO] = init_channel();
+		Threads[i]->output_port = init_channel();
+		Threads[i]->port_batch_size = PORT_START_BATCH_SIZE;
+
+		// Initialize curr_scheduled_events
+		Threads[i]->curr_scheduled_events = rsalloc(sizeof(int)*n_prc);	
+				
+		// Initialize heap data structure used by controllers.
+		// We can initialize it for all threads with a minor cost since 
+		// it actually allocs memory to store data on first push
+		Threads[i]->events_heap = rsalloc(sizeof(heap_t));
+		Threads[i]->events_heap->size = 0; 
+		Threads[i]->events_heap->len = 0;
+
+		// Initialize the pointer of possible PTs for this thread
+		Threads[i]->num_PTs = 0;
+		if(n_cores - rootsim_config.num_controllers > 0) {
+			Threads[i]->PTs = rsalloc(sizeof(Thread_State *) * (n_cores - rootsim_config.num_controllers));
+		} else {
+			Threads[i]->PTs = NULL;
+		}
+
+		// This TCB is associated with a certain tid and global_tid.
+		// The actual thread which will take this tid depends on the race
+		// threads make upon their creation.
+		Threads[i]->tid = i;
+		Threads[i]->global_tid = to_global_tid(kid, i);
+
+	}
+
+	// In this second run, we mutually assing PTs to CTs and vice versa (we loop over PTs)
+	if(rootsim_config.num_controllers > 0) {
+		for(i = rootsim_config.num_controllers; i < n_cores; i++) {
+			Threads[i]->CT = Threads[curr_ct];
+			Threads[curr_ct]->PTs[Threads[curr_ct]->num_PTs] = Threads[i];
+
+			printf("PT %d sees as its CT: %d\n", Threads[i]->tid, Threads[i]->CT->tid);
+			printf("CT %d has got a new PT: %d\n", Threads[curr_ct]->tid, Threads[curr_ct]->PTs[Threads[curr_ct]->num_PTs]->tid); 
+
+			Threads[curr_ct]->num_PTs++;
+			curr_ct = (curr_ct + 1) % rootsim_config.num_controllers;
+		}
+		
+		// Alloc and set to zero the idle_microseconds array. Should be moved to statistics
+		total_idle_microseconds = rsalloc(sizeof(long)*n_cores); 
+		bzero(total_idle_microseconds, sizeof(long)*n_cores);
+	}
+}
+
+>>>>>>> origin/power

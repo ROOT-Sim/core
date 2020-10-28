@@ -96,6 +96,13 @@ enum _control_msgs {
 	RENDEZVOUS_ROLLBACK,
 	RENDEZVOUS_GET_PAGE,
 	RENDEZVOUS_GET_PAGE_ACK,
+<<<<<<< HEAD
+=======
+	RENDEZVOUS_PAGE_WRITE_BACK,
+	ASYM_ROLLBACK_NOTICE,
+	ASYM_ROLLBACK_BUBBLE,
+	ASYM_ROLLBACK_ACK,
+>>>>>>> origin/power
 	MAX_VALUE_CONTROL
 >>>>>>> origin/ecs
 };
@@ -195,6 +202,7 @@ typedef struct _outgoing_t {
 extern void ParallelScheduleNewEvent(unsigned int, simtime_t, unsigned int, void *, unsigned int);
 extern void communication_init(void);
 extern void communication_fini(void);
+<<<<<<< HEAD
 extern void Send(msg_t * msg);
 extern void insert_outgoing_msg(msg_t * msg);
 extern void send_outgoing_msgs(struct lp_struct *);
@@ -212,6 +220,37 @@ extern void hdr_to_msg(msg_hdr_t * hdr, msg_t * msg);
 extern void msg_release(msg_t * msg);
 extern void dump_msg_content(msg_t * msg);
 
+=======
+extern int comm_finalize(void);
+extern void Send(msg_t *msg);
+extern simtime_t receive_time_barrier(simtime_t max);
+extern int messages_checking(void);
+extern void insert_outgoing_msg(msg_t *msg);
+extern void send_outgoing_msgs(LID_t);
+extern void asym_send_outgoing_msgs(LID_t);
+extern void asym_extract_generated_msgs(void);
+extern void send_antimessages(LID_t, simtime_t);
+extern void communication_fini_thread(void);
+extern void communication_init_thread(void);
+
+/* In window.c */
+extern void windows_init(void);
+extern void register_msg(msg_t *msg);
+extern void receive_ack(void);
+extern void send_forced_ack(void);
+extern simtime_t local_min_timestamp(void);
+extern void start_ack_timer(void);
+
+
+extern void msg_hdr_release(msg_hdr_t *msg);
+extern msg_t *get_msg_from_slab(void);
+extern msg_hdr_t *get_msg_hdr_from_slab(void);
+extern void pack_msg(msg_t **msg, GID_t sender, GID_t receiver, int type, simtime_t timestamp, simtime_t send_time, size_t size, void *payload);
+extern void msg_to_hdr(msg_hdr_t *hdr, msg_t *msg);
+extern void hdr_to_msg(msg_hdr_t *hdr, msg_t *msg);
+extern void msg_release(msg_t *msg);
+extern void dump_msg_content(msg_t *msg);
+>>>>>>> origin/power
 
 #ifndef NDEBUG
 extern void validate_msg(msg_t * msg);

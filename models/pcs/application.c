@@ -284,9 +284,14 @@ void ProcessEvent(unsigned int curr_lp, simtime_t event_ts, int event_type, even
 				ScheduleNewEvent(me, handoff_time, HANDOFF_LEAVE, &new_event_content, sizeof(new_event_content));
 			}
 
+<<<<<<< HEAD
 =======
 				if(shortcut || new_event_content.call_term_time < handoff_time) {
 					ScheduleNewEvent(curr_lp, new_event_content.call_term_time, END_CALL, &new_event_content, sizeof(new_event_content));
+=======
+				if(1 || new_event_content.call_term_time < handoff_time) {
+					ScheduleNewEvent(me, new_event_content.call_term_time, END_CALL, &new_event_content, sizeof(new_event_content));
+>>>>>>> origin/power
 				} else {
 					new_event_content.cell = FindReceiver();
 					ScheduleNewEvent(curr_lp, handoff_time, HANDOFF_LEAVE, &new_event_content, sizeof(new_event_content));

@@ -369,6 +369,73 @@ ac_system_map=no
 
 if test "x$ac_on_linux" = "xyes"
 then
+<<<<<<< HEAD
+=======
+
+	# If our libtimestretch library is installed, then we can use Preemptive Time Warp
+	AC_CHECK_LIB(timestretch, ts_start, [libtimestretch=yes], [libtimestretch=no])
+	if test "x$libtimestretch" = "xyes" -a "x$enable_ult" != "xno"
+	then
+			#
+			# We have found everything that we need, but the user can disable the subsystem
+			#
+
+		AC_ARG_ENABLE([preemption],
+		AS_HELP_STRING([--disable-preemption], [Disable Preemptive Time Warp)]))
+
+		AS_IF([test "x$enable_preemption" != "xno"], [
+			AC_DEFINE([HAVE_PREEMPTION])
+			ac_have_preemption=yes
+			CFLAGS="$CFLAGS -ltimestretch"
+		])
+	fi
+
+	# If we are on a NUMA system, try to use the NUMA subsystem
+	AC_CHECK_LIB(numa, numa_num_possible_nodes, [numa_cv_libnuma=yes], [numa_cv_libnuma=no])
+	AC_CHECK_HEADER(numa.h, [numa_cv_numa_h=yes], [numa_cv_numa_h=no])
+	AC_CHECK_PROG([numactl],[numactl],[yes],[no])
+
+	if test "x$numa_cv_libnuma" = "xyes" -a "x$numa_cv_numa_h" = "xyes" -a "x$numactl" = "xyes" -a "x$ac_have_parallel_allocator" = "xyes"
+	then
+			#
+			# We have found everything that we need, but the user can disable the subsystem
+			#
+
+		AC_ARG_ENABLE([numa],
+		AS_HELP_STRING([--disable-numa], [Disable NUMA subsystem on NUMA machines]))
+
+		AS_IF([test "x$enable_numa" != "xno"], [
+			AC_DEFINE([HAVE_NUMA])
+			ac_have_numa=yes
+			CFLAGS="$CFLAGS -lnuma"
+		])
+	fi
+
+	# Power Management Subsystem Configuration
+	ac_power_management=yes
+	AC_CHECK_FILE("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",, [ac_power_management=no])
+	AC_CHECK_FILE("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies",, [ac_power_management=no])
+	AC_CHECK_FILE("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed",, [ac_power_management=no])
+	AC_CHECK_FILE("/sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj",, [ac_power_management=no])
+
+	if test "x$ac_power_management" = "xyes"
+	then
+		#
+		# We have found everything that we need, but the user can disable the subsystem
+		#
+
+		AC_ARG_ENABLE([pmanagement],
+		AS_HELP_STRING([--disable-pmanagement], [Disable the Power Management Subsystem]))
+
+		AS_IF([test "x$enable_pmanagement" != "xno"], [
+			AC_DEFINE([HAVE_POWER_MANAGEMENT])
+			ac_have_power_management=yes
+		])
+	fi
+
+
+
+>>>>>>> origin/power
 	# Test for linux headers, to compile kernel modules
 	ac_kernel_headers=no
 	AC_CHECK_HEADERS([linux/ioctl.h],
@@ -525,6 +592,19 @@ else
 	fi
 fi
 
+# Compose the message regarding Power Management
+if test "x$ac_have_power_management" = "xyes"
+then
+	ac_power="Enabled"
+else
+	if test "x$enable_pmanagement" = "xno"
+	then
+		ac_power="Disabled by the user"
+	else
+		ac_power="Disabled (kernel files not found)"
+	fi
+fi
+
 
 # Compose message to tell whether modules are disabled
 ac_modules="Enabled"
@@ -565,11 +645,15 @@ LP Preemption Support..... : ${ac_preemption}
 <<<<<<< HEAD
 LP Rebinding.............. : ${ac_lp_rebinding}
 <<<<<<< HEAD
+<<<<<<< HEAD
 Approximated Rollback..... : ${ac_approximated_rollback}
 =======
 >>>>>>> origin/energy
 
 =======
+=======
+Power Management.......... : ${ac_power}
+>>>>>>> origin/power
 Linux Kernel Modules...... : ${ac_modules}
 Incremental State Saving.. : ${ac_iss}
 >>>>>>> origin/incremental

@@ -36,7 +36,9 @@
 #pragma once
 
 #include <stdbool.h>
+#include <core/core.h>
 #include <arch/atomic.h>
+<<<<<<< HEAD
 #include <src/datatypes/msgchannel.h>
 #include <src/datatypes/heap.h>
 
@@ -91,6 +93,11 @@ typedef HANDLE tid_t;
 #else /* OS_LINUX || OS_WINDOWS */
 #error Unsupported operating system
 #endif
+=======
+#include <arch/os.h>
+#include <datatypes/msgchannel.h>
+#include <datatypes/heap.h>
+>>>>>>> origin/power
 
 
 /// This structure is used to call the thread creation helper function
@@ -99,6 +106,7 @@ struct _helper_thread {
 	void *arg;			///< Arguments to be passed to @ref start_routine
 };
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 /// Thread barrier definition
 typedef struct {
@@ -115,6 +123,10 @@ typedef struct {
 /* The global tid is obtained by concatenating of the `kid` and the `local_tid`
 >>>>>>> origin/atomic
  * and is stored into an unsigned int. Since we are using half of the unsigned int
+=======
+/* Global tid is obtained by concatenating `kid` and `tid`.
+ * It is stored into an unsigned int. Since we are using half of the unsigned int
+>>>>>>> origin/power
  * for each part we have that the total number of kernels and
  * the number of threads per kernel must be less then (2^HALF_UINT_BITS - 1)
  */
@@ -141,6 +153,7 @@ typedef struct {
 #define MAX_THREADS_PER_KERNEL ((1 << HALF_UINT_BITS) - 1)
 
 
+<<<<<<< HEAD
 /**
  * @brief Convert a local tid in a global tid
  *
@@ -227,9 +240,59 @@ typedef struct _Thread_State {
 #define PORT_PRIO_HI	0
 #define PORT_PRIO_LO	1
 =======
+=======
+/// This macro expands to true if the current KLT is the master thread for the local kernel
+#define master_thread() (tid == 0)
+>>>>>>> origin/power
 
 /// This macro tells on what core the current thread is running
-#define running_core() (local_tid)
+#define running_core() (tid)
+
+enum thread_incarnation {
+	THREAD_SYMMETRIC,
+	THREAD_CONTROLLER,
+	THREAD_PROCESSING
+};
+
+/// Thread State Control Block
+typedef struct _Thread_State {
+	/// This member tells what incar
+	enum thread_incarnation	incarnation;
+
+	/// tid, used to identify a thread within a local machine
+	unsigned int		tid;
+
+	/// Global tid, used to identify a thread within the whole system
+	unsigned int		global_tid;
+
+	/** Thread Input Port: if a thread is a Processing Thread, these are used to send messages to process.
+	 * There are two input ports, which are associated with high and low priority messages to exchange. */
+	msg_channel		*input_port[2];
+
+	/// Thread Output Port: if a thread is a Processing Thread, this is used to send back generated events or control messages to the controller
+	msg_channel		*output_port;
+
+	/// Number of PTs assigned to this controller. 0 if the thread isn't a controller.
+	unsigned int		num_PTs;
+
+	/// Processing Threads assigned to this controller.
+	struct _Thread_State	**PTs;
+
+	/// If the thread is a PT, this points to the corresponding CT
+	struct _Thread_State	*CT;
+
+	/// If PT, it defines the current batch size for the input port
+	unsigned int port_batch_size; 
+
+	/* Pointer to an array of chars used by controllers as a counter of the number
+	of events scheduled for each LP during the execution of asym_schedule*/
+	int *curr_scheduled_events;	
+
+	/* If CT, it is a pointer to a priority queue used in BATCH_LOWEST_TIMESTAMP
+	 * for scheduling a batch of events*/
+	heap_t *events_heap;
+
+} Thread_State;
 
 
 /// This structure is used to call the thread creation helper function
@@ -247,6 +310,7 @@ void create_threads(unsigned short int n, void *(*start_routine)(void*), void *a
 
 extern tid_t os_tid;
 extern __thread unsigned int tid;
+<<<<<<< HEAD
 extern __thread unsigned int local_tid; // TODO: we don't really need the local tid...
 
 <<<<<<< HEAD
@@ -256,6 +320,8 @@ extern void create_threads(unsigned short int n, void *(*start_routine)(void *),
 void threads_init(void);
 void threads_reassign(int modifier);
 
+=======
+>>>>>>> origin/power
 
 // Macros to retrieve messages from PT port
 
@@ -280,7 +346,45 @@ typedef struct {
 } barrier_t;
 
 /// Reset operation on a thread barrier
+<<<<<<< HEAD
 #define thread_barrier_reset(b)	atomic_set(&(b)->barr, 0)
+=======
+#define thread_barrier_reset(b)		do { \
+						(atomic_set((&b->c1), (b)->num_threads)); \
+						(atomic_set((&b->c2), (b)->num_threads)); \
+						(atomic_set((&b->barr), -1)); \
+					} while (0)
+
+
+extern void barrier_init(barrier_t *b, int t);
+extern bool thread_barrier(barrier_t *b);
+bool reserve_barrier(barrier_t *b);
+void release_barrier(barrier_t *b);
+void threads_init(void);
+
+extern msg_t *pt_get_lo_prio_msg(void);
+extern msg_t *pt_get_hi_prio_msg(void);
+
+// Macros to differentiate across different input ports
+#define PORT_PRIO_HI	0
+#define PORT_PRIO_LO	1
+
+// Macros to retrieve messages from PT port
+#define pt_get_lo_prio_msg() get_msg(Threads[tid]->input_port[PORT_PRIO_LO])
+#define pt_get_hi_prio_msg() get_msg(Threads[tid]->input_port[PORT_PRIO_HI])
+#define pt_get_out_msg(th_id) get_msg(Threads[(th_id)]->output_port)
+
+// Macros to send messages to PT port
+#define pt_put_lo_prio_msg(th_id, event) insert_msg(Threads[(th_id)]->input_port[PORT_PRIO_LO], (event))
+#define pt_put_hi_prio_msg(th_id, event) insert_msg(Threads[(th_id)]->input_port[PORT_PRIO_HI], (event))
+#define pt_put_out_msg(event) insert_msg(Threads[tid]->output_port, (event))
+
+/// Barrier for all worker threads
+extern barrier_t all_thread_barrier;
+extern barrier_t controller_barrier;
+
+extern Thread_State **Threads;
+>>>>>>> origin/power
 
 /**
 * Initialize a thread barrier. If more than the hereby specified

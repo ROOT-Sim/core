@@ -70,15 +70,23 @@ struct lp_struct *smallest_timestamp_first(void)
 			evt_time = next_event_timestamp(lp);
 		}
 
+<<<<<<< HEAD
 		if (evt_time < next_time && evt_time < INFTY) {
 			next_time = evt_time;
 			next_lp = lp;
 		}
+=======
+		return 0; // continue to the next element
+	}
+
+	LPS_bound_foreach(__helper, &stf_candidate);
+>>>>>>> origin/power
 
     }
 	return next_lp;
 }
 
+<<<<<<< HEAD
 /** This function implements a selection strategy similar
 * to smallest timestamp first algorithm for the asymmetric
 * architecture. It returns the LP of the logical process with
@@ -118,3 +126,71 @@ struct lp_struct *asym_smallest_timestamp_first(void)
     }
     return next_lp;
 }
+=======
+
+/* This function implements a selection strategy similar
+* to smallest timestamp first algorithm for the asymmetric 
+* architecture. It returns the LP of the logical process with 
+* the smallest timestamp among the set of LPs passed as parameter
+* This is necessary to skip LPs for whom the respective input port
+* is already filled. 
+*
+* TO BE IMPLEMENTED.
+* 
+* @author Stefano Conoci 
+* @author Alessandro Pellegrini */
+
+LID_t asym_smallest_timestamp_first(void){
+	min_lp stf_candidate = {
+		.lid = idle_process,
+		.time = INFTY,
+	};
+
+	int __helper(LID_t lid, GID_t gid, unsigned int num, void *data) {
+		min_lp *candidate = (min_lp *)data;
+		LP_State *lp = LPS(lid);
+		simtime_t evt_time;
+		(void)gid;
+		(void)num;
+
+//		printf("STF: LP %d in state %d", num, lp->state);
+	
+		// If waiting for synch, don't take into account the LP
+		if(is_blocked_state(lp->state)) {
+//			printf(" skipped\n");
+			return 0; // continue to the next element
+		}
+	
+		//If the LP is in READY_FOR_SYNCH has to handle the same messagge of ECS
+		if(lp->state == LP_STATE_READY_FOR_SYNCH) {
+			// The LP handles the suspended event as the next event
+			evt_time = lvt(lid);
+		} else {
+			// Compute the next event's timestamp. Translate the id from the local binding to the local ID
+			evt_time = next_event_timestamp(lid);
+//			printf(" evt_time: %f", (evt_time < INFTY ? evt_time : -1.0));
+		}
+
+//		printf(" candidate->time: %f",  (candidate->time < INFTY ? candidate->time : -1.0));
+	
+		if(evt_time < candidate->time && evt_time < INFTY) {
+			candidate->time = evt_time;
+			candidate->lid = lid;
+		}
+
+//		printf("\n");
+
+		return 0; // continue to the next element
+	}
+
+	LPS_asym_mask_foreach(__helper, &stf_candidate);
+
+/*	if(stf_candidate.time == INFTY)
+		printf("SCHED: NO LP TO SCHEDULE\n");
+	else
+		printf("SCHED: picking LP %d at time %f\n", stf_candidate.lid, stf_candidate.time);
+*/
+	return stf_candidate.lid;
+}
+
+>>>>>>> origin/power

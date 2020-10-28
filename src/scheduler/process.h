@@ -50,7 +50,12 @@
 #include <lib/abm_layer.h>
 #include <lib/topology.h>
 #include <communication/communication.h>
+<<<<<<< HEAD
 #include <arch/x86/linux/rootsim/ioctl.h>
+=======
+#include <arch/linux/modules/cross_state_manager/cross_state_manager.h>
+#include <core/power.h>
+>>>>>>> origin/power
 
 #define LP_STACK_SIZE	4194304	// 4 MB
 
@@ -61,11 +66,15 @@
 #define LP_STATE_ROLLBACK		0x00008
 #define LP_STATE_SILENT_EXEC		0x00010
 #define LP_STATE_ROLLBACK_ALLOWED	0x00020
+<<<<<<< HEAD
+=======
+#define LP_STATE_READY_FOR_SYNCH	0x00040	// This should be a blocked state! Check schedule() and stf()
+>>>>>>> origin/power
 #define LP_STATE_SUSPENDED		0x01010
-#define LP_STATE_READY_FOR_SYNCH	0x00011	// This should be a blocked state! Check schedule() and stf()
 #define LP_STATE_WAIT_FOR_SYNCH		0x01001
 #define LP_STATE_WAIT_FOR_UNBLOCK	0x01002
 #define LP_STATE_WAIT_FOR_DATA		0x01004
+<<<<<<< HEAD
 <<<<<<< HEAD
 #define LP_STATE_READY_FOR_DATA		0x01005
 #define LP_STATE_WAIT_FOR_WRITE		0X01006
@@ -82,6 +91,9 @@
 #define LP_STATE_SYNCH_FOR_CANCELBACK	0x00200
 
 >>>>>>> origin/cancelback
+=======
+#define LP_STATE_WAIT_FOR_ROLLBACK_ACK	0x01008
+>>>>>>> origin/power
 
 #define BLOCKED_STATE			0x01000
 #define is_blocked_state(state)	(bool)(state & BLOCKED_STATE)
@@ -116,11 +128,19 @@ struct lp_struct {
 	/// Seed to generate pseudo-random values
 	seed_type	seed;
 
+<<<<<<< HEAD
 	/// ID of the worker thread towards which the LP is bound
 	unsigned int worker_thread;
 
     /// ID of the Processing Thread (in case worker_thread above is a controller) which processes events
     unsigned int processing_thread;
+=======
+	/// ID of the worker thread (or controller) towards which the LP is bound
+	unsigned int		worker_thread;
+>>>>>>> origin/power
+
+	/// ID of the Processing Thread (in case worker_thread above is a controller) which processes events
+	unsigned int		processing_thread;
 
 	/// Current execution state of the LP
 	short unsigned int state;
@@ -170,8 +190,14 @@ struct lp_struct {
 	/// Bound lock
 	spinlock_t bound_lock;
 
+	/// Send time of the last event extracted from the output port of the PT executing events of this LP
+	simtime_t		last_sent_time;
+
 	/// Output messages queue
 	list(msg_hdr_t) queue_out;
+
+	/// Event retirement queue
+	list(msg_t)		retirement_queue;
 
 	/// Saved states queue
 	list(state_t) queue_states;
@@ -213,6 +239,7 @@ struct lp_struct {
 =======
 	#ifdef HAVE_CROSS_STATE
 	GID_t			ECS_synch_table[MAX_CROSS_STATE_DEPENDENCIES];
+<<<<<<< HEAD
 	unsigned int 	ECS_index;
 	list(ecs_page_node_t)	ECS_page_list;
 	list(ecs_page_node_t)	ECS_prefetch_list;
@@ -228,6 +255,9 @@ struct lp_struct {
 	int				ECS_clustered_events;
 	int				ECS_scattered_events;
 
+=======
+	unsigned int 		ECS_index;
+>>>>>>> origin/power
 	#endif
 >>>>>>> origin/ecs
 
@@ -244,8 +274,13 @@ struct lp_struct {
 	unsigned int ECS_index;
 #endif
 
+<<<<<<< HEAD
 	unsigned long long wait_on_rendezvous;
 	unsigned int wait_on_object;
+=======
+	stat_interval_t		interval_stats;
+} LP_State;
+>>>>>>> origin/power
 
 	/* Per-Library variables */
 	numerical_state_t numerical;
@@ -267,6 +302,11 @@ extern __thread struct lp_struct **lps_bound_blocks;
 // to lps_bound_block each time asym_schedule is called.
 extern __thread struct lp_struct **asym_lps_mask;
 
+// Mask of LP bound to thread that are yet to be filled 
+// in the current execution of asym_schedule. It reset 
+// to lps_bound_block each time asym_schedule is called. 
+extern __thread LP_State **asym_lps_mask;
+
 /** This macro retrieves the LVT for the current LP. There is a small interval window
  *  where the value returned is the one of the next event to be processed. In particular,
  *  this happens in the scheduling function, when the bound is advanced to the next event to
@@ -274,6 +314,7 @@ extern __thread struct lp_struct **asym_lps_mask;
  */
 //#define lvt(lp) (lp->bound != NULL ? lp->bound->timestamp : 0.0)
 
+<<<<<<< HEAD
 // TODO: see issue #121 to see how to make this ugly hack disappear
 extern __thread unsigned int __lp_counter;
 extern __thread unsigned int __lp_bound_counter;
@@ -286,6 +327,18 @@ extern __thread unsigned int __lp_bound_counter;
 
 #define foreach_bound_mask_lp(lp)	__lp_bound_counter = 0;\
 				for(struct lp_struct *(lp) = asym_lps_mask[__lp_bound_counter]; __lp_bound_counter < n_lp_per_thread && ((lp) = asym_lps_mask[__lp_bound_counter]); ++__lp_bound_counter)
+=======
+#define LPS(lid) ((__builtin_choose_expr(is_lid(lid), lps_blocks[lid.id], (void)0)))
+#define LPS_bound(lid) (__builtin_choose_expr(__builtin_types_compatible_p(__typeof__ (lid), unsigned int), lps_bound_blocks[lid], (void)0))
+#define LPS_bound_mask(lid) (__builtin_choose_expr(__builtin_types_compatible_p(__typeof__ (lid), unsigned int), asym_lps_mask[lid], (void)0))
+
+extern inline void LPS_bound_set(unsigned int entry, LP_State *lp_block);
+extern inline int LPS_foreach(int (*f)(LID_t, GID_t, unsigned int, void *), void *data);
+extern inline int LPS_bound_foreach(int (*f)(LID_t, GID_t, unsigned int, void *), void *data);
+extern inline int LPS_asym_mask_foreach(int (*f)(LID_t, GID_t, unsigned int, void *), void *data);
+extern void initialize_control_blocks(void);
+extern void initialize_binding_blocks(void);
+>>>>>>> origin/power
 
 #define LPS_bound_set(entry, lp)	lps_bound_blocks[(entry)] = (lp);
 

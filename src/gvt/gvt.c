@@ -43,16 +43,25 @@
 #include <core/core.h>
 #include <core/init.h>
 #include <core/timer.h>
+<<<<<<< HEAD
 #include <scheduler/binding.h>
 #include <scheduler/process.h>
 #include <scheduler/scheduler.h>
+=======
+#include <core/power.h>
+#include <scheduler/process.h>
+#include <scheduler/scheduler.h> // this is for n_prc_per_thread
+>>>>>>> origin/power
 #include <statistics/statistics.h>
 #include <mm/mm.h>
 #include <communication/mpi.h>
 #include <communication/gvt.h>
 
+<<<<<<< HEAD
 /// A constant 1 to be used in CAS operations to set tokens
 __thread const atomic_int one = 1;
+=======
+>>>>>>> origin/power
 
 enum kernel_phases {
 	kphase_start,
@@ -170,6 +179,7 @@ static simtime_t *local_min;
 static simtime_t *local_min_barrier;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 /** The number of threads participating to the GVT computation on a single node depends on whether
  * we are running with the symmetric or asymmetric configuration, and it can potentially change
  * over time. This variable tells how many threads are participating to the GVT.
@@ -179,6 +189,12 @@ static unsigned int gvt_participants;
 /// Total number of pages available on the system
 static size_t tot_pages;
 >>>>>>> origin/cancelback
+=======
+// The number of threads participating to the GVT computation on a single node depends on whether
+// we are running with the symmetric or asymmetric configuration, and it can potentially change
+// over time. This variable tells how many threads are participating to the GVT.
+static unsigned int gvt_participants;
+>>>>>>> origin/power
 
 /**
 * Initialization of the GVT subsystem.
@@ -214,11 +230,22 @@ void gvt_init(void) {
 		local_min_barrier[i] = INFTY;
 	}
 
+<<<<<<< HEAD
     if(rootsim_config.num_controllers > 0) {
         gvt_participants = rootsim_config.num_controllers;
     } else {
         gvt_participants = n_cores;
     }
+=======
+	if(rootsim_config.num_controllers > 0) {
+		gvt_participants = rootsim_config.num_controllers;
+	} else {
+		gvt_participants = n_cores;
+	}
+
+	timer_start(gvt_timer);
+}
+>>>>>>> origin/power
 
 	timer_start(gvt_timer);
 
@@ -275,6 +302,7 @@ inline size_t get_cancelback_threshold() {
  */
 <<<<<<< HEAD
 inline simtime_t get_last_gvt(void) {
+<<<<<<< HEAD
 
     /* TODO: è un po' una porcata, perché potrebbe esserci una corsa
        critica su new_gvt, ma è da verificare */
@@ -290,6 +318,12 @@ inline simtime_t get_last_gvt(void)
 >>>>>>> origin/energy
 =======
 >>>>>>> origin/energy_tmp
+=======
+	// TODO: è un po' una porcata, perché potrebbe esserci una corsa
+	// critica su new_gvt, ma è da verificare
+	if(Threads[tid]->incarnation == THREAD_PROCESSING)
+		return new_gvt;
+>>>>>>> origin/power
 	return last_gvt;
 }
 
@@ -297,6 +331,7 @@ inline simtime_t get_last_gvt(void)
 static inline void reduce_local_gvt(void) {
 
 
+<<<<<<< HEAD
 	foreach_bound_lp(lp) {
 		// If no message has been processed, local estimate for
 		// GVT is forced to 0.0. This can happen, e.g., if
@@ -304,6 +339,15 @@ static inline void reduce_local_gvt(void) {
 		if (unlikely(lp->last_processed == NULL)) {
 			local_min[local_tid] = 0.0;
             break;
+=======
+		for(i = 0; i < n_prc_per_thread; i++) {
+			if(LPS_bound(i)->bound == NULL) {
+				local_min[tid] = 0.0;
+				break;
+			}
+//			local_min[tid] = min(local_min[tid], LPS_bound(i)->bound->timestamp);
+			local_min[tid] = min(local_min[tid], LPS_bound(i)->last_sent_time);
+>>>>>>> origin/power
 		}
 
 		// GVT inheritance: if the current LP has no scheduled
@@ -331,6 +375,7 @@ static inline void reduce_local_gvt(void) {
 >>>>>>> origin/atomic
 }
 
+<<<<<<< HEAD
 
 simtime_t GVT_phases(void) {
 =======
@@ -358,6 +403,26 @@ inline bool has_cancelback_started() {
 		atomic_dec(&counter_A);	// Notify finalization of phase A
 
         return -1.0;
+=======
+	if(thread_phase == tphase_send && atomic_read(&counter_A) == 0) {
+		// In the asymmetric version, repeating a main loop is such that
+		// the output port is completely emptied in the next iteration of the main
+		// loop
+		if(rootsim_config.num_controllers == 0) {
+			#ifdef HAVE_MPI
+			// Check whether we have new ingoing messages sent by remote instances
+			receive_remote_msgs();
+			#endif
+			process_bottom_halves();
+			schedule();
+		} else {
+			asym_extract_generated_msgs();
+			process_bottom_halves();
+		}
+		thread_phase = tphase_B;
+		atomic_dec(&counter_send);
+		return  -1.0;
+>>>>>>> origin/power
 	}
 
 	if (thread_phase == tphase_send && atomic_read(&counter_A) == 0) {
@@ -391,6 +456,7 @@ inline bool has_cancelback_started() {
         #endif
 		process_bottom_halves();
 
+<<<<<<< HEAD
 		reduce_local_gvt();
 
         #ifdef HAVE_MPI
@@ -400,6 +466,24 @@ inline bool has_cancelback_started() {
 		local_min[local_tid] =
 		    min(local_min[local_tid], min_outgoing_red_msg[local_tid]);
         #endif
+=======
+		for(i = 0; i < n_prc_per_thread; i++) {
+			if(LPS_bound(i)->bound == NULL) {
+				local_min[tid] = 0.0;
+				break;
+			}
+
+//			local_min[tid] = min(local_min[tid], LPS_bound(i)->bound->timestamp);
+			local_min[tid] = min(local_min[tid], LPS_bound(i)->last_sent_time);
+		}
+
+		#ifdef HAVE_MPI
+		// WARNING: local thread cannot send any remote
+		// message between the two following calls
+		exit_red_phase();
+		local_min[tid] = min(local_min[tid], min_outgoing_red_msg[tid]);
+		#endif
+>>>>>>> origin/power
 
 		thread_phase = tphase_aware;
 		atomic_dec(&counter_B);
@@ -408,10 +492,14 @@ inline bool has_cancelback_started() {
         if (atomic_read(&counter_B) == 0) {
 			simtime_t agreed_vt = INFTY;
 <<<<<<< HEAD
+<<<<<<< HEAD
             for (i = 0; i < gvt_participants; i++) {
                 agreed_vt = min(local_min[i], agreed_vt);
 =======
 			for (i = 0; i < active_threads; i++) {
+=======
+			for(i = 0; i < gvt_participants; i++) {
+>>>>>>> origin/power
 				agreed_vt = min(local_min[i], agreed_vt);
 >>>>>>> origin/energy
 			}
@@ -538,6 +626,7 @@ simtime_t gvt_operations(void) {
 			atomic_set(&counter_kvt, gvt_participants);
 			atomic_set(&counter_finalized, gvt_participants);
 
+<<<<<<< HEAD
 			atomic_set(&counter_A, gvt_participants);
 			atomic_set(&counter_send, gvt_participants);
 			atomic_set(&counter_B, gvt_participants);
@@ -550,6 +639,15 @@ simtime_t gvt_operations(void) {
 			atomic_set(&counter_send, active_threads);
 			atomic_set(&counter_B, active_threads);
 >>>>>>> origin/energy
+=======
+			atomic_set(&counter_initialized, gvt_participants);
+			atomic_set(&counter_kvt, gvt_participants);
+			atomic_set(&counter_finalized, gvt_participants);
+
+			atomic_set(&counter_A, gvt_participants);
+			atomic_set(&counter_send, gvt_participants);
+			atomic_set(&counter_B, gvt_participants);
+>>>>>>> origin/power
 
 			atomic_set(&kernel_phase, kphase_start);
 
@@ -571,7 +669,7 @@ simtime_t gvt_operations(void) {
 		enter_red_phase();
         #endif
 
-		local_min[local_tid] = INFTY;
+		local_min[tid] = INFTY;
 
 		thread_phase = tphase_A;
 		atomic_dec(&counter_initialized);
@@ -717,8 +815,17 @@ simtime_t gvt_operations(void) {
 		atomic_dec(&counter_finalized);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (atomic_read(&counter_finalized) == 0) {
 			if (iCAS(&idle_tkn, 1, 0)) {
+=======
+		if(atomic_read(&counter_finalized) == 0){
+			if(iCAS(&idle_tkn, 1, 0)){
+				// Notify the power cap module that a new statistic sample is available 
+				if(rootsim_config.num_controllers > 0)
+					gvt_interval_passed = 1; 
+				
+>>>>>>> origin/power
 				kernel_phase = kphase_idle;
 <<<<<<< HEAD
                 updated_gvt = last_gvt;

@@ -18,12 +18,28 @@ librootsim_a_SOURCES =	main.c \
 			datatypes/array.c \
 			datatypes/list.c \
 			datatypes/calqueue.c \
+<<<<<<< HEAD
+=======
+			datatypes/msgchannel.c \
+			datatypes/slab.c \
+			datatypes/treiber.c \
+			datatypes/heap.c\
+>>>>>>> origin/power
 			mm/state.c \
 			mm/globvars.c \
 			queues/queues.c \
 			queues/xxhash.c \
 			core/init.c \
 			core/core.c \
+<<<<<<< HEAD
+=======
+			core/power.c \
+			scheduler/binding.c \
+			scheduler/control.c \
+			scheduler/preempt.c \
+			scheduler/preempt_callback.S \
+			scheduler/process.c \
+>>>>>>> origin/power
 			scheduler/stf.c \
 			scheduler/scheduler.c \
 			scheduler/control.c \

@@ -72,6 +72,8 @@ void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
 	time_barrier = 0.7 * time_barrier;
 >>>>>>> origin/cancelback
 
+	//time_barrier *= 0.7;
+
 	// State list must be handled specifically, as nodes point to malloc'd
 	// nodes. We therefore manually scan the list and free the memory.
 <<<<<<< HEAD
@@ -102,9 +104,15 @@ void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
 	last_kept_event = state->last_event;
 
 	// Truncate the input queue, accounting for the event which is pointed by the lastly kept state
+<<<<<<< HEAD
 	committed_events = (double)list_trunc(lp->queue_in, timestamp,last_kept_event->timestamp, msg_release);
     controller_committed_events += committed_events;
     statistics_post_data(lp, STAT_COMMITTED, committed_events);
+=======
+	committed_events = (double)list_trunc(LPS(lid)->queue_in, timestamp, last_kept_event->timestamp, msg_release);
+	controller_committed_events += committed_events;
+	statistics_post_lp_data(lid, STAT_COMMITTED, committed_events);
+>>>>>>> origin/power
 
 	// Truncate the output queue
 <<<<<<< HEAD
@@ -168,7 +176,7 @@ void adopt_new_gvt(simtime_t new_gvt, simtime_t new_min_barrier) {
 
 	// If needed, call the CCGS subsystem
 	if(compute_snapshot) {
-		ccgs_compute_snapshot(time_barrier_pointer, new_gvt);
+//		ccgs_compute_snapshot(time_barrier_pointer, new_gvt);
 	}
 
 	for(i = 0; i < n_prc_per_thread; i++) {

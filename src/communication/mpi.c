@@ -171,10 +171,15 @@ void send_remote_msg(msg_t *msg)
 {
 	outgoing_msg *out_msg = allocate_outgoing_msg();
 	out_msg->msg = msg;
+<<<<<<< HEAD
 	out_msg->msg->colour = threads_phase_colour[local_tid];
 	unsigned int dest = find_kernel_by_gid(msg->receiver);
 
 	validate_msg(msg);
+=======
+	out_msg->msg->colour = threads_phase_colour[tid];
+	unsigned int dest = GidToKernel(msg->receiver);
+>>>>>>> origin/power
 
 	register_outgoing_msg(out_msg->msg);
 
@@ -523,7 +528,7 @@ void dist_termination_finalize(void)
 /**
  * @brief Syncronize all the kernels
  *
- * This function can be used as syncronization barrier between all the threads
+ * This function can be used as synchronization barrier between all the threads
  * of all the kernels.
  *
  * The function will return only after all the threads on all the kernels
@@ -536,9 +541,14 @@ void dist_termination_finalize(void)
  *          of cpu cycles, and drops performance significantly. Avoid
  *          using it as much as possible!
  */
+<<<<<<< HEAD
 void syncronize_all(void)
 {
 	if (master_thread()) {
+=======
+void synchronize_all(void){
+	if(master_thread()){
+>>>>>>> origin/power
 		MPI_Comm comm;
 		MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 		MPI_Barrier(comm);
@@ -628,8 +638,13 @@ void mpi_finalize(void)
 		MPI_Barrier(MPI_COMM_WORLD);
 		MPI_Comm_free(&msg_comm);
 		MPI_Finalize();
+<<<<<<< HEAD
 	} else {
 		rootsim_error(true, "MPI finalize has been invoked by a non master thread: T%u\n", local_tid);
+=======
+	}else{
+		rootsim_error(true, "MPI finalize has been invoked by a non master thread: T%u\n", tid);
+>>>>>>> origin/power
 	}
 }
 

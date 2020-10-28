@@ -48,8 +48,13 @@
 #include <scheduler/process.h>
 #include <scheduler/ht_sched.h>
 #include <gvt/gvt.h>
+<<<<<<< HEAD
 #include <mm/mm.h>
 #include <score/score.h>
+=======
+#include <mm/dymelor.h>
+#include <core/power.h>
+>>>>>>> origin/power
 
 #ifdef HAVE_CROSS_STATE
 #include <mm/ecs.h>
@@ -62,6 +67,7 @@
 #include <core/init.h>
 #undef _INIT_FROM_MAIN
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 int controller_committed_events = 0;
 atomic_t final_processed_events;
@@ -99,6 +105,12 @@ static int thread_configuration_modifier;
 
 >>>>>>> origin/energy
 __thread jmp_buf exit_jmp;
+=======
+int controller_committed_events = 0; 
+atomic_t final_processed_events;
+__thread int my_processed_events = 0;
+
+>>>>>>> origin/power
 
 /**
 <<<<<<< HEAD
@@ -165,6 +177,7 @@ static void finish(void) {
 */
 static void *main_simulation_loop(void *arg) __attribute__ ((noreturn));
 static void *main_simulation_loop(void *arg) {
+<<<<<<< HEAD
 >>>>>>> origin/cancelback
 
     thread_barrier(&all_thread_barrier);
@@ -183,6 +196,8 @@ static void wait(void){
 static void *main_simulation_loop(void *arg) __attribute__((noreturn));
 static void *main_simulation_loop(void *arg)
 {
+=======
+>>>>>>> origin/power
 	(void)arg;
 <<<<<<< HEAD
 	simtime_t my_time_barrier = -1.0;
@@ -195,6 +210,7 @@ static void *main_simulation_loop(void *arg)
 
 	simtime_t my_time_barrier = -1.0;
 
+<<<<<<< HEAD
 #ifdef HAVE_PMU
 	if (rootsim_config.snapshot == SNAPSHOT_HARDINC) {
 		fd = open("/dev/rootsim", 666);
@@ -207,6 +223,119 @@ static void *main_simulation_loop(void *arg)
 >>>>>>> origin/incremental
 
 #ifdef HAVE_CROSS_STATE
+=======
+	// We differentiate here the nature of the main loop
+	switch(Threads[tid]->incarnation) {
+		case THREAD_SYMMETRIC:
+			goto symmetric;
+		case THREAD_CONTROLLER:
+			goto controller;
+		case THREAD_PROCESSING:
+			goto processing;
+		default:
+			fprintf(stderr, "%s:%d: Error: unknown incarnation for thread %d\n", __FILE__, __LINE__, tid);
+			abort();
+	}
+
+
+    controller:
+
+	// Do the initial (local) LP binding, then execute INIT at all (local) LPs
+	initialize_worker_thread();
+
+	#ifdef HAVE_MPI
+	syncronize_all();
+	#endif
+	
+	while (!end_computing()) {
+		
+		// We assume that thread with tid 0 should be a controller. 
+		// Should be adapted for MPI. 
+		
+		#ifdef HAVE_POWER_MANAGEMENT
+		if(master_thread()){
+			powercap_state_machine();
+		}
+		#endif
+
+		// Recompute the LPs-thread binding
+		rebind_LPs();
+
+		#ifdef HAVE_MPI
+		// Check whether we have new ingoing messages sent by remote instances
+		receive_remote_msgs();
+		prune_outgoing_queues();
+		#endif
+
+		// Read output ports of all bound PTs
+		asym_extract_generated_msgs();
+
+		// Forward the messages from the kernel incoming message queue to the destination LPs
+		process_bottom_halves();
+
+		// Activate one LP and process one event. Send messages produced during the events' execution
+		asym_schedule();
+/*		printf("\tPorts: ");
+		int i;
+		for(i = 0; i < n_cores; i++) {
+			if(Threads[i]->incarnation == THREAD_PROCESSING)
+				printf("%d/%d ", atomic_read(&Threads[i]->input_port[1]->size), Threads[i]->port_batch_size);
+		}
+		printf("\n");
+*/
+		my_time_barrier = gvt_operations();
+
+		// Only a master thread on master kernel prints the time barrier
+		if (master_kernel() && master_thread () && D_DIFFER(my_time_barrier, -1.0)) {
+			if (rootsim_config.verbose == VERBOSE_INFO || rootsim_config.verbose == VERBOSE_DEBUG) {
+				#ifdef HAVE_PREEMPTION
+				printf("TIME BARRIER %f - %d preemptions - %d in platform mode - %d would preempt\n", my_time_barrier, atomic_read(&preempt_count), atomic_read(&overtick_platform), atomic_read(&would_preempt));
+				#else
+				printf("TIME BARRIER %f\n", my_time_barrier);
+				#endif
+
+				printf("\tPorts: ");
+		unsigned int i;
+				for(i = 0; i < n_cores; i++) {
+					if(Threads[i]->incarnation == THREAD_PROCESSING)
+						printf("%d/%d ", atomic_read(&Threads[i]->input_port[1]->size), Threads[i]->port_batch_size);
+				}
+				printf("\n");
+
+				fflush(stdout);
+			}
+		}
+
+		#ifdef HAVE_MPI
+		collect_termination();
+		#endif
+	}
+
+	goto finish;
+
+    processing:
+
+	// To enforce data separation more, we need a slab allocator for processing threads as well
+	initialize_processing_thread();
+
+	#ifdef HAVE_CROSS_STATE
+	lp_alloc_thread_init();
+	#endif
+	
+	while (!end_computing()) {
+		asym_process();
+	}
+
+	atomic_add(&final_processed_events, my_processed_events);
+
+	goto finish;
+
+    symmetric:
+
+	// TODO: everything down there must be rethought in case we differentiate at runtime the number of Controllers and PTs!!!!
+
+	#ifdef HAVE_CROSS_STATE
+>>>>>>> origin/power
 	lp_alloc_thread_init();
 #endif
 >>>>>>> origin/energy
@@ -258,6 +387,7 @@ static void symmetric_execution(void) {
 		       "****************************\n");
 	}
 
+<<<<<<< HEAD
 	if (setjmp(exit_jmp) != 0) {
 		printf("LEAVING!\n");
 		goto leave_for_error;
@@ -271,6 +401,19 @@ static void symmetric_execution(void) {
 <<<<<<< HEAD
 >>>>>>> origin/cancelback
 =======
+=======
+	while (!end_computing()) {
+		
+		// This should be only called when power mode is enabled 
+		#ifdef HAVE_POWER_MANAGEMENT
+		if(master_thread()){
+			powercap_state_machine();
+		}
+		#endif
+
+		
+		// Recompute the LPs-thread binding
+>>>>>>> origin/power
 		rebind_LPs();
 >>>>>>> origin/energy
 
@@ -554,6 +697,8 @@ leave_for_error:
 #endif
 >>>>>>> origin/incremental
 	thread_barrier(&all_thread_barrier);
+
+    finish:
 
 	// If we're exiting due to an error, we neatly shut down the simulation
 	if (simulation_error()) {

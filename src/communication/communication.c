@@ -33,11 +33,16 @@
 #include <float.h>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 #include <arch/thread.h>
 >>>>>>> origin/asym
 #include <core/init.h>
+=======
+#include <arch/thread.h>
+>>>>>>> origin/power
 #include <core/core.h>
+#include <core/init.h>
 #include <gvt/gvt.h>
 #include <queues/queues.h>
 #include <communication/communication.h>
@@ -99,6 +104,7 @@ void communication_fini(void)
 }
 
 
+<<<<<<< HEAD
 /**
 * @brief Find a slab to allocate a message buffer
 *
@@ -122,6 +128,14 @@ static inline struct lp_struct *which_slab_to_use(GID_t sender, GID_t receiver)
 	if (find_kernel_by_gid(receiver) == kid)
 		return find_lp_by_gid(receiver);
 	return find_lp_by_gid(sender);
+=======
+void communication_init_thread(void) {
+	slab_init(&msg_slab[tid], SLAB_MSG_SIZE); 
+}
+
+void communication_fini_thread(void) {
+	slab_destroy(&msg_slab[tid]);
+>>>>>>> origin/power
 }
 
 
@@ -182,9 +196,17 @@ void msg_hdr_release(msg_hdr_t *msg)
 msg_hdr_t *get_msg_hdr_from_slab(struct lp_struct *lp)
 {
 	// TODO: The magnitude of this hack compares to that of the national debt.
+<<<<<<< HEAD
 	// We are wasting a lot of memory from the LP buddy just to keep antimessages!
 	msg_hdr_t *msg = (msg_hdr_t *) get_msg_from_slab(lp);
 	bzero(msg, rootsim_config.slab_msg_size);
+=======
+	// We must have a single allocation point where we just get a buffer, and then
+	// we map that to the various data structures.
+	msg_hdr_t *msg = (msg_hdr_t *)get_msg_from_slab();
+	bzero(msg, SLAB_MSG_SIZE);
+	msg->alloc_tid = tid;
+>>>>>>> origin/power
 	return msg;
 =======
 void send_antimessages(unsigned int lid, simtime_t after_simtime) {
@@ -193,6 +215,7 @@ void send_antimessages(unsigned int lid, simtime_t after_simtime) {
 
 	msg_t msg;
 
+<<<<<<< HEAD
 	if (list_empty(LPS[lid]->queue_out))
 		return;
 
@@ -209,6 +232,26 @@ void send_antimessages(unsigned int lid, simtime_t after_simtime) {
 		anti_msg = list_head(LPS[lid]->queue_out);
 	} else {
 		anti_msg = list_next(anti_msg);
+=======
+msg_t *get_msg_from_slab(void) {
+	msg_t *msg = NULL;
+	treiber *to_release;
+	treiber *to_release_nxt;
+
+	// Unlink the whole Treiber stack and release all nodes.
+	// If at least one node is available, reuse it for the
+	// current allocation.
+	to_release = treiber_detach(msg_treiber[tid]);
+	while(to_release != NULL) {
+		if(msg == NULL) {
+			msg = to_release->data;
+		} else {
+			slab_free(&msg_slab[tid], to_release->data);
+		}
+		to_release_nxt = to_release->next;
+		rsfree(to_release);
+		to_release = to_release_nxt;
+>>>>>>> origin/power
 	}
 
 	// Now send all antimessages
@@ -236,6 +279,10 @@ void send_antimessages(unsigned int lid, simtime_t after_simtime) {
 >>>>>>> origin/cancelback
 }
 
+<<<<<<< HEAD
+=======
+	msg = (msg_t *)slab_alloc(&msg_slab[tid]);
+>>>>>>> origin/power
 
 /**
 * @brief Get a buffer to keep a message.
@@ -271,7 +318,11 @@ msg_t *get_msg_from_slab(struct lp_struct *lp)
 	msg_t *msg = (msg_t *) slab_alloc(lp);
 >>>>>>> origin/incremental
 	bzero(msg, SLAB_MSG_SIZE);
+<<<<<<< HEAD
 >>>>>>> origin/exercise
+=======
+	msg->alloc_tid = tid;
+>>>>>>> origin/power
 	return msg;
 }
 
@@ -281,6 +332,7 @@ void msg_release(msg_t *msg) {
 	unsigned int thr;
 >>>>>>> origin/ecs
 
+<<<<<<< HEAD
 /**
  * @brief Release a message buffer
  *
@@ -317,6 +369,15 @@ void msg_release(msg_t *msg)
 =======
 		slab_free(lp, msg);
 >>>>>>> origin/incremental
+=======
+	if(sizeof(msg_t) + msg->size <= SLAB_MSG_SIZE) {
+		thr = msg->alloc_tid;
+		if(tid == thr) {
+			slab_free(&msg_slab[thr], msg);
+		} else {
+			treiber_push(msg_treiber[thr], msg);
+		}
+>>>>>>> origin/power
 	} else {
 		rsfree(msg);
 	}
@@ -376,26 +437,45 @@ __visible void ParallelScheduleNewEvent(unsigned int gid_receiver, simtime_t tim
 		return;
 		//goto out;
 	}
+<<<<<<< HEAD
+=======
+
+	/* Sanity checks */
+#ifndef NDEBUG
+>>>>>>> origin/power
 	// Check whether the destination LP is out of range
 	if (unlikely(gid_receiver > n_LP_tot - 1)) {	// It's unsigned, so no need to check whether it's < 0
 		rootsim_error(false, "Warning: the destination LP %u is out of range. The event has been ignored\n", gid_receiver);
 		goto out;
 	}
+<<<<<<< HEAD
 	// Check if the associated timestamp is negative. In asymmetric computation, anyhow, this sanity check doesn't hold.
 	if (unlikely(rootsim_config.num_controllers == 0 && timestamp < current_evt->timestamp)) {
 		rootsim_error(true, "LP %u is trying to generate an event (type %d) to %u in the past! (Current LVT = %f, generated event's timestamp = %f) Aborting...\n",
 			      current->gid, event_type, gid_receiver,
                       current_evt->timestamp, timestamp);
+=======
+
+	// Check if the associated timestamp is negative. In asymmetric computation, anyhow, this sanity check doesn't hold.
+	if(rootsim_config.num_controllers == 0 && timestamp < lvt(current_lp)) {
+		rootsim_error(true, "LP %u is trying to generate an event (type %d) to %u in the past! (Current LVT = %f, generated event's timestamp = %f) Aborting...\n", current_lp, event_type, receiver.id, lvt(current_lp), timestamp);
+>>>>>>> origin/power
 	}
 	// Check if the event type is mapped to an internal control message
 	if (unlikely(event_type >= RESERVED_MSG_CODE)) {
 		rootsim_error(true, "LP %u is generating an event with type %d which is a reserved type. Switch event type to a value less than %d. Aborting...\n",
 			      current->gid, event_type, MIN_VALUE_CONTROL);
 	}
+#endif
 
 	// Copy all the information into the event structure
+<<<<<<< HEAD
 	pack_msg(&event, current->gid, receiver, event_type, timestamp, current_evt->timestamp, event_size, event_content);
 	event->mark = generate_mark(current);
+=======
+	pack_msg(&event, LidToGid(current_lp), receiver, event_type, timestamp, current_evt->timestamp, event_size, event_content);
+	event->mark = generate_mark(current_lp);
+>>>>>>> origin/power
 
 	if (unlikely(event->type == RENDEZVOUS_START)) {
 		event->rendezvous_mark = current_evt->rendezvous_mark;
@@ -404,7 +484,13 @@ __visible void ParallelScheduleNewEvent(unsigned int gid_receiver, simtime_t tim
     validate_msg(event);
 	insert_outgoing_msg(event);
 
+<<<<<<< HEAD
  out:
+=======
+#ifndef NDEBUG
+    out:
+#endif
+>>>>>>> origin/power
 	switch_to_application_mode();
 }
 
@@ -542,7 +628,14 @@ void send_outgoing_msgs(struct lp_struct *lp)
      	Send(msg);
 
 		// register the message in the sender's output queue, for antimessage management
+<<<<<<< HEAD
 		list_insert(lp->queue_out, send_time, msg_hdr);
+=======
+		list_insert(LPS(lid)->queue_out, send_time, msg_hdr);
+
+		if(msg->send_time > LPS(lid)->last_sent_time)
+			LPS(lid)->last_sent_time = msg->send_time;
+>>>>>>> origin/power
 	}
 
 	lp->outgoing_buffer.size = 0;
@@ -553,8 +646,56 @@ void asym_send_outgoing_msgs(struct lp_struct *lp) {
     msg_t *msg;
     //printf("current gid: %d\n", lp->gid.to_int);
 
+<<<<<<< HEAD
     for(i = 0; i < lp->outgoing_buffer.size; i++) {
         msg = lp->outgoing_buffer.outgoing_msgs[i];
+=======
+void asym_send_outgoing_msgs(LID_t lid) {
+	register unsigned int i = 0;
+	msg_t *msg;
+
+	for(i = 0; i < LPS(lid)->outgoing_buffer.size; i++) {
+		msg = LPS(lid)->outgoing_buffer.outgoing_msgs[i];
+
+		pt_put_out_msg(msg);
+//		printf("Putting in the output port the following message\n");
+//		dump_msg_content(msg);
+	}
+
+	LPS(lid)->outgoing_buffer.size = 0;
+}
+
+void asym_extract_generated_msgs(void) {
+	unsigned int i;
+	msg_t *msg;
+	msg_hdr_t *msg_hdr;
+	for(i = 0; i < Threads[tid]->num_PTs; i++) {
+//		printf("Output port size for PT %u: %d\n", Threads[tid]->PTs[i]->tid), atomic_read(&Threads[tid]->PTs[i]->output_port->size);
+		while((msg = pt_get_out_msg(Threads[tid]->PTs[i]->tid)) != NULL) {
+			if(is_control_msg(msg->type) && msg->type == ASYM_ROLLBACK_ACK) {
+				LPS(GidToLid(msg->receiver))->state = LP_STATE_ROLLBACK_ALLOWED;
+				// printf("Received ROLLBACK ACK for LP %d with timestamp %lf\n", gid_to_int(msg->receiver), msg->timestamp);
+				msg_release(msg);
+				continue;
+			}
+			Send(msg);
+
+			if(msg->send_time > LPS(GidToLid(msg->sender))->last_sent_time &&
+					LPS(GidToLid(msg->sender))->state == LP_STATE_READY)
+				LPS(GidToLid(msg->sender))->last_sent_time = msg->send_time;
+
+			msg_hdr = get_msg_hdr_from_slab();
+			msg_to_hdr(msg_hdr, msg);
+			// register the message in the sender's output queue, for antimessage management
+			// We can use msg->sender here (ensuring data separation) because we're extracting
+			// messages from an output port coming from a PT managed by the current CT, therefore
+			// involving only local LPs.
+			list_insert(LPS(GidToLid(msg->sender))->queue_out, send_time, msg_hdr);
+		}
+	}
+}
+
+>>>>>>> origin/power
 
         pt_put_out_msg(msg);
 

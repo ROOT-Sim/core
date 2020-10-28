@@ -38,12 +38,17 @@ enum {
 >>>>>>> origin/asym
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define COMPLETE_EVENTS 2000	// for the LOOP traditional case
 #define LOOP_COUNT	1000
 //#define FANOUT 1
 =======
 #define COMPLETE_EVENTS 100000	// for the LOOP traditional case
 #define LOOP_COUNT	500
+=======
+#define COMPLETE_EVENTS 10000	// for the LOOP traditional case
+#define LOOP_COUNT	250000
+>>>>>>> origin/power
 
 
 // This is the events' payload which is exchanged across LPs

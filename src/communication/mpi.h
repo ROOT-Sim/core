@@ -50,8 +50,13 @@ void mpi_init(int *argc, char ***argv);
 void inter_kernel_comm_init(void);
 void inter_kernel_comm_finalize(void);
 void mpi_finalize(void);
+<<<<<<< HEAD
 void syncronize_all(void);
 void send_remote_msg(msg_t * msg);
+=======
+void synchronize_all(void);
+void send_remote_msg(msg_t* msg);
+>>>>>>> origin/power
 bool pending_msgs(int tag);
 void receive_remote_msgs(void);
 bool is_request_completed(MPI_Request *);

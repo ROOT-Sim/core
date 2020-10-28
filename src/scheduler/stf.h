@@ -37,5 +37,15 @@
 #include <core/core.h>
 #include <scheduler/process.h>
 
+<<<<<<< HEAD
 extern struct lp_struct *smallest_timestamp_first(void);
 extern struct lp_struct* asym_smallest_timestamp_first(void);
+=======
+extern LID_t smallest_timestamp_first(void);
+extern LID_t asym_smallest_timestamp_first(void);
+
+
+#endif /* _SFT_H */
+
+
+>>>>>>> origin/power

@@ -111,11 +111,8 @@ msg_t *advance_to_next_event(struct lp_struct *lp)
 }
 
 /**
-* Insert a message in the bottom halft of a locally-hosted LP. Of course,
-* the LP must be locally hosted. This is guaranteed by the fact
-* that the only point where this function is called is from Send(),
-* which checks whether the LP is hosted locally from this kernel
-* instance or not.
+* Insert a message in the bottom half of a locally-hosted LP. Of course,
+* the LP must be locally hosted.
 *
 * @author Alessandro Pellegrini
 *
@@ -257,7 +254,17 @@ void process_bottom_halves(void)
                         list_delete_by_content(LPS[lid_receiver]->queue_in, matched_in_msg);
                     }
 
+<<<<<<< HEAD
 					break;
+=======
+
+					#ifdef HAVE_MPI
+					register_incoming_msg(msg_to_process);
+					#endif
+
+					// If the matched message is in the past, we have to rollback
+					if(matched_msg->timestamp <= lvt(lid_receiver)) {
+>>>>>>> origin/power
 
 				case positive_cb: ;
 
@@ -266,6 +273,7 @@ void process_bottom_halves(void)
                     msg_hdr_t* out_msg = list_tail(LPS[lid_receiver]->queue_out);
                     while(out_msg != NULL) {
 
+<<<<<<< HEAD
                         if (out_msg->mark == msg_to_process->mark) {
                             matched_out_msg = out_msg;
                             break;
@@ -320,13 +328,85 @@ void process_bottom_halves(void)
                         // Delete the matched message
                         list_delete_by_content(LPS[lid_receiver]->queue_out, matched_out_msg);
                     }
+=======
+						if(matched_msg->unprocessed == false)
+							goto delete;
+
+						// Unchain the event from the input queue
+						list_delete_by_content(receiver->queue_in, matched_msg);
+						list_insert_tail(LPS(lid_receiver)->retirement_queue, matched_msg);
+
+						// Rollback last sent time as well if needed
+						if(receiver->bound->timestamp < LPS(lid_receiver)->last_sent_time)
+							LPS(lid_receiver)->last_sent_time = receiver->bound->timestamp;
+
+					} else {
+					    delete:
+						// Unchain the event from the input queue
+						list_delete_by_content(receiver->queue_in, matched_msg);
+						// Delete the matched message
+						msg_release(matched_msg);
+						//list_insert_tail(LPS(lid_receiver)->retirement_queue, matched_msg);
+					}
+>>>>>>> origin/power
 
 					break;
 
                 case positive:
 >>>>>>> origin/cancelback
 
+<<<<<<< HEAD
 			    //spin_lock(&receiver->bound_lock);
+=======
+					// A positive message is directly placed in the queue
+	//				list_insert(receiver->queue_in, timestamp, msg_to_process);
+	do {\
+		__typeof__(msg_to_process) __n; /* in-block scope variable */\
+		__typeof__(msg_to_process) __new_n = (msg_to_process);\
+		size_t __key_position = my_offsetof((receiver->queue_in), timestamp);\
+		double __key;\
+		size_t __size_before;\
+		rootsim_list *__l;\
+		do {\
+			__l = (rootsim_list *)(receiver->queue_in);\
+			assert(__l);\
+			__size_before = __l->size;\
+			if(__l->size == 0) { /* Is the list empty? */\
+				__new_n->prev = NULL;\
+				__new_n->next = NULL;\
+				__l->head = __new_n;\
+				__l->tail = __new_n;\
+				break;\
+			}\
+			__key = get_key(__new_n); /* Retrieve the new node's key */\
+			/* Scan from the tail, as keys are ordered in an increasing order */\
+			__n = __l->tail;\
+			while(__n != NULL && __key < get_key(__n)) {\
+				__n = __n->prev;\
+			}\
+			/* Insert depending on the position */\
+		 	if(__n == __l->tail) { /* tail */\
+				__new_n->next = NULL;\
+				((__typeof(msg_to_process))__l->tail)->next = __new_n;\
+				__new_n->prev = __l->tail;\
+				__l->tail = __new_n;\
+			} else if(__n == NULL) { /* head */\
+				__new_n->prev = NULL;\
+				__new_n->next = __l->head;\
+				((__typeof(msg_to_process))__l->head)->prev = __new_n;\
+				__l->head = __new_n;\
+			} else { /* middle */\
+				__new_n->prev = __n;\
+				__new_n->next = __n->next;\
+				__n->next->prev = __new_n;\
+				__n->next = __new_n;\
+			}\
+		} while(0);\
+		__l->size++;\
+		assert(__l->size == (__size_before + 1));\
+	} while(0);
+
+>>>>>>> origin/power
 
 <<<<<<< HEAD
 				statistics_post_data(receiver, STAT_ANTIMESSAGE, 1.0);
@@ -343,12 +423,26 @@ void process_bottom_halves(void)
 							LPS[lid_receiver]->bound = list_prev(LPS[lid_receiver]->bound);
 						}
 
+<<<<<<< HEAD
 						if (LPS[lid_receiver]->state != LP_STATE_SYNCH_FOR_CANCELBACK) {
 							LPS[lid_receiver]->state = LP_STATE_ROLLBACK;
 						}
 					}
 
                     break;
+=======
+						receiver->state = LP_STATE_ROLLBACK;
+
+						// Rollback last sent time as well if needed
+						if(receiver->bound->timestamp < LPS(lid_receiver)->last_sent_time)
+							LPS(lid_receiver)->last_sent_time = receiver->bound->timestamp;
+					}
+
+					#ifdef HAVE_MPI
+					register_incoming_msg(msg_to_process);
+					#endif
+					break;
+>>>>>>> origin/power
 
 				// It's a control message
 				case other:
@@ -446,6 +540,7 @@ void process_bottom_halves(void)
              }
 		}
 	}
+<<<<<<< HEAD
 	straggler_set = false;
     straggler_percentage = (stragglers_received / n_lp_per_thread) * 100;
     post_stragglers_percentage(straggler_percentage);
@@ -483,4 +578,16 @@ unsigned long long generate_mark(struct lp_struct *lp)
 	unsigned long long k2 = lp->mark++;
 
 	return (unsigned long long)(((k1 + k2) * (k1 + k2 + 1) / 2) + k2);
+=======
+
+	// We have processed all in transit messages.
+	// Actually, during this operation, some new in transit messages could
+	// be placed by other threads. In this case, we loose their presence.
+	// This is not a correctness error. The only issue could be that the
+	// preemptive scheme will not detect this, and some events could
+	// be in fact executed out of order.
+	#ifdef HAVE_PREEMPTION
+	reset_min_in_transit(tid);
+	#endif
+>>>>>>> origin/power
 }

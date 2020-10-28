@@ -57,14 +57,26 @@
 >>>>>>> origin/incremental
 #include <statistics/statistics.h>
 
+<<<<<<< HEAD
+=======
+
+/// Function pointer to switch between the parallel and serial version of SetState
+void (*SetState)(void *new_state);
+
+
+>>>>>>> origin/power
 /**
 * This function is used to create a state log to be added to the LP's log chain
 *
 * @param lp A pointer to the lp_struct of the LP for which a checkpoint
 *           is to be taken.
 */
+<<<<<<< HEAD
 bool LogState(struct lp_struct *lp)
 {
+=======
+bool LogState(LID_t lid) {
+>>>>>>> origin/power
 	bool take_snapshot = false;
 	state_t *new_state;
 
@@ -270,9 +282,14 @@ void rollback(struct lp_struct *lp)
 	unsigned int reprocessed_events;
 
 	// Sanity check
+<<<<<<< HEAD
 	if (unlikely(lp->state != LP_STATE_ROLLBACK)) {
 		rootsim_error(false, "I'm asked to roll back LP %d's execution, but rollback_bound is not set. Ignoring...\n",
 			      lp->gid.to_int);
+=======
+	if(LPS(lid)->state != LP_STATE_ROLLBACK) {
+		rootsim_error(false, "I'm asked to roll back LP %d's execution, but it's not flagged as an LP to rollback\n", LidToGid(lid));
+>>>>>>> origin/power
 		return;
 	}
 <<<<<<< HEAD

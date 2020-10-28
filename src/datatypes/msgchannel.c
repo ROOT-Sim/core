@@ -72,8 +72,15 @@ msg_channel *init_channel(void)
     mc->buffers[M_READ] = rsalloc(sizeof(struct _msg_buff));
 	mc->buffers[M_WRITE] = rsalloc(sizeof(struct _msg_buff));
 
+<<<<<<< HEAD
 	if (mc->buffers[M_READ] == NULL || mc->buffers[M_WRITE] == NULL)
 		rootsim_error(true, "Unable to allocate message channel\n");
+=======
+	atomic_set(&mc->size, 0);
+
+	if(mc->buffers[M_READ] == NULL || mc->buffers[M_WRITE] == NULL)
+		rootsim_error(true, "%s:%d: Unable to allocate message channel\n", __FILE__, __LINE__);
+>>>>>>> origin/power
 
 	mc->buffers[M_READ]->buffer = rsalloc(INITIAL_CHANNEL_SIZE * sizeof(msg_t *));
 	mc->buffers[M_READ]->size = INITIAL_CHANNEL_SIZE;
@@ -125,12 +132,20 @@ void insert_msg(msg_channel * mc, msg_t * msg)
 
 	spin_unlock(&mc->write_lock);
 
+<<<<<<< HEAD
     atomic_inc(&mc->size);
 }
 
 
 void *get_msg(msg_channel * mc)
 {
+=======
+	atomic_inc(&mc->size);
+}
+
+void *get_msg(msg_channel *mc) {
+	int index;
+>>>>>>> origin/power
 	msg_t *msg = NULL;
 
 	if (unlikely(mc->buffers[M_READ]->read == mc->buffers[M_READ]->written)) {
@@ -143,7 +158,7 @@ void *get_msg(msg_channel * mc)
 		goto leave;
 	}
 
-	int index = mc->buffers[M_READ]->read++;
+	index = mc->buffers[M_READ]->read++;
 	msg = mc->buffers[M_READ]->buffer[index];
 	atomic_dec(&mc->size);
 
@@ -156,6 +171,7 @@ void *get_msg(msg_channel * mc)
 	return msg;
 }
 
+<<<<<<< HEAD
 
 // Retrieves the current amount of events in the respective input port
 int get_port_current_size(msg_channel *mc){
@@ -173,3 +189,10 @@ bool are_input_channels_empty(int id){
 bool is_out_channel_empty(unsigned int thread_id){
     return( get_port_current_size(Threads[thread_id]->output_port) == 0);
 }
+=======
+// Retrive the current amount of events in the respective input port 
+int get_port_current_size(msg_channel *mc){
+	return atomic_read(&mc->size);
+}
+
+>>>>>>> origin/power

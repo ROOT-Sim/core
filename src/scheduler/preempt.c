@@ -156,14 +156,25 @@ void preempt(void)
 	if (platform_mode || rolling_back) {
 //              atomic_inc(&overtick_platform);
 
+<<<<<<< HEAD
 	} else if (min_in_transit_lvt[local_tid] < current_lvt) {
 //              atomic_inc(&would_preempt);
 		current->state = LP_STATE_SUSPENDED;	// Questo triggera la logica di ripartenza dell'LP di ECS, ma forse va cambiato nome...
+=======
+	} else if(min_in_transit_lvt[tid] < current_lvt) {
+//		atomic_inc(&would_preempt);
+		LPS[current_lp]->state = LP_STATE_SUSPENDED; // Questo triggera la logica di ripartenza dell'LP di ECS, ma forse va cambiato nome...
+>>>>>>> origin/power
 		switch_to_platform_mode();
 		context_switch(&current->context, &kernel_context);
 	}
 
+<<<<<<< HEAD
 /*	if(!platform_mode && min_in_transit_lvt[local_tid] < current_lvt) {
+=======
+
+/*	if(!platform_mode && min_in_transit_lvt[tid] < current_lvt) {
+>>>>>>> origin/power
 
 		atomic_inc(&preempt_count);
 

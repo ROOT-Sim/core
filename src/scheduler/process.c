@@ -48,7 +48,16 @@ struct lp_struct **lps_blocks = NULL;
 /** Each KLT(CT) has a binding towards some LPs. This is the structure used
  *  to keep track of LPs currently being handled
  */
+<<<<<<< HEAD
 __thread struct lp_struct **lps_bound_blocks = NULL;
+=======
+__thread LP_State **lps_bound_blocks = NULL;
+
+__thread LP_State **asym_lps_mask = NULL;
+
+void initialize_control_blocks(void) {
+	register unsigned int i;
+>>>>>>> origin/power
 
 __thread struct lp_struct **asym_lps_mask = NULL;
 
@@ -62,12 +71,23 @@ void initialize_binding_blocks(void) {
 
 }
 
+<<<<<<< HEAD
 void free_binding_blocks(void){
     rsfree(lps_bound_blocks);
     rsfree(asym_lps_mask);
+=======
+void initialize_binding_blocks(void) {
+	lps_bound_blocks = (LP_State **)rsalloc(n_prc * sizeof(LP_State *));
+	bzero(lps_bound_blocks, sizeof(LP_State *) * n_prc);
+
+	// Also initialize the mask for asym_schedule used in asymmetric executions
+	asym_lps_mask = (LP_State **)rsalloc(n_prc * sizeof(LP_State *));
+	bzero(asym_lps_mask, sizeof(LP_State *) * n_prc);
+>>>>>>> origin/power
 }
 
 
+<<<<<<< HEAD
 void initialize_lps(void) {
 	unsigned int i, j;
 	unsigned int lid = 0;
@@ -110,12 +130,31 @@ void initialize_lps(void) {
 		allocator_init(lp);
 
 		lp->slab = slab_init(SLAB_MSG_SIZE);
+=======
+inline int LPS_bound_foreach(int (*f)(LID_t, GID_t, unsigned int, void *), void *data) {
+		LID_t lid;
+		GID_t gid;
+		unsigned int i;
+	
+		int ret = 0;
+
+		for(i = 0; i < n_prc_per_thread; i++) {
+		lid = LPS_bound(i)->lid;
+				gid = LidToGid(lid);
+				ret = f(lid, gid, lid_to_int(lid), data);
+				if(ret != 0)
+						break;
+		}
+
+		return ret;
+>>>>>>> origin/power
 
 		// Allocate memory for the outgoing buffer
 		lp->outgoing_buffer.max_size = INIT_OUTGOING_MSG;
 		lp->outgoing_buffer.outgoing_msgs =
 		    rsalloc(sizeof(msg_t *) * INIT_OUTGOING_MSG);
 
+<<<<<<< HEAD
 		// Initialize bottom halves msg channel
 		lp->bottom_halves = init_channel();
 
@@ -169,6 +208,44 @@ void initialize_lps(void) {
 
 		// Create User-Level Thread
 		context_create(&lp->context, LP_main_loop, NULL, lp->stack, LP_STACK_SIZE);
+=======
+// In asymmetric executions, it cycles on all LPs currently bound to the controller
+// thread. It skips NULL pointers as they represent LP's mapped to ports which are already
+// filled. 
+inline int LPS_asym_mask_foreach(int (*f)(LID_t, GID_t, unsigned int, void *), void *data) {
+		LID_t lid;
+		GID_t gid;
+		unsigned int i;
+		LP_State *mask;
+	
+		int ret = 0;
+
+		for(i = 0; i < n_prc_per_thread; i++) {
+			if((mask = LPS_bound_mask(i)) != NULL){
+				lid = mask->lid;
+				gid = LidToGid(lid);
+				ret = f(lid, gid, lid_to_int(lid), data);
+				if(ret != 0)
+					break;
+			}
+		}
+
+		return ret;
+}
+
+inline int LPS_foreach(int (*f)(LID_t, GID_t, unsigned int, void *), void *data) {
+	LID_t lid;
+	GID_t gid;
+	unsigned int i;
+	int ret = 0;
+
+	for(i = 0; i < n_prc; i++) {
+		set_lid(lid, i);
+		gid = LidToGid(lid);
+		ret = f(lid, gid, i, data);
+		if(ret != 0) 
+			break;
+>>>>>>> origin/power
 	}
 }
 

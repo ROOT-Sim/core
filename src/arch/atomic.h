@@ -76,6 +76,7 @@ typedef struct { volatile int count; } atomic_t;
 /// Spinlock definition
 typedef struct { volatile unsigned int lock; } spinlock_t;
 
+<<<<<<< HEAD
 
 
 extern inline bool CAS_x86(volatile unsigned long long *ptr, unsigned long long oldVal, unsigned long long newVal);
@@ -89,6 +90,19 @@ extern inline void atomic_dec_x86(atomic_t *);
 extern inline int atomic_inc_and_test_x86(atomic_t *v);
 extern inline bool spin_trylock_x86(spinlock_t *s);
 extern inline void spin_unlock_x86(spinlock_t *s);
+=======
+#define CAS(ptr, old, new) __sync_bool_compare_and_swap((ptr), (old), (new))
+inline bool iCAS(volatile uint32_t *ptr, uint32_t oldVal, uint32_t newVal);
+inline int atomic_test_and_set(int *);
+inline int atomic_test_and_reset(int *);
+inline void atomic_add(atomic_t *, int);
+inline void atomic_sub(atomic_t *, int);
+inline void atomic_inc(atomic_t *);
+inline void atomic_dec(atomic_t *);
+inline int atomic_inc_and_test(atomic_t *v);
+inline bool spin_trylock(spinlock_t *s);
+inline void spin_unlock(spinlock_t *s);
+>>>>>>> origin/power
 
 #ifdef SPINLOCK_GIVES_COUNT
 extern inline unsigned int spin_lock_x86(spinlock_t *s);

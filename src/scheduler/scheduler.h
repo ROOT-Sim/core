@@ -94,13 +94,58 @@ enum {
     BATCH_LOWEST_TIMESTAMP /**<batch lowest time stamp scheduler in asymmetric executions */
 };
 
+/* Code of the batch lowest time stamp scheduler
+* that can be used in asymmetric executions 
+*/
+#define BATCH_LOWEST_TIMESTAMP		1
+
+/* This macro defines a threshold in the percentage of utilization
+* of the port in asymmetric execution. Utilization rates higher than 
+* this value are considered inadequate as they might lead to an empty port 
+* the PTs. Consequently, if utilization is higher than this value,
+* the port size is increased.
+*
+* Author: Stefano Conoci
+*/
+#define UPPER_PORT_THRESHOLD	0.9
+
+
+/* This macro defines a threshold in the percentage of utilization
+* of the port in asymmetric execution. Utilization rates lower than 
+* this value are considered inadequate as they might lead to an excessive 
+* amount of unnecessary speculation . Consequently, if utilization  is
+* lower than this value, the port size is decreased.
+*
+* Author: Stefano Conoci
+*/ 
+#define LOWER_PORT_THRESHOLD	0.4
+
+// This marco defines the maximum logical size for the input queues
+#define MAX_PORT_SIZE	128
+
+// This macro defines the maximum number of events of a given lp can be put
+// in the input port in a single asym_schedule execution
+#define MAX_LP_EVENTS_PER_BATCH		1
+
+// This macro defines the amount of variation (either increase or decrease)
+// in the size of input ports based on the feedback from the previous schedule
+#define BATCH_STEP 	4
+
+// This macro defins the default value of the batch size of each input port
+#define PORT_START_BATCH_SIZE	4
+
 /* Functions invoked by other modules */
 extern void scheduler_init(void);
 extern void scheduler_fini(void);
 extern void schedule(void);
 extern void asym_schedule(void);
 extern void asym_process(void);
+<<<<<<< HEAD
 extern void schedule_on_init(struct lp_struct *next);
+=======
+extern void initialize_LP(LID_t lp);
+extern void initialize_processing_thread(void);
+>>>>>>> origin/power
 extern void initialize_worker_thread(void);
 extern void activate_LP(struct lp_struct *, msg_t *);
 extern void LP_main_loop(void *args);
@@ -122,8 +167,15 @@ void disable_preemption(void);
 
 extern __thread struct lp_struct *current;
 extern __thread msg_t *current_evt;
+<<<<<<< HEAD
 extern __thread unsigned int n_lp_per_thread;
 extern long *total_idle_microseconds;
+=======
+extern __thread void *current_state;
+extern __thread unsigned int n_prc_per_thread;
+extern long *total_idle_microseconds;
+
+>>>>>>> origin/power
 
 #ifdef HAVE_PREEMPTION
 extern __thread volatile bool platform_mode;

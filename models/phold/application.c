@@ -5,6 +5,7 @@
 
 #include "application.h"
 
+<<<<<<< HEAD
 static unsigned max_buffers = MAX_BUFFERS;
 static unsigned max_buffer_size = MAX_BUFFER_SIZE;
 static unsigned complete_events = COMPLETE_EVENTS;
@@ -90,6 +91,9 @@ static error_t model_parse(int key, char *arg, struct argp_state *state) {
 }
 
 #undef HANDLE_ARGP_CASE
+=======
+#define JOBS_PER_OBJECT 10
+>>>>>>> origin/power
 
 struct _topology_settings_t topology_settings = {.type = TOPOLOGY_OBSTACLES, .default_geometry = TOPOLOGY_GRAPH, .write_enabled = false};
 struct argp model_argp = {model_options, model_parse, NULL, NULL, NULL, NULL, NULL};
@@ -124,9 +128,13 @@ void ProcessEvent(int curr_lp, simtime_t event_ts, int event_type, event_content
 	lp_state_type *state_ptr = (lp_state_type*)state;
 >>>>>>> origin/asym
 
+<<<<<<< HEAD
 void ProcessEvent(unsigned me, simtime_t now, int event_type, unsigned *event_content, unsigned int event_size, void *state) {
 	lp_state_type *state_ptr = (lp_state_type *)state;
 
+=======
+	int cont = 0; 
+>>>>>>> origin/power
 	switch (event_type) {
 
 		case INIT:
@@ -138,6 +146,7 @@ void ProcessEvent(unsigned me, simtime_t now, int event_type, unsigned *event_co
 
 <<<<<<< HEAD
                         SetState(state_ptr);
+<<<<<<< HEAD
 
 			if(new_mode) {
 				unsigned buffers_to_allocate = (unsigned)(Random() * max_buffers);
@@ -145,8 +154,11 @@ void ProcessEvent(unsigned me, simtime_t now, int event_type, unsigned *event_co
 			// Explicitly tell ROOT-Sim this is our LP's state
             SetState(state_ptr);
 
+=======
+	loop: 
+>>>>>>> origin/power
 			timestamp = (simtime_t) (20 * Random());
-
+	
 
 			if(1 /*|| IsParameterPresent(event_content, "traditional")*/) {
 
@@ -164,7 +176,14 @@ void ProcessEvent(unsigned me, simtime_t now, int event_type, unsigned *event_co
 					printf("Running a traditional loop-based PHOLD benchmark with counter set to %d, %d total events per LP\n", LOOP_COUNT, COMPLETE_EVENTS);
 				}
 
+<<<<<<< HEAD
 				ScheduleNewEvent(curr_lp, timestamp, LOOP, NULL, 0);
+=======
+				ScheduleNewEvent(me, timestamp, LOOP, NULL, 0);
+				cont++; 
+				if(cont < JOBS_PER_OBJECT)
+					goto loop;
+>>>>>>> origin/power
 			} else {
 
 				state_ptr->traditional = false;
@@ -256,6 +275,7 @@ void ProcessEvent(unsigned me, simtime_t now, int event_type, unsigned *event_co
 
 		case LOOP:
 <<<<<<< HEAD
+<<<<<<< HEAD
 			state_ptr->events++;
 			simtime_t timestamp = now + (Expent(tau));
 			ScheduleNewEvent(me, timestamp, LOOP, NULL, 0);
@@ -277,6 +297,22 @@ void ProcessEvent(unsigned me, simtime_t now, int event_type, unsigned *event_co
 		ScheduleNewEvent(FindReceiver(), timestamp, LOOP, NULL, 0);}
 
 		break;
+=======
+			for(i = 0; i < LOOP_COUNT; i++) {
+				j = i;
+			}
+			for(i = 0; i < 1; i++) {
+				state_ptr->events++;
+				timestamp = now + (simtime_t)(Expent(TAU));
+				if(Random() < 0.8)
+					ScheduleNewEvent(FindReceiver(TOPOLOGY_MESH), timestamp, LOOP, NULL, 0);
+				else
+					ScheduleNewEvent(me, timestamp, LOOP, NULL, 0);
+			}
+			if(0 && Random() < 0.2)
+				ScheduleNewEvent(FindReceiver(TOPOLOGY_MESH), timestamp, LOOP, NULL, 0);
+			break;
+>>>>>>> origin/power
 
 
 		case ALLOC: {

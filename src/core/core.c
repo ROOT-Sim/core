@@ -43,7 +43,12 @@
 #include <scheduler/scheduler.h>
 #include <statistics/statistics.h>
 #include <gvt/gvt.h>
+<<<<<<< HEAD
 #include <mm/mm.h>
+=======
+#include <mm/dymelor.h>
+#include <core/power.h>
+>>>>>>> origin/power
 
 /// Barrier for all worker threads
 barrier_t all_thread_barrier;
@@ -139,6 +144,7 @@ static void handle_signal(int signum)
 *
 */
 void base_init(void) {
+<<<<<<< HEAD
 	struct sigaction new_act = { 0 };
 
     if(rootsim_config.num_controllers > 0) {
@@ -155,6 +161,44 @@ void base_init(void) {
 	// register the signal handler
 	sigaction(SIGINT, &new_act, NULL);
 	// register the exit function
+=======
+	register unsigned int i;
+	GID_t gid;
+
+	if(rootsim_config.num_controllers > 0) {
+		barrier_init(&controller_barrier, rootsim_config.num_controllers);
+	} else {
+		barrier_init(&controller_barrier, n_cores);
+	}
+
+	barrier_init(&all_thread_barrier, n_cores);
+
+	n_prc = 0;
+	ProcessEvent = rsalloc(sizeof(void *) * n_prc_tot);
+	OnGVT = rsalloc(sizeof(void *) * n_prc_tot);
+	to_lid = (unsigned int *)rsalloc(sizeof(unsigned int) * n_prc_tot);
+	to_gid = (unsigned int *)rsalloc(sizeof(unsigned int) * n_prc_tot);
+
+	for (i = 0; i < n_prc_tot; i++) {
+
+		if (rootsim_config.snapshot == FULL_SNAPSHOT) {
+			OnGVT[i] = &OnGVT_light;
+			ProcessEvent[i] = &ProcessEvent_light;
+		} // TODO: add here an else for ISS
+
+		set_gid(gid, i);
+		if (GidToKernel(gid) == kid) { // If the i-th logical process is hosted by this kernel
+			to_lid[i] = n_prc;
+			to_gid[n_prc] = i;
+			n_prc++;
+		} else if (kernel[i] < n_ker) { // If not
+			to_lid[i] = UINT_MAX;
+		} else { // Sanity check
+			rootsim_error(true, "Invalid mapping: there is no kernel %d!\n", kernel[i]);
+		}
+	}
+
+>>>>>>> origin/power
 	atexit(exit_from_simulation_model);
 }
 
@@ -205,7 +249,13 @@ void simulation_shutdown(int code)
 			statistics_fini();
 			gvt_fini();
 			communication_fini();
+<<<<<<< HEAD
 			scheduler_fini();
+=======
+			#ifdef HAVE_POWER_MANAGEMENT	
+			shutdown_powercap_module();
+			#endif
+>>>>>>> origin/power
 			base_fini();
 		}
 

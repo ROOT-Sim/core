@@ -44,6 +44,14 @@
 <<<<<<< HEAD
 #include <lib/numerical.h>
 #include <arch/atomic.h>
+<<<<<<< HEAD
+=======
+
+
+extern int controller_committed_events;
+extern atomic_t final_processed_events;
+extern __thread int my_processed_events;
+>>>>>>> origin/power
 
 
 extern int controller_committed_events;
@@ -195,10 +203,17 @@ typedef struct _msg_t {
 =======
 >>>>>>> origin/asym
 
+<<<<<<< HEAD
 	// Pointers to attach messages to chains
 	struct _msg_t *next;
 	struct _msg_t *prev;
     bool	unprocessed;
+=======
+	struct _msg_t 		*next;
+	struct _msg_t 		*prev;
+	unsigned int		alloc_tid; // TODO: this should be moved into an external container, to avoid transmitting it!
+	bool			unprocessed;
+>>>>>>> origin/power
 
 	/* Place here all members which must be transmitted over the network. It is convenient not to reorder the members
 	 * of the structure. If new members have to be added, place them right before the "Model data" part.*/
