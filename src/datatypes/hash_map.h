@@ -26,8 +26,11 @@
 * It's based on a open addressing design:
 * it handles collisions through linear probing,
 * entries are reordered through robin hood hashing.
+<<<<<<< HEAD
 *  TODO by default __wrap_malloc and __wrap_free are used, instead
 * 	the choice of the allocation facilities should change on demand
+=======
+>>>>>>> origin/incremental
 */
 
 #pragma once

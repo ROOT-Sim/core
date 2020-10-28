@@ -32,8 +32,11 @@
 #include <core/init.h>
 #include <gvt/gvt.h>
 #include <gvt/ccgs.h>
+<<<<<<< HEAD
 #include <mm/state.h>
 <<<<<<< HEAD
+=======
+>>>>>>> origin/incremental
 #include <mm/mm.h>
 =======
 #include <mm/globvars.h>

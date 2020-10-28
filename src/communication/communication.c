@@ -55,7 +55,7 @@
 #endif
 
 /// This is the function pointer to correctly set ScheduleNewEvent API version, depending if we're running serially or in parallel
-void (*ScheduleNewEvent)(unsigned int gid_receiver, simtime_t timestamp, unsigned int event_type, void *event_content, unsigned int event_size);
+__visible void (*ScheduleNewEvent)(unsigned int gid_receiver, simtime_t timestamp, unsigned int event_type, void *event_content, unsigned int event_size);
 
 /**
 * @brief Initialize the communication subsystem
@@ -141,6 +141,7 @@ void msg_hdr_release(msg_hdr_t *msg)
 
 	lp = find_lp_by_gid(msg->sender);
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 #ifndef NDEBUG
 	bzero(msg, sizeof(msg_hdr_t));
@@ -150,6 +151,9 @@ void msg_hdr_release(msg_hdr_t *msg)
 =======
 	slab_free(lp->slab, msg);
 >>>>>>> origin/exercise
+=======
+	slab_free(lp, msg);
+>>>>>>> origin/incremental
 }
 
 
@@ -258,10 +262,14 @@ void send_antimessages(unsigned int lid, simtime_t after_simtime) {
 msg_t *get_msg_from_slab(struct lp_struct *lp)
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	msg_t *msg = (msg_t *) slab_alloc(lp->mm->slab);
 	bzero(msg, rootsim_config.slab_msg_size);
 =======
 	msg_t *msg = (msg_t *) slab_alloc(lp->slab);
+=======
+	msg_t *msg = (msg_t *) slab_alloc(lp);
+>>>>>>> origin/incremental
 	bzero(msg, SLAB_MSG_SIZE);
 >>>>>>> origin/exercise
 	return msg;
@@ -304,7 +312,11 @@ void msg_release(msg_t *msg)
 
 	if (likely(sizeof(msg_t) + msg->size <= rootsim_config.slab_msg_size)) {
 		lp = which_slab_to_use(msg->sender, msg->receiver);
+<<<<<<< HEAD
 		slab_free(lp->slab, msg);
+=======
+		slab_free(lp, msg);
+>>>>>>> origin/incremental
 	} else {
 		rsfree(msg);
 	}
@@ -340,14 +352,14 @@ void msg_release(msg_t *msg)
  *
  * If the LP is running in silent execution, this function simply returns
  * as the event has already been sent during a previous event execution.
- * 
+ *
  * @param gid_receiver Global id of logical process at which the message must be delivered
  * @param timestamp Logical Virtual Time associated with the event enveloped into the message
  * @param event_type Type of the event
  * @param event_content Payload of the event
  * @param event_size Size of event's payload
  */
-void ParallelScheduleNewEvent(unsigned int gid_receiver, simtime_t timestamp, unsigned int event_type, void *event_content, unsigned int event_size)
+__visible void ParallelScheduleNewEvent(unsigned int gid_receiver, simtime_t timestamp, unsigned int event_type, void *event_content, unsigned int event_size)
 {
 	msg_t *event;
 	GID_t receiver;
@@ -362,6 +374,7 @@ void ParallelScheduleNewEvent(unsigned int gid_receiver, simtime_t timestamp, un
 	// In Silent execution, we do not send again already sent messages
 	if (unlikely(current->state == LP_STATE_SILENT_EXEC)) {
 		return;
+		//goto out;
 	}
 	// Check whether the destination LP is out of range
 	if (unlikely(gid_receiver > n_LP_tot - 1)) {	// It's unsigned, so no need to check whether it's < 0
@@ -831,7 +844,11 @@ void dump_msg_content(msg_t *msg) {
 	printf("\tsend_time: %f\n", msg->send_time);
 	printf("\tmark: %llu\n", msg->mark);
 	printf("\trendezvous_mark: %llu\n", msg->rendezvous_mark);
+<<<<<<< HEAD
 	printf("\tsize: %d\n", msg->size);  */
+=======
+	printf("\tsize: %zu\n", msg->size);
+>>>>>>> origin/incremental
 }
 
 <<<<<<< HEAD
@@ -901,7 +918,7 @@ unsigned int mark_to_gid(unsigned long long mark)
  *          use it in a production environment. The @c NDEBUG guard
  *          ensures that it is never compiled in a final version of the
  *          runtime environment, so keep it only as a debugging function.
- * 
+ *
  * @param msg A pointer to the message to validate
  */
 void validate_msg(msg_t *msg)

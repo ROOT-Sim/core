@@ -27,6 +27,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -42,8 +43,10 @@
 #include <gvt/ccgs.h>
 #include <powercap/powercap.h>
 #include <scheduler/binding.h>
+#include <scheduler/ht_sched.h>
 #include <scheduler/scheduler.h>
 #include <scheduler/process.h>
+#include <scheduler/ht_sched.h>
 #include <gvt/gvt.h>
 #include <mm/mm.h>
 #include <score/score.h>
@@ -59,6 +62,7 @@
 #include <core/init.h>
 #undef _INIT_FROM_MAIN
 
+<<<<<<< HEAD
 int controller_committed_events = 0;
 atomic_t final_processed_events;
 __thread int my_processed_events = 0;
@@ -76,6 +80,13 @@ static atomic_t PTs_to_stop;
 ///add or remove CTs
 static int thread_configuration_modifier;
 
+=======
+#ifdef HAVE_PMU
+#include <arch/x86/linux/rootsim/ioctl.h>
+#include <sys/ioctl.h>  /* ioctl syscall*/
+#include <unistd.h>	/* close syscall */
+#endif
+>>>>>>> origin/incremental
 
 /**
  * This jump buffer allows rootsim_error, in case of a failure, to jump
@@ -133,6 +144,16 @@ static bool end_computing(void) {
 	return false;
 }
 
+<<<<<<< HEAD
+=======
+#ifdef HAVE_PREEMPTION
+extern atomic_t preempt_count;
+extern atomic_t overtick_platform;
+extern atomic_t would_preempt;
+extern atomic_t overtick_user;
+extern atomic_t need_resched;
+#endif
+>>>>>>> origin/incremental
 
 static void finish(void) {
 =======
@@ -162,19 +183,62 @@ static void wait(void){
 static void *main_simulation_loop(void *arg) __attribute__((noreturn));
 static void *main_simulation_loop(void *arg)
 {
-
 	(void)arg;
+<<<<<<< HEAD
 	simtime_t my_time_barrier = -1.0;
 
 	if(rootsim_config.powercap > 0)
 		init_powercap_thread(tid);
+=======
+
+	smart_set_affinity();
+
+	simtime_t my_time_barrier = -1.0;
+
+#ifdef HAVE_PMU
+	if (rootsim_config.snapshot == SNAPSHOT_HARDINC) {
+		fd = open("/dev/rootsim", 666);
+		if (fd < 0) {
+			printf("Error, cannot open %s\n", "/dev/rootsim");
+			abort();
+		}
+	}
+#endif
+>>>>>>> origin/incremental
 
 #ifdef HAVE_CROSS_STATE
 	lp_alloc_thread_init();
 #endif
 >>>>>>> origin/energy
 
+<<<<<<< HEAD
 static void symmetric_execution(void) {
+=======
+#ifdef HAVE_PMU
+	pid_t pid;
+	if (rootsim_config.snapshot == SNAPSHOT_HARDINC) {
+		pid = getpid();
+		if (ioctl(fd, IOCTL_ADD_THREAD, pid)) {
+			printf("Cannot register thread to  %s\n", "/dev/rootsim");
+			abort();
+		} else {
+			printf("THREAD %u registered\n", pid);
+		}
+
+		/* Init memory_trace struct - Check it */
+		memory_trace.addresses = (unsigned long long *) malloc(4096 * 16);
+		if (!memory_trace.addresses) {
+			printf("memory_trace init failed, malloc error\n");
+			abort();
+		}
+		memory_trace.length = (4096 * 16) / sizeof(unsigned long long);
+		memory_trace.cpu = sched_getcpu();
+		/* IOCTL to register thread */
+	}
+#endif
+	// Do the initial (local) LP binding, then execute INIT at all (local) LPs
+	initialize_worker_thread();
+>>>>>>> origin/incremental
 
     simtime_t my_time_barrier = -1.0;
 
@@ -233,6 +297,11 @@ static void symmetric_execution(void) {
 		if (master_kernel() && master_thread() && D_DIFFER(my_time_barrier, -1.0)) {
 			if (rootsim_config.verbose == VERBOSE_INFO || rootsim_config.verbose == VERBOSE_DEBUG) {
 				printf("TIME BARRIER %f\n", my_time_barrier);
+<<<<<<< HEAD
+=======
+#endif
+
+>>>>>>> origin/incremental
 				fflush(stdout);
 			}
 		}
@@ -286,6 +355,7 @@ static void symmetric_execution(void) {
     finish();
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 static void asymmetric_execution(void) {
 
@@ -468,6 +538,21 @@ static void asymmetric_execution(void) {
 	if(rootsim_config.powercap > 0 && master_thread())
 		end_powercap_mainthread();
 
+=======
+leave_for_error:
+#ifdef HAVE_PMU
+	if (rootsim_config.snapshot == SNAPSHOT_HARDINC) {
+		free(memory_trace.addresses);
+		if (!pid || ioctl(fd, IOCTL_DEL_THREAD, pid)) {
+			printf("Cannot unregister thread to  %s\n", "/dev/rootsim");
+		} else {
+			printf("THREAD %u unregistered\n", pid);
+		}
+		if (fd) close(fd);
+		/* IOCTL to unregister thread */
+	}
+#endif
+>>>>>>> origin/incremental
 	thread_barrier(&all_thread_barrier);
 
 	// If we're exiting due to an error, we neatly shut down the simulation
@@ -566,9 +651,6 @@ int main(int argc, char **argv) {
 	#endif
 
 	SystemInit(argc, argv);
-
-	if (rootsim_config.core_binding)
-		set_affinity(0);
 
 	if (rootsim_config.serial) {
 		serial_simulation();

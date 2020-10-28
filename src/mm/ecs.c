@@ -47,7 +47,7 @@
 
 
 #include <core/core.h>
-#include <mm/mm.h>
+#include <mm/dymelor.h>
 #include <scheduler/scheduler.h>
 #include <scheduler/process.h>
 #include <communication/communication.h>
@@ -63,7 +63,7 @@
 #include <math.h>
 >>>>>>> origin/ecs
 
-#include <arch/x86/linux/cross_state_manager/cross_state_manager.h>
+#include <arch/x86/linux/rootsim/ioctl.h>
 
 #define foo(x) printf(x "\n"); fflush(stdout)
 #define treshold(x) (x * alpha)
@@ -612,7 +612,14 @@ void ecs_send_pages(msg_t *msg) {
 	void *sender_fault_address;
 
 	the_request = (ecs_page_request_t *)&(msg->event_content);
+<<<<<<< HEAD
 	
+=======
+	the_pages = __real_malloc(sizeof(ecs_page_request_t) + the_request->count * PAGE_SIZE);
+	the_pages->write_mode = the_request->write_mode;
+	the_pages->base_address = the_request->base_address;
+	the_pages->count = the_request->count;
+>>>>>>> origin/incremental
 
 <<<<<<< HEAD
 	//printf("LP %d sending %d pages from %p to %d\n", msg->receiver, the_request->count, the_request->base_address, msg->sender);
@@ -656,11 +663,15 @@ void reinstall_writeback_pages(msg_t *msg) {
 
 	wb = (ecs_writeback_t *)(msg->event_content);
 
+<<<<<<< HEAD
 	for(i = 0; i < wb->count; i++) {
 		dest = (void *)(wb->pages[i].address);
 		source = wb->pages[i].page;
 		memcpy(dest, source, PAGE_SIZE);
 	}
+=======
+	__real_free(the_pages);
+>>>>>>> origin/incremental
 }
 
 void reinstall_prefetch_pages(msg_t *msg){

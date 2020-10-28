@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+<<<<<<< HEAD
 #include <core/core.h>
 
 extern void *__real_malloc(size_t);
@@ -38,6 +39,14 @@ extern void *__real_realloc(void *, size_t);
 extern void *__real_calloc(size_t, size_t);
 
 inline void *rsalloc(size_t size) {
+=======
+#include <mm/dymelor.h>
+#include <mm/mm.h>
+#include <core/core.h>
+
+inline void *rsalloc(size_t size)
+{
+>>>>>>> origin/incremental
 	void *mem_block = __real_malloc(size);
 	if (unlikely(mem_block == NULL && size != 0)) {
 		rootsim_error(true, "Error in memory allocation, aborting...");
@@ -45,7 +54,19 @@ inline void *rsalloc(size_t size) {
 	return mem_block;
 }
 
+<<<<<<< HEAD
 inline void rsfree(void *ptr) {
+=======
+inline void *rszalloc(size_t size)
+{
+	void *mem_block = rsalloc(size);
+	__real_bzero(mem_block, size);
+	return mem_block;
+}
+
+inline void rsfree(void *ptr)
+{
+>>>>>>> origin/incremental
 	__real_free(ptr);
 }
 

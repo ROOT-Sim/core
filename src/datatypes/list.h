@@ -60,9 +60,13 @@ typedef struct rootsim_list {
  */
 #define new_list(type)	(type *)({ \
 				void *__lmptr; \
+<<<<<<< HEAD
 				__lmptr = (void *)rsalloc(sizeof(struct rootsim_list)); \
 				bzero(__lmptr, sizeof(struct rootsim_list));\
                 ((rootsim_list *)__lmptr)->concurrency_canary = UINT32_MAX;\
+=======
+				__lmptr = (void *)rszalloc(sizeof(struct rootsim_list)); \
+>>>>>>> origin/incremental
 				__lmptr;\
 			})
 
@@ -162,8 +166,8 @@ typedef struct rootsim_list {
 
 /// This macro retrieves the key of a payload data structure given its offset, and casts the value to double.
 #define get_key(data) ({\
-			char *__key_ptr = ((char *)(data) + __key_position);\
-			double *__key_double_ptr = (double *)__key_ptr;\
+			void *__key_ptr = ((char *)(data) + __key_position);\
+			double *__key_double_ptr = (double *)(__key_ptr);\
 			*__key_double_ptr;\
 		      })
 

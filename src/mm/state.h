@@ -41,7 +41,7 @@
 
 enum {
 	STATE_SAVING_INVALID = 0,	/**< By convention 0 is the invalid field */
-	STATE_SAVING_COPY,			/**< Copy State Saving checkpointing interval */
+	STATE_SAVING_COPY,		/**< Copy State Saving checkpointing interval */
 	STATE_SAVING_PERIODIC		/**< Periodic State Saving checkpointing interval */
 };
 

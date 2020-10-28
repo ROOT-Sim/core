@@ -35,8 +35,12 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <arch/atomic.h>
+<<<<<<< HEAD
 
 #include <stdatomic.h>
+=======
+#include <mm/mm.h>
+>>>>>>> origin/incremental
 
 /**
 * This function implements a compare-and-swap atomic operation on x86-64 for integers

@@ -35,10 +35,13 @@
 #include <stdbool.h>
 
 #include <mm/state.h>
+<<<<<<< HEAD
 #include <mm/slab.h>
 
 #include <mm/mm.h>
 #include <exc/allocator/allocator.h>
+=======
+>>>>>>> origin/incremental
 #include <mm/ecs.h>
 #include <datatypes/list.h>
 #include <datatypes/msgchannel.h>
@@ -47,7 +50,7 @@
 #include <lib/abm_layer.h>
 #include <lib/topology.h>
 #include <communication/communication.h>
-#include <arch/x86/linux/cross_state_manager/cross_state_manager.h>
+#include <arch/x86/linux/rootsim/ioctl.h>
 
 #define LP_STACK_SIZE	4194304	// 4 MB
 
@@ -107,6 +110,12 @@ struct lp_struct {
 	/// Global ID of the LP
 	GID_t gid;
 
+	/// Logical Process lock, used to serialize accesses to concurrent data structures
+	spinlock_t	lock;
+
+	/// Seed to generate pseudo-random values
+	seed_type	seed;
+
 	/// ID of the worker thread towards which the LP is bound
 	unsigned int worker_thread;
 
@@ -130,12 +139,18 @@ struct lp_struct {
 	/// Counts how many events executed from the last checkpoint (to support PSS)
 	unsigned int from_last_ckpt;
 
+	/// Counts how many incremental checkpoints have been taken (to support ISS)
+	unsigned int from_last_full_ckpt;
+
 	/// If this variable is set, the next invocation to LogState() takes a new state log, independently of the checkpointing interval
 <<<<<<< HEAD
 	bool state_log_forced;
 =======
 	bool		state_log_forced;
 >>>>>>> origin/cancelback
+
+	/// If this variable is set, the next invocation to LogState() takes a full checkpointing, independently of the checkpointing mode or policies
+	bool state_log_full_forced;
 
 	/// The current state base pointer (updated by SetState())
 	void *current_base_pointer;
@@ -156,10 +171,10 @@ struct lp_struct {
 	spinlock_t bound_lock;
 
 	/// Output messages queue
-	 list(msg_hdr_t) queue_out;
+	list(msg_hdr_t) queue_out;
 
 	/// Saved states queue
-	 list(state_t) queue_states;
+	list(state_t) queue_states;
 
     /// Event retirement queue
     list(msg_t) retirement_queue;
@@ -168,7 +183,7 @@ struct lp_struct {
 	msg_channel *bottom_halves;
 
 	/// Processed rendezvous queue
-	 list(msg_t) rendezvous_queue;
+	list(msg_t) rendezvous_queue;
 
     /// Unique identifier within the LP
     unsigned long long mark;
@@ -240,7 +255,7 @@ struct lp_struct {
 
 	/// pointer to the region struct
 	region_abm_t *region;
-	
+
 };
 
 // LPs process control blocks and binding control blocks

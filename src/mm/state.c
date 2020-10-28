@@ -49,8 +49,12 @@
 #include <communication/communication.h>
 <<<<<<< HEAD
 #include <mm/mm.h>
+<<<<<<< HEAD
 =======
 >>>>>>> origin/globvars
+=======
+#include <mm/dymelor.h>
+>>>>>>> origin/incremental
 #include <statistics/statistics.h>
 
 /**
@@ -80,25 +84,32 @@ bool LogState(struct lp_struct *lp)
 	// Switch on the checkpointing mode
 	switch (rootsim_config.checkpointing) {
 
-	case STATE_SAVING_COPY:
-		take_snapshot = true;
-		break;
-
-	case STATE_SAVING_PERIODIC:
-		if (lp->from_last_ckpt >= lp->ckpt_period) {
+		case STATE_SAVING_COPY:
 			take_snapshot = true;
-			lp->from_last_ckpt = 0;
-		}
-		break;
+			break;
 
-	default:
-		rootsim_error(true, "State saving mode not supported.");
+		case STATE_SAVING_PERIODIC:
+			if (lp->from_last_ckpt >= lp->ckpt_period) {
+				take_snapshot = true;
+				lp->from_last_ckpt = 0;
+			}
+			break;
+
+		default:
+			rootsim_error(true, "State saving mode not supported.");
 	}
 
  skip_switch:
 
 	// Shall we take a log?
 	if (take_snapshot) {
+
+		// Check if we have to force a full checkpoint
+		lp->from_last_full_ckpt++;
+		if(lp->from_last_full_ckpt >= 10) {
+			set_force_full(lp);
+			lp->from_last_full_ckpt = 0;
+		}
 
 		// Allocate the state buffer
 		new_state = rsalloc(sizeof(*new_state));
@@ -147,8 +158,14 @@ bool LogState(struct lp_struct *lp)
 	return take_snapshot;
 }
 
+<<<<<<< HEAD
 void RestoreState(struct lp_struct *lp, state_t * state_to_restore)
+=======
+void RestoreState(struct lp_struct *lp, state_t *restore_state)
+>>>>>>> origin/incremental
 {
+	//~ printf("(%d) Restoring state at %f\n", lp->gid.to_int, restore_state->lvt);
+
 	// Restore simulation model buffers
 <<<<<<< HEAD
 	log_restore(lp, state_to_restore);
@@ -260,6 +277,8 @@ void rollback(struct lp_struct *lp)
 	}
 <<<<<<< HEAD
 
+	//~ printf("(%d) Rolling back at %f\n", lp->gid.to_int, lvt(lp));
+
 	// Discard any possible execution state related to a blocked execution
 	memcpy(&lp->context, &lp->default_context, sizeof(LP_context_t));
 
@@ -267,6 +286,7 @@ void rollback(struct lp_struct *lp)
 
 	last_correct_event = lp->bound;
 
+<<<<<<< HEAD
 =======
 
 	statistics_post_lp_data(lid, STAT_ROLLBACK, 1.0);
@@ -280,6 +300,8 @@ void rollback(struct lp_struct *lp)
 	globvars_rollback(last_correct_event->timestamp);
 	
 >>>>>>> origin/globvars
+=======
+>>>>>>> origin/incremental
 	// Send antimessages
 	send_antimessages(lp, last_correct_event->timestamp);
 
@@ -307,6 +329,7 @@ void rollback(struct lp_struct *lp)
 #endif
 		list_delete_by_content(lp->queue_states, s);
 	}
+
 	// Restore the simulation state and correct the state base pointer
 	RestoreState(lp, state_to_restore);
 
@@ -363,14 +386,13 @@ state_t *find_time_barrier(struct lp_struct *lp, simtime_t simtime)
 >>>>>>> origin/cancelback
 	}
 
-/*
-	// TODO Search for the first full log before the gvt
+
+	// Search for the first full log before the gvt
 	while(true) {
-		if(is_incremental(current->log) == false)
+		if(is_incremental(barrier_state->log) == false)
 			break;
-	  	current = list_prev(current);
+		barrier_state = list_prev(barrier_state);
 	}
-*/
 
 	return barrier_state;
 }

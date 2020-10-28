@@ -11,6 +11,7 @@
 #define actual_malloc(siz) malloc(siz)
 #define actual_free(ptr) free(ptr)
 
+#include <mm/mm.h>
 #include <mm/dymelor.h>
 #include <core/init.h>
 
@@ -82,13 +83,6 @@ int n_running;
 
 
 __thread struct thread_st *st;
-
-
-void statistics_post_data(struct lp_struct *lp, enum stat_msg_t type, double data) {
-	(void)lp;
-	(void)type;
-	(void)data;
-}
 
 
 /*
@@ -178,7 +172,7 @@ static void free_it(struct bin *m) {
 		frees++;
 	}
 	if(m->subs == SLAB)
-		slab_free(current->mm->slab, m->ptr);
+		slab_free(current, m->ptr);
 	if(m->subs == BUDDY)
 		free_buddy_memory(current->mm->buddy, current->mm->segment->base, m->ptr);
 }
@@ -235,7 +229,7 @@ static void bin_alloc(struct bin *m, size_t size, unsigned r)
 		// slab
 		if (m->size > 0)
 			free_it(m);
-		m->ptr = slab_alloc(current->mm->slab);
+		m->ptr = slab_alloc(current);
 		m->subs = SLAB;
 	} else {
 		// malloc

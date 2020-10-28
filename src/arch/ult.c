@@ -45,6 +45,10 @@
 #include <arch/ult.h>
 #include <core/core.h>
 #include <scheduler/process.h>
+<<<<<<< HEAD
+=======
+#include <mm/mm.h>
+>>>>>>> origin/incremental
 
 /// This is the execution context of the simulation kernel
 __thread kernel_context_t kernel_context;

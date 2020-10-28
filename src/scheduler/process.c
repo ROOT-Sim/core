@@ -29,12 +29,14 @@
  * @date December 14, 2017
  */
 
+#include <stdlib.h>
 #include <limits.h>
 
 #include <core/core.h>
 #include <core/init.h>
 #include <scheduler/process.h>
 #include <scheduler/scheduler.h>
+#include <mm/mm.h>
 
 // TODO: see issue #121 to see how to make this ugly hack disappear
 __thread unsigned int __lp_counter = 0;
@@ -118,10 +120,15 @@ void initialize_lps(void) {
 		lp->bottom_halves = init_channel();
 
 		// Which version of OnGVT and ProcessEvent should we use?
-		if (rootsim_config.snapshot == SNAPSHOT_FULL) {
-			lp->OnGVT = &OnGVT_light;
-			lp->ProcessEvent = &ProcessEvent_light;
-		}		// TODO: add here an else for ISS
+		if (rootsim_config.snapshot == SNAPSHOT_FULL || rootsim_config.snapshot == SNAPSHOT_HARDINC) {
+			lp->OnGVT = &OnGVT;
+			lp->ProcessEvent = &ProcessEvent;
+		} else if(rootsim_config.snapshot == SNAPSHOT_SOFTINC) {
+			lp->OnGVT = &OnGVT_instr;
+			lp->ProcessEvent = &ProcessEvent_instr;
+		} else {
+			rootsim_error(true, "Wrong type of snapshot: neither full nor incremental\n");
+		}
 
 		// Allocate LP stack
 		lp->stack = get_ult_stack(LP_STACK_SIZE);
@@ -161,8 +168,7 @@ void initialize_lps(void) {
 #endif
 
 		// Create User-Level Thread
-		context_create(&lp->context, LP_main_loop, NULL, lp->stack,
-			       LP_STACK_SIZE);
+		context_create(&lp->context, LP_main_loop, NULL, lp->stack, LP_STACK_SIZE);
 	}
 }
 

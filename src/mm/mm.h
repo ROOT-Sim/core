@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include <stdlib.h>
 #include <sys/mman.h>
 #include <pthread.h>
 #include <core/core.h>
@@ -41,17 +40,20 @@
 #include <unistd.h>
 >>>>>>> origin/asym
 
+<<<<<<< HEAD
 extern void allocator_init(struct lp_struct *lp);
 extern void allocator_fini(struct lp_struct *lp);
+=======
+struct malloc_state;
+>>>>>>> origin/incremental
 
 extern void allocator_processing_start(struct lp_struct *lp);
 extern uint32_t allocator_checkpoint_take(struct lp_struct *lp);
 extern void allocator_checkpoint_restore(struct lp_struct *lp, uint32_t checkpoint_i);
 
 extern struct slab_chain *slab_init(const size_t itemsize);
-extern void *slab_alloc(struct slab_chain *);
-extern void slab_free(struct slab_chain *, const void *const addr);
-
+extern void *slab_alloc(struct lp_struct *lp);
+extern void slab_free(struct lp_struct *lp, const void *const addr);
 
 // Checkpointing API
 extern void *log_full(struct lp_struct *);
@@ -63,6 +65,8 @@ extern void clean_buffers_on_gvt(struct lp_struct *, simtime_t);
 extern void event_approximation_mark(const struct lp_struct *, msg_t*);
 =======
 >>>>>>> origin/exercise
+
+extern void set_force_full(struct lp_struct *);
 
 /* Simulation Platform Memory APIs */
 extern inline void *rsalloc(size_t);

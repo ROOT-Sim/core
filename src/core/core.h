@@ -41,6 +41,7 @@
 #include <setjmp.h>
 
 
+<<<<<<< HEAD
 #include <lib/numerical.h>
 #include <arch/atomic.h>
 
@@ -48,6 +49,10 @@
 extern int controller_committed_events;
 extern atomic_t final_processed_events;
 extern __thread int my_processed_events;
+=======
+#define __visible __attribute__((visibility("default")))
+
+>>>>>>> origin/incremental
 
 /// This macro expands to true if the local kernel is the master kernel
 #define master_kernel() (kid == 0)
@@ -55,7 +60,9 @@ extern __thread int my_processed_events;
 // XXX: This should be moved to state or queues
 enum {
 	SNAPSHOT_INVALID = 0,	/**< By convention 0 is the invalid field */
-	SNAPSHOT_FULL,		/**< xxx documentation */
+	SNAPSHOT_FULL,		/**< Full State Saving */
+	SNAPSHOT_SOFTINC,	/**< Incremental State Saving (software based) */
+	SNAPSHOT_HARDINC,	/**< Incremental State Saving (hardware based) */
 };
 
 /// Maximum number of kernels the distributed simulator can handle
@@ -212,7 +219,7 @@ typedef struct _msg_t {
 
 	unsigned int sample_id;
 	// Model data
-	unsigned int size;
+	size_t size;
 	unsigned char event_content[];
 =======
 	unsigned int   		sender;
@@ -250,6 +257,7 @@ typedef struct _msg_hdr_t {
 
 
 // XXX: this should be refactored someway
+<<<<<<< HEAD
 extern unsigned int kid,	/* Kernel ID for the local kernel */
  n_ker,				/* Total number of kernel instances */
  n_cores,			/* Total number of cores required for simulation */
@@ -264,6 +272,18 @@ bool OnGVT_light(unsigned int me, void *snapshot);
 extern void ProcessEvent_inc(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
 bool OnGVT_inc(unsigned int me, void *snapshot);
 extern void RestoreApproximated(void *lp_state);
+=======
+extern unsigned int	kid,		/* Kernel ID for the local kernel */
+			n_ker,		/* Total number of kernel instances */
+			n_cores,	/* Total number of cores required for simulation */
+			n_prc,		/* Number of LPs hosted by the current kernel instance */
+			* kernel;
+
+extern void ProcessEvent(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
+bool OnGVT(unsigned int me, void *snapshot);
+extern void ProcessEvent_instr(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
+bool OnGVT_instr(unsigned int me, void *snapshot);
+>>>>>>> origin/incremental
 
 extern void base_init(void);
 extern void base_fini(void);

@@ -46,7 +46,9 @@
 #include <arch/thread.h>
 #include <exc/allocator/allocator.h>
 #include <core/init.h>
+#include <mm/dymelor.h>
 #include <scheduler/binding.h>
+#include <scheduler/ht_sched.h>
 #include <scheduler/process.h>
 #include <scheduler/scheduler.h>
 #include <scheduler/stf.h>
@@ -60,11 +62,20 @@
 #include <mm/mm.h>
 #include <statistics/statistics.h>
 #include <gvt/gvt.h>
+<<<<<<< HEAD
 #include <arch/x86/linux/cross_state_manager/cross_state_manager.h>
+=======
+#include <statistics/statistics.h>
+#include <arch/x86/linux/rootsim/ioctl.h>
+>>>>>>> origin/incremental
 #include <queues/xxhash.h>
 #include <score/score.h>
 
 
+#ifdef HAVE_PMU
+#include <sys/ioctl.h>  /* ioctl syscall*/
+#include <unistd.h>	/* close syscall */
+#endif
 /// This is used to keep track of how many LPs were bound to the current KLT
 __thread unsigned int n_lp_per_thread;
 
@@ -82,6 +93,7 @@ __thread struct lp_struct *current;
  */
 __thread msg_t *current_evt;
 
+<<<<<<< HEAD
 // Timer per thread used to gather statistics on execution time for
 // controllers and processers in asymmetric executions
 //static __thread timer timer_local_thread;
@@ -89,6 +101,14 @@ __thread msg_t *current_evt;
 // Pointer to an array of longs which are used as an accumulator of time
 // spent idle in asym_schedule or asym_process
 long *total_idle_microseconds;
+=======
+#ifdef HAVE_PMU
+__thread int fd = 0;
+__thread memory_trace_t memory_trace;
+__thread bool pmu_enabled = false;
+#endif
+
+>>>>>>> origin/incremental
 /*
 * This function initializes the scheduler. In particular, it relies on MPI to broadcast to every simulation kernel process
 * which is the actual scheduling algorithm selected.
@@ -100,6 +120,12 @@ long *total_idle_microseconds;
 <<<<<<< HEAD
 void scheduler_init(void)
 {
+#ifdef HAVE_PMU
+	if (rootsim_config.snapshot == SNAPSHOT_HARDINC && fd < 0) {
+		printf("Error, %s is not available\n", "/dev/rootsim");
+		abort();
+	}
+#endif
 #ifdef HAVE_PREEMPTION
 	preempt_init();
 #endif
@@ -215,6 +241,8 @@ void LP_main_loop(void *args) {
 #endif
 		allocator_processing_start(current);
 
+		idle_thread_activate();
+
 		timer event_timer;
 		timer_start(event_timer);
 #ifdef HAVE_APPROXIMATED_ROLLBACK
@@ -222,15 +250,19 @@ void LP_main_loop(void *args) {
 #endif
 		// Process the event
 <<<<<<< HEAD
+<<<<<<< HEAD
         if(&abm_settings){
 =======
 on_process_event_forward(current_evt);
 		if(&abm_settings){
 >>>>>>> origin/energy_tmp
+=======
+		if(&abm_settings) {
+>>>>>>> origin/incremental
 			ProcessEventABM();
-		}else if (&topology_settings){
+		} else if (&topology_settings) {
 			ProcessEventTopology();
-		}else{
+		} else {
 			switch_to_application_mode();
 			current->ProcessEvent(current->gid.to_int,
 				      current_evt->timestamp,
@@ -240,8 +272,27 @@ on_process_event_forward(current_evt);
 				      current->current_base_pointer);
 			switch_to_platform_mode();
 		}
+<<<<<<< HEAD
 		
 		int delta_event_timer = timer_value_micro(event_timer);
+=======
+
+		int delta_event_timer = timer_value_micro(event_timer);
+
+		idle_thread_deactivate();
+
+#ifdef HAVE_PMU
+		if (rootsim_config.snapshot == SNAPSHOT_HARDINC) {
+			size_t size, i;
+			do {
+				size = ioctl(fd, IOCTL_GET_MEM_TRACE, &memory_trace);
+				for (i = 0; i < size; ++i)
+					mark_mem((void *)memory_trace.addresses[i], 1);
+			} while(size > 0 && size == memory_trace.length);
+		}
+#endif
+
+>>>>>>> origin/incremental
 #ifdef EXTRA_CHECKS
 		if (current->bound->size > 0) {
 			hash2 =
@@ -367,6 +418,7 @@ void initialize_worker_thread(void) {
 		printf("Initializing LPs... ");
 		fflush(stdout);
 	}
+<<<<<<< HEAD
 
     if(rootsim_config.num_controllers == 0) {
         thread_barrier(&all_thread_barrier);
@@ -395,6 +447,23 @@ void initialize_worker_thread(void) {
 		thread_barrier(&all_thread_barrier);
 	} else {
 		thread_barrier(&controller_barrier);
+=======
+	// Worker Threads synchronization barrier: they all should start working together
+	thread_barrier(&all_thread_barrier);
+
+	if (master_thread() && master_kernel())
+		printf("done\n");
+
+	// Schedule an INIT event to the newly instantiated LP
+	// We need two separate foreach_bound_lp here, because
+	// in this way we are sure that there is at least one
+	// event to be used as the bound and we do not have to make
+	// any check on null throughout the scheduler code.
+	foreach_bound_lp(lp) {
+		pack_msg(&init_event, lp->gid, lp->gid, INIT, 0.0, 0.0, 0, NULL);
+		init_event->mark = generate_mark(lp);
+		list_insert_head(lp->queue_in, init_event);
+>>>>>>> origin/incremental
 	}
 
     foreach_bound_lp(lp) {
@@ -406,7 +475,15 @@ void initialize_worker_thread(void) {
 	} else {
 		thread_barrier(&controller_barrier);
 	}
+<<<<<<< HEAD
 
+=======
+#ifdef HAVE_PMU
+	pmu_enabled = rootsim_config.snapshot == SNAPSHOT_HARDINC;
+#endif
+	// Worker Threads synchronization barrier: they all should start working together
+	thread_barrier(&all_thread_barrier);
+>>>>>>> origin/incremental
 
 #ifdef HAVE_PREEMPTION
 	if (!rootsim_config.disable_preemption)
@@ -416,7 +493,7 @@ void initialize_worker_thread(void) {
 }
 
 /**
-* This function is the application-level ProcessEvent() callback entry point.
+* This function is the application-level __ProcessEvent() callback entry point.
 * It allows to specify which lp must be scheduled, specifying its lvt, its event
 * to be executed and its simulation state.
 * This provides a general entry point to application-level code, to be used
@@ -839,7 +916,7 @@ void asym_schedule(void) {
 */
 void schedule(void)
 {
-	struct lp_struct *next;
+	struct lp_struct *next = NULL;
 	msg_t *event;
 
 #ifdef HAVE_CROSS_STATE
@@ -849,12 +926,12 @@ void schedule(void)
 	// Find the next LP to be scheduled
 	switch (rootsim_config.scheduler) {
 
-	case SCHEDULER_STF:
-		next = smallest_timestamp_first();
-		break;
+		case SCHEDULER_STF:
+			next = smallest_timestamp_first();
+			break;
 
-	default:
-		rootsim_error(true, "unrecognized scheduler!");
+		default:
+			rootsim_error(true, "unrecognized scheduler!");
 	}
 
 	// No logical process found with events to be processed
@@ -971,17 +1048,12 @@ void schedule(void)
 	LogState(next);
 }
 
-void schedule_on_init(struct lp_struct *next)
+void schedule_on_init(struct lp_struct *lp)
 {
 	msg_t *event;
 
-#ifdef HAVE_CROSS_STATE
-	bool resume_execution = false;
-#endif
-
-	event = list_head(next->queue_in);
-	next->bound = event;
-
+	event = list_head(lp->queue_in);
+	lp->bound = event;
 
 	// Sanity check: if we get here, it means that lid is a LP which has
 	// at least one event to be executed. If advance_to_next_event() returns
@@ -990,19 +1062,12 @@ void schedule_on_init(struct lp_struct *next)
 	if (unlikely(event == NULL) || event->type != INIT) {
 		rootsim_error(true,
 			      "Critical condition: LP %d should have an INIT event but I cannot find it. Aborting...\n",
-			      next->gid);
+			      lp->gid.to_int);
 	}
 
-#ifdef HAVE_CROSS_STATE
-	// In case we are resuming an interrupted execution, we keep track of this.
-	// If at the end of the scheduling the LP is not blocked, we can unblock all the remote objects
-	if (is_blocked_state(next->state) || next->state == LP_STATE_READY_FOR_SYNCH) {
-		resume_execution = true;
-	}
-#endif
+	lp->state = LP_STATE_RUNNING;
 
-	next->state = LP_STATE_RUNNING;
-
+<<<<<<< HEAD
 	activate_LP(next, event);
 	if(rootsim_config.num_controllers>0)
 	    next->last_processed = next->next_last_processed;
@@ -1029,7 +1094,22 @@ void schedule_on_init(struct lp_struct *next)
 		force_LP_checkpoint(next);
 	}
 #endif
+=======
+	current = lp;
+	current_evt = event;
+	ProcessEvent(current->gid.to_int, event->timestamp, event->type,
+		     event->event_content, event->size, current->current_base_pointer);
+	current_evt = NULL;
+	current = NULL;
 
+	lp->state = LP_STATE_READY;
+	send_outgoing_msgs(lp);
+>>>>>>> origin/incremental
+
+	// If we run using incremental state saving, the very first snapshot must
+	// be anyhow a full checkpoint
+	set_force_full(lp);
+	force_LP_checkpoint(lp);
 	// Log the state, if needed
-	LogState(next);
+	LogState(lp);
 }

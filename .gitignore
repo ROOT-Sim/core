@@ -64,6 +64,7 @@ modules.order
 /dymelor
 /numerical
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /perf/
 >>>>>>> origin/cancelback
@@ -73,3 +74,6 @@ models/phold_use/results-*
 =======
 globvars
 >>>>>>> origin/globvars
+=======
+src/compiler/rootsim_exposed_functions.cpp
+>>>>>>> origin/incremental

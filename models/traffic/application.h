@@ -33,7 +33,11 @@
 
 // Execution time must be specified in seconds
 #ifndef EXECUTION_TIME
+<<<<<<< HEAD
 	#define EXECUTION_TIME	(0.01 * DAY)
+=======
+	#define EXECUTION_TIME	(1 * DAY)
+>>>>>>> origin/incremental
 #endif
 
 

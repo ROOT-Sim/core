@@ -37,6 +37,41 @@
 #include <mm/mm.h>
 #include <scheduler/scheduler.h>
 
+<<<<<<< HEAD
+=======
+
+void mark_mem(void *address, size_t size)
+{
+	malloc_area *m_area;
+	malloc_state *m_state;
+	size_t bitmap_size, chk_size;
+	int chunk;
+
+	m_state = current->mm->m_state;
+	m_area = malloc_area_get(address, &chunk);
+
+	if(!m_area || !bitmap_check(m_area->use_bitmap, chunk))
+		return;
+
+	chk_size = UNTAGGED_CHUNK_SIZE(m_area);
+	bitmap_size = bitmap_required_size(m_area->num_chunks);
+
+	if (m_area->state_changed == 0) {
+		m_state->total_inc_size += bitmap_size + sizeof(malloc_area);
+	}
+	m_area->state_changed = 1;
+
+	if (!bitmap_check(m_area->dirty_bitmap, chunk)) {
+		bitmap_set(m_area->dirty_bitmap, chunk);
+		m_state->total_inc_size += chk_size;
+		if(m_area->dirty_chunks == 0)
+			m_state->total_inc_size += bitmap_size;
+
+		m_area->dirty_chunks++;
+	}
+
+}
+>>>>>>> origin/incremental
 /**
 * This function marks a memory chunk as dirty.
 * It is invoked from assembly modules invoked by calls injected by the instrumentor, and from the
@@ -52,6 +87,7 @@
 __attribute__((used))
 void __write_mem(void *address, size_t size)
 {
+<<<<<<< HEAD
 	void *stack = __builtin_frame_address(0);
 
 	malloc_area *m_area;
@@ -59,6 +95,11 @@ void __write_mem(void *address, size_t size)
 	size_t bitmap_size, chk_size;
 	int chunk;
 
+=======
+	(void)size;
+	void *stack = __builtin_frame_address(0);
+
+>>>>>>> origin/incremental
 	if(address > stack)
 		return;
 
@@ -66,6 +107,7 @@ void __write_mem(void *address, size_t size)
 
 	switch_to_platform_mode();
 
+<<<<<<< HEAD
 	m_state = current->mm->m_state;
 	m_area = malloc_area_get(address, &chunk);
 
@@ -89,3 +131,10 @@ void __write_mem(void *address, size_t size)
 	return;
 }
 
+=======
+	mark_mem(address, size);
+
+	switch_to_application_mode();
+	return;
+}
+>>>>>>> origin/incremental

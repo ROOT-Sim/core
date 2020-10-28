@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include <stdlib.h>
 
 
 int load_and_parse_json_file(const char *file_name, char **file_str_p, jsmntok_t **tokens_p) {

@@ -75,7 +75,8 @@ static int slab_is_valid(const struct slab_chain *const sch)
 	const struct slab_header *const heads[] =
 	    { sch->full, sch->empty, sch->partial };
 
-	for (size_t head = 0; head < 3; ++head) {
+	size_t head;
+	for (head = 0; head < 3; ++head) {
 		const struct slab_header *prev = NULL, *slab;
 
 		for (slab = heads[head]; slab != NULL; slab = slab->next) {
@@ -127,7 +128,7 @@ struct slab_chain *slab_init(const size_t itemsize)
 	assert(itemsize >= 1 && itemsize <= SIZE_MAX);
 	assert(POWEROF2(PAGE_SIZE));
 
-	struct slab_chain *sch = rsalloc(sizeof(struct slab_chain));
+	struct slab_chain *sch = __real_malloc(sizeof(struct slab_chain));
 	sch->itemsize = itemsize;
 	spinlock_init(&sch->lock);
 
@@ -157,10 +158,12 @@ struct slab_chain *slab_init(const size_t itemsize)
 	return sch;
 }
 
-void *slab_alloc(struct slab_chain *const sch)
+void *slab_alloc(struct lp_struct *lp)
 {
 	void *ret = NULL;
-	assert(sch != NULL);
+	assert(lp != NULL);
+
+	struct slab_chain *const sch = lp->mm->slab;
 
 	spin_lock(&sch->lock);
 
@@ -269,9 +272,12 @@ void *slab_alloc(struct slab_chain *const sch)
 	return ret;
 }
 
-void slab_free(struct slab_chain *const sch, const void *const addr)
+void slab_free(struct lp_struct *lp, const void *const addr)
 {
-	assert(sch != NULL);
+	assert(lp != NULL);
+
+	struct slab_chain *sch = lp->mm->slab;
+
 	spin_lock(&sch->lock);
 	assert(slab_is_valid(sch));
 
@@ -369,7 +375,7 @@ void slab_free(struct slab_chain *const sch, const void *const addr)
 		slab->slots |= SLOTS_FIRST << slot;
 	}
 
- out:
+    out:
 	spin_unlock(&sch->lock);
 }
 
@@ -381,7 +387,8 @@ void slab_destroy(const struct slab_chain *const sch)
 	struct slab_header *const heads[] = { sch->partial, sch->empty, sch->full };
 	struct slab_header *pages_head = NULL, *pages_tail;
 
-	for (size_t i = 0; i < 3; ++i) {
+	size_t i;
+	for (i = 0; i < 3; ++i) {
 		struct slab_header *slab = heads[i];
 
 		while (slab != NULL) {

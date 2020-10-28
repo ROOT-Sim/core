@@ -53,7 +53,6 @@
 
 #pragma once
 
-#include <scheduler/process.h>
 
 /// This macro specified the default output directory, if nothing is passed as an option
 #define DEFAULT_OUTPUT_DIR "outputs"
@@ -219,6 +218,10 @@ struct stat_t {
 		simtime_advancement;
 >>>>>>> origin/ecs
 };
+
+
+struct lp_struct;
+
 
 extern void _mkdir(const char *path);
 

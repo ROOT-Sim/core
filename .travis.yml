@@ -1,6 +1,7 @@
 language: c
-compiler: gcc
-dist: xenial
+os: linux
+compiler: clang
+dist: bionic
 
 git:
   depth: 1
@@ -9,31 +10,62 @@ branches:
   except:
   - gh-pages
 
-matrix:
+jobs:
   include:
-  - os: linux
-    addons:
-      apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - g++-7
-        - mpich
-        - libmpich-dev
-        - doxygen
-        - graphviz
-        - lcov
-        - python3-setuptools
-        - python3-pip
-        - jq
-
+    - addons:
+       apt:
+         packages:
+          - clang-8
+          - libclang-8-dev
+          - llvm-8
+          - llvm-8-dev
+          - llvm-8-tools
+          - libc++-8-dev
+          - libc++abi-8-dev
+          - mpich
+          - libmpich-dev
+          - lcov
+          - python3-setuptools
+          - python3-pip
+          - doxygen
+          - graphviz
+          - jq
+      env:
+          - CC=clang-8
+          - CXX=clang++-8
+          - LLVM_CONFIG=llvm-config-8
+    - addons:
+       sources:
+        - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main'
+          key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+       apt:
+         packages:
+          - clang-9
+          - libclang-9-dev
+          - llvm-9
+          - llvm-9-dev
+          - llvm-9-tools
+          - libc++-9-dev
+          - libc++abi-9-dev
+          - mpich
+          - libmpich-dev
+          - lcov
+          - python3-setuptools
+          - python3-pip
+          - doxygen
+          - graphviz
+          - jq
+      env:
+          - CC=clang-9
+          - CXX=clang++-9
+          - LLVM_CONFIG=llvm-config-9
+          - deploy=true
+     
 env:
-  matrix:
+  global:
     secure: JvReZBJUpYGDbrSbsshimBKu2HXLA3nniHSTVdTdWCOIo2mwAAU/qBh3gqExTsihdI9/6OaK4RoL6kvgRoKZ4HllkKxHtP5ttKpVguRYAzWLJWnlJm7s7v1AEs1txdQLa9kgGGHJsNnMYI+dX5BCG+huVdI+phf8BhVcCi04EGw=
 
 before_install:
-  - export CC=mpicc
-  - export MPICH_CC=gcc-7
   - pip3 install --upgrade pip
   - pip3 install --user $(whoami) coverxygen
 
@@ -46,6 +78,8 @@ before_script:
   - m4 --version
   - automake --version
   - autoconf --version
+  - ./scripts/travis-select-llvm.sh $LLVM_CONFIG
+  - llvm-config --cppflags
 
 script:
   - ./scripts/travis-build.sh
@@ -58,19 +92,20 @@ after_success:
 # Documentation autodeploy script
 deploy:
  - provider: pages
-   skip-cleanup: true
-   github-token: $DOCS_SECRET
-   keep-history: false
-   local-dir: ROOT-Sim
+   token: $DOCS_SECRET
+   keep_history: false
+   local_dir: ROOT-Sim
    verbose: true
    on:
      branch: master
+     condition: $deploy = true
 
  - provider: pages
-   skip-cleanup: true
-   github-token: $DOCS_SECRET
-   keep-history: false
-   local-dir: ROOT-Sim
+   token: $DOCS_SECRET
+   keep_history: false
+   local_dir: ROOT-Sim
    verbose: true
    on:
      branch: develop
+     condition: $deploy = true
+

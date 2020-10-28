@@ -32,6 +32,10 @@
  */
 
 #include <arch/memusage.h>
+<<<<<<< HEAD
+=======
+#include <mm/mm.h>
+>>>>>>> origin/incremental
 
 
 #if defined(_WIN32)

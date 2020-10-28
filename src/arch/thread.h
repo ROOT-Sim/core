@@ -245,6 +245,7 @@ struct _helper_thread {
 void create_threads(unsigned short int n, void *(*start_routine)(void*), void *arg);
 >>>>>>> origin/atomic
 
+extern tid_t os_tid;
 extern __thread unsigned int tid;
 extern __thread unsigned int local_tid; // TODO: we don't really need the local tid...
 

@@ -3,7 +3,13 @@ AM_CFLAGS = -I $(top_srcdir)/src
 AM_CCASFLAGS = -I $(top_srcdir)/src
 AM_MAKEFLAGS = -s
 AUTOMAKE_OPTIONS = subdir-objects
-SUBDIRS = scripts man
+SUBDIRS = man
+
+.PHONY: rootsim-cc
+
+# Define what libraries we are building here
+lib_LIBRARIES = librootsim.a
+lib_LTLIBRARIES = libdymelor.la librootsimcc.la
 
 # The following rules tell whether we have to compile kernel modules or not
 if NO_KERNEL_MODULES
@@ -33,13 +39,38 @@ BUILT_SOURCES = src/arch/asm_defines.h
 CLEANFILES = src/arch/asm_defines.h
 src/arch/asm_defines.h: src/arch/asm_defines.c
 	echo "Generating defines for assembly modules..."
-	@$(COMPILE) -DASM_DEFINES -S $< -o - | $(AWK) '($$1 == "->") { print "#define " $$2 " " substr($$3, 2) }' > $(top_srcdir)/$@
+	@$(COMPILE) -DASM_DEFINES -S $< -o - | $(AWK) '($$1 == "#####") { print "#define " $$2 " " substr($$3, 2) }' > $(top_srcdir)/$@
+
+src/compiler/rootsim_exposed_functions.cpp: src/ROOT-Sim.h scripts/rootsim_gen_exposed.sh
+	echo "Generating exposed functions table..."
+	scripts/rootsim_gen_exposed.sh
+
+
+# ROOT-Sim compiler-related stuff
+dist_bin_SCRIPTS = rootsim-cc
+CLEANFILES += $(dist_bin_SCRIPTS)
+
+do_subst = $(SED)	-e 's,[@]libdir[@],$(libdir),g' \
+			-e 's,[@]includedir[@],$(includedir),g' \
+			-e 's,[@]VERSION[@],$(VERSION),g' \
+			-e 's,[@]COMPILER[@],$(COMPILER),g' \
+			-e 's,[@]CFLAGS[@],$(CFLAGS),g'
+
+rootsim-cc: src/compiler/rootsim-cc.in
+	@echo -e "  GEN      rootsim-cc"
+	@$(do_subst) < src/compiler/rootsim-cc.in > rootsim-cc
+	@chmod +x rootsim-cc
+
+
+librootsimcc_la_SOURCES = src/compiler/rootsim-cc.cpp src/compiler/rootsim_exposed_functions.cpp
+librootsimcc_la_CPPFLAGS = @LLVMFLAGS@
+librootsimcc_la_LDFLAGS = -version-info 0:0:0
 
 
 # From here on, there are main ROOT-Sim build rules
 librootsim_include_HEADERS = src/ROOT-Sim.h
 librootsim_includedir = $(includedir)
-lib_LIBRARIES = librootsim.a libwrapperl.a libdymelor.a
+
 
 librootsim_a_SOURCES =	src/main.c \
 			src/arch/memusage.c \
@@ -47,6 +78,7 @@ librootsim_a_SOURCES =	src/main.c \
 			src/arch/ult.c \
 			src/arch/x86.c \
 			src/arch/x86/disassemble.c \
+			src/arch/x86/ime.c \
 			src/arch/x86/jmp.S \
 			src/arch/x86/ecs_callback.S \
 			src/arch/x86/preempt_callback.S \
@@ -78,6 +110,7 @@ librootsim_a_SOURCES =	src/main.c \
 			src/queues/queues.c \
 			src/queues/xxhash.c \
 			src/scheduler/binding.c \
+			src/scheduler/ht_sched.c \
 			src/scheduler/control.c \
 			src/scheduler/preempt.c \
 			src/scheduler/process.c \
@@ -132,12 +165,14 @@ librootsim_a_SOURCES =	src/main.c \
 			src/core/core.h \
 			src/core/init.h \
 			src/scheduler/binding.h \
+			src/scheduler/ht_sched.h \
 			src/scheduler/process.h \
 			src/scheduler/scheduler.h \
 			src/scheduler/stf.h \
 			src/score/score.h
 
 
+<<<<<<< HEAD
 libwrapperl_a_SOURCES = src/lib-wrapper/wrapper.c
 
 libdymelor_a_SOURCES = 	\
@@ -145,3 +180,13 @@ libdymelor_a_SOURCES = 	\
 			src/exc/allocator/allocator.c \
 			src/exc/asm/asm_io.S \
 			src/mm/slab.c
+=======
+libdymelor_la_SOURCES =	src/mm/checkpoints.c \
+			src/mm/platform.c \
+			src/mm/dymelor.c \
+			src/mm/buddy.c \
+			src/mm/segment.c \
+			src/mm/slab.c \
+			src/mm/memtrace.c \
+			src/mm/wrapper.c
+>>>>>>> origin/incremental

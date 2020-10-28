@@ -47,6 +47,7 @@
 #include <core/init.h>
 #include <datatypes/bitmap.h>
 #include <scheduler/process.h>
+#include <scheduler/ht_sched.h>
 #include <gvt/gvt.h>
 #include <gvt/ccgs.h>
 #include <scheduler/scheduler.h>
@@ -89,7 +90,8 @@ enum _opt_codes{
 	OPT_NPWD,
 	OPT_P,
 	OPT_FULL,
-	OPT_INC,
+	OPT_SOFTINC,
+	OPT_HARDINC,
 	OPT_A,
 	OPT_GVT,
 	OPT_SIMULATION_TIME,
@@ -157,6 +159,8 @@ const char * const param_to_text[][5] = {
 	[OPT_SNAPSHOT - OPT_FIRST] = {
 			[SNAPSHOT_INVALID] = "invalid snapshot specification",
 			[SNAPSHOT_FULL] = "full",
+			[SNAPSHOT_SOFTINC] = "software based incremental",
+			[SNAPSHOT_HARDINC] = "hardware based incremental",
 	}
 };
 
@@ -181,7 +185,8 @@ static const struct argp_option argp_options[] = {
 	{"npwd",		OPT_NPWD,		0,		0,		"Non Piece-Wise-Deterministic simulation model. See manpage for accurate description", 0},
 	{"p",			OPT_P,			"VALUE",	0,		"Checkpointing interval", 0},
 	{"full",		OPT_FULL,		0,		0,		"Take only full logs", 0},
-	{"inc",			OPT_INC,		0,		0,		"Take only incremental logs (still to be released)", 0},
+	{"soft-inc",		OPT_SOFTINC,		0,		0,		"Take only software-aided incremental logs", 0},
+	{"hard-inc",		OPT_HARDINC,		0,		0,		"Take only hardware-aided incremental logs", 0},
 	{"A",			OPT_A,			0,		0,		"Autonomic subsystem: set checkpointing interval and log mode automatically at runtime (still to be released)", 0},
 	{"gvt",			OPT_GVT,		"VALUE",	0,		"Time between two GVT reductions (in milliseconds)", 0},
 	{"cktrm-mode",		OPT_CKTRM_MODE,		"TYPE",		0,		"Termination Detection mode. Supported values: normal, incremental, accurate", 0},
@@ -312,18 +317,22 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 			} else {
 				rootsim_config.checkpointing = STATE_SAVING_PERIODIC;
 				rootsim_config.ckpt_period = parse_ullong_limits(1, 40);
-				// This is a micro optimization that makes the LogState function to avoid checking the checkpointing interval and keeping track of the logs taken
+				// This is a micro optimization that makes the LogState function avoid checking the checkpointing interval and keeping track of the logs taken
 				if(rootsim_config.ckpt_period == 1)
 					rootsim_config.checkpointing = STATE_SAVING_COPY;
 			}
 			break;
 
-		case OPT_INC:
-			argp_failure(state, EXIT_FAILURE, ENOSYS, "incremental state saving is not supported in stable version yet...\nAborting");
+		case OPT_SOFTINC:
+			rootsim_config.snapshot = SNAPSHOT_SOFTINC;
+			break;
+
+		case OPT_HARDINC:
+			rootsim_config.snapshot = SNAPSHOT_HARDINC;
 			break;
 
 		case OPT_A:
-			argp_failure(state, EXIT_FAILURE, ENOSYS, "autonomic state saving is not supported in stable version yet...\nAborting");
+			argp_failure(state, EXIT_FAILURE, ENOSYS, "autonomic state saving is not supported in stable version yet.\nAborting...");
 			break;
 
 		case OPT_GVT:
@@ -417,6 +426,17 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 			break;
 
 		case ARGP_KEY_SUCCESS:
+			// TODO: we have to make sure that setting serial unsets all parallel related options since the serial runtime
+			// relies on common code and default values
+			if(rootsim_config.serial && rootsim_config.snapshot != SNAPSHOT_FULL){
+				rootsim_error(false, "Running a serial simulation, resetting SNAPSHOT setting");
+				rootsim_config.snapshot = SNAPSHOT_FULL;
+			}
+
+#ifndef HAVE_PMU
+			if(rootsim_config.snapshot == SNAPSHOT_HARDINC)
+				rootsim_error(true, "ROOT-Sim has been built without hardware incremental support");
+#endif
 
 			// sanity checks
 			if(!rootsim_config.serial && !bitmap_check(scanned, OPT_NP - OPT_FIRST))
@@ -516,6 +536,11 @@ void SystemInit(int argc, char **argv)
 	// All init routines are executed serially (there is no notion of threads in there)
 	// and the order of invocation can matter!
 	base_init();
+<<<<<<< HEAD
+=======
+	ht_sched_init();
+	segment_init();
+>>>>>>> origin/incremental
 	initialize_lps();
 	remote_memory_init();
 	statistics_init();

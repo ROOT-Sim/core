@@ -33,7 +33,6 @@
 
 #pragma once
 
-#include <math.h>
 #include <string.h>
 
 #include <core/core.h>
@@ -45,6 +44,11 @@
  * DyMeLoR definitions and structures *
  **************************************/
 
+<<<<<<< HEAD
+=======
+#define LP_PREALLOCATION_INITIAL_ADDRESS	(void *)0x0000008000000000
+
+>>>>>>> origin/incremental
 #define MIN_CHUNK_SIZE 128U	// Size (in bytes) of the smallest chunk provideable by DyMeLoR
 #define MAX_CHUNK_SIZE 4194304U	// Size (in bytes) of the biggest one. Notice that if this number
 				// is too large, performance (and memory usage) might be affected.
@@ -128,7 +132,11 @@ typedef struct _malloc_state malloc_state;
 
 #define is_incremental(ckpt) (((malloc_state *)ckpt)->is_incremental == true)
 
+<<<<<<< HEAD
 #define get_top_malloc_area(ptr) **((malloc_area ***)ptr - 1)
+=======
+#define get_area(ptr) (*(((malloc_area **)ptr) - 1))
+>>>>>>> origin/incremental
 
 #define PER_LP_PREALLOCATED_MEMORY (262144L * PAGE_SIZE)	// This should be power of 2 multiplied by a page size. This is 1GB per LP.
 #define BUDDY_GRANULARITY PAGE_SIZE	// This is the smallest chunk released by the buddy in bytes. PER_LP_PREALLOCATED_MEMORY/BUDDY_GRANULARITY must be integer and a power of 2
@@ -172,8 +180,9 @@ struct slab_chain {
  ***************/
 
 // DyMeLoR API
-extern void set_force_full(unsigned int, int);
-extern void dirty_mem(void *, int);
+extern malloc_area* malloc_area_get (void *address, int *chunk_ret);
+extern void mark_mem(void *address, size_t size);
+__attribute__((used)) void __write_mem(void *address, size_t size);
 extern size_t get_state_size(int);
 extern size_t get_log_size(malloc_state *);
 extern size_t get_inc_log_size(void *);
@@ -187,10 +196,10 @@ extern void free_lp_memory(struct lp_struct *, void *);
 extern malloc_area* malloc_area_get (void *address, int *chunk_ret);
 
 // Userspace API
-extern void *__wrap_malloc(size_t);
-extern void __wrap_free(void *);
-extern void *__wrap_realloc(void *, size_t);
-extern void *__wrap_calloc(size_t, size_t);
+__visible extern void *__wrap_malloc(size_t);
+__visible extern void __wrap_free(void *);
+__visible extern void *__wrap_realloc(void *, size_t);
+__visible extern void *__wrap_calloc(size_t, size_t);
 
 
 /***************************
@@ -215,8 +224,27 @@ extern void free_buddy_memory(struct buddy *self, void *base_mem, void *ptr);
 
 // This is used to help ensure that the platform is not using malloc.
 #pragma GCC poison malloc free realloc calloc
+<<<<<<< HEAD
 =======
 void dump_malloc_state(malloc_state *);
 void dump_malloc_area(malloc_area *);
 #endif
 >>>>>>> origin/ecs
+=======
+
+extern char *__real_strcpy(char *s, const char *ct);
+extern char *__real_strncpy(char *s, const char *ct, size_t n);
+extern char *__real_strcat(char *s, const char *ct);
+extern char *__real_strncat(char *s, const char *ct, size_t n);
+extern void *__real_memcpy(void *s, const void *ct, size_t n);
+extern void *__real_memmove(void *s, const void *ct, size_t n);
+extern void *__real_memset(void *s, int c, size_t n);
+extern void __real_bzero(void *s, size_t n);
+extern char *__real_strdup(const char *s);
+extern char *__real_strndup(const char *s, size_t n);
+extern void *__real_malloc(size_t size);
+extern void __real_free(void *ptr);
+extern void *__real_realloc(void *ptr, size_t size);
+extern void *__real_calloc(size_t nmemb, size_t size);
+
+>>>>>>> origin/incremental

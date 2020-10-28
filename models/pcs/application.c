@@ -53,7 +53,7 @@ const struct argp_option model_options[] = {
 
 static error_t model_parse (int key, char *arg, struct argp_state *state) {
 	(void)state;
-	
+
 	switch (key) {
 		HANDLE_CASE(OPT_TA, "%lf", ref_ta);
 		HANDLE_CASE(OPT_TAD, "%lf", ta_duration);
@@ -91,9 +91,12 @@ struct _topology_settings_t topology_settings = {.default_geometry = TOPOLOGY_HE
 void ProcessEvent(unsigned int curr_lp, simtime_t event_ts, int event_type, event_content_type *event_content, unsigned int size, void *ptr) {
 	(void)size;
 <<<<<<< HEAD
+<<<<<<< HEAD
 	
 	event_content_type new_event_content;
 =======
+=======
+>>>>>>> origin/incremental
 
 	unsigned int w;
 
@@ -453,12 +456,15 @@ void RestoreApproximated(void *ptr) {
 bool OnGVT(unsigned int me, lp_state_type *snapshot) {
 	(void)me;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     if((double)snapshot->complete_calls/complete_calls*100.0<100.0)
         fprintf(stdout,"LP%d: %.1f%%\n", me, (double)snapshot->complete_calls/complete_calls*100.0);
    /* else
         fprintf(stdout,"LP%d: COMPLETE\n", me);*/
 >>>>>>> origin/asym
+=======
+>>>>>>> origin/incremental
 
 	if (snapshot->complete_calls < complete_calls)
 		return false;
