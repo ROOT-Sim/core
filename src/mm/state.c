@@ -135,6 +135,9 @@ bool LogState(LID_t lid) {
 		// Allocate the state buffer
 		new_state = rsalloc(sizeof(*new_state));
 
+		// Early evaluation of simulation termination.
+		ccgs_lp_can_halt_on_checkpoint(lp);
+
 		// Associate the checkpoint with current LVT and last-executed event
 		if(rootsim_config.num_controllers>0) {
             new_state->lvt = lp->next_last_processed->timestamp;
@@ -152,10 +155,13 @@ bool LogState(LID_t lid) {
 		new_state->state = lp->state;
 		new_state->base_pointer = lp->current_base_pointer;
 
+<<<<<<< HEAD
 		// Early evaluation of simulation termination.
 		new_state->simulation_completed = ccgs_lp_can_halt(lp);
 
 <<<<<<< HEAD
+=======
+>>>>>>> origin/termination
 		// Log library-related states
 		memcpy(&new_state->numerical, &lp->numerical, sizeof(numerical_state_t));
 

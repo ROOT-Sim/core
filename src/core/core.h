@@ -147,8 +147,6 @@ enum {
 /// Macro to "legitimately" pun a type
 #define UNION_CAST(x, destType) (((union {__typeof__(x) a; destType b;})x).b)
 
-// GID and LID types
-
 /**
  * @brief Definition of a GID.
  *
@@ -223,8 +221,18 @@ typedef struct _msg_t {
 	bool			unprocessed;
 >>>>>>> origin/power
 
+<<<<<<< HEAD
 	/* Place here all members which must be transmitted over the network. It is convenient not to reorder the members
 	 * of the structure. If new members have to be added, place them right before the "Model data" part.*/
+=======
+	/// Termination predicate for this LP after the execution of this event
+	bool simulation_completed;
+
+	/* Place here all members which must be transmitted over the network. Do not to reorder the members
+	 * of the structure from here on: if new members have to be addedd, place them right before the "Model data" part.
+	 * In particular, if you place any new member before `sender`, this will break the `MSG_PADDING` macro, and will
+	 * make that variable not transmitted over the network, which is not what you would expect by reading this comment. */
+>>>>>>> origin/termination
 
 	// Kernel's information
 <<<<<<< HEAD
@@ -284,13 +292,16 @@ typedef struct _msg_hdr_t {
 	// Pointers to attach messages to chains
 	struct _msg_hdr_t *next;
 	struct _msg_hdr_t *prev;
+	
 	// Kernel's information
 	GID_t sender;
 	GID_t receiver;
+
 	// TODO: non serve davvero, togliere
 	int type;
 	unsigned long long rendezvous_mark;	/// Unique identifier of the message, used for rendez-vous event
 	// TODO: fine togliere
+	
 	simtime_t timestamp;
 	simtime_t send_time;
 	unsigned long long mark;
@@ -305,6 +316,7 @@ extern unsigned int kid,	/* Kernel ID for the local kernel */
  n_prc,				/* Number of LPs hosted by the current kernel instance */
 *kernel;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 /// Current number of active threads. This is always <= n_cores
 extern volatile unsigned int active_threads;
@@ -381,6 +393,10 @@ bool OnGVT_inc(int gid, void *snapshot);
 extern bool (**_OnGVT)(int gid, void *snapshot);
 extern void (**_ProcessEvent)(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
 >>>>>>> origin/reverse
+=======
+extern void ProcessEvent_light(unsigned int me, simtime_t now, unsigned int event, const void *payload, size_t size, void *state);
+extern void ProcessEvent_inc(unsigned int me, simtime_t now, unsigned int event, const void *payload, size_t size, void *state);
+>>>>>>> origin/termination
 
 extern void base_init(void);
 extern void base_fini(void);

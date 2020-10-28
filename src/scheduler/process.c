@@ -159,6 +159,7 @@ inline int LPS_bound_foreach(int (*f)(LID_t, GID_t, unsigned int, void *), void 
 		lp->bottom_halves = init_channel();
 
 		// Which version of OnGVT and ProcessEvent should we use?
+<<<<<<< HEAD
 		if (rootsim_config.snapshot == SNAPSHOT_FULL || rootsim_config.snapshot == SNAPSHOT_HARDINC) {
 			lp->OnGVT = &OnGVT;
 			lp->ProcessEvent = &ProcessEvent;
@@ -168,6 +169,11 @@ inline int LPS_bound_foreach(int (*f)(LID_t, GID_t, unsigned int, void *), void 
 		} else {
 			rootsim_error(true, "Wrong type of snapshot: neither full nor incremental\n");
 		}
+=======
+		if (rootsim_config.snapshot == SNAPSHOT_FULL) {
+			lp->ProcessEvent = &ProcessEvent_light;
+		} // TODO: add here an else for ISS
+>>>>>>> origin/termination
 
 		// Allocate LP stack
 		lp->stack = get_ult_stack(LP_STACK_SIZE);

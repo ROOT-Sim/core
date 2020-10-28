@@ -37,6 +37,7 @@
 #include <stdbool.h>
 #include <core/core.h>
 #include <core/init.h>
+#include <datatypes/bitmap.h>
 #include <mm/mm.h>
 #include <mm/state.h>
 #include <communication/communication.h>
@@ -48,8 +49,14 @@
 /// This variable is an aggregate result for the distributed termination detection
 static bool ccgs_completed_simulation = false;
 
-/// In case termination detection is incremental, this array keeps track of LPs that think the simulation can be halted already
-static bool *lps_termination;
+/// This is the LP termination set, where each pointer keeps a reference to the event determining the termination
+static msg_t **terminated;
+
+/// This variables tells how many LPs in the `terminated` set have agreed upon termination
+static unsigned int terminated_counter = 0;
+
+/// This bitmap keeps track of LPs that agreed upon simulation termination
+static rootsim_bitmap *lps_termination;
 
 inline bool ccgs_can_halt_simulation(void)
 {
@@ -60,30 +67,40 @@ inline bool ccgs_can_halt_simulation(void)
 #endif
 }
 
+
+
 // Deve essere chiamata da un solo thread al GVT
 void ccgs_reduce_termination(void)
 {
-	register unsigned int i;
-	bool termination = true;
-
-	/* Local termination:  all LPs need to be terminated */
-	for (i = 0; i < n_prc; i++) {
-		termination &= lps_termination[i];
+	// In case of approximate termination, we have just run ccgs_compute_snapshot()
+	// and we therefore have now to check if all LPs have agreed upon termination.
+	if (rootsim_config.check_termination_mode == CKTRM_APPROXIMATED) {
+		ccgs_completed_simulation = bitmap_count_reset(lps_termination, bitmap_required_size(n_prc)) > 0;
 	}
 
 #ifdef HAVE_MPI
 	/* If terminated locally check for global termination
 	 * All other kernel need to terminated
 	 */
-	if (unlikely(!ccgs_completed_simulation && termination)) {
+	if (unlikely(!ccgs_completed_simulation)) {
 		broadcast_termination();
 	}
 #endif
+}
 
-	ccgs_completed_simulation = termination;
+
+void ccgs_reconstruct_state(void)
+{
+}
+
+
+void ccgs_find_consistent_state(void)
+{
 }
 
 /**
+ * @todo outdated function documentation
+ * 
 * This function rebuilds a simulation state aligned to the new GVT for every LP.
 * In this way, each LP is asked (via the OnGVT() callback) to check whether the
 * simulation can terminate.
@@ -107,19 +124,20 @@ void ccgs_reduce_termination(void)
 void ccgs_compute_snapshot(state_t *time_barrier_pointer[])
 {
 	int i = -1;
-	bool check_res = true;
+	bool incremental_check = true;
 
 	foreach_bound_lp(lp) {
 		i++;
 
-		// If termination detection is incremental, we skip the current LP
-		if (rootsim_config.check_termination_mode == CKTRM_INCREMENTAL && lps_termination[lp->lid.to_int]) {
-			continue;
-		}
-
 		if (time_barrier_pointer[i] == NULL)
 			continue;
 
+		// If termination detection is incremental, we could skip the current LP if already agreed for termination
+		if (rootsim_config.check_termination_mode & CKTRM_INCREMENTAL && bitmap_check(lps_termination, lp->lid.to_int)) {
+			continue;
+		}
+
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 		// TODO: realign LogState and RestoreState to be compliant with the execution in the committed portion
@@ -166,16 +184,22 @@ void ccgs_compute_snapshot(state_t *time_barrier_pointer[])
 		lps_termination[lid] = _OnGVT[lid](LidToGid(lid), LPS[lid]->current_base_pointer);
 		check_res &= lps_termination[lid];
 >>>>>>> origin/reverse
+=======
+		// TODO: We have a new committed state, pass it to the model
+		// TODO: if running in accurate mode, we must be sure that we do not call
+		// this in case we have a consistent termination detection
+		ccgs_reconstruct_state();
+>>>>>>> origin/termination
 
-		// Early stop
-		if (rootsim_config.check_termination_mode == CKTRM_INCREMENTAL && !check_res) {
-			break;
+		// In approximate termination detection, we simply look at the time barrier
+		// to see if after this event the LP agreed upon termination
+		if (rootsim_config.check_termination_mode == CKTRM_APPROXIMATED && incremental_check) {
+			
+			if(time_barrier_pointer[i]->last_event->simulation_completed)
+				bitmap_set(lps_termination, lp->lid.to_int);
+			incremental_check &= time_barrier_pointer[i]->last_event->simulation_completed;
 		}
-
 	}
-
-	// No real LP is running now!
-	current = NULL;
 }
 
 
@@ -189,12 +213,15 @@ void ccgs_compute_snapshot(state_t *time_barrier_pointer[])
  * In particular, if the termination detection is incremental, the LP's OnGVT()
  * will be only called if the LP has not decided to terminate the simulation already.
  *
+ * The information about the termination is stored in the `simulation_completed` member
+ * of the event pointed by `bound`. This is consistent also with executions using
+ * accurate termination detection.
+ *
  * @param lp	The LP for which to call termination detection
- * @return 	@c true if the simulation should terminate according to the LP,
- * 		@c false otherwise.
  */
-bool ccgs_lp_can_halt(struct lp_struct *lp)
+void ccgs_lp_can_halt_on_checkpoint(struct lp_struct *lp)
 {
+<<<<<<< HEAD
 <<<<<<< HEAD
 	bool ret;
 =======
@@ -210,15 +237,89 @@ bool ccgs_lp_can_halt(struct lp_struct *lp)
 	current = NULL;
 	
 	return ret;
+=======
+	bool previously_agreed;
+
+	// In accurate mode, we do not check for termination detection
+	// when a checkpoint is taken, rather after the execution
+	// of every event.
+	if(rootsim_config.check_termination_mode == CKTRM_ACCURATE)
+		return;
+
+	 previously_agreed = bitmap_check(lps_termination, lp->lid.to_int);
+
+	// If we run an incremental termination detection, if a LP
+	// has already agreed to terminate, we propagate this decision
+	if (rootsim_config.check_termination_mode & CKTRM_INCREMENTAL && previously_agreed) {
+		lp->bound->simulation_completed = true;
+		return;
+	}
+
+	// Ask the model whether the current LP thinks it can terminate the simulation
+	lp->bound->simulation_completed = CanTerminate(lp->gid.to_int, lp->current_base_pointer, lp->bound->timestamp);
+>>>>>>> origin/termination
 }
+
+
+void ccgs_lp_can_halt(struct lp_struct *lp)
+{
+	bool previously_agreed, currently_agrees;
+
+	// We should perform a termination detection here only if we are
+	// running in approximate mode
+	if(rootsim_config.check_termination_mode == CKTRM_APPROXIMATED)
+		return;
+
+	 previously_agreed = bitmap_check(lps_termination, lp->lid.to_int);
+
+	// If we run an incremental termination detection, if a LP
+	// has already agreed to terminate, we propagate this decision
+	if (rootsim_config.check_termination_mode & CKTRM_INCREMENTAL && previously_agreed) {
+		lp->bound->simulation_completed = true;
+		return;
+	}
+
+	currently_agrees = CanTerminate(lp->gid.to_int, lp->current_base_pointer, lp->bound->timestamp);
+
+	// We are here in accurate non-incremental termination detection, or
+	// in incremental detection dealing with a LP which has not yet
+	// agreed upon termination. We now check if a LP has changed its
+	// mind, and move it across the two sets. In incremental mode,
+	// the previous if prevents a LP to move back to the non_terminated set.	
+	if((currently_agrees ^ previously_agreed) != 0) {
+		if(previously_agreed) {
+			terminated[lp->lid.to_int] = NULL;
+			terminated_counter--;
+		} else {
+			terminated[lp->lid.to_int] = lp->bound;
+			terminated_counter++;
+		}
+	}
+
+	// Early notify that the simulation is completed, when running with CKTRM_ACCURATE
+	if(unlikely(terminated_counter == n_prc)) {
+		ccgs_completed_simulation = true;
+
+#ifdef HAVE_MPI
+		// We are not running distributed: allow an inspection of the
+		// correct committed states from LPs
+		// TODO
+#endif
+	}
+}
+
+
 
 void ccgs_init(void)
 {
-	lps_termination = rsalloc(sizeof(bool) * n_prc);
-	memset(lps_termination, 0, sizeof(bool) * n_prc);
+	lps_termination = malloc(bitmap_required_size(n_prc));
+	bitmap_initialize(lps_termination, n_prc);
+
+	terminated = malloc(sizeof(msg_t *) * n_prc);
 }
 
 void ccgs_fini(void)
 {
+	rsfree(terminated);
 	rsfree(lps_termination);
 }

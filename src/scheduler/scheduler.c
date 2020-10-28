@@ -53,7 +53,11 @@
 #include <arch/thread.h>
 #include <exc/allocator/allocator.h>
 #include <core/init.h>
+<<<<<<< HEAD
 #include <mm/dymelor.h>
+=======
+#include <gvt/ccgs.h>
+>>>>>>> origin/termination
 #include <scheduler/binding.h>
 #include <scheduler/ht_sched.h>
 #include <scheduler/process.h>
@@ -1724,6 +1728,9 @@ void schedule(void)
 		force_LP_checkpoint(next);
 	}
 #endif
+
+	// Accurate termination detection
+	ccgs_lp_can_halt(next);
 
 	// Log the state, if needed
 	LogState(next);

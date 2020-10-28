@@ -118,6 +118,7 @@ static void move_healthy_people(unsigned me, region_t *region, simtime_t now){
 // we handle infects visits move at slightly randomized timesteps 1.0, 2.0, 3.0...
 // healthy people are moved at slightly randomized timesteps 0.5, 1.5, 2.5, 3.5...
 // this way we preserve the order of operation as in the original model
+<<<<<<< HEAD
 void ProcessEvent(unsigned int me, simtime_t now, int event_type,
 		union {agent_t *agent; unsigned *n; infection_t *i_m; init_t *in_m;} payload, unsigned int event_size, region_t *state) {
 
@@ -125,10 +126,22 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type,
 		state->now = now;
 
 	switch (event_type) {
+=======
+void ProcessEvent(unsigned int me, simtime_t now, unsigned int event, const void *pay, size_t size, void *state)
+{
+	(void)size;
+	
+	region_t *region = (region_t *)state;
+	
+	if(!me && event != INIT)
+		region->now = now;
+
+	union _payload payload = (union _payload)pay;
+
+	switch (event) {
+>>>>>>> origin/termination
 		case INIT:
-			(void)event_size;
-			// standard stuff
-			region_t *region = malloc(sizeof(region_t));
+			region = malloc(sizeof(region_t));
 			SetState(region);
 			region->healthy = 0;
 			region->now = 0.0;
@@ -153,20 +166,20 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type,
 			break;
 
 		case MIDNIGHT:
-			move_healthy_people(me, state, now);
+			move_healthy_people(me, region, now);
 			ScheduleNewEvent(me, now + 0.25 + Random()/2, MIDNIGHT, NULL, 0);
 			break;
 
 		case RECEIVE_HEALTHY:
-			state->healthy += *(payload.n);
+			region->healthy += *(payload.n);
 			break;
 
 		case INFECTION:
-			guy_on_infection(payload.i_m, state, now);
+			guy_on_infection(payload.i_m, region, now);
 			break;
 
 		case GUY_VISIT:
-			guy_on_visit(*payload.agent, me, state, now);
+			guy_on_visit(*payload.agent, me, region, now);
 			break;
 
 		case GUY_LEAVE:
@@ -174,17 +187,18 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type,
 			break;
 
 		case GUY_INIT:
-			guy_on_init(payload.in_m, state);
+			guy_on_init(payload.in_m, region);
 			break;
 
 		case _TRAVERSE:
 		default:
-			printf("%s:%d: Unsupported event: %d\n", __FILE__, __LINE__, event_type);
+			printf("%s:%d: Unsupported event: %d\n", __FILE__, __LINE__, event);
 			exit(EXIT_FAILURE);
 	}
 
 }
 
+<<<<<<< HEAD
 int OnGVT(unsigned int me, region_t *snapshot) {
 	if(snapshot->now > END_TIME){
 		for(unsigned i = 0; i < END_TIME; ++i){
@@ -195,6 +209,16 @@ int OnGVT(unsigned int me, region_t *snapshot) {
 					class_stats[me][i][3],
 					class_stats[me][i][4]);
 		}
+=======
+bool CanTerminate(unsigned int me, const void *snapshot, simtime_t now)
+{
+	(void)now;
+	
+	region_t *state = (region_t *)snapshot;
+	
+	if(!me) {
+		return state->now > END_TIME;
+>>>>>>> origin/termination
 	}
 
 	return snapshot->now > END_TIME;
@@ -205,3 +229,19 @@ void RestoreApproximated(void *ptr)
 	(void)ptr;
 }
 
+<<<<<<< HEAD
+=======
+void OnCommittedState(unsigned int me, const void *snapshot, simtime_t now)
+{
+	(void)me;
+	(void)now;
+
+	region_t *state = (region_t *)snapshot;
+
+	if(!me) {
+		printf("healthy %u, infected %u\n", state->healthy, CountAgents());
+		return state->now > END_TIME;
+	}
+}
+
+>>>>>>> origin/termination

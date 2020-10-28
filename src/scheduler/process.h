@@ -247,6 +247,7 @@ struct lp_struct {
 
 >>>>>>> origin/asym
 	/**
+<<<<<<< HEAD
 	 * Implementation of OnGVT used for this LP. This can be changed
 	 * at runtime by the autonomic subsystem, when dealing with ISS and SSS
 	 */
@@ -277,11 +278,13 @@ struct lp_struct {
 >>>>>>> origin/ecs
 
 	/**
+=======
+>>>>>>> origin/termination
 	 * Implementation of ProcessEvent used for this LP. This can be changed
 	 * at runtime by the autonomic subsystem, when dealing with ISS and SSS
 	 */
-	void (*ProcessEvent)(unsigned int me, simtime_t now, int event_type,
-			     void *event_content, unsigned int size,
+	void (*ProcessEvent)(unsigned int me, simtime_t now, unsigned int event_type,
+			     const void *event_content, size_t size,
 			     void *state);
 
 #ifdef HAVE_CROSS_STATE

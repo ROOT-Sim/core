@@ -25,6 +25,7 @@ retval=0
 
 function do_unit_test() {
 	unit_tests+=($1)
+	unlink $1
 	make -f tests/Makefile $1 > /dev/null
 	echo -n "Running unit test $1... "
 	./$1 > /dev/null
@@ -41,6 +42,7 @@ function do_unit_test() {
 
 function do_rs_unit_test() {
 	unit_tests+=($1)
+	unlink $1
 	make -f tests/Makefile $1 > /dev/null
 	echo -n "Running unit test $1... "
 	./$1 --lp $2 --wt $3 > /dev/null
@@ -58,6 +60,7 @@ function do_rs_unit_test() {
 function do_test() {
 
 	# Compile and store the name of the test suite
+	unlink model
 	rootsim-cc models/$1/*.c -o model
 	tests+=($1)
 

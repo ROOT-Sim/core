@@ -65,6 +65,7 @@ modules.order
 /numerical
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /perf/
 >>>>>>> origin/cancelback
@@ -77,3 +78,6 @@ globvars
 =======
 src/compiler/rootsim_exposed_functions.cpp
 >>>>>>> origin/incremental
+=======
+/capabilities
+>>>>>>> origin/termination

@@ -115,7 +115,12 @@ double	write_distribution = WRITE_DISTRIBUTION,
 	tau = TAU;
 
 
+<<<<<<< HEAD
 void ProcessEvent(int curr_lp, simtime_t event_ts, int event_type, event_content_type *event_content, unsigned int size, void *state) {
+=======
+void ProcessEvent(unsigned int me, simtime_t now, unsigned int event, const void *payload, size_t size, void *state)
+{
+>>>>>>> origin/termination
 	(void)size;
 
 	simtime_t timestamp;
@@ -124,20 +129,33 @@ void ProcessEvent(int curr_lp, simtime_t event_ts, int event_type, event_content
 		remaining_size,
 		step;
 	event_content_type new_event;
+	event_content_type *event_content = (event_content_type *)payload;
 
+<<<<<<< HEAD
 	lp_state_type *state_ptr = (lp_state_type*)state;
 >>>>>>> origin/asym
+=======
+	lp_state_type *state_ptr = (lp_state_type *)state;
+>>>>>>> origin/termination
 
 <<<<<<< HEAD
 void ProcessEvent(unsigned me, simtime_t now, int event_type, unsigned *event_content, unsigned int event_size, void *state) {
 	lp_state_type *state_ptr = (lp_state_type *)state;
 
+<<<<<<< HEAD
 =======
 	int cont = 0; 
 >>>>>>> origin/power
 	switch (event_type) {
 
 		case INIT:
+=======
+	switch (event) {
+
+		case INIT:
+
+			// Initialize LP's state
+>>>>>>> origin/termination
 			state_ptr = malloc(sizeof(lp_state_type));
                         if(state_ptr == NULL){
                                 exit(-1);
@@ -148,11 +166,15 @@ void ProcessEvent(unsigned me, simtime_t now, int event_type, unsigned *event_co
                         SetState(state_ptr);
 <<<<<<< HEAD
 
+<<<<<<< HEAD
 			if(new_mode) {
 				unsigned buffers_to_allocate = (unsigned)(Random() * max_buffers);
 =======
 			// Explicitly tell ROOT-Sim this is our LP's state
             SetState(state_ptr);
+=======
+			timestamp = (simtime_t)(20 * Random());
+>>>>>>> origin/termination
 
 =======
 	loop: 
@@ -370,8 +392,13 @@ void ProcessEvent(unsigned me, simtime_t now, int event_type, unsigned *event_co
 			}
 
 			// Is there a buffer to be deallocated?
+<<<<<<< HEAD
 			if(fabsf(current_size + 1) < FLT_EPSILON) {
 				ScheduleNewEvent(curr_lp, timestamp, DEALLOC, NULL, 0);
+=======
+			if(fabs(current_size + 1) < FLT_EPSILON) {
+				ScheduleNewEvent(me, timestamp, DEALLOC, NULL, 0);
+>>>>>>> origin/termination
 				break;
 			} else {
 >>>>>>> origin/asym
@@ -420,6 +447,7 @@ void RestoreApproximated(void *ptr) {
 	}
 }
 
+<<<<<<< HEAD
 bool OnGVT(unsigned me, lp_state_type *snapshot) {
 	if(snapshot->events >= complete_events){
 #ifndef NDEBUG
@@ -435,10 +463,35 @@ bool OnGVT(unsigned int me, lp_state_type *snapshot) {
         fprintf(stdout,"PT%d: COMPLETE (%d events)\n", me, snapshot->events);*/  
         if(snapshot->traditional) {
 		if(snapshot->events < COMPLETE_EVENTS)
+=======
+bool CanTerminate(unsigned int me, const void *snapshot, simtime_t now) {
+	(void)me;
+	(void)now;
+
+	if(((lp_state_type *)snapshot)->traditional) {
+		if(((lp_state_type *)snapshot)->events < COMPLETE_EVENTS)
+>>>>>>> origin/termination
 			return false;
 >>>>>>> origin/asym
 		return true;
 	}
+<<<<<<< HEAD
 	return false;
+=======
+
+
+	// Did we perform enough allocations?
+        if (((lp_state_type *)snapshot)->cont_allocation < complete_alloc)
+                return false;
+
+        return true;
+>>>>>>> origin/termination
+}
+
+void OnCommittedState(unsigned int me, const void *snapshot, simtime_t now)
+{
+	(void)me;
+	(void)snapshot;
+	(void)now;
 }
 
