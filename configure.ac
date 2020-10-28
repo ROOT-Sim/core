@@ -127,7 +127,7 @@ AS_IF([test $GCC_VERSION_MAJOR -ge 7 -a "x$enable_debug" == "xyes"],[
 ])
 
 #----------------------------------------------------------------------------
-# Checks for programs.
+# Check for programs.
 #----------------------------------------------------------------------------
 AC_PROG_MAKE_SET
 AC_PROG_MKDIR_P
@@ -140,6 +140,17 @@ AC_SUBST(ARFLAGS, [cr])
 AM_PROG_AS
 AC_PROG_AWK
 LT_INIT
+
+
+#----------------------------------------------------------------------------
+# Check for objdump. TODO: we need to flag the compilation of globvars!
+#----------------------------------------------------------------------------
+AC_CHECK_PROG(OBJDUMP, objdump, objdump)
+
+if test -z "$OBJDUMP"; then
+  AC_MSG_ERROR([Cannot find objdump in your path; please set the OBJDUMP environment variable!])
+fi
+
 
 
 

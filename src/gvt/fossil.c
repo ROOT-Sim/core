@@ -33,7 +33,11 @@
 #include <gvt/gvt.h>
 #include <gvt/ccgs.h>
 #include <mm/state.h>
+<<<<<<< HEAD
 #include <mm/mm.h>
+=======
+#include <mm/globvars.h>
+>>>>>>> origin/globvars
 #include <scheduler/process.h>
 #include <scheduler/scheduler.h>
 #include <statistics/statistics.h>
@@ -100,7 +104,15 @@ void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
     statistics_post_data(lp, STAT_COMMITTED, committed_events);
 
 	// Truncate the output queue
+<<<<<<< HEAD
 	list_trunc(lp->queue_out, send_time, last_kept_event->timestamp, msg_hdr_release);
+=======
+	list_trunc_before(LPS[lid]->queue_out, send_time, last_kept_event->timestamp);
+
+	// If any global variable is used in the model, prune the multiversion list
+        // TODO: check se time_barrier è lo stesso dello stato sopra
+        globvars_on_gvt(time_barrier);
+>>>>>>> origin/globvars
 }
 
 /**

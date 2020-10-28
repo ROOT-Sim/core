@@ -53,6 +53,7 @@ doxy.conf
 doxyfile.stamp
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 Module.symvers
 modules.order
 *.o.cmd
@@ -69,3 +70,6 @@ modules.order
 =======
 models/phold_use/results-*
 >>>>>>> origin/energy_tmp
+=======
+globvars
+>>>>>>> origin/globvars

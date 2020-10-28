@@ -51,8 +51,15 @@
 #include <gvt/ccgs.h>
 #include <scheduler/scheduler.h>
 #include <mm/state.h>
+<<<<<<< HEAD
 #include <mm/ecs.h>
 #include <mm/mm.h>
+=======
+#include <mm/dymelor.h>
+#include <mm/globvars.h>
+#include <mm/malloc.h>
+#include <core/backtrace.h> // Place this after malloc.h!
+>>>>>>> origin/globvars
 #include <statistics/statistics.h>
 #include <lib/numerical.h>
 #include <lib/topology.h>
@@ -513,6 +520,7 @@ void SystemInit(int argc, char **argv)
 	remote_memory_init();
 	statistics_init();
 	scheduler_init();
+	globvars_init();
 	communication_init();
 	threads_init();
 	gvt_init();
