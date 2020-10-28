@@ -1,7 +1,13 @@
 language: c
+<<<<<<< HEAD
 os: linux
 compiler: clang
 dist: bionic
+=======
+compiler: gcc
+sudo: false
+dist: xenial
+>>>>>>> origin/manpages
 
 git:
   depth: 1
@@ -84,7 +90,11 @@ before_script:
 script:
   - ./scripts/travis-build.sh
   - ./scripts/tests.sh
+<<<<<<< HEAD
   - ./scripts/travis-build-doc.sh
+=======
+  - ./scripts/travis-docs.sh
+>>>>>>> origin/manpages
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -x gcov-7
