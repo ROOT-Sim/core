@@ -1,9 +1,0 @@
-#pragma once
-
-#define NET_STATS
-#define DEBUG_HEURISTICS
-//#define DEBUG_OVERHEAD
-#define REDUCED_VERBOSITY
-//#define NO_POWER_MANAGEMENT 1
-//#define LOCK_BASED_TRANSACTIONS
-//#define TIMELINE_PLOT

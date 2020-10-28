@@ -1,4 +1,4 @@
-# The ROme OpTimistic Simulator (ROOT-Sim) 2.0.0
+# The ROme OpTimistic Simulator (ROOT-Sim) 3.0.0
 
 [![Build Status](https://travis-ci.org/HPDCS/ROOT-Sim.svg?branch=master)](https://travis-ci.org/HPDCS/ROOT-Sim)
 [![codecov.io](https://codecov.io/gh/HPDCS/ROOT-Sim/branch/master/graphs/badge.svg)](http://codecov.io/github/HPDCS/ROOT-Sim)

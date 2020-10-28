@@ -1,2 +1,0 @@
-# chardev device
-KERNEL=="rootsim", MODE="0644"
