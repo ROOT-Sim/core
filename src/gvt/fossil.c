@@ -58,10 +58,6 @@ void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
 	while ((state = list_head(lp->queue_states)) != NULL
 	       && state->lvt < time_barrier) {
 		log_delete(state->log);
-		if(&topology_settings && topology_settings.write_enabled)
-			rsfree(state->topology);
-		if(&abm_settings)
-			rsfree(state->region_data);
 #ifndef NDEBUG
 		state->last_event = (void *)0xDEADBABE;
 #endif
@@ -95,6 +91,15 @@ void adopt_new_gvt(simtime_t new_gvt)
 	unsigned int i;
 
 	state_t *time_barrier_pointer[n_prc_per_thread];
+<<<<<<< HEAD
+=======
+	bool compute_snapshot;
+	memset(time_barrier_pointer, 0, sizeof(state_t *) * n_prc_per_thread);
+
+	// Snapshot should be recomputed only periodically
+	snapshot_cycles++;
+	compute_snapshot = ((snapshot_cycles % rootsim_config.gvt_snapshot_cycles) == 0);
+>>>>>>> origin/approximated
 
 	// Precompute the time barrier for each process
 	i = 0;

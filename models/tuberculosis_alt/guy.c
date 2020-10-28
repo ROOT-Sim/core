@@ -73,7 +73,6 @@ static void guy_sick_update(agent_t agent, unsigned me, simtime_t now){
 		guy->treatment_day = now;
 		// set the guy to an under treatment state
 		bitmap_set(guy->flags, f_treatment);
-		CoreMemoryUnmark(guy);
 		return;
 	}
 
@@ -167,7 +166,6 @@ static bool guy_infected_update(agent_t agent, region_t *region, simtime_t now){
 		define_diagnose(guy, now);
 		// set this guy to a sick state
 		bitmap_set(guy->flags, f_sick);
-		CoreMemoryMark(guy);
 	}
 	return false;
 }
@@ -184,6 +182,7 @@ static void guy_treatment_update(agent_t agent, simtime_t now){
 	if(Random() < daily_prob || now >= guy->treatment_day + t_treatment_max) {
 		compute_relapse_p(guy, now);
 		// set the guy to a treated state
+		CoreMemoryMark(guy);
 		bitmap_reset(guy->flags, f_sick);
 	}
 }
@@ -203,6 +202,7 @@ static bool guy_treated_update(agent_t agent, region_t *region, simtime_t now){
 		// ... or can get sick again...
 		define_diagnose(guy, now);
 		bitmap_set(guy->flags, f_sick);
+		CoreMemoryUnmark(guy);
 	}
 	return false;
 	// ... or finally live "normally" for another day
@@ -346,4 +346,22 @@ void guy_on_infection(infection_t *inf, region_t *region, simtime_t now){
 		// we immediately schedule the first agent hop
 		ScheduleNewLeaveEvent(now + 0.001, GUY_LEAVE, agent);
 	}
+}
+
+void guy_stats(unsigned guy_counts[4])
+{
+	guy_counts[0] = 0;
+	guy_counts[1] = 0;
+	guy_counts[2] = 0;
+	guy_counts[3] = 0;
+	agent_t agent = 0;
+	unsigned tot = CountAgents();
+	uint32_t closure = 0;
+	while(IterAgents(&agent, &closure)){
+		guy_t *guy = DataAgent(agent, NULL);
+		guy_counts[2 * bitmap_check(guy->flags, f_sick) + bitmap_check(guy->flags, f_treatment)]++;
+		tot--;
+	}
+	if(tot)
+		printf("wrong iteration!");
 }

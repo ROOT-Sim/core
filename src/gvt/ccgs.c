@@ -120,6 +120,40 @@ void ccgs_compute_snapshot(state_t *time_barrier_pointer[])
 		if (time_barrier_pointer[i] == NULL)
 			continue;
 
+<<<<<<< HEAD
+=======
+		// TODO: realign LogState and RestoreState to be compliant with the execution in the committed portion
+
+		// Log the current state so that after we can restore it.
+		current = lp;
+		temporary_log.log = log_state(lp);
+		temporary_log.state = lp->state;
+		temporary_log.base_pointer = lp->current_base_pointer;
+
+		// Restore the time barrier state
+		lp->state = time_barrier_pointer[i]->state;
+		lp->current_base_pointer =
+		    time_barrier_pointer[i]->base_pointer;
+		log_restore(lp, time_barrier_pointer[i]);
+
+/*
+		// If the LP is not blocked, we can reconstruct the state exactly to the GVT
+		if(!is_blocked_state(lp->state))  {
+			// Realign the state to the current GVT value
+			if(list_next(time_barrier_pointer[i]->last_event) != NULL) {
+				realignment_evt = list_next(time_barrier_pointer[i]->last_event);
+				while(realignment_evt != NULL && realignment_evt->timestamp < gvt) {
+					realignment_evt = list_next(realignment_evt);
+				}
+				realignment_evt = list_prev(realignment_evt);
+
+				// TODO: LPS[lid]->current_base_pointer can be removed as a parameter
+				silent_execution(lid, LPS(lid)->current_base_pointer, list_next(time_barrier_pointer[i]->last_event), realignment_evt);
+			}
+		}
+
+*/
+>>>>>>> origin/approximated
 		// Call the application to check termination
 		lps_termination[lp->lid.to_int] = time_barrier_pointer[i]->simulation_completed;
 		check_res &= lps_termination[lp->lid.to_int];

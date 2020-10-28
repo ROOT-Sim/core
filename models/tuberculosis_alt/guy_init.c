@@ -9,7 +9,7 @@
 #include "guy.h"
 #include "parameters.h"
 
-const unsigned int scale_factor = 100;
+const unsigned int scale_factor = 50;
 
 struct _init_t{
 	unsigned healthy;
@@ -134,7 +134,6 @@ static void new_sick(void){
 	// set sick state
 	bitmap_set(guy->flags, f_sick);
 	bitmap_reset(guy->flags, f_treatment);
-	CoreMemoryMark(guy);
 }
 
 static void new_treatment(void){
@@ -159,6 +158,7 @@ static void new_treated(void){
 	// compute relapse probability
 	compute_relapse_p(guy, 0.0);
 	// set treatment state
+	CoreMemoryMark(guy);
 	bitmap_reset(guy->flags, f_sick);
 	bitmap_set(guy->flags, f_treatment);
 }

@@ -1,11 +1,8 @@
-# This is a Makefile which allows to compile a simulation
-# model using the HPC ROOT-Sim runtime.
+CC = ~/rootsim-cc/bin/rootsim-cc
+CFLAGS = -Wall -Wextra
+TARGET = tuberculosis
 
-CC = rootsim-cc
-CFLAGS = -g -Wall -Wextra
-TARGET = pcs
-
-SRCS = application.c functions.c
+SRCS = application.c guy.c guy_init.c parameters.c
 OBJS = $(SRCS:.c=.o)
 
 .PHONY: clean

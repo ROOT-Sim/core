@@ -142,6 +142,7 @@ function do_test_custom() {
 do_rs_unit_test capabilities 2 1
 do_unit_test dymelor
 do_unit_test numerical
+do_unit_test hash_map
 
 
 # Run models to make comprehensive tests

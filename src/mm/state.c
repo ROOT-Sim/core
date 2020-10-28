@@ -114,6 +114,7 @@ bool LogState(struct lp_struct *lp)
 		// Log library-related states
 		memcpy(&new_state->numerical, &lp->numerical, sizeof(numerical_state_t));
 
+<<<<<<< HEAD
 		if(&topology_settings && topology_settings.write_enabled) {
 			new_state->topology = rsalloc(topology_global.chkp_size);
 			memcpy(new_state->topology, lp->topology, topology_global.chkp_size);
@@ -123,6 +124,8 @@ bool LogState(struct lp_struct *lp)
 			new_state->region_data = abm_do_checkpoint(lp->region);
 		}
 
+=======
+>>>>>>> origin/approximated
 		// Link the new checkpoint to the state chain
 		list_insert_tail(lp->queue_states, new_state);
 
@@ -143,14 +146,6 @@ void RestoreState(struct lp_struct *lp, state_t * restore_state)
 	// Restore library-related states
 	memcpy(&lp->numerical, &restore_state->numerical,
 	       sizeof(numerical_state_t));
-
-	if(&topology_settings && topology_settings.write_enabled){
-		memcpy(lp->topology, restore_state->topology,
-				topology_global.chkp_size);
-	}
-
-	if(&abm_settings)
-		abm_restore_checkpoint(restore_state->region_data, lp->region);
 
 #ifdef HAVE_CROSS_STATE
 	lp->ECS_index = 0;
@@ -181,28 +176,25 @@ unsigned int silent_execution(struct lp_struct *lp, msg_t *evt, msg_t *final_evt
 	old_state = lp->state;
 	lp->state = LP_STATE_SILENT_EXEC;
 
-	// This is true if the restored state was taken exactly after the new bound
-	if (evt == final_evt)
-		goto out;
-
-	evt = list_next(evt);
-	final_evt = list_next(final_evt);
-
 	// Reprocess events. Outgoing messages are explicitly discarded, as this part of
 	// the simulation has been already executed at least once
-	while (evt != NULL && evt != final_evt) {
+	if(!evt){
+				rootsim_error(true, "DAFAKKK");
 
+			}
+	while(evt != final_evt){
+		evt = list_next(evt);
+		if(!evt){
+					rootsim_error(true, "DAFAKKK");
+					break;
+				}
 		if (unlikely(!reprocess_control_msg(evt))) {
-			evt = list_next(evt);
 			continue;
 		}
-
-		events++;
 		activate_LP(lp, evt);
-		evt = list_next(evt);
+		++events;
 	}
 
- out:
 	lp->state = old_state;
 	return events;
 }
@@ -323,6 +315,10 @@ state_t *find_time_barrier(struct lp_struct *lp, simtime_t simtime)
 void SetState(void *new_state)
 {
 	current->current_base_pointer = new_state;
+#ifdef HAVE_APPROXIMATED_ROLLBACK
+	if(likely(!rootsim_config.serial))
+		CoreMemoryMark(new_state);
+#endif
 }
 
 /**
