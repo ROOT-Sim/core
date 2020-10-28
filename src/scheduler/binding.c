@@ -66,6 +66,7 @@ static double *assignments;
 static unsigned int *new_LPS_binding;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 //#ifdef HAVE_LP_REBINDING
 static int binding_acquire_phase = 0;
 =======
@@ -74,6 +75,13 @@ static volatile int binding_acquire_phase = 0;
 static __thread int local_binding_acquire_phase = 0;
 
 static volatile int binding_phase = 0;
+=======
+#ifdef HAVE_LP_REBINDING
+static atomic_t binding_acquire_phase = 0;
+static __thread int local_binding_acquire_phase = 0;
+
+static atomic_t binding_phase = 0;
+>>>>>>> origin/atomic
 static __thread int local_binding_phase = 0;
 <<<<<<< HEAD
 //#endif
@@ -285,6 +293,7 @@ static void post_local_reduction(void)
 		lp_cost[lp->lid.to_int].workload_factor *= statistics_get_lp_data(lp, STAT_GET_EVENT_TIME_LP);
 		lp_cost[lp->lid.to_int].workload_factor /= (last_evt->timestamp - first_evt->timestamp);
 	}
+	atomic_thread_fence(memory_order_acquire);
 }
 
 static void install_binding(void)
@@ -336,7 +345,6 @@ void reassignation_rebind(void) {
 * because no runtime data is available at the time, so we "share" the load
 * as the number of LPs.
 * Then, successive invocations, will use the knapsack load sharing policy
-
 * @author Alessandro Pellegrini
 */
 <<<<<<< HEAD
@@ -423,6 +431,7 @@ void rebind_LPs(void)
 		sample_average_powercap_violation();
 	
 	if (master_thread()) {
+<<<<<<< HEAD
 		if (unlikely(rebinding_triggered && rebinding_completed)) {
 			rebinding_triggered = false;
 			rebinding_completed = false;
@@ -441,6 +450,12 @@ void rebind_LPs(void)
 			}
 
 			binding_phase++;
+=======
+		if (unlikely
+		    (timer_value_seconds(rebinding_timer) >= REBIND_INTERVAL)) {
+			timer_restart(rebinding_timer);
+			atomic_inc(&binding_phase);
+>>>>>>> origin/atomic
 		}
 
 		if (atomic_read(&worker_thread_reduction) == 0) {
@@ -450,14 +465,18 @@ void rebind_LPs(void)
 			if(rootsim_config.powercap > 0)
 				wake_up_sleeping_threads();
 
+<<<<<<< HEAD
 			atomic_set(&worker_thread_installation, active_threads);
 			binding_acquire_phase++;
+=======
+			atomic_inc(&binding_acquire_phase);
+>>>>>>> origin/atomic
 		}
 	}
 >>>>>>> origin/energy
 
-	if (local_binding_phase < binding_phase) {
-		local_binding_phase = binding_phase;
+	if(local_binding_phase < atomic_read(&binding_phase)) {
+		local_binding_phase = atomic_read(&binding_phase);
 		post_local_reduction();
 		atomic_dec(&worker_thread_reduction);
 
@@ -474,8 +493,14 @@ void rebind_LPs(void)
 		}
 	}
 
+<<<<<<< HEAD
 	if (local_binding_acquire_phase < binding_acquire_phase) {
 		local_binding_acquire_phase = binding_acquire_phase;
+=======
+	if(local_binding_acquire_phase < atomic_read(&binding_acquire_phase)) {
+		local_binding_acquire_phase = atomic_read(&binding_acquire_phase);
+
+>>>>>>> origin/atomic
 		install_binding();
         #ifdef HAVE_PREEMPTION
 		reset_min_in_transit(local_tid);

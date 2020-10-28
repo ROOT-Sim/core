@@ -48,22 +48,19 @@
 #include <unistd.h>
 #include <pthread.h>
 
-/// Macro to get the core count on the hosting machine
+// Macros to get information about the hosting machine
+
 #define get_cores() (sysconf( _SC_NPROCESSORS_ONLN ))
 
-/// How do we identify a thread?
+
+
+// How do we identify a thread?
 typedef pthread_t tid_t;
 
 /// Spawn a new thread
 #define new_thread(entry, arg)	pthread_create(&os_tid, NULL, entry, arg)
 
-/**
- * This inline function sets the affinity of the thread which calls it.
- *
- * @param core The core id on which the thread wants to be stuck on.
- */
-static inline void set_affinity(int core)
-{
+static inline void set_affinity(int core) {
 	cpu_set_t cpuset;
 	CPU_ZERO(&cpuset);
 	CPU_SET(core, &cpuset);
@@ -102,6 +99,7 @@ struct _helper_thread {
 	void *arg;			///< Arguments to be passed to @ref start_routine
 };
 
+<<<<<<< HEAD
 /// Thread barrier definition
 typedef struct {
 	int num_threads;	///< Number of threads which will synchronize on the barrier
@@ -113,6 +111,9 @@ typedef struct {
 
 /**
  * The global tid is obtained by concatenating of the `kid` and the `local_tid`
+=======
+/* The global tid is obtained by concatenating of the `kid` and the `local_tid`
+>>>>>>> origin/atomic
  * and is stored into an unsigned int. Since we are using half of the unsigned int
  * for each part we have that the total number of kernels and
  * the number of threads per kernel must be less then (2^HALF_UINT_BITS - 1)
@@ -157,6 +158,7 @@ typedef struct {
 /// This macro expands to true if the current KLT is the master thread for the local kernel
 #define master_thread() (local_tid == 0)
 
+<<<<<<< HEAD
 enum thread_incarnation {
     THREAD_SYMMETRIC,
     THREAD_CONTROLLER,
@@ -224,10 +226,29 @@ typedef struct _Thread_State {
 // Macros to differentiate across different input ports
 #define PORT_PRIO_HI	0
 #define PORT_PRIO_LO	1
+=======
+
+/// This macro tells on what core the current thread is running
+#define running_core() (local_tid)
+
+
+/// This structure is used to call the thread creation helper function
+struct _helper_thread {
+	void *(*start_routine)(void*);
+	void *arg;
+};
+
+
+/// Macro to create one single thread
+#define create_thread(entry, arg) (create_threads(1, entry, arg))
+
+void create_threads(unsigned short int n, void *(*start_routine)(void*), void *arg);
+>>>>>>> origin/atomic
 
 extern __thread unsigned int tid;
 extern __thread unsigned int local_tid; // TODO: we don't really need the local tid...
 
+<<<<<<< HEAD
 extern void barrier_init(barrier_t * b, int t);
 extern bool thread_barrier(barrier_t * b);
 extern void create_threads(unsigned short int n, void *(*start_routine)(void *), void *arg);
@@ -249,5 +270,28 @@ void threads_reassign(int modifier);
 /// Barrier for all worker threads
 extern barrier_t all_thread_barrier;
 extern barrier_t controller_barrier;
+=======
+/// Thread barrier definition
+typedef struct {
+	int num_threads;
+	atomic_t pass;
+	atomic_t barr;
+} barrier_t;
+
+/// Reset operation on a thread barrier
+#define thread_barrier_reset(b)	atomic_set(&(b)->barr, 0)
+
+/**
+* Initialize a thread barrier. If more than the hereby specified
+* number of threads try to synchronize on the barrier, the behaviour is undefined.
+**/
+#define barrier_init(B, T) do {\
+				(B)->num_threads = T;\
+				thread_barrier_reset(B);\
+			   } while(0)
+
+
+extern bool thread_barrier(barrier_t *b);
+>>>>>>> origin/atomic
 
 extern Thread_State **Threads;

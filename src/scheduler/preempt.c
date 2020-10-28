@@ -98,10 +98,10 @@ void reset_min_in_transit(unsigned int thread)
 
 	local_min = min_in_transit_lvt[thread];
 
-	// If the CAS (unlikely) fails, then some other thread has updated
+	// If the cmpxchg (unlikely) fails, then some other thread has updated
 	// the min in transit. We do not retry the operation, as this
 	// case must be handled.
-	CAS((uint64_t *) & min_in_transit_lvt[thread], UNION_CAST(local_min, uint64_t), UNION_CAST(INFTY, uint64_t));
+	cmpxcgh((uint64_t *)&min_in_transit_lvt[thread], UNION_CAST(local_min, uint64_t), UNION_CAST(INFTY, uint64_t));
 }
 
 void update_min_in_transit(unsigned int thread, simtime_t lvt)
@@ -118,7 +118,7 @@ void update_min_in_transit(unsigned int thread, simtime_t lvt)
 			break;
 		}
 	// simtime_t is 64-bits wide, so we use 64-bits CAS
-	} while (!CAS((uint64_t *) & min_in_transit_lvt[thread], UNION_CAST(local_min, uint64_t), UNION_CAST(lvt, uint64_t)));
+	} while(!cmpxchg((uint64_t *)&min_in_transit_lvt[thread], UNION_CAST(local_min, uint64_t), UNION_CAST(lvt, uint64_t)));
 }
 
 __thread bool rolling_back = false;

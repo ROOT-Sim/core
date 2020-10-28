@@ -31,28 +31,27 @@
 
 #pragma once
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 
-/**
- * Atomic counter definition. This is a structure keeping a volatile int
- * inside. The structure and the volatile part is required to avoid
- * that the compiler wrongly optimizes some accesses to the count member.
- */
-typedef struct {
-	volatile int count; ///< Atomic counter. Use the provided API to ensure atomicity.
-} atomic_t;
+/// This is the definition of a software barrier. No effect on hardware
+/// accesses comes from the usage of this instruction!
+#define barrier() __asm__ __volatile__("":::"memory")
 
-/**
- * Spinlock definition. This is a structure keeping a volatile unsigned int
- * inside. The structure and the volatile part is required to avoid
- * that the compiler wrongly optimizes some accesses to the count member.
- */
-typedef struct {
-	volatile unsigned int lock; ///< The lock guard.
-} spinlock_t;
+#if defined(__x86_64__)
+  #define cpu_relax() __asm__ __volatile__("pause": : :"memory")
+#else
+  #define cpu_relax()
+#endif
+
+/// RMW instructions used in the engine
+#define cmpxchg(P, O, N) atomic_compare_exchange_strong_explicit((P), (O), (N), memory_order_acq_rel, memory_order_acquire)
+#define __atomic_add(P, V) atomic_fetch_add_explicit((P), (V), memory_order_release)
+#define __atomic_sub(P, V) atomic_fetch_sub_explicit((P), (V), memory_order_release)
 
 
+<<<<<<< HEAD
 inline bool iCAS(volatile uint32_t * ptr, uint32_t oldVal, uint32_t newVal);
 inline int atomic_test_and_set(int *);
 inline void atomic_inc(atomic_t *);
@@ -114,14 +113,70 @@ extern inline void spin_lock_x86(spinlock_t *s);
 
 #define LOCK "lock; "
 
+=======
+/// Atomic type definition
+typedef atomic_int atomic_t;
+#define atomic _Atomic
+
+#define atomic_add(P, V)	__atomic_add((P), (V))
+#define atomic_inc(P)		atomic_add((P), 1)
+#define atomic_sub(P, V)	__atomic_sub((P), (V))
+#define atomic_dec(P)		atomic_sub((P), 1)
+>>>>>>> origin/atomic
 
 /// Read operation on an atomic counter
-#define atomic_read(v)		((v)->count)
+#define atomic_read(P)		atomic_load_explicit((P), memory_order_acquire)
 
 /// Set operation on an atomic counter
-#define atomic_set(v,i)		(((v)->count) = (i))
+#define atomic_set(P, V)	atomic_init((P), (V))
+
+
+/**
+ * Spinlock definition. We use a ticket lock here. The ticket lock
+ * can be extremely slow when the number of threads exceeds the
+ * number of CPUs. This is something which we explicitly forbid in
+ * ROOT-Sim, so this is the locking strategy which we use. Indeed,
+ * fairness is quite important here.
+ */
+typedef union ticketlock spinlock_t;
+union ticketlock {
+    unsigned u;
+    struct {
+        unsigned short ticket;
+        unsigned short users;
+    } s;
+};
 
 /// Spinlock initialization
+<<<<<<< HEAD
 #define plain_spinlock_init(s)	((s)->lock = 0)
+=======
+#define spinlock_init(P)	((P)->u = 0)
+
+
+static inline void spin_lock(spinlock_t *t) {
+    unsigned short me = atomic_add(&t->s.users, 1);
+
+    while (t->s.ticket != me)
+	cpu_relax();
+}
+
+static inline void spin_unlock(spinlock_t *t) {
+    barrier();
+    t->s.ticket++;
+}
+
+static inline bool spin_trylock(spinlock_t *t) {
+    unsigned short me = t->s.users;
+    unsigned short menew = me + 1;
+    unsigned cmp = ((unsigned) me << 16) + me;
+    unsigned cmpnew = ((unsigned) menew << 16) + me;
+
+    if (cmpxchg(&t->u, &cmp, cmpnew))
+	return true;
+
+    return false;
+}
+>>>>>>> origin/atomic
 
  #define spinlock_init(s)	plain_spinlock_init(s) 
