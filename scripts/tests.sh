@@ -35,6 +35,22 @@ function do_unit_test() {
 	fi
 }
 
+function do_rs_unit_test() {
+	unit_tests+=($1)
+	make -f tests/Makefile $1 > /dev/null
+	echo -n "Running unit test $1... "
+	./$1 --lp $2 --wt $3 > /dev/null
+	
+	if test $? -eq 0; then
+		unit_results+=('Y')
+		echo "passed."
+	else
+		unit_results+=('N')
+		retval=1
+		echo "failed."
+	fi
+}
+
 function do_test() {
 
 	# Compile and store the name of the test suite
@@ -123,6 +139,7 @@ function do_test_custom() {
 
 
 # Run available unit tests
+do_rs_unit_test capabilities 2 1
 do_unit_test dymelor
 do_unit_test numerical
 
@@ -134,7 +151,8 @@ do_test collector 4
 do_test stupid_model 16
 
 # Additional tests to increase code coverage
-do_test_custom pcs --lp 16 --output-dir dummy --npwd --gvt 500 --gvt-snapshot-cycles 3 --verbose info --seed 12345 --scheduler stf --cktrm-mode normal --simulation-time 1000
+do_test_custom pcs --lp 16 --output-dir dummy --npwd --gvt 500 --verbose info --seed 12345 --scheduler stf --cktrm-mode normal --simulation-time 1000
+do_test_custom pcs --lp 4 --silent-output
 
 
 
