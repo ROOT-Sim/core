@@ -20,7 +20,7 @@ AC_ARG_ENABLE([coverage],
 AM_CONDITIONAL([DEBUG], [test x$enable_debug = xyes])
 
 # Setup compilation flags
-CFLAGS_COMMON="-std=c11 -fno-omit-frame-pointer -ffloat-store -fno-common -fstrict-aliasing -fgnu89-inline -rdynamic -lm -U_FORTIFY_SOURCE"
+CFLAGS_COMMON="-std=c11 -fno-omit-frame-pointer -ftree-vectorize -ffloat-store -fno-common -fstrict-aliasing -fgnu89-inline -rdynamic -lm -D_FORTIFY_SOURCE"
 CFLAGS_WARNINGS="-Wall -Wextra -Wmisleading-indentation -Wcast-align -Wpointer-arith -Wstrict-overflow=5 -Wstrict-prototypes -Winline -Wundef -Wnested-externs -Wshadow -Wunreachable-code -Wfloat-equal -Wredundant-decls -Wold-style-definition -Wno-switch-enum"
 #CFLAGS_WARNINGS="$CFLAGS_WARNINGS -Wconversion"
 
@@ -215,6 +215,7 @@ case $host_os in
         ;;
 esac
 
+<<<<<<< HEAD
 #----------------------------------------------------------------------------
 # COMPILE TIME OPTIONS
 #
@@ -239,6 +240,25 @@ AS_IF([test "x$enable_approximated_rollback" = "xyes"], [
 	AC_DEFINE([HAVE_APPROXIMATED_ROLLBACK])
 ])
 
+=======
+#------------------------------------------------------------
+# Power management support
+#------------------------------------------------------------
+ac_power_management=no
+if test "x$ac_on_linux" = "xyes"
+then
+	ac_power_management=yes
+	AC_CHECK_FILE("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",, [ac_power_management=no])
+	AC_CHECK_FILE("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies",, [ac_power_management=no])
+	AC_CHECK_FILE("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed",, [ac_power_management=no])
+	AC_CHECK_FILE("/sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj",, [ac_power_management=no])
+
+	AS_IF([test "x$ac_power_management" != "xno"], [
+		AC_DEFINE([HAVE_POWER_MANAGEMENT])
+		ac_have_power_management=yes
+	])
+fi
+>>>>>>> origin/energy
 
 #------------------------------------------------------------
 # Linux specific subsystems.
@@ -401,6 +421,7 @@ else
 fi
 
 
+<<<<<<< HEAD
 # Compose the message regarding LP rebinding
 if test "x$ac_have_lp_rebinding" = "xyes"
 then
@@ -419,6 +440,8 @@ else
 fi
 
 
+=======
+>>>>>>> origin/energy
 # Compose the message regarding Preemptive Time Warp
 if test "x$ac_have_preemption" = "xyes"
 then
@@ -476,6 +499,15 @@ then
 	fi
 fi
 
+
+# Compose the message regarding Power Management
+if test "x$ac_have_power_management" = "xyes"
+then
+	ac_power="Enabled"
+else
+	ac_power="Governor information not found"
+fi
+
 # This is the line to reintroduce the ECS and modules messages
 #Event Cross State......... : ${ac_ecs}
 #Linux Kernel Modules...... : ${ac_modules}
@@ -488,9 +520,13 @@ CPU Architecture.......... : ${host_cpu}
 Operating System.......... : ${host_os}
 Debugging Support......... : ${enable_debug}
 MPI....................... : ${enable_mpi}
+Power Management.......... : ${ac_power}
 LP Preemption Support..... : ${ac_preemption}
+<<<<<<< HEAD
 LP Rebinding.............. : ${ac_lp_rebinding}
 Approximated Rollback..... : ${ac_approximated_rollback}
+=======
+>>>>>>> origin/energy
 
 
 EOF

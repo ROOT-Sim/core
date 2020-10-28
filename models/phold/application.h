@@ -37,9 +37,21 @@ enum {
 #define LOOP		3
 >>>>>>> origin/asym
 
+<<<<<<< HEAD
 #define COMPLETE_EVENTS 2000	// for the LOOP traditional case
 #define LOOP_COUNT	1000
 //#define FANOUT 1
+=======
+#define COMPLETE_EVENTS 100000	// for the LOOP traditional case
+#define LOOP_COUNT	500
+
+
+// This is the events' payload which is exchanged across LPs
+typedef struct _event_content_type {
+	int size;
+} event_content_type;
+
+>>>>>>> origin/energy
 
 // This structure defines buffers lists
 typedef struct _buffer {

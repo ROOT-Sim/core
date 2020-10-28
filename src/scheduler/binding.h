@@ -29,5 +29,10 @@
 #pragma once
 
 extern void rebind_LPs(void);
+<<<<<<< HEAD
 extern void force_rebind_GLP(void);
 extern void reassignation_rebind(void);
+=======
+extern void initial_binding(void);
+extern void trigger_rebinding(void);
+>>>>>>> origin/energy

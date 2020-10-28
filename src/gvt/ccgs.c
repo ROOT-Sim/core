@@ -190,7 +190,13 @@ void ccgs_compute_snapshot(state_t *time_barrier_pointer[])
  */
 bool ccgs_lp_can_halt(struct lp_struct *lp)
 {
+<<<<<<< HEAD
 	bool ret;
+=======
+	if (rootsim_config.simulation_time > 0 || rootsim_config.wallclock_time > 0)
+		return false;
+
+>>>>>>> origin/energy
 	if (rootsim_config.check_termination_mode == CKTRM_INCREMENTAL && lps_termination[lp->lid.to_int]) {
 		return true;
 	}

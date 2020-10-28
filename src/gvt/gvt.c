@@ -39,6 +39,7 @@
 #include <core/core.h>
 #include <core/init.h>
 #include <core/timer.h>
+#include <scheduler/binding.h>
 #include <scheduler/process.h>
 #include <scheduler/scheduler.h>
 #include <statistics/statistics.h>
@@ -258,6 +259,7 @@ inline size_t get_cancelback_threshold() {
  * the committed trajectory. It's so far mainly used for termination
  * detection based on passed simulation time.
  */
+<<<<<<< HEAD
 inline simtime_t get_last_gvt(void) {
 
     /* TODO: è un po' una porcata, perché potrebbe esserci una corsa
@@ -265,6 +267,12 @@ inline simtime_t get_last_gvt(void) {
     if(Threads[tid]->incarnation == THREAD_PROCESSING){
         return new_gvt;
     }
+=======
+inline simtime_t get_last_gvt(void)
+{
+	if(last_gvt != new_gvt)
+		return new_gvt; // this possibly breaks GVT algorithm in a corner case which I don't remember!
+>>>>>>> origin/energy
 	return last_gvt;
 }
 
@@ -375,8 +383,13 @@ inline bool has_cancelback_started() {
 
         if (atomic_read(&counter_B) == 0) {
 			simtime_t agreed_vt = INFTY;
+<<<<<<< HEAD
             for (i = 0; i < gvt_participants; i++) {
                 agreed_vt = min(local_min[i], agreed_vt);
+=======
+			for (i = 0; i < active_threads; i++) {
+				agreed_vt = min(local_min[i], agreed_vt);
+>>>>>>> origin/energy
 			}
 			return agreed_vt;
 		}
@@ -475,6 +488,7 @@ simtime_t gvt_operations(void) {
 			commit_kvt_tkn = 1;
 			idle_tkn = 1;
 
+<<<<<<< HEAD
             atomic_set(&counter_initialized, gvt_participants);
 			atomic_set(&counter_kvt, gvt_participants);
 			atomic_set(&counter_finalized, gvt_participants);
@@ -482,6 +496,15 @@ simtime_t gvt_operations(void) {
 			atomic_set(&counter_A, gvt_participants);
 			atomic_set(&counter_send, gvt_participants);
 			atomic_set(&counter_B, gvt_participants);
+=======
+			atomic_set(&counter_initialized, active_threads);
+			atomic_set(&counter_kvt, active_threads);
+			atomic_set(&counter_finalized, active_threads);
+
+			atomic_set(&counter_A, active_threads);
+			atomic_set(&counter_send, active_threads);
+			atomic_set(&counter_B, active_threads);
+>>>>>>> origin/energy
 
 			kernel_phase = kphase_start;
 
@@ -618,6 +641,7 @@ simtime_t gvt_operations(void) {
         if (atomic_read(&counter_finalized) == 0) {
 			if (iCAS(&idle_tkn, 1, 0)) {
 				kernel_phase = kphase_idle;
+<<<<<<< HEAD
                 updated_gvt = last_gvt;
                 // Notify the power cap module that a new statistic sample is available
             /*    if(rootsim_config.num_controllers > 0)
@@ -664,6 +688,9 @@ simtime_t gvt_operations(void) {
 					// Reset tid to invalid value
 					iCAS(&cancelback_tid, tid, UINT_MAX);
 				}
+=======
+				trigger_rebinding();
+>>>>>>> origin/energy
 			}
 
 			// Dump statistics

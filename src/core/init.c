@@ -35,6 +35,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <limits.h>
+#include <float.h>
 #include <sysexits.h>
 #include <argp.h>
 #include <errno.h>
@@ -85,6 +86,7 @@ enum _opt_codes{
 	OPT_A,
 	OPT_GVT,
 	OPT_SIMULATION_TIME,
+	OPT_WALLCLOCK_TIME,
 	OPT_DETERMINISTIC_SEED,
 	OPT_SEED,
 	OPT_SERIAL,
@@ -98,9 +100,14 @@ enum _opt_codes{
 	OPT_PREEMPTION,
 <<<<<<< HEAD
 	OPT_SILENT,
+<<<<<<< HEAD
 =======
 	OPT_SLAB_MSG_SIZE,
 >>>>>>> origin/PADS2020
+=======
+	OPT_POWERCAP,
+	OPT_POWERCAP_EXPLORE,
+>>>>>>> origin/energy
 	OPT_LAST
 };
 
@@ -172,6 +179,7 @@ static const struct argp_option argp_options[] = {
 	{"gvt",			OPT_GVT,		"VALUE",	0,		"Time between two GVT reductions (in milliseconds)", 0},
 	{"cktrm-mode",		OPT_CKTRM_MODE,		"TYPE",		0,		"Termination Detection mode. Supported values: normal, incremental, accurate", 0},
 	{"simulation-time",	OPT_SIMULATION_TIME, 	"VALUE",	0,		"Halt the simulation when all LPs reach this logical time. 0 means infinite", 0},
+	{"wallclock-time",	OPT_WALLCLOCK_TIME, 	"VALUE",	0,		"Halt the simulation when the wall clock time reaches this value. 0 means infinite", 0},
 	{"lps-distribution",	OPT_LPS_DISTRIBUTION, 	"TYPE",		0,		"LPs distributions over simulation kernels policies. Supported values: block, circular", 0},
 	{"deterministic-seed",	OPT_DETERMINISTIC_SEED,	0,		0, 		"Do not change the initial random seed for LPs. Enforces different deterministic simulation runs", 0},
 	{"verbose",		OPT_VERBOSE,		"TYPE",		0,		"Verbose execution", 0},
@@ -189,7 +197,12 @@ static const struct argp_option argp_options[] = {
 #ifdef HAVE_PREEMPTION
 >>>>>>> origin/asym
 	{"no-preemption",	OPT_PREEMPTION,		0,		0,		"Disable Preemptive Time Warp", 0},
+<<<<<<< HEAD
 	{"slab-msg-size",	OPT_SLAB_MSG_SIZE,	"VALUE",	0,		"Sets the Slab allocator message size", 0},
+=======
+	{"powercap",		OPT_POWERCAP,		"VALUE",	0,		"Power capping value (in Watts) which defines a limit for the system power consumption", 0},
+	{"powercap-exploration",OPT_POWERCAP_EXPLORE,	"VALUE",	0,		"Power Capping Exploration Strategy", 0},
+>>>>>>> origin/energy
 	{0}
 };
 
@@ -227,6 +240,17 @@ static const struct argp_option argp_options[] = {
 		__value;												\
 	})
 
+#define parse_ldouble_limits(low, high) 	\
+	({														\
+		long double __value;										\
+		char *__endptr;												\
+		__value = strtold(arg, &__endptr);									\
+		if(!(*arg != '\0' && *__endptr == '\0' && __value >= low && __value <= high)) {	\
+			malformed_option_failure();									\
+		}													\
+		__value;												\
+	})
+
 static error_t parse_opt (int key, char *arg, struct argp_state *state)
 {
 	// this is used in order to ensure that the user doesn't use duplicate options
@@ -244,7 +268,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 			if(strcmp(arg, "auto") == 0) {
 				n_cores = get_cores();
 			} else {
-				n_cores = parse_ullong_limits(1, UINT_MAX);
+				active_threads = n_cores = parse_ullong_limits(1, UINT_MAX);
 			}
 			break;
 
@@ -303,6 +327,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 			rootsim_config.simulation_time = parse_ullong_limits(0, INT_MAX);
 			break;
 
+		case OPT_WALLCLOCK_TIME:
+			rootsim_config.wallclock_time = parse_ullong_limits(0, INT_MAX);
+			break;
+
 		case OPT_DETERMINISTIC_SEED:
 			rootsim_config.deterministic_seed = true;
 			break;
@@ -335,6 +363,19 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 			rootsim_config.silent_output = true;
 			break;
 
+		case OPT_POWERCAP:
+			rootsim_config.powercap = parse_ldouble_limits(0.0, LDBL_MAX);
+			#ifndef HAVE_POWER_MANAGEMENT
+			if(rootsim_config.powercap > 0.0) {
+				conflicting_option_failure("Power Capping support not available at compile time");
+			}
+			#endif
+			break;
+
+		case OPT_POWERCAP_EXPLORE:
+			rootsim_config.powercap_exploration = parse_ullong_limits(0, UINT64_MAX);
+			break;
+
 		case ARGP_KEY_INIT:
 
 			memset(&rootsim_config, 0, sizeof(rootsim_config));
@@ -358,9 +399,14 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 			rootsim_config.disable_preemption = false;
 <<<<<<< HEAD
 			rootsim_config.silent_output = false;
+<<<<<<< HEAD
 =======
 			rootsim_config.slab_msg_size = 512;
 >>>>>>> origin/PADS2020
+=======
+			rootsim_config.powercap = 0.0;
+			rootsim_config.powercap_exploration = 0;
+>>>>>>> origin/energy
 			break;
 
 		case ARGP_KEY_SUCCESS:
@@ -517,12 +563,6 @@ bool CapabilityAvailable(enum capability_t which, struct capability_info_t *info
 			return false; // not implemented
 		case CAP_LINUX_MODULES:
 			return false; // not implemented
-		case CAP_LP_REBINDING:
-			#ifdef HAVE_LP_REBINDING
-			return true;
-			#else
-			return false;
-			#endif
 		case CAP_MPI:
 			#ifdef HAVE_MPI
 			return true;
@@ -543,6 +583,8 @@ bool CapabilityAvailable(enum capability_t which, struct capability_info_t *info
 				return true;
 			case CAP_SIMULATION_TIME:
 				return rootsim_config.simulation_time > 0;
+			case CAP_POWER:
+				return rootsim_config.powercap > 0.0;
 			default:
 				rootsim_error(false, "Requesting information for an unknown capability\n");
 				return false;
@@ -592,6 +634,9 @@ bool CapabilityAvailable(enum capability_t which, struct capability_info_t *info
 		case CAP_SIMULATION_TIME:
 			info->simulation_time = rootsim_config.simulation_time;
 			return rootsim_config.simulation_time > 0;
+		case CAP_POWER:
+			info->powercap = rootsim_config.powercap;
+			return rootsim_config.powercap > 0.0;
 		default:
 			rootsim_error(false, "Requesting information for an unknown capability\n");
 			return false;

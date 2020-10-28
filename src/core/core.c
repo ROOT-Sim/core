@@ -61,8 +61,13 @@ unsigned int n_ker;
 /// Total number of cores required for simulation
 unsigned int n_cores;
 
+<<<<<<< HEAD
 /// Used to map a global id to a local id
 unsigned int *to_lid;
+=======
+/// Current number of active threads. This is always <= n_cores
+volatile unsigned int active_threads;
+>>>>>>> origin/energy
 
 /// Total number of logical processes running in the simulation
 unsigned int n_LP_tot;

@@ -31,9 +31,11 @@
 #include <stdlib.h>
 
 #include <arch/atomic.h>
+#include <arch/thread.h>
 #include <core/core.h>
-#include <core/timer.h>
+#include <core/init.h>
 #include <datatypes/list.h>
+#include <powercap/powercap.h>
 #include <scheduler/binding.h>
 #include <scheduler/process.h>
 #include <scheduler/scheduler.h>
@@ -43,7 +45,7 @@
 #include <arch/thread.h>
 #include <src/core/init.h>
 
-#define REBIND_INTERVAL 10.0
+#define REBIND_INTERVAL 100
 
 struct lp_cost_id {
 	double workload_factor;
@@ -52,26 +54,40 @@ struct lp_cost_id {
 
 struct lp_cost_id *lp_cost;
 
+<<<<<<< HEAD
 /// A guard to know whether this is the first invocation or not
 static  bool asym_first_lp_binding = true;
 static __thread bool first_lp_binding = true;
 static  unsigned int binding_counter = 0;
 
+=======
+static double *assignments;
+>>>>>>> origin/energy
 static unsigned int *new_LPS_binding;
-static timer rebinding_timer;
 
+<<<<<<< HEAD
 //#ifdef HAVE_LP_REBINDING
 static int binding_acquire_phase = 0;
+=======
+static volatile int binding_acquire_phase = 0;
+>>>>>>> origin/energy
 static __thread int local_binding_acquire_phase = 0;
 
-static int binding_phase = 0;
+static volatile int binding_phase = 0;
 static __thread int local_binding_phase = 0;
+<<<<<<< HEAD
 //#endif
 
 static __thread bool bt_updated = false;
 
+=======
+>>>>>>> origin/energy
 
 static atomic_t worker_thread_reduction;
+static atomic_t worker_thread_installation;
+
+static bool rebinding_triggered = false;
+static bool rebinding_completed = true;
 
 static unsigned int binding_threads = 0;
 
@@ -98,6 +114,7 @@ static inline void LPs_block_binding(void) {
 	unsigned int block_leftover;
 	struct lp_struct *lp;
 
+<<<<<<< HEAD
     // We determine here the number of threads used for binding, depending on the
     // actual (current) incarnation of available threads.
     if(rootsim_config.num_controllers == 0)
@@ -107,6 +124,10 @@ static inline void LPs_block_binding(void) {
 
     LP_per_thread = (n_prc / binding_threads_local);
 	block_leftover = n_prc - LP_per_thread * binding_threads_local;
+=======
+	buf1 = (n_prc / active_threads);
+	block_leftover = n_prc - buf1 * active_threads;
+>>>>>>> origin/energy
 
 	if (block_leftover > 0) {
 		LP_per_thread++;
@@ -176,7 +197,6 @@ static inline void LP_knapsack(void) {
 	register unsigned int i, j;
     double reference_knapsack = 0;
 	bool assigned;
-	double assignments[n_cores];
 
     if(rootsim_config.num_controllers == 0){
         binding_threads = n_cores;
@@ -189,7 +209,11 @@ static inline void LP_knapsack(void) {
 	for (i = 0; i < n_prc; i++) {
 		reference_knapsack += lp_cost[i].workload_factor;
 	}
+<<<<<<< HEAD
 	reference_knapsack /= binding_threads;
+=======
+	reference_knapsack /= active_threads;
+>>>>>>> origin/energy
 
 	// Sort the expected times
 	qsort(lp_cost, n_prc, sizeof(struct lp_cost_id), compare_lp_cost);
@@ -197,17 +221,25 @@ static inline void LP_knapsack(void) {
 	// At least one LP per thread
 	bzero(assignments, sizeof(double) * binding_threads);
 	j = 0;
+<<<<<<< HEAD
 	for (i = 0; i < binding_threads; i++) {
+=======
+	for (i = 0; i < active_threads; i++) {
+>>>>>>> origin/energy
 		assignments[j] += lp_cost[i].workload_factor;
 		new_LPS_binding[i] = j;
 		j++;
 	}
 
-	// Very suboptimal approximation of knapsack
+	// Suboptimal approximation of knapsack
 	for (; i < n_prc; i++) {
 		assigned = false;
 
+<<<<<<< HEAD
 		for (j = 0; j < binding_threads; j++) {
+=======
+		for (j = 0; j < active_threads; j++) {
+>>>>>>> origin/energy
 			// Simulate assignment
 			if (assignments[j] + lp_cost[i].workload_factor <= reference_knapsack) {
 				assignments[j] += lp_cost[i].workload_factor;
@@ -226,12 +258,14 @@ static inline void LP_knapsack(void) {
 		j = 0;
 		for (; i < n_prc; i++) {
 			new_LPS_binding[i] = j;
+<<<<<<< HEAD
 			j = (j + 1) % binding_threads;
+=======
+			j = (j + 1) % active_threads;
+>>>>>>> origin/energy
 		}
 	}
 }
-
-#ifdef HAVE_LP_REBINDING
 
 static void post_local_reduction(void)
 {
@@ -242,7 +276,11 @@ static void post_local_reduction(void)
 		first_evt = list_head(lp->queue_in);
 		last_evt = list_tail(lp->queue_in);
 
+<<<<<<< HEAD
 		lp_cost[lp->lid.to_int].id = i++;	// TODO: do we really need this?
+=======
+		lp_cost[lp->lid.to_int].id = i++; // TODO: do we really need this?
+>>>>>>> origin/energy
 		lp_cost[lp->lid.to_int].workload_factor = list_sizeof(lp->queue_in);
 		lp_cost[lp->lid.to_int].workload_factor *= statistics_get_lp_data(lp, STAT_GET_EVENT_TIME_LP);
 		lp_cost[lp->lid.to_int].workload_factor /= (last_evt->timestamp - first_evt->timestamp);
@@ -255,6 +293,12 @@ static void install_binding(void)
 
 	n_lp_per_thread = 0;
 
+	//~ if(master_thread()) {
+		//~ foreach_lp(lp) {
+			//~ printf("Lp %d installed on thread %d\n", lp->lid.to_int, new_LPS_binding[i]);
+		//~ }
+	//~ }
+
 	foreach_lp(lp) {
 		if (new_LPS_binding[i++] == local_tid) {
 			LPS_bound_set(n_lp_per_thread++, lp);
@@ -264,13 +308,19 @@ static void install_binding(void)
 			}
 		}
 	}
+<<<<<<< HEAD
     // In case we're running with the asymmetric architecture, we have
     // to rebind as well
     if(rootsim_config.num_controllers > 0)
         rebind_LPs_to_PTs();
+=======
+
+	//~ for(i = 0; i < n_prc; i++)
+		//~ if(lps_bound_blocks[i])
+			//~ printf("%d: LP %d is %sbound\n", tid, lps_bound_blocks[i]->lid.to_int, i < n_prc_per_thread ? "" : "not ");
+>>>>>>> origin/energy
 }
 
-#endif
 
 void reassignation_rebind(void) {
     free_binding_blocks();
@@ -289,6 +339,7 @@ void reassignation_rebind(void) {
 
 * @author Alessandro Pellegrini
 */
+<<<<<<< HEAD
 void rebind_LPs(void) {
 
 
@@ -362,11 +413,65 @@ void rebind_LPs(void) {
             binding_acquire_phase++;
         }
     }
+=======
+extern bool end_computing(void);
+void rebind_LPs(void)
+{
+	double committed_per_second;
+
+	if(rootsim_config.powercap > 0 && master_thread())
+		sample_average_powercap_violation();
+	
+	if (master_thread()) {
+		if (unlikely(rebinding_triggered && rebinding_completed)) {
+			rebinding_triggered = false;
+			rebinding_completed = false;
+
+			// The old number of active threads must participate in the reduction
+			atomic_set(&worker_thread_reduction, active_threads);
+
+			committed_per_second = statistics_get_current_throughput();
+			if(rootsim_config.powercap > 0 && statistics_get_current_gvt_round() > 1) {
+				// Retrieve the current throughput value and decide
+				// upon a new configuration of threads.
+				if(committed_per_second > 0.0) {
+					active_threads = start_heuristic(committed_per_second); // threads could go to sleep here
+					printf("Active threads set to %d\n", active_threads);
+				}
+			}
+
+			binding_phase++;
+		}
+
+		if (atomic_read(&worker_thread_reduction) == 0) {
+			LP_knapsack();
+	
+			// Possibly wake up some threads
+			if(rootsim_config.powercap > 0)
+				wake_up_sleeping_threads();
+
+			atomic_set(&worker_thread_installation, active_threads);
+			binding_acquire_phase++;
+		}
+	}
+>>>>>>> origin/energy
 
 	if (local_binding_phase < binding_phase) {
 		local_binding_phase = binding_phase;
 		post_local_reduction();
 		atomic_dec(&worker_thread_reduction);
+
+		// Go to sleep if the heuristic decided to do so
+		if(rootsim_config.powercap > 0)
+			check_running_array(tid);
+
+		if(master_thread())
+			reset_measures_for_filtering();
+
+		if(end_computing()) {
+			// Bye bye main loop!
+			longjmp(exit_jmp, 1);
+		}
 	}
 
 	if (local_binding_acquire_phase < binding_acquire_phase) {
@@ -374,6 +479,7 @@ void rebind_LPs(void) {
 		install_binding();
         #ifdef HAVE_PREEMPTION
 		reset_min_in_transit(local_tid);
+<<<<<<< HEAD
         #endif
 		if (controller_barrier.num_threads !=rootsim_config.num_controllers && rootsim_config.num_controllers > 0){
                     if(master_kernel() && master_thread())  
@@ -383,8 +489,65 @@ void rebind_LPs(void) {
 		}
 		if (thread_barrier(&controller_barrier)) {
 			atomic_set(&worker_thread_reduction, binding_threads);
+=======
+#endif
+		atomic_dec(&worker_thread_installation);
+		while(atomic_read(&worker_thread_installation) > 0) {
+			if(end_computing()) {
+				// Bye bye main loop!
+				longjmp(exit_jmp, 1);
+			}
+		}
+		if(master_thread()) {
+			atomic_set(&worker_thread_reduction, active_threads);
+			rebinding_completed = true;
+>>>>>>> origin/energy
 		}
 
+		//~ if (thread_barrier(&all_thread_barrier)) {
+                       //~ atomic_set(&worker_thread_reduction, active_threads);
+                       //~ rebinding_completed = true;
+                //~ }
 	}
-#endif
+}
+
+/**
+* Other subsystems might request to rebind LPs and threads by relying on
+* this internal API. It allows to specify the number of threads that should
+* participate in the rebinding phase.
+* 
+* @author Alessandro Pellegrini
+*/
+void trigger_rebinding(void)
+{
+	if(!rebinding_triggered) {
+		rebinding_triggered = true;
+	}
+}
+
+
+/**
+* This function _must_ be called before entering the actual main loop.
+* Each worker thread sets up its data structures, and the performs a
+* (deterministic) block allocation. This is because no runtime data
+* is available at the time, so we "share" the load as the number of LPs.
+* Then, successive invocations, will use the knapsack load sharing policy
+
+* @author Alessandro Pellegrini
+*/
+void initial_binding(void)
+{
+	initialize_binding_blocks();
+
+	LPs_block_binding();
+
+	if (master_thread()) {
+		new_LPS_binding = rsalloc(sizeof(int) * n_prc);
+
+		lp_cost = rsalloc(sizeof(struct lp_cost_id) * n_prc);
+		assignments = rsalloc(sizeof(double) * n_prc);
+		memset(lp_cost, 0, sizeof(struct lp_cost_id) * n_prc);
+
+		atomic_set(&worker_thread_reduction, active_threads);
+	}
 }

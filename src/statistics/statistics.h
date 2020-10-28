@@ -174,7 +174,8 @@ struct stat_t {
 			    idle_cycles,
 			    memory_usage,
 			    simtime_advancement,
-			    gvt_computations, exponential_event_time;
+			    gvt_computations,
+			    exponential_event_time;
 		};
 		vec_double vec;
 	};
@@ -242,4 +243,6 @@ extern inline void log_state_switch(unsigned int lid);
 >>>>>>> origin/cancelback
 
 extern double statistics_get_lp_data(struct lp_struct *, unsigned int type);
-
+extern double statistics_get_current_throughput(void);
+extern int statistics_get_current_gvt_round(void);
+extern int statistics_get_execution_time(void);

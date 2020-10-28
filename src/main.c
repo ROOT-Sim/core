@@ -40,6 +40,7 @@
 #include <arch/thread.h>
 #include <statistics/statistics.h>
 #include <gvt/ccgs.h>
+#include <powercap/powercap.h>
 #include <scheduler/binding.h>
 #include <scheduler/scheduler.h>
 #include <scheduler/process.h>
@@ -82,29 +83,52 @@ static int thread_configuration_modifier;
  * all threads synchronize. This avoids side effects like, e.g., accessing
  * a NULL pointer.
  */
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/energy
 __thread jmp_buf exit_jmp;
 
 /**
 <<<<<<< HEAD
 * This function checks the different possibilities for termination detection termination.
 */
+<<<<<<< HEAD
 static bool end_computing(void) {
+=======
+/*static*/ bool end_computing(void)
+{
+>>>>>>> origin/energy
 
 	// Did CCGS decide to terminate the simulation?
 	if (ccgs_can_halt_simulation()) {
+		printf("ccgs\n");
 		return true;
 	}
 	// Termination detection based on passed (committed) simulation time
 	if (rootsim_config.simulation_time != 0 && (int)get_last_gvt() >= rootsim_config.simulation_time) {
+		printf("simtime\n");
+		return true;
+	}
+	// Termination detection based on passed (committed) wallclock time
+	if (rootsim_config.wallclock_time != 0 && (int)statistics_get_execution_time() >= rootsim_config.wallclock_time) {
+		printf("simtime\n");
 		return true;
 	}
 	// If some KLT has encountered an error condition, we neatly shut down the simulation
 	if (simulation_error()) {
+		printf("error\n");
 		return true;
 	}
 
-	if (user_requested_exit())
+	if (user_requested_exit()) {
+		printf("user exit\n");
 		return true;
+	}
+
+	if(rootsim_config.powercap > 0.0) {
+		return current_exploit_steps > 2;
+	}
 
 	return false;
 }
@@ -130,23 +154,61 @@ static void *main_simulation_loop(void *arg) {
     simulation_shutdown(EXIT_SUCCESS);
 }
 
+<<<<<<< HEAD
 static void wait(void){
     thread_barrier(&all_thread_barrier);
 }
+=======
+static void *main_simulation_loop(void *arg) __attribute__((noreturn));
+static void *main_simulation_loop(void *arg)
+{
+
+	(void)arg;
+	simtime_t my_time_barrier = -1.0;
+
+	if(rootsim_config.powercap > 0)
+		init_powercap_thread(tid);
+
+#ifdef HAVE_CROSS_STATE
+	lp_alloc_thread_init();
+#endif
+>>>>>>> origin/energy
 
 static void symmetric_execution(void) {
 
     simtime_t my_time_barrier = -1.0;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     #ifdef HAVE_CROSS_STATE
     lp_alloc_thread_init();
     #endif
 =======
 	simtime_t old_time_barrier = -1;
+=======
+	// Notify the statistics subsystem that we are now starting the actual simulation
+	if (master_kernel() && master_thread()) {
+		statistics_start();
+		printf("****************************\n"
+		       "*    Simulation Started    *\n"
+		       "****************************\n");
+	}
+
+	if (setjmp(exit_jmp) != 0) {
+		printf("LEAVING!\n");
+		goto leave_for_error;
+	}
+>>>>>>> origin/energy
+
+	if(rootsim_config.powercap > 0)
+		check_running_array(tid);
 
 	while (!end_computing()) {
+<<<<<<< HEAD
 >>>>>>> origin/cancelback
+=======
+		rebind_LPs();
+>>>>>>> origin/energy
 
     initialize_worker_thread();  //Do the initial (local) LP binding, then execute INIT at all (local) LPs
 
@@ -217,6 +279,7 @@ static void symmetric_execution(void) {
     finish();
 }
 
+<<<<<<< HEAD
 static void asymmetric_execution(void) {
 
     simtime_t my_time_barrier = -1.0;
@@ -393,6 +456,22 @@ static void asymmetric_execution(void) {
         atomic_add(&final_processed_events, my_processed_events);
         finish();
     }
+=======
+ leave_for_error:
+	if(rootsim_config.powercap > 0 && master_thread())
+		end_powercap_mainthread();
+
+	thread_barrier(&all_thread_barrier);
+
+	// If we're exiting due to an error, we neatly shut down the simulation
+	if (simulation_error()) {
+		simulation_shutdown(EXIT_FAILURE);
+	}
+	simulation_shutdown(EXIT_SUCCESS);
+
+	if(!master_thread())
+		while(1);
+>>>>>>> origin/energy
 }
 
 #ifdef HAVE_PREEMPTION
@@ -489,6 +568,11 @@ int main(int argc, char **argv) {
 	} else {
 		// The number of locally required threads is now set. Detach them and then join the main simulation loop
 		if (!simulation_error()) {
+
+			if(rootsim_config.powercap > 0) {
+				active_threads = init_powercap_mainthread(n_cores);
+			}
+			
 			if (n_cores > 1) {
 				create_threads(n_cores - 1, main_simulation_loop, NULL);
 			}
