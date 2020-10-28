@@ -140,12 +140,16 @@ void msg_hdr_release(msg_hdr_t *msg)
 	struct lp_struct *lp;
 
 	lp = find_lp_by_gid(msg->sender);
+<<<<<<< HEAD
 
 #ifndef NDEBUG
 	bzero(msg, sizeof(msg_hdr_t));
 #endif
 
 	slab_free(lp->mm->slab, msg);
+=======
+	slab_free(lp->slab, msg);
+>>>>>>> origin/exercise
 }
 
 
@@ -253,8 +257,13 @@ void send_antimessages(unsigned int lid, simtime_t after_simtime) {
 */
 msg_t *get_msg_from_slab(struct lp_struct *lp)
 {
+<<<<<<< HEAD
 	msg_t *msg = (msg_t *) slab_alloc(lp->mm->slab);
 	bzero(msg, rootsim_config.slab_msg_size);
+=======
+	msg_t *msg = (msg_t *) slab_alloc(lp->slab);
+	bzero(msg, SLAB_MSG_SIZE);
+>>>>>>> origin/exercise
 	return msg;
 }
 
@@ -295,7 +304,7 @@ void msg_release(msg_t *msg)
 
 	if (likely(sizeof(msg_t) + msg->size <= rootsim_config.slab_msg_size)) {
 		lp = which_slab_to_use(msg->sender, msg->receiver);
-		slab_free(lp->mm->slab, msg);
+		slab_free(lp->slab, msg);
 	} else {
 		rsfree(msg);
 	}

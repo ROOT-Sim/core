@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <arch/atomic.h>
-#include <mm/dymelor.h>
 
 #include <stdatomic.h>
 

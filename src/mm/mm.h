@@ -41,23 +41,12 @@
 #include <unistd.h>
 >>>>>>> origin/asym
 
-struct _malloc_state;
+extern void allocator_init(struct lp_struct *lp);
+extern void allocator_fini(struct lp_struct *lp);
 
-struct memory_map {
-	struct _malloc_state *m_state;
-	struct buddy *buddy;
-	struct slab_chain *slab;
-	struct segment *segment;
-};
-
-extern bool allocator_init(void);
-extern void allocator_fini(void);
-extern void segment_init(void);
-extern struct segment *get_segment(GID_t i);
-extern void *get_base_pointer(GID_t gid);
-
-extern void initialize_memory_map(struct lp_struct *lp);
-extern void finalize_memory_map(struct lp_struct *lp);
+extern void allocator_processing_start(struct lp_struct *lp);
+extern uint32_t allocator_checkpoint_take(struct lp_struct *lp);
+extern void allocator_checkpoint_restore(struct lp_struct *lp, uint32_t checkpoint_i);
 
 extern struct slab_chain *slab_init(const size_t itemsize);
 extern void *slab_alloc(struct slab_chain *);
@@ -69,8 +58,11 @@ extern void *log_full(struct lp_struct *);
 extern void *log_state(struct lp_struct *);
 extern void log_restore(struct lp_struct *, state_t *);
 extern void log_delete(void *);
+<<<<<<< HEAD
 extern void clean_buffers_on_gvt(struct lp_struct *, simtime_t);
 extern void event_approximation_mark(const struct lp_struct *, msg_t*);
+=======
+>>>>>>> origin/exercise
 
 /* Simulation Platform Memory APIs */
 extern inline void *rsalloc(size_t);
@@ -78,5 +70,3 @@ extern inline void *rszalloc(size_t size);
 extern inline void rsfree(void *);
 extern inline void *rsrealloc(void *, size_t);
 extern inline void *rscalloc(size_t, size_t);
-
-extern void malloc_state_wipe(struct memory_map *);

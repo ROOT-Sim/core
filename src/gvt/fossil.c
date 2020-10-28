@@ -67,11 +67,16 @@ void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
 
 	// State list must be handled specifically, as nodes point to malloc'd
 	// nodes. We therefore manually scan the list and free the memory.
+<<<<<<< HEAD
 	while ((state = list_head(lp->queue_states)) != NULL && state->lvt < time_barrier) {
 		log_delete(state->log);
 <<<<<<< HEAD
 #ifndef NDEBUG
 =======
+=======
+	while ((state = list_head(lp->queue_states)) != NULL
+	       && state->lvt < time_barrier) {
+>>>>>>> origin/exercise
 		if(&topology_settings && topology_settings.write_enabled)
 			rsfree(state->topology);
 		if(&abm_settings)
@@ -162,10 +167,13 @@ void adopt_new_gvt(simtime_t new_gvt, simtime_t new_min_barrier) {
 		// Execute the fossil collection
 		fossil_collection(lp, time_barrier_pointer[i]->lvt);
 
+<<<<<<< HEAD
 		// Actually release memory buffer allocated by the LPs and then released via free() calls
 <<<<<<< HEAD
 		clean_buffers_on_gvt(lp, time_barrier_pointer[i]->lvt);
 
+=======
+>>>>>>> origin/exercise
 		i++;
 =======
 		clean_buffers_on_gvt(LPS_bound[i]->lid, time_barrier_pointer[i]->lvt);

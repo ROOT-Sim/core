@@ -109,7 +109,7 @@ bool LogState(struct lp_struct *lp)
 		}
 
 		// Log simulation model buffers
-		new_state->log = log_state(lp);
+		new_state->checkpoint_i = allocator_checkpoint_take(lp);
 
 		// Log members of lp_struct which must be restored
 		new_state->state = lp->state;
@@ -145,7 +145,11 @@ bool LogState(struct lp_struct *lp)
 void RestoreState(struct lp_struct *lp, state_t * state_to_restore)
 {
 	// Restore simulation model buffers
+<<<<<<< HEAD
 	log_restore(lp, state_to_restore);
+=======
+	allocator_checkpoint_restore(lp, restore_state->checkpoint_i);
+>>>>>>> origin/exercise
 
 	// Restore members of lp_struct which have been checkpointed
 	lp->current_base_pointer = state_to_restore->base_pointer;
@@ -281,9 +285,12 @@ void rollback(struct lp_struct *lp)
 		s = restore_state;
 		on_log_discarded(s);
 		restore_state = list_prev(restore_state);
+<<<<<<< HEAD
 >>>>>>> origin/energy_tmp
 		log_delete(s->log);
 		statistics_post_data(lp, STAT_ABORT, (double)lp->ckpt_period); 
+=======
+>>>>>>> origin/exercise
 #ifndef NDEBUG
 		s->last_event = (void *)0xBABEBEEF;
 #endif
