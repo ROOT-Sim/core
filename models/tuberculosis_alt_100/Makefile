@@ -1,6 +1,6 @@
 CC = rootsim-cc
 CFLAGS = -Wall -Wextra
-TARGET = tuberculosis_alt
+TARGET = tuberculosis_alt_100
 
 SRCS = application.c guy.c guy_init.c parameters.c
 OBJS = $(SRCS:.c=.o)

@@ -41,6 +41,7 @@
  * If messages are smaller than this size, then message buffers are taken
  * from the slab. Otherwise, the buddy system is queried directly.
  */
+<<<<<<< HEAD
 #define SLAB_MSG_SIZE		512
 =======
 
@@ -52,6 +53,10 @@
 
 #define SLAB_MSG_SIZE	512	
 >>>>>>> origin/ecs
+=======
+
+//#define SLAB_MSG_SIZE		512
+>>>>>>> origin/PADS2020
 
 /**
  * @brief Simulation Platform Control Messages

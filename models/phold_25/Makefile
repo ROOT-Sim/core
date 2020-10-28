@@ -1,8 +1,11 @@
-CC = rootsim-cc
-CFLAGS = -Wall -Wextra
-TARGET = tuberculosis_alt
+# This is a Makefile which allows to compile a simulation
+# model using the HPC ROOT-Sim runtime.
 
-SRCS = application.c guy.c guy_init.c parameters.c
+CC = rootsim-cc
+CFLAGS = -g -Wall -Wextra
+TARGET = phold_25
+
+SRCS = application.c functions.c
 OBJS = $(SRCS:.c=.o)
 
 .PHONY: clean

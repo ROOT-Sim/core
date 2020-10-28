@@ -42,15 +42,6 @@ static error_t model_parse(int key, char *arg, struct argp_state *state) {
 		case ARGP_KEY_SUCCESS:
 			printf("\t* ROOT-Sim's TBC model - Current Configuration *\n");
 			printf("approximated: %d\n", approximated);
-<<<<<<< HEAD
-			stats_file = fopen("tbc_stats.txt", "a");
-			if(!stats_file){
-				printf("Unable to open tbc stats file");
-				exit(EXIT_FAILURE);
-			}
-			fprintf(stats_file, "*** %s\n", approximated ? "approximated" : "precise");
-=======
->>>>>>> origin/PADS2020
 			break;
 
 		default:
