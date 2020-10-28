@@ -247,6 +247,14 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 			state->arriving_handoffs++;
 			state->arriving_calls++;
 
+<<<<<<< HEAD
+=======
+			ran = Random();
+			int i;
+			//i = *(event_content->dummy);
+			*(event_content->dummy) = 1;
+			state->dummy_flag = true;
+>>>>>>> origin/ecs
 
 			if (state->channel_counter == 0)
 				state->blocked_on_handoff++;

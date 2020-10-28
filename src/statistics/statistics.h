@@ -84,6 +84,7 @@ enum stat_file_per_thread {
 #define STAT_FILE_NAME_LP		"lps"
 
 /* Definition of LP Statistics Post Messages */
+<<<<<<< HEAD
 enum stat_msg_t {
 	STAT_ANTIMESSAGE = 1001,
 	STAT_EVENT,
@@ -101,6 +102,44 @@ enum stat_msg_t {
 	STAT_GET_SIMTIME_ADVANCEMENT,	//xxx totally unused
 	STAT_GET_EVENT_TIME_LP
 };
+=======
+#define STAT_ANTIMESSAGE	1
+#define STAT_EVENT		2
+#define STAT_COMMITTED		3
+#define STAT_ROLLBACK		4
+#define STAT_CKPT		5
+#define STAT_CKPT_TIME		6
+#define STAT_CKPT_MEM		7
+#define STAT_RECOVERY		8
+#define STAT_RECOVERY_TIME	9
+#define STAT_EVENT_TIME		10
+#define STAT_IDLE_CYCLES	11
+#define STAT_SILENT		12
+#define STAT_ECS		13
+#define STAT_ECS_FAULT		14
+#define STAT_ECS_CLUSTERED		15
+#define STAT_ECS_SCATTERED		16
+#define STAT_ECS_NO_PREFETCH_TIME 17
+#define STAT_ECS_CLUSTERED_TIME 18
+#define STAT_ECS_SCATTERED_TIME 19
+
+/* Definition of Global Statistics Post Messages */
+#define STAT_SIM_START		1001
+#define STAT_GVT		1002
+#define STAT_GVT_ROUND_TIME 1003
+
+
+/* Definition of Thread Statistics Get Messages */
+#define STAT_GET_SIMTIME_ADVANCEMENT	15001
+#define STAT_GET_EVENT_TIME_LP		15002
+#define STAT_GET_TOT_ECS			15003
+#define STAT_GET_CLUSTERED_FAULTS	15004
+
+
+
+enum stat_levels {STATS_GLOBAL, STATS_PERF, STATS_LP, STATS_ALL};
+
+>>>>>>> origin/ecs
 
 enum stats_levels {
 	STATS_INVALID = 0,	/**< By convention 0 is the invalid field */
@@ -115,6 +154,7 @@ typedef double vec_double __attribute__((vector_size(16 * sizeof(double))));
 
 // Structure to keep track of (incremental) statistics
 struct stat_t {
+<<<<<<< HEAD
 	union {
 		struct {
 			double tot_antimessages,
@@ -138,6 +178,35 @@ struct stat_t {
 	double gvt_time,
 	    gvt_round_time,
 	    gvt_round_time_min, gvt_round_time_max, max_resident_set;
+=======
+	double 	tot_antimessages,
+		tot_events,
+		committed_events,
+		reprocessed_events,
+		tot_rollbacks,
+		tot_ckpts,
+		ckpt_time,
+		ckpt_mem,
+		tot_recoveries,
+		recovery_time,
+		event_time,
+		exponential_event_time,
+		idle_cycles,
+		memory_usage,
+		gvt_computations,
+		gvt_time,
+		gvt_round_time_min,
+		gvt_round_time_max,
+		gvt_round_time,
+		tot_ecs,
+		ecs_page_faults,
+		ecs_clustered_faults,
+		ecs_scattered_faults,
+		ecs_no_prefetch_time,
+		ecs_clustered_time,
+		ecs_scattered_time,
+		simtime_advancement;
+>>>>>>> origin/ecs
 };
 
 extern void _mkdir(const char *path);
@@ -149,12 +218,19 @@ extern void statistics_fini(void);
 
 extern void statistics_start(void);
 extern void statistics_stop(int exit_code);
+<<<<<<< HEAD
 
 extern inline void statistics_on_gvt(double gvt);
 extern inline void statistics_on_gvt_serial(double gvt);
 
 extern inline void statistics_post_data(struct lp_struct *, enum stat_msg_t type, double data);
 extern inline void statistics_post_data_serial(enum stat_msg_t type, double data);
+=======
+extern inline void statistics_post_lp_data(LID_t lid, unsigned int type, double data);
+extern inline void statistics_post_other_data(unsigned int type, double data);
+extern double statistics_get_lp_data(unsigned int type, LID_t lid);
+extern double statistics_get_system_wide_data(unsigned int type);
+>>>>>>> origin/ecs
 
 extern double statistics_get_lp_data(struct lp_struct *, unsigned int type);
 

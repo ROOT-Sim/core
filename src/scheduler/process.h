@@ -58,6 +58,8 @@
 #define LP_STATE_WAIT_FOR_SYNCH		0x01001
 #define LP_STATE_WAIT_FOR_UNBLOCK	0x01002
 #define LP_STATE_WAIT_FOR_DATA		0x01004
+#define LP_STATE_READY_FOR_DATA		0x01005
+#define LP_STATE_WAIT_FOR_WRITE		0X01006
 
 #define BLOCKED_STATE			0x01000
 #define is_blocked_state(state)	(bool)(state & BLOCKED_STATE)
@@ -123,11 +125,32 @@ struct lp_struct {
 	/// Buffer used by KLTs for buffering outgoing messages during the execution of an event
 	outgoing_t outgoing_buffer;
 
+<<<<<<< HEAD
 	/**
 	 * Implementation of OnGVT used for this LP. This can be changed
 	 * at runtime by the autonomic subsystem, when dealing with ISS and SSS
 	 */
 	bool (*OnGVT)(unsigned int me, void *snapshot);
+=======
+	#ifdef HAVE_CROSS_STATE
+	GID_t			ECS_synch_table[MAX_CROSS_STATE_DEPENDENCIES];
+	unsigned int 	ECS_index;
+	list(ecs_page_node_t)	ECS_page_list;
+	list(ecs_page_node_t)	ECS_prefetch_list;
+	simtime_t		ECS_last_prefetch_switch;
+	int				ECS_current_prefetch_mode;
+	int				ECS_page_faults;
+	int				ECS_clustered_faults;
+	int				ECS_scattered_faults;
+	int				ECS_no_prefetch_time;
+	int				ECS_clustered_time;
+	int				ECS_scattered_time;
+	int				ECS_no_prefetch_events;
+	int				ECS_clustered_events;
+	int				ECS_scattered_events;
+
+	#endif
+>>>>>>> origin/ecs
 
 	/**
 	 * Implementation of ProcessEvent used for this LP. This can be changed

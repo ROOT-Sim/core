@@ -179,6 +179,10 @@ static void *main_simulation_loop(void *arg)
 	simulation_shutdown(EXIT_SUCCESS);
 }
 
+<<<<<<< HEAD
+=======
+ 
+>>>>>>> origin/ecs
 /**
 * This function implements the ROOT-Sim's entry point
 *
@@ -187,6 +191,7 @@ static void *main_simulation_loop(void *arg)
 *
 * @return Exit code
 */
+<<<<<<< HEAD
 int main(int argc, char **argv)
 {
 #ifdef HAVE_MPI
@@ -200,6 +205,17 @@ int main(int argc, char **argv)
 
 		while (__wait == 0)
 			sleep(5);
+=======
+int main(int argc, char **argv) {
+	if((getenv("WGDB")) != NULL && *(getenv("WGDB")) == '1'){
+		int i = 0; char hostname[256]; gethostname(hostname, sizeof(hostname)); printf("PID %d on %s ready for attach\n", getpid(), hostname); fflush(stdout); while (0 == i) sleep(5);
+	}
+	// Runtime NUMA check
+	#ifdef HAVE_NUMA
+	if(numa_available() < 0) {
+		fprintf(stderr, "Your system does not support NUMA API\n");
+		exit(EXIT_FAILURE);
+>>>>>>> origin/ecs
 	}
 #endif
 

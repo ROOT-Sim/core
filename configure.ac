@@ -26,7 +26,7 @@ CFLAGS_WARNINGS="-Wall -Wextra -Wmisleading-indentation -Wcast-align -Wpointer-a
 
 # Flag to enable debugging the platform
 AS_IF([test x$enable_debug = xyes],
-      [CFLAGS="-g3 -O0 $CFLAGS_COMMON $CFLAGS_WARNINGS"],
+      [CFLAGS="-g3 -ggdb3 -O0 $CFLAGS_COMMON $CFLAGS_WARNINGS"],
       [CFLAGS="-O3 $CFLAGS_COMMON"]
       AC_DEFINE([NDEBUG]))
 

@@ -211,6 +211,7 @@ struct buddy {
 	size_t longest[] __attribute__((aligned(sizeof(size_t)))); // an array based binary tree
 };
 
+<<<<<<< HEAD
 extern struct buddy *buddy_new(size_t requested_size);
 extern void buddy_destroy(struct buddy *self);
 extern void *allocate_buddy_memory(struct buddy *self, void *base_mem, size_t requested_size);
@@ -219,3 +220,8 @@ extern void free_buddy_memory(struct buddy *self, void *base_mem, void *ptr);
 
 // This is used to help ensure that the platform is not using malloc.
 #pragma GCC poison malloc free realloc calloc
+=======
+void dump_malloc_state(malloc_state *);
+void dump_malloc_area(malloc_area *);
+#endif
+>>>>>>> origin/ecs

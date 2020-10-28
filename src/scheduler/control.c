@@ -36,6 +36,7 @@
 #include <mm/ecs.h>
 #include <datatypes/list.h>
 #include <gvt/gvt.h>
+#include <statistics/statistics.h>
 
 // Questa funzione serve a mandare in rollback qualcuno che mi
 // aveva mandato un RENDEZVOUS_START. Viene invocata da rollback()
@@ -111,9 +112,19 @@ bool anti_control_message(msg_t * msg)
 		old_rendezvous->rendezvous_mark = 0;
 
 		//Reset ECS information
+<<<<<<< HEAD
 		if (receiver->wait_on_rendezvous == msg->rendezvous_mark) {
 			receiver->ECS_index = 0;
 			receiver->wait_on_rendezvous = 0;
+=======
+		if(LPS(lid_receiver)->wait_on_rendezvous == msg->rendezvous_mark) {
+			LPS(lid_receiver)->ECS_index = 0;
+			LPS(lid_receiver)->wait_on_rendezvous = 0;
+			/*LPS(lid_receiver)->ECS_page_faults = 0;
+			LPS(lid_receiver)->ECS_clustered_faults = 0;
+			LPS(lid_receiver)->ECS_scattered_faults = 0;*/
+
+>>>>>>> origin/ecs
 		}
 
 		return false;
@@ -157,6 +168,7 @@ bool receive_control_msg(msg_t * msg)
 		if (receiver->state == LP_STATE_ROLLBACK ||
 		    receiver->state == LP_STATE_SILENT_EXEC) {
 			break;
+<<<<<<< HEAD
 		}
 		if (receiver->wait_on_rendezvous == msg->rendezvous_mark) {
 			ecs_install_pages(msg);
@@ -167,6 +179,19 @@ bool receive_control_msg(msg_t * msg)
 	case RENDEZVOUS_ACK:
 		if (receiver->state == LP_STATE_ROLLBACK ||
 		    receiver->state == LP_STATE_SILENT_EXEC) {
+=======
+		
+		case RENDEZVOUS_GET_PAGE_ACK:
+			if(LPS(lid_receiver)->state == LP_STATE_ROLLBACK ||
+					LPS(lid_receiver)->state == LP_STATE_SILENT_EXEC) {
+				break;
+			}
+			if(LPS(lid_receiver)->wait_on_rendezvous == msg->rendezvous_mark) {
+				//ecs_install_pages(msg);
+				reinstall_prefetch_pages(msg);
+				LPS(lid_receiver)->state = LP_STATE_READY_FOR_SYNCH;
+			}
+>>>>>>> origin/ecs
 			break;
 		}
 		if (receiver->wait_on_rendezvous == msg->rendezvous_mark) {
@@ -174,7 +199,19 @@ bool receive_control_msg(msg_t * msg)
 			receiver->state = LP_STATE_READY_FOR_SYNCH;
 		}
 
+<<<<<<< HEAD
 		break;
+=======
+		case RENDEZVOUS_ACK:
+			if(LPS(lid_receiver)->state == LP_STATE_ROLLBACK ||
+					LPS(lid_receiver)->state == LP_STATE_SILENT_EXEC) {
+				break;
+			}
+			if(LPS(lid_receiver)->wait_on_rendezvous == msg->rendezvous_mark) {
+				setup_ecs_on_segment(msg);
+				LPS(lid_receiver)->state = LP_STATE_READY_FOR_SYNCH;
+			}
+>>>>>>> origin/ecs
 
 	case RENDEZVOUS_UNBLOCK:
 		if (receiver->state == LP_STATE_ROLLBACK ||
@@ -182,6 +219,7 @@ bool receive_control_msg(msg_t * msg)
 			break;
 		}
 
+<<<<<<< HEAD
 		if (receiver->wait_on_rendezvous == msg->rendezvous_mark) {
 			receiver->wait_on_rendezvous = 0;
 			receiver->state = LP_STATE_READY;
@@ -193,6 +231,29 @@ bool receive_control_msg(msg_t * msg)
 		LogState(current);
 		current_lvt = INFTY;
 		current = NULL;
+=======
+		case RENDEZVOUS_UNBLOCK:
+			//printf("LP %d getting unblock\n", msg->receiver);
+			fflush(stdout);
+			if(LPS(lid_receiver)->state == LP_STATE_ROLLBACK ||
+				LPS(lid_receiver)->state == LP_STATE_SILENT_EXEC)  {
+				break;
+			}
+
+			reinstall_writeback_pages(msg);
+
+			if(LPS(lid_receiver)->wait_on_rendezvous == msg->rendezvous_mark) {
+				LPS(lid_receiver)->wait_on_rendezvous = 0;
+				LPS(lid_receiver)->state = LP_STATE_READY;
+			}
+		
+			current_lp = GidToLid(msg->receiver);
+			current_lvt = msg->timestamp;
+			force_LP_checkpoint(current_lp);
+			LogState(current_lp);
+			current_lvt = INFTY;
+			current_lp = idle_process;
+>>>>>>> origin/ecs
 
 		break;
 
@@ -222,6 +283,7 @@ bool process_control_msg(msg_t * msg)
 		return true;
 	}
 #ifdef HAVE_CROSS_STATE
+<<<<<<< HEAD
 	struct lp_struct *receiver = find_lp_by_gid(msg->receiver);
 	msg_t *copy;
 	switch (msg->type) {
@@ -248,6 +310,31 @@ bool process_control_msg(msg_t * msg)
 		rootsim_error(true,
 			      "Trying to handle a control message which is meaningless at schedule time: %d\n",
 			      msg->type);
+=======
+	LID_t lid_receiver = GidToLid(msg->receiver);
+	msg_t *copy; 
+	switch(msg->type) {
+
+		case RENDEZVOUS_START:
+			assert(msg->size == 0);
+			copy = rsalloc(sizeof(msg_t));
+			*copy = *msg;	
+			list_insert(LPS(lid_receiver)->rendezvous_queue, timestamp, copy);
+			// Place this into input queue
+			LPS(lid_receiver)->wait_on_rendezvous = msg->rendezvous_mark;
+
+			LPS(lid_receiver)->state = LP_STATE_WAIT_FOR_UNBLOCK;
+			
+			pack_msg(&control_msg, msg->receiver, msg->sender, RENDEZVOUS_ACK, msg->timestamp, msg->timestamp, 0, NULL);
+			control_msg->message_kind = positive;
+			control_msg->rendezvous_mark = msg->rendezvous_mark;
+			Send(control_msg);
+
+			break;
+
+		default:
+			rootsim_error(true, "Trying to handle a control message which is meaningless at schedule time: %d\n", msg->type);
+>>>>>>> origin/ecs
 
 	}
 #endif

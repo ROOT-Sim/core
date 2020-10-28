@@ -33,6 +33,7 @@
 
 #include <core/core.h>
 
+<<<<<<< HEAD
 /**
  * @brief Slab allocator max message size.
  *
@@ -41,6 +42,16 @@
  * from the slab. Otherwise, the buddy system is queried directly.
  */
 #define SLAB_MSG_SIZE		512
+=======
+
+/// Ack window size
+#define WND_BUFFER_LENGTH	10000
+/// Ack window size
+#define WINDOW_DIMENSION	50
+
+
+#define SLAB_MSG_SIZE	512	
+>>>>>>> origin/ecs
 
 /**
  * @brief Simulation Platform Control Messages
@@ -56,6 +67,7 @@
  * considered to be a model-specific message code.
  */
 enum _control_msgs {
+<<<<<<< HEAD
 	RESERVED_MSG_CODE = 65532,
 	TOPOLOGY_UPDATE,		/**< Used by the topology API to convey remote updates on costs/probabilities */
 	ABM_UPDATE,			/**< Used by ABM API, right now these are treated as normal positive messages */
@@ -70,11 +82,22 @@ enum _control_msgs {
 	RENDEZVOUS_GET_PAGE_ACK,	///< ECS protocol: the sender LP is giving a lease on a set of pages
 	RENDEZVOUS_PAGE_WRITE_BACK,	///< ECS protocol: modified pages are sent back to the owner LP
 	MAX_VALUE_CONTROL		///< Anything after this value is considered as an impossible message
+=======
+	MIN_VALUE_CONTROL=65537,
+	RENDEZVOUS_START,
+	RENDEZVOUS_ACK,
+	RENDEZVOUS_UNBLOCK,
+	RENDEZVOUS_ROLLBACK,
+	RENDEZVOUS_GET_PAGE,
+	RENDEZVOUS_GET_PAGE_ACK,
+	MAX_VALUE_CONTROL
+>>>>>>> origin/ecs
 };
 
 /// This macro tells whether a message is a control message, by its type
 #define is_control_msg(type)	(type >= MIN_VALUE_CONTROL && type != RENDEZVOUS_START)
 
+<<<<<<< HEAD
 
 /**
  * @brief Internal MPI tags.
@@ -87,6 +110,31 @@ enum _mpi_tags {
 	MSG_NEW_GVT = 100,	///< Master notifies the new GVT
 	MSG_FINI		///< One rank informs the others that the simulation has to be stopped
 };
+=======
+// Message Codes for PVM
+#define MSG_INIT_MPI		200
+#define MSG_EVENT		2
+#define MSG_EVENT_BIG	3
+//#define MSG_ACKNOWLEDGE		3
+#define MSG_GVT			10
+#define MSG_UNLOCK		11
+#define MSG_GO_TO_FINAL_BARRIER	12
+#define MSG_GVT_ACK		13
+
+
+
+// Message Codes for GVT operations
+#define MSG_COMPUTE_GVT		50 /// Master asks for tables
+#define MSG_INFO_GVT		51 /// Slaves reply with their information
+#define MSG_NEW_GVT		52 /// Master notifies the new GVT
+#define MSG_TIME_BARRIER	53 /// Slaves communicate their maximum time barrier
+#define MSG_SNAPSHOT		54 /// Retrieve termination result
+#define MSG_FINI			55
+#define MSG_STATS			56
+
+
+#define INIT_OUTGOING_MSG	10
+>>>>>>> origin/ecs
 
 /**
  * For performance reasons, while executing an event, newly-generated events

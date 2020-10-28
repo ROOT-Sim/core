@@ -593,10 +593,15 @@ void register_outgoing_msg(const msg_t *msg)
 		return;
 #endif
 
+<<<<<<< HEAD
 	unsigned int dst_kid = find_kernel_by_gid(msg->receiver);
 
 	if (dst_kid == kid)
 		return;
+=======
+	unsigned int dst_kid = GidToKernel(msg->receiver);						
+	if(dst_kid == kid) return;
+>>>>>>> origin/ecs
 
 	if (is_red_colour(msg->colour)) {
 		min_outgoing_red_msg[local_tid] = min(min_outgoing_red_msg[local_tid], msg->timestamp);

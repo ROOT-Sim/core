@@ -199,9 +199,93 @@ void LP_main_loop(void *args)
 	}
 }
 
+<<<<<<< HEAD
 void initialize_worker_thread(void)
 {
 	msg_t *init_event;
+=======
+
+
+
+
+
+/**
+ * This function initializes a LP execution context. It allocates page-aligned memory for efficiency
+ * reasons, and then calls <context_create>() which does the final trick.
+ * <context_create>() uses global variables: LPs must therefore be intialized before creating new kernel threads
+ * for supporting concurrent execution of LPs.
+ *
+ * @author Alessandro Pellegrini
+ *
+ * @date November 8, 2013
+ *
+ * @param lp the idex of the LP in the LPs descriptor table to be initialized
+ */
+void initialize_LP(LID_t lp) {
+	unsigned int i;
+
+	// Allocate LP stack
+	#ifdef ENABLE_ULT
+	LPS(lp)->stack = get_ult_stack(LP_STACK_SIZE);
+	#endif
+
+
+	// Set the initial checkpointing period for this LP.
+	// If the checkpointing period is fixed, this will not change during the
+	// execution. Otherwise, new calls to this function will (locally) update
+	// this.
+	set_checkpoint_period(lp, rootsim_config.ckpt_period);
+
+
+	// Initially, every LP is ready
+	LPS(lp)->state = LP_STATE_READY;
+
+	// There is no current state layout at the beginning
+	LPS(lp)->current_base_pointer = NULL;
+
+	// Initialize the queues
+	LPS(lp)->queue_in = new_list(msg_t);
+	LPS(lp)->queue_out = new_list(msg_hdr_t);
+	LPS(lp)->queue_states = new_list(state_t);
+	LPS(lp)->rendezvous_queue = new_list(msg_t);
+
+	// Initialize the LP lock
+	spinlock_init(&LPS(lp)->lock);
+
+	// No event has been processed so far
+	LPS(lp)->bound = NULL;
+
+	LPS(lp)->outgoing_buffer.min_in_transit = rsalloc(sizeof(simtime_t) * n_cores);
+	for(i = 0; i < n_cores; i++) {
+		LPS(lp)->outgoing_buffer.min_in_transit[i] = INFTY;
+	}
+
+	#ifdef HAVE_CROSS_STATE
+	// No read/write dependencies open so far for the LP. The current lp is always opened
+	LPS(lp)->ECS_index = 0;
+	LPS(lp)->ECS_synch_table[0] = LidToGid(lp); // LidToGid for distributed ECS
+	LPS(lp)->ECS_page_list = new_list(ecs_page_node_t);
+	LPS(lp)->ECS_prefetch_list = new_list(ecs_page_node_t);
+	LPS(lp)->ECS_page_faults = 0;
+	LPS(lp)->ECS_current_prefetch_mode = NO_PREFETCH;
+	LPS(lp)->ECS_last_prefetch_switch = current_lvt;
+	LPS(lp)->ECS_no_prefetch_events = 1;
+	LPS(lp)->ECS_clustered_events = 1;
+	LPS(lp)->ECS_scattered_events = 1;
+	#endif
+
+	// Create user thread
+	#ifdef ENABLE_ULT
+	context_create(&LPS(lp)->context, LP_main_loop, NULL, LPS(lp)->stack, LP_STACK_SIZE);
+	#endif
+}
+
+
+
+
+void initialize_worker_thread(void) {
+	communication_init_thread();
+>>>>>>> origin/ecs
 
 	// Divide LPs among worker threads, for the first time here
 	rebind_LPs();
@@ -445,11 +529,19 @@ void schedule_on_init(struct lp_struct *next)
 		send_outgoing_msgs(next);
 	}
 #ifdef HAVE_CROSS_STATE
+<<<<<<< HEAD
 	if (resume_execution && !is_blocked_state(next->state)) {
 		//printf("ECS event is finished mark %llu !!!\n", next->wait_on_rendezvous);
 		fflush(stdout);
 		unblock_synchronized_objects(next);
 
+=======
+	if(resume_execution && !is_blocked_state(LPS(lid)->state)) {
+		//printf("ECS event is finished at LP %d mark %llu !!!\n", lid_to_int(lid), LPS(lid)->wait_on_rendezvous);
+		fflush(stdout);
+		unblock_synchronized_objects(lid);
+		statistics_post_lp_data(lid, STAT_ECS, 1.0);
+>>>>>>> origin/ecs
 		// This is to avoid domino effect when relying on rendezvous messages
 		force_LP_checkpoint(next);
 	}

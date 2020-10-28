@@ -178,7 +178,11 @@ void send_remote_msg(msg_t *msg)
 	register_outgoing_msg(out_msg->msg);
 
 	lock_mpi();
+<<<<<<< HEAD
 	MPI_Isend(((char *)out_msg->msg) + MSG_PADDING, MSG_META_SIZE + msg->size, MPI_BYTE, dest, msg->receiver.to_int, msg_comm, &out_msg->req);
+=======
+	MPI_Isend(out_msg->msg, sizeof(msg_t) + msg->size, MPI_BYTE, dest, MSG_EVENT, MPI_COMM_WORLD, &out_msg->req);
+>>>>>>> origin/ecs
 	unlock_mpi();
 
 	// Keep the message in the outgoing queue until it will be delivered
@@ -217,6 +221,7 @@ void receive_remote_msgs(void)
 	struct lp_struct *lp;
 	GID_t gid;
 
+<<<<<<< HEAD
 	// TODO: given the latest changes in the platform, this *might*
 	// be removed.
 	if (!spin_trylock(&msgs_lock))
@@ -252,6 +257,45 @@ void receive_remote_msgs(void)
 	}
     out:
 	spin_unlock(&msgs_lock);
+=======
+	while(true){
+		lock_mpi();
+		MPI_Improbe(MPI_ANY_SOURCE, MSG_EVENT, MPI_COMM_WORLD, &pending, &mpi_msg, &status);
+		unlock_mpi();
+
+		if(!pending)
+			return;
+	
+		MPI_Get_count(&status, MPI_BYTE, &size);
+
+		if(size <= SLAB_MSG_SIZE)
+			msg = get_msg_from_slab();
+		else{
+			msg = rsalloc(size);
+			bzero(msg,size);
+		}
+
+		/* - `pending_msgs` and `MPI_Recv` need to be in the same critical section.
+		 *    I could start an MPI_Recv with an empty incoming queue.
+		 * - `MPI_Recv` and `insert_bottom_half` need to be in the same critical section.
+		 *    messages need to be inserted in arrival order into the BH
+		 */
+		unsigned int thr = msg->alloc_tid;
+
+		// Receive the message
+		lock_mpi();
+		MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+		unlock_mpi();
+
+		msg->alloc_tid = thr;
+		msg->next = NULL;
+		msg->prev = NULL;
+
+		validate_msg(msg);
+		insert_bottom_half(msg);
+	}
+
+>>>>>>> origin/ecs
 }
 
 

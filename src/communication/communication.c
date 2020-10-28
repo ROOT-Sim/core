@@ -196,6 +196,11 @@ msg_t *get_msg_from_slab(struct lp_struct *lp)
 	return msg;
 }
 
+<<<<<<< HEAD
+=======
+void msg_release(msg_t *msg) {
+	unsigned int thr;
+>>>>>>> origin/ecs
 
 /**
  * @brief Release a message buffer
@@ -574,6 +579,7 @@ void hdr_to_msg(msg_hdr_t *hdr, msg_t *msg)
 	msg->mark = hdr->mark;
 }
 
+<<<<<<< HEAD
 
 /**
  * @brief Dump the content of a message
@@ -589,6 +595,12 @@ void dump_msg_content(msg_t *msg)
 	printf("\tsender: %u\n", msg->sender.to_int);
 	printf("\treceiver: %u\n", msg->sender.to_int);
 #ifdef HAVE_MPI
+=======
+void dump_msg_content(msg_t *msg) {
+	printf("\tsender: %u\n", gid_to_int(msg->sender));
+	printf("\treceiver: %u\n", gid_to_int(msg->receiver));
+	#ifdef HAVE_MPI
+>>>>>>> origin/ecs
 	printf("\tcolour: %d\n", msg->colour);
 #endif
 	printf("\ttype: %d\n", msg->type);

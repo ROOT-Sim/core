@@ -1,4 +1,5 @@
 /**
+<<<<<<< HEAD
 * @file datatypes/bitmap.h
 *
 * @brief Bitmap data type
@@ -13,6 +14,11 @@
 * @copyright
 * Copyright (C) 2008-2019 HPDCS Group
 * https://hpdcs.github.io
+=======
+*			Copyright (C) 2008-2018 HPDCS Group
+*			http://www.dis.uniroma1.it/~hpdcs
+*
+>>>>>>> origin/ecs
 *
 * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
 *
@@ -28,6 +34,7 @@
 * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 *
+<<<<<<< HEAD
 * @author Andrea Piccione
 *
 * @date 26 Oct 2018
@@ -38,6 +45,27 @@
 #include <limits.h>		// for CHAR_BIT
 #include <memory.h>		// for memset()
 #include <core/core.h>		// for UNION_CAST()
+=======
+* @file bitmap.h
+* @date 26 Oct 2018
+* @brief This header implements a minimal bitmap data type
+* @author Andrea Piccione
+*
+* This a simple bitmap implemented with some simple macros.
+* Keep in mind that some trust is given to the developer since
+* the implementation, for performances and simplicity
+* reasons, doesn't remember his effective size; consequently
+* it doesn't check boundaries on the array that stores the bits.
+*/
+
+#pragma once
+#ifndef __BITMAP_DATATYPE_H_
+#define __BITMAP_DATATYPE_H_
+
+#include <limits.h> // for CHAR_BIT
+#include <memory.h> // for memset()
+#include <core/core.h>	// for UNION_CAST()
+>>>>>>> origin/ecs
 
 /// This defines a generic bitmap.
 typedef unsigned char rootsim_bitmap;
@@ -144,6 +172,7 @@ typedef unsigned char rootsim_bitmap;
  *	This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
  * 	Care to avoid side effects in the arguments because they may be evaluated more than once
  */
+<<<<<<< HEAD
 #define bitmap_count_reset(bitmap, bitmap_size) ({				\
 		unsigned __i, __blocks = bitmap_size / B_BLOCK_SIZE;		\
 		unsigned __ret = bitmap_size * CHAR_BIT;			\
@@ -154,6 +183,18 @@ typedef unsigned char rootsim_bitmap;
 			}							\
 		}								\
 		__ret; 								\
+=======
+#define bitmap_count_reset(bitmap, bitmap_size) ({					\
+		unsigned __i, __blocks = bitmap_size / B_BLOCK_SIZE;		\
+		unsigned __ret = bitmap_size * CHAR_BIT;					\
+		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);\
+		for(__i = 0; __i < __blocks; ++__i){						\
+			if((__cur_block = __block_b[__i])){						\
+				__ret -= B_POPC(__cur_block);						\
+			}														\
+		}															\
+		__ret; 														\
+>>>>>>> origin/ecs
 	})
 
 /*!
@@ -166,6 +207,7 @@ typedef unsigned char rootsim_bitmap;
  *	This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
  * 	Care to avoid side effects in the arguments because they may be evaluated more than once
  */
+<<<<<<< HEAD
 #define bitmap_first_reset(bitmap, bitmap_size)	({				\
 		unsigned __i, __blocks = bitmap_size / B_BLOCK_SIZE;		\
 		unsigned __ret = UINT_MAX;					\
@@ -177,6 +219,19 @@ typedef unsigned char rootsim_bitmap;
 			}							\
 		}								\
 		__ret; 								\
+=======
+#define bitmap_first_reset(bitmap, bitmap_size)	({					\
+		unsigned __i, __blocks = bitmap_size / B_BLOCK_SIZE;		\
+		unsigned __ret = UINT_MAX;									\
+		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);\
+		for(__i = 0; __i < __blocks; ++__i){						\
+			if((__cur_block = ~__block_b[__i])){					\
+				__ret = B_CTZ(__cur_block);							\
+				break;												\
+			}														\
+		}															\
+		__ret; 														\
+>>>>>>> origin/ecs
 	})
 
 /*!
@@ -191,6 +246,7 @@ typedef unsigned char rootsim_bitmap;
  */
 #define bitmap_foreach_set(bitmap, bitmap_size, func) ({ 			\
 		unsigned __i, __fnd, __blocks = bitmap_size / B_BLOCK_SIZE;	\
+<<<<<<< HEAD
 		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);	\
 		for(__i = 0; __i < __blocks; ++__i){				\
 			if((__cur_block = __block_b[__i])){			\
@@ -202,3 +258,18 @@ typedef unsigned char rootsim_bitmap;
 			}							\
 		}								\
 	})
+=======
+		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);\
+		for(__i = 0; __i < __blocks; ++__i){						\
+			if((__cur_block = __block_b[__i])){						\
+				do{													\
+					__fnd = B_CTZ(__cur_block);						\
+					B_RESET_BIT_AT(__cur_block, __fnd);				\
+					func((__fnd + __i * B_BITS_PER_BLOCK));			\
+				}while(__cur_block);								\
+			}														\
+		}															\
+	})
+
+#endif /* __BITMAP_DATATYPE_H_ */
+>>>>>>> origin/ecs

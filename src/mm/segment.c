@@ -44,6 +44,7 @@ size_t __page_size = 0;
 //TODO: document this magic! This is related to the pml4 index intialized in the ECS kernel module
 static unsigned char *init_address = (unsigned char *)(10LL << 39);
 
+<<<<<<< HEAD
 void *get_base_pointer(GID_t gid)
 {
 //      printf("get base pointer for lid % d (gid %d) returns: %p\n",GidToLid(gid),gid,init_address + PER_LP_PREALLOCATED_MEMORY * gid);
@@ -66,6 +67,11 @@ void *get_segment_memory(struct segment *seg, size_t size)
 	}
 
 	return ret;
+=======
+void *get_base_pointer(GID_t gid){
+	//printf("get base pointer for lid % d (gid %d) returns: %p\n", GidToLid(gid), gid, init_address + PER_LP_PREALLOCATED_MEMORY * gid_to_int(gid));
+	return init_address + PER_LP_PREALLOCATED_MEMORY * gid_to_int(gid);
+>>>>>>> origin/ecs
 }
 
 void free_segment_memory(void *ptr)
