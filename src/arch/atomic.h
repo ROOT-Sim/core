@@ -63,6 +63,54 @@ inline void spin_unlock(spinlock_t * s);
 inline void spin_lock(spinlock_t * s);
 inline void atomic_add(atomic_t *, int);
 
+<<<<<<< HEAD
+=======
+#define SPINLOCK_GIVES_COUNT
+
+
+
+#if defined(ARCH_X86) || defined(ARCH_X86_64)
+
+/// Atomic counter definition
+typedef struct { volatile int count; } atomic_t;
+
+/// Spinlock definition
+typedef struct { volatile unsigned int lock; } spinlock_t;
+
+
+
+extern inline bool CAS_x86(volatile unsigned long long *ptr, unsigned long long oldVal, unsigned long long newVal);
+extern inline bool iCAS_x86(volatile unsigned int *ptr, unsigned int oldVal, unsigned int newVal);
+extern inline int atomic_test_and_set_x86(int *);
+extern inline int atomic_test_and_reset_x86(int *);
+extern inline void atomic_add_x86(atomic_t *, int);
+extern inline void atomic_sub_x86(atomic_t *, int);
+extern inline void atomic_inc_x86(atomic_t *);
+extern inline void atomic_dec_x86(atomic_t *);
+extern inline int atomic_inc_and_test_x86(atomic_t *v);
+extern inline bool spin_trylock_x86(spinlock_t *s);
+extern inline void spin_unlock_x86(spinlock_t *s);
+
+#ifdef SPINLOCK_GIVES_COUNT
+extern inline unsigned int spin_lock_x86(spinlock_t *s);
+#else
+extern inline void spin_lock_x86(spinlock_t *s);
+#endif
+
+
+#define CAS			CAS_x86
+#define iCAS			iCAS_x86
+#define atomic_test_and_set	atomic_test_and_set_x86
+#define atomic_test_and_reset	atomic_test_and_reset_x86
+#define atomic_add		atomic_add_x86
+#define atomic_sub		atomic_sub_x86
+#define atomic_dec		atomic_dec_x86
+#define atomic_inc		atomic_inc_x86
+#define atomic_inc_and_test	atomic_inc_and_test_x86
+#define spin_lock		spin_lock_x86
+#define spin_trylock		spin_trylock_x86
+#define spin_unlock		spin_unlock_x86
+>>>>>>> origin/cancelback
 
 #define LOCK "lock; "
 

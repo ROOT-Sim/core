@@ -170,6 +170,7 @@ void msg_hdr_release(msg_hdr_t *msg)
 * @return A pointer to the freshly allocated buffer. It is large enough to
 *         keep a @ref msg_hdr_t datatype.
 */
+<<<<<<< HEAD
 msg_hdr_t *get_msg_hdr_from_slab(struct lp_struct *lp)
 {
 	// TODO: The magnitude of this hack compares to that of the national debt.
@@ -177,6 +178,54 @@ msg_hdr_t *get_msg_hdr_from_slab(struct lp_struct *lp)
 	msg_hdr_t *msg = (msg_hdr_t *) get_msg_from_slab(lp);
 	bzero(msg, rootsim_config.slab_msg_size);
 	return msg;
+=======
+void send_antimessages(unsigned int lid, simtime_t after_simtime) {
+	msg_hdr_t *anti_msg,
+		  *anti_msg_next;
+
+	msg_t msg;
+
+	if (list_empty(LPS[lid]->queue_out))
+		return;
+
+	// Get the first message header with a timestamp <= after_simtime
+	anti_msg = list_tail(LPS[lid]->queue_out);
+	while(anti_msg != NULL && anti_msg->send_time > after_simtime)
+		anti_msg = list_prev(anti_msg);
+
+	// The next event is the first event with a sendtime > after_simtime, if any.
+	// Explicitly consider the case in which all anti messages should be sent.
+	if(anti_msg == NULL && list_head(LPS[lid]->queue_out)->send_time <= after_simtime) {
+		return;
+	} else if (anti_msg == NULL && list_head(LPS[lid]->queue_out)->send_time > after_simtime) {
+		anti_msg = list_head(LPS[lid]->queue_out);
+	} else {
+		anti_msg = list_next(anti_msg);
+	}
+
+	// Now send all antimessages
+	while(anti_msg != NULL) {
+		bzero(&msg, sizeof(msg_t));
+		msg.sender = anti_msg->sender;
+		msg.receiver = anti_msg->receiver;
+		msg.timestamp = anti_msg->timestamp;
+		msg.send_time = anti_msg->send_time;
+		msg.mark = anti_msg->mark;
+		msg.message_kind = negative;
+		
+		if (msg.sender != lid) {
+			rootsim_error(true, "LP %u sending a message for which it is not the sender!\n", lid);
+		}
+		
+
+		Send(&msg);
+
+		// Remove the already sent antimessage from output queue
+		anti_msg_next = list_next(anti_msg);
+		list_delete_by_content(LPS[lid]->queue_out, anti_msg);
+		anti_msg = anti_msg_next;
+	}
+>>>>>>> origin/cancelback
 }
 
 
@@ -567,6 +616,7 @@ void pack_msg(msg_t **msg, GID_t sender, GID_t receiver, int type, simtime_t tim
 }
 
 
+<<<<<<< HEAD
 bool check_output_channels_emptiness(void) {
     unsigned int idx;
 >>>>>>> origin/asym
@@ -689,6 +739,21 @@ void msg_to_hdr(msg_hdr_t *hdr, msg_t *msg)
 	hdr->send_time = msg->send_time;
 	hdr->mark = msg->mark;
 }
+=======
+/**
+*
+*
+* @author Francesco Quaglia
+*/
+
+void insert_outgoing_msg(msg_t *msg) {
+
+		// If the model is generating many events at the same time, reallocate the outgoing buffer
+	if(LPS[current_lp]->outgoing_buffer.size == LPS[current_lp]->outgoing_buffer.max_size){
+		LPS[current_lp]->outgoing_buffer.max_size *= 2;
+		LPS[current_lp]->outgoing_buffer.outgoing_msgs = rsrealloc(LPS[current_lp]->outgoing_buffer.outgoing_msgs, sizeof(msg_t) * LPS[current_lp]->outgoing_buffer.max_size);
+	}
+>>>>>>> origin/cancelback
 
 
 /**
@@ -760,10 +825,15 @@ void dump_msg_content(msg_t *msg) {
 	printf("\tsize: %d\n", msg->size);  */
 }
 
+<<<<<<< HEAD
 
+=======
+void send_outgoing_msgs(unsigned int lid) {
+>>>>>>> origin/cancelback
 
 #ifndef NDEBUG
 
+<<<<<<< HEAD
 /**
  * @brief Tell the GID of the sender of a message, given its mark
  *
@@ -793,6 +863,12 @@ unsigned int mark_to_gid(unsigned long long mark)
 
 	return (int)x;
 }
+=======
+	for(i = 0; i < LPS[lid]->outgoing_buffer.size; i++) {
+
+		msg = &LPS[lid]->outgoing_buffer.outgoing_msgs[i];
+		Send(msg);
+>>>>>>> origin/cancelback
 
 
 /**

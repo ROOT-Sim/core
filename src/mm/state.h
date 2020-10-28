@@ -81,7 +81,22 @@ typedef struct _state_t {
 >>>>>>> origin/approximated
 } state_t;
 
+<<<<<<< HEAD
 struct lp_struct;
+=======
+extern void ParallelSetState(void *new_state);
+extern void LogState(unsigned int);
+extern void RestoreState(unsigned int lid, state_t *restore_state);
+extern void rollback(unsigned int lid);
+extern state_t *find_time_barrier(int lid,  simtime_t time);
+extern state_t *update_time_barrier(unsigned int, state_t *, simtime_t);
+extern void clean_queue_states(unsigned int lid, simtime_t new_gvt);
+extern void rebuild_state(unsigned int lid, state_t *state_pointer, simtime_t time);
+extern void set_checkpoint_period(unsigned int lid, int period);
+extern void force_LP_checkpoint(unsigned int lid);
+extern unsigned int silent_execution(unsigned int lid, void *state_buffer, msg_t *evt, msg_t *final_evt);
+#endif /* _STATE_MGNT_H_ */
+>>>>>>> origin/cancelback
 
 extern bool LogState(struct lp_struct *);
 extern void RestoreState(struct lp_struct *, state_t * state_to_restore);

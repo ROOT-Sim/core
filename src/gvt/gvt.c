@@ -33,6 +33,7 @@
 
 #include <ROOT-Sim.h>
 #include <arch/thread.h>
+#include <limits.h>
 #include <gvt/gvt.h>
 #include <gvt/ccgs.h>
 #include <core/core.h>
@@ -102,6 +103,35 @@ static atomic_t counter_send;
 /// How many threads have left phase B?
 static atomic_t counter_B;
 
+<<<<<<< HEAD
+=======
+/// How many threads are aware that the GVT reduction is over?
+static atomic_t counter_aware;
+
+/// How many threads have acquired the new GVT?
+static atomic_t counter_end;
+
+/// Keeps track of Cancelback cooldown
+static atomic_t counter_cancelback;
+
+/** Flag to start a new GVT reduction phase. Explicitly using an int here,
+ *  because 'bool' could be compiler dependent, but we must know the size
+ *  beforehand, because we're going to use CAS on this. Changing the type could
+ *  entail an undefined behaviour. 'false' and 'true' are usually int's (or can be
+ *  converted to them by the compiler), so everything should work here.
+ */
+static volatile unsigned int GVT_flag = 0;
+
+/// Pointers to the barrier states of the bound LPs
+static state_t **time_barrier_pointer;
+
+/// This is the thread which will be assigned the task to start the Cancelback protocol
+static volatile unsigned int cancelback_tid = UINT_MAX;
+
+// Whether Cancelback was started during last iteration
+static volatile unsigned int cancelback_flag = 0;
+
+>>>>>>> origin/cancelback
 /** Keep track of the last computed gvt value. Its a per-thread variable
  * to avoid synchronization on it, but eventually all threads write here
  * the same exact value.
@@ -112,11 +142,14 @@ static atomic_t counter_B;
  */
 static __thread simtime_t last_gvt = 0.0;
 
+<<<<<<< HEAD
 static simtime_t updated_gvt = 0.0;
 
 // last agreed KVT
 static volatile simtime_t new_gvt = 0.0;
 
+=======
+>>>>>>> origin/cancelback
 /// What is my phase? All threads start in the initial phase
 static __thread enum thread_phases thread_phase = tphase_idle;
 
@@ -128,11 +161,16 @@ static simtime_t *local_min;
 
 static simtime_t *local_min_barrier;
 
+<<<<<<< HEAD
 /** The number of threads participating to the GVT computation on a single node depends on whether
  * we are running with the symmetric or asymmetric configuration, and it can potentially change
  * over time. This variable tells how many threads are participating to the GVT.
  */
 static unsigned int gvt_participants;
+=======
+/// Total number of pages available on the system
+static size_t tot_pages;
+>>>>>>> origin/cancelback
 
 /**
 * Initialization of the GVT subsystem.
@@ -141,13 +179,29 @@ void gvt_init(void) {
 
 	unsigned int i;
 
+	tot_pages = sysconf(_SC_PHYS_PAGES);
+	size_t cb_threshold = (size_t)(tot_pages * CANCELBACK_MEM_THRESHOLD);
+	printf("Total number of pages on system: %zu\nThreshold is %zu\n", tot_pages, cb_threshold);
+	
+	double page_size = sysconf(_SC_PAGESIZE) / 1000.0;
+	printf("Page size on this system: %f KB\n", page_size);
+
 	// This allows the first GVT phase to start
 	atomic_set(&counter_finalized, 0);
 
+	/// This allows to enable Cancelback trigger condition
+	atomic_set(&counter_cancelback, 0);
+
 	// Initialize the local minima
+<<<<<<< HEAD
 	local_min =         rsalloc(sizeof(simtime_t) * n_cores);
 	local_min_barrier = rsalloc(sizeof(simtime_t) * n_cores);
 	for (i = 0; i < n_cores; i++) {
+=======
+	local_min = rsalloc(sizeof(simtime_t) * n_cores);
+	local_min_barrier = rsalloc(sizeof(simtime_t) * n_cores);
+	for(i = 0; i < n_cores; i++) {
+>>>>>>> origin/cancelback
 		local_min[i] = INFTY;
 		local_min_barrier[i] = INFTY;
 	}
@@ -188,6 +242,16 @@ void gvt_fini(void) {
     #endif
 }
 
+<<<<<<< HEAD
+=======
+
+inline size_t get_cancelback_threshold() {
+
+	return (size_t)(tot_pages * CANCELBACK_MEM_THRESHOLD);
+}
+
+
+>>>>>>> origin/cancelback
 /**
  * This function returns the last computed GVT value at each thread.
  * It can be safely used concurrently to keep track of the evolution of
@@ -204,6 +268,7 @@ inline simtime_t get_last_gvt(void) {
 	return last_gvt;
 }
 
+<<<<<<< HEAD
 static inline void reduce_local_gvt(void) {
 
 
@@ -236,6 +301,14 @@ static inline void reduce_local_gvt(void) {
 
 
 simtime_t GVT_phases(void) {
+=======
+/**
+ * This function returns whether Cancelback started during the previous iteration
+ */
+inline bool has_cancelback_started() {
+	return cancelback_flag == 1;
+}
+>>>>>>> origin/cancelback
 
 	unsigned int i;
 
@@ -345,11 +418,33 @@ bool start_new_gvt(void) {
 * 	  different threads here).
 */
 simtime_t gvt_operations(void) {
+<<<<<<< HEAD
+=======
+	register unsigned int i;
+	simtime_t new_gvt;
+	simtime_t new_min_barrier;
+	state_t *tentative_barrier;
+>>>>>>> origin/cancelback
 
     // GVT reduction initialization.
 	// This is different from the paper's pseudocode to reduce
 	// slightly the number of clock reads
+<<<<<<< HEAD
 	if (kernel_phase == kphase_idle) {
+=======
+	if(GVT_flag == 0 && atomic_read(&counter_end) == 0) {
+
+
+		// When using ULT, creating stacks might require more time than
+		// the first gvt phase. In this case, we enter the GVT reduction
+		// before running INIT. This makes all the assumptions about the
+		// fact that bound is not null fail, and everything here inevitably
+		// crashes. This is a sanity check for this.
+		if(first_gvt_invocation) {
+			first_gvt_invocation = false;
+			timer_restart(gvt_timer);
+		}
+>>>>>>> origin/cancelback
 
 		if (start_new_gvt() && iCAS(&current_GVT_round, my_GVT_round, my_GVT_round + 1)) {
 
@@ -390,6 +485,7 @@ simtime_t gvt_operations(void) {
 
 			kernel_phase = kphase_start;
 
+<<<<<<< HEAD
 			timer_restart(gvt_timer);
 		}
 	}
@@ -419,6 +515,18 @@ simtime_t gvt_operations(void) {
         #else
 				kernel_phase = kphase_kvt;
         #endif
+=======
+			for(i = 0; i < n_prc_per_thread; i++) {
+				if(LPS_bound[i]->bound == NULL) {
+					local_min[tid] = 0.0;
+					local_min_barrier[tid] = 0.0;
+					break;
+				}
+
+				local_min[tid] = min(local_min[tid], LPS_bound[i]->bound->timestamp);
+				tentative_barrier = find_time_barrier(LPS_bound[i]->lid, LPS_bound[i]->bound->timestamp);
+				local_min_barrier[tid] = min(local_min_barrier[tid], tentative_barrier->lvt);
+>>>>>>> origin/cancelback
 			}
 		}
 		return -1.0;
@@ -432,6 +540,7 @@ simtime_t gvt_operations(void) {
 			flush_white_msg_sent();
 			kernel_phase = kphase_kvt;
 		}
+<<<<<<< HEAD
 		return -1.0;
 	}
     #endif
@@ -451,6 +560,22 @@ simtime_t gvt_operations(void) {
 				kernel_phase = kphase_fossil;
 
                 #endif
+=======
+
+		if(my_phase == phase_B && atomic_read(&counter_send) == 0) {
+			process_bottom_halves();
+
+			for(i = 0; i < n_prc_per_thread; i++) {
+				if(LPS_bound[i]->bound == NULL) {
+					local_min[tid] = 0.0;
+					local_min_barrier[tid] = 0.0;
+					break;
+				}
+
+				local_min[tid] = min(local_min[tid], LPS_bound[i]->bound->timestamp);
+				tentative_barrier = find_time_barrier(LPS_bound[i]->lid, LPS_bound[i]->bound->timestamp);
+				local_min_barrier[tid] = min(local_min_barrier[tid], tentative_barrier->lvt);
+>>>>>>> origin/cancelback
 			}
 		}
 		return -1.0;
@@ -462,6 +587,7 @@ simtime_t gvt_operations(void) {
 			int gvt_round_time = timer_value_micro(gvt_round_timer);
 			statistics_post_data(current, STAT_GVT_ROUND_TIME, gvt_round_time);
 
+<<<<<<< HEAD
 			new_gvt = last_reduced_gvt();
 			kernel_phase = kphase_fossil;
 		}
@@ -497,11 +623,78 @@ simtime_t gvt_operations(void) {
             /*    if(rootsim_config.num_controllers > 0)
                     gvt_interval_passed = 1         */      //COINVOLGE power.h
 			}
+=======
+		if(my_phase == phase_aware && atomic_read(&counter_B) == 0) {
+			new_gvt = INFTY;
+			new_min_barrier = INFTY;
+
+			for(i = 0; i < n_cores; i++) {
+				new_gvt = min(local_min[i], new_gvt);
+				new_min_barrier = min(local_min_barrier[i], new_min_barrier);
+			}
+
+			atomic_dec(&counter_aware);
+
+			if(atomic_read(&counter_aware) == 0) {
+				// The last one passing here, resets GVT flag
+				iCAS(&GVT_flag, 1, 0);
+				// Also, for convenience, the last one will start the Cancelback protocol, if needed
+				iCAS(&cancelback_tid, UINT_MAX, tid);
+			}
+
+			// Execute fossil collection and termination detection
+			// Each thread stores the last computed value in last_gvt,
+			// while the return value is the gvt only for the master
+			// thread. To check for termination based on simulation time,
+			// this variable must be explicitly inspected using
+			// get_last_gvt()
+			adopt_new_gvt(new_gvt, new_min_barrier);
+			adopted_last_gvt = new_gvt;
+
+			if (tid == cancelback_tid) {
+				if (is_memory_limit_exceeded() && atomic_read(&counter_cancelback) == 0 && attempt_cancelback(adopted_last_gvt)) { // or last_gvt?
+					atomic_set(&counter_cancelback, CANCELBACK_COOLDOWN);
+					iCAS(&cancelback_flag, 0, 1);
+				} else {
+					iCAS(&cancelback_flag, 1, 0);
+				}
+
+				if (atomic_read(&counter_cancelback) > 0) {
+					atomic_dec(&counter_cancelback);
+					// Reset tid to invalid value
+					iCAS(&cancelback_tid, tid, UINT_MAX);
+				}
+			}
+
+			// Dump statistics
+			statistics_post_other_data(STAT_GVT, new_gvt);
+
+			my_phase = phase_end;
+
+			return last_gvt;
+		}
+
+
+	} else {
+
+		// GVT flag is not set. We check whether we can reset the
+		// internal thread's state, waiting for the beginning of a
+		// new phase.
+		if(my_phase == phase_end) {
+
+			// Back to phase A for next GVT round
+			my_phase = phase_A;
+			local_min[tid] = INFTY;
+			local_min_barrier[tid] = INFTY;
+			atomic_dec(&counter_end);
+			last_gvt = adopted_last_gvt;
+>>>>>>> origin/cancelback
 		}
 		return last_gvt;
 	}
 	return -1.0;
 }
+<<<<<<< HEAD
 
 bool is_idle(void){
     if (kernel_phase == kphase_idle){
@@ -514,3 +707,5 @@ void update_GVT(void){
     my_GVT_round = current_GVT_round;
     last_gvt = updated_gvt;
 }
+=======
+>>>>>>> origin/cancelback

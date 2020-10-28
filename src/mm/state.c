@@ -242,6 +242,7 @@ void rollback(struct lp_struct *lp)
 			      lp->gid.to_int);
 		return;
 	}
+<<<<<<< HEAD
 
 	// Discard any possible execution state related to a blocked execution
 	memcpy(&lp->context, &lp->default_context, sizeof(LP_context_t));
@@ -250,6 +251,12 @@ void rollback(struct lp_struct *lp)
 
 	last_correct_event = lp->bound;
 
+=======
+
+	statistics_post_lp_data(lid, STAT_ROLLBACK, 1.0);
+
+	last_correct_event = LPS[lid]->bound;
+>>>>>>> origin/cancelback
 
 	// Send antimessages
 	send_antimessages(lp, last_correct_event->timestamp);
@@ -307,9 +314,15 @@ state_t *find_time_barrier(struct lp_struct *lp, simtime_t simtime)
 	// Must point to the state with lvt immediately before the GVT
 	while (barrier_state != NULL && barrier_state->lvt >= simtime) {
 		barrier_state = list_prev(barrier_state);
+<<<<<<< HEAD
 	}
 	if (barrier_state == NULL) {
 		barrier_state = list_head(lp->queue_states);
+=======
+  	}
+  	if(barrier_state == NULL) {
+		barrier_state = list_head(LPS[lid]->queue_states);
+>>>>>>> origin/cancelback
 	}
 
 /*

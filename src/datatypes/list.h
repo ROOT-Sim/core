@@ -75,7 +75,61 @@ typedef struct rootsim_list {
 
 #define canary_leave(list) ((rootsim_list *)list)->concurrency_canary = UINT32_MAX;
 
+<<<<<<< HEAD
 // Get the size of the current list.
+=======
+/// Insert a new node in the list. Refer to <__list_insert_tail>() for a more thorough documentation.
+#define list_insert_tail(list, data) \
+			(__typeof__(list))__list_insert_tail((list), sizeof *(list), (data))
+
+
+/// Insert a new node in the list. Refer to <__list_insert>() for a more thorough documentation.
+#define list_insert(list, key_name, data) \
+			(__typeof__(list))__list_insert((list), sizeof *(list), my_offsetof((list), key_name), (data))
+
+/// Remove a node in the list. Refer to <__list_delete>() for a more thorough documentation.
+#define list_delete(list, key_name, key_value) \
+		__list_delete((list), sizeof *(list), (double)(key_value), my_offsetof((list), key_name))
+
+/// Remove a node in the list and returns its content. Refer to <__list_extract>() for a more thorough documentation.
+#define list_extract(list, key_name, key_value) \
+		(__typeof__(list))__list_extract((list), sizeof *(list), (double)(key_value), my_offsetof((list), key_name))
+
+/** Remove a node in the list and returns its content by the pointer of the data contained in the node.
+ *  Refer to <__list_extract_by_content>() for a more thorough documentation.
+ */
+#define list_extract_by_content(list, ptr) \
+		(__typeof__(list))__list_extract_by_content((list), sizeof *(list), (ptr), true)
+
+/** Remove a node in the list by the pointer of the data contained in the node
+ *  Refer to <__list_delete_by_content>() for a more thorough documentation.
+ *  TODO: there is a memory leak here
+ */
+#define list_delete_by_content(list, ptr) \
+		(void)__list_extract_by_content((list), sizeof *(list), (ptr), false)
+
+/// Find a node in the list. Refer to <__list_find>() for a more thorough documentation.
+#define list_find(list, key_name, key_value) \
+		(__typeof__(list))__list_find((list), (double)(key_value), my_offsetof((list), key_name))
+
+
+#define LIST_TRUNC_AFTER	10
+#define LIST_TRUNC_BEFORE	11
+
+/// Truncate a list up to a certain point, towards increasing values. Refer to <__list_trunc>() for a more thorough documentation.
+#define list_trunc_before(list, key_name, key_value) \
+		__list_trunc((list), (double)(key_value), my_offsetof((list), key_name), LIST_TRUNC_BEFORE)
+
+/// Truncate a list from a certain point, towards increasing values. Refer to <__list_trunc>() for a more thorough documentation.
+#define list_trunc_after(list, key_name, key_value) \
+		__list_trunc((list), (double)(key_value), my_offsetof((list), key_name), LIST_TRUNC_AFTER)
+
+/// Split list at a certain point.
+#define list_split_at(list, new_l, key_name, key_value) \
+        __list_split_at((list), (new_l), (double)(key_value), my_offsetof((list), key_name))
+
+/// Get the size of the current list. Refer to <__list_delete>() for a more thorough documentation.
+>>>>>>> origin/cancelback
 #define list_sizeof(list) ((struct rootsim_list *)list)->size
 
 /**

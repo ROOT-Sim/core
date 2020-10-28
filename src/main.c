@@ -85,6 +85,7 @@ static int thread_configuration_modifier;
 __thread jmp_buf exit_jmp;
 
 /**
+<<<<<<< HEAD
 * This function checks the different possibilities for termination detection termination.
 */
 static bool end_computing(void) {
@@ -110,6 +111,16 @@ static bool end_computing(void) {
 
 
 static void finish(void) {
+=======
+* This function implements the main simulation loop
+*
+* @param arg This argument should be always set to NULL
+*
+* @author Francesco Quaglia
+*/
+static void *main_simulation_loop(void *arg) __attribute__ ((noreturn));
+static void *main_simulation_loop(void *arg) {
+>>>>>>> origin/cancelback
 
     thread_barrier(&all_thread_barrier);
     
@@ -127,9 +138,15 @@ static void symmetric_execution(void) {
 
     simtime_t my_time_barrier = -1.0;
 
+<<<<<<< HEAD
     #ifdef HAVE_CROSS_STATE
     lp_alloc_thread_init();
     #endif
+=======
+	simtime_t old_time_barrier = -1;
+
+	while (!end_computing()) {
+>>>>>>> origin/cancelback
 
     initialize_worker_thread();  //Do the initial (local) LP binding, then execute INIT at all (local) LPs
 
@@ -145,9 +162,20 @@ static void symmetric_execution(void) {
                "****************************\n");
     }
 
+<<<<<<< HEAD
     if (setjmp(exit_jmp) != 0) {
         finish();
     }
+=======
+		// Only a master thread on master kernel prints the time barrier
+		if (master_kernel() && master_thread() && D_DIFFER(my_time_barrier, -1.0)) {
+			if (rootsim_config.verbose == VERBOSE_INFO || rootsim_config.verbose == VERBOSE_DEBUG) {
+				printf("TIME BARRIER %f\n", my_time_barrier);
+				fflush(stdout);
+			}
+		}
+	}
+>>>>>>> origin/cancelback
 
     while (!end_computing()) {
 

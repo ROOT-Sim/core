@@ -52,6 +52,7 @@ outputs/
 doxy.conf
 doxyfile.stamp
 
+<<<<<<< HEAD
 Module.symvers
 modules.order
 *.o.cmd
@@ -61,3 +62,6 @@ modules.order
 
 /dymelor
 /numerical
+=======
+/perf/
+>>>>>>> origin/cancelback

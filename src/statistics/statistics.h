@@ -138,6 +138,7 @@ enum stat_msg_t {
 
 enum stat_levels {STATS_GLOBAL, STATS_PERF, STATS_LP, STATS_ALL};
 
+<<<<<<< HEAD
 >>>>>>> origin/ecs
 
 enum stats_levels {
@@ -150,6 +151,9 @@ enum stats_levels {
 
 // this is used in order to have more efficient stats additions during gvt reductions
 typedef double vec_double __attribute__((vector_size(16 * sizeof(double))));
+=======
+enum color {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE};
+>>>>>>> origin/cancelback
 
 // Structure to keep track of (incremental) statistics
 struct stat_t {
@@ -219,6 +223,7 @@ extern void statistics_start(void);
 extern void statistics_stop(int exit_code);
 <<<<<<< HEAD
 
+<<<<<<< HEAD
 extern inline void statistics_on_gvt(double gvt);
 extern inline void statistics_on_gvt_serial(double gvt);
 
@@ -230,6 +235,11 @@ extern inline void statistics_post_other_data(unsigned int type, double data);
 extern double statistics_get_lp_data(unsigned int type, LID_t lid);
 extern double statistics_get_system_wide_data(unsigned int type);
 >>>>>>> origin/ecs
+=======
+extern inline void stylized_printf(const char* s, int color, bool is_bold);
+extern inline void log_msg(const char* msg, ...);
+extern inline void log_state_switch(unsigned int lid);
+>>>>>>> origin/cancelback
 
 extern double statistics_get_lp_data(struct lp_struct *, unsigned int type);
 

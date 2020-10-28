@@ -2,7 +2,11 @@
 
 #define PACKET 1 // Event definition
 #define DELAY 120
+<<<<<<< HEAD
 #define PACKETS 1000 // Termination condition
+=======
+#define PACKETS 1000000 // Termination condition
+>>>>>>> origin/cancelback
 
 typedef struct event_content_t {
 	simtime_t sent_at;

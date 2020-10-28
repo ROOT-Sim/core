@@ -154,8 +154,12 @@ typedef struct _lid_t {
 #define is_lid(val) __builtin_types_compatible_p(__typeof__ (val), LID_t)
 #define is_gid(val) __builtin_types_compatible_p(__typeof__ (val), GID_t)
 
+<<<<<<< HEAD
 #define lid_equals(first, second) (is_lid(first) && is_lid(second) && first.to_int == second.to_int)
 #define gid_equals(first, second) (is_gid(first) && is_gid(second) && first.to_int == second.to_int)
+=======
+typedef enum {positive, negative, positive_cb, negative_cb, other} message_kind_t;
+>>>>>>> origin/cancelback
 
 //#define lid_to_int(lid) __builtin_choose_expr(is_lid(lid), (lid).to_int, (void)0)
 //#define gid_to_int(gid) __builtin_choose_expr(is_gid(gid), (gid).to_int, (void)0)
@@ -193,6 +197,7 @@ typedef struct _msg_t {
 	 * of the structure. If new members have to be added, place them right before the "Model data" part.*/
 
 	// Kernel's information
+<<<<<<< HEAD
 	GID_t sender;
 	GID_t receiver;
 #ifdef HAVE_MPI
@@ -208,6 +213,21 @@ typedef struct _msg_t {
 	// Model data
 	unsigned int size;
 	unsigned char event_content[];
+=======
+	unsigned int   		sender;
+	unsigned int   		receiver;
+	int   			type;
+	simtime_t		timestamp;
+	simtime_t		send_time;
+	// TODO: risistemare questa cosa degli antimessaggi
+	message_kind_t		message_kind;
+	unsigned long long	mark;	/// Unique identifier of the message, used for antimessages
+	unsigned long long	rendezvous_mark;	/// Unique identifier of the message, used for rendez-vous events
+    //	struct _state_t 	*is_first_event_of;
+	// Application informations
+	char event_content[MAX_EVENT_SIZE];
+	int size;
+>>>>>>> origin/cancelback
 } msg_t;
 
 /// Message envelope definition. This is used to handle the output queue and stores information needed to generate antimessages
@@ -250,5 +270,7 @@ extern void simulation_shutdown(int code) __attribute__((noreturn));
 extern inline bool user_requested_exit(void);
 extern inline bool simulation_error(void);
 extern void initialization_complete(void);
+extern bool end_computing(void);
+
 
 #define rootsim_error(fatal, msg, ...) _rootsim_error(fatal, "%s:%d: %s(): " msg, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)

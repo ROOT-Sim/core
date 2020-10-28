@@ -99,11 +99,62 @@ long *total_idle_microseconds;
 *
 * @param sched The scheduler selected initially, but master can decide to change it, so slaves must rely on what master send to them
 */
+<<<<<<< HEAD
 void scheduler_init(void)
 {
 #ifdef HAVE_PREEMPTION
 	preempt_init();
 #endif
+=======
+void scheduler_init(void) {
+
+	register unsigned int i;
+
+	// TODO: implementare con delle broadcast!!
+/*	if(n_ker > 1) {
+		if (master_kernel()) {
+			for (i = 1; i < n_ker; i++) {
+				comm_send(&rootsim_config.scheduler, sizeof(rootsim_config.scheduler), MPI_CHAR, i, MSG_INIT_MPI, MPI_COMM_WORLD);
+			}
+		} else {
+			comm_recv(&rootsim_config.scheduler, sizeof(rootsim_config.scheduler), MPI_CHAR, 0, MSG_INIT_MPI, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		}
+	}
+*/
+	// Allocate LPS control blocks
+	LPS = (LP_state **)rsalloc(n_prc * sizeof(LP_state *));
+	for (i = 0; i < n_prc; i++) {
+		LPS[i] = (LP_state *)rsalloc(sizeof(LP_state));
+		bzero(LPS[i], sizeof(LP_state));
+
+		// Allocate memory for the outgoing buffer
+		LPS[i]->outgoing_buffer.max_size = INIT_OUTGOING_MSG;
+		LPS[i]->outgoing_buffer.outgoing_msgs = rsalloc(sizeof(msg_t) * INIT_OUTGOING_MSG);
+	}
+
+	// Initialize the INIT barrier
+	barrier_init(&INIT_barrier, n_cores);
+
+}
+
+
+
+static void destroy_LPs(void) {
+	register unsigned int i;
+
+	for(i = 0; i < n_prc; i++) {
+		rsfree(LPS[i]->queue_in);
+		rsfree(LPS[i]->queue_out);
+		rsfree(LPS[i]->queue_states);
+		rsfree(LPS[i]->bottom_halves);
+
+		// Destroy stacks
+		#ifdef ENABLE_ULT
+		lp_free(LPS[i]->stack);
+		#endif
+	}
+
+>>>>>>> origin/cancelback
 }
 
 /**
@@ -249,7 +300,11 @@ void initialize_LP(LID_t lp) {
 
 
 	// Initially, every LP is ready
+<<<<<<< HEAD
 	LPS(lp)->state = LP_STATE_READY;
+=======
+	LPS[lp]->state = LP_STATE_READY;
+>>>>>>> origin/cancelback
 
 	// There is no current state layout at the beginning
 	LPS(lp)->current_base_pointer = NULL;
@@ -799,6 +854,7 @@ void schedule(void)
 	}
 
 	// No logical process found with events to be processed
+<<<<<<< HEAD
 	if (next == NULL) {
 		statistics_post_data(NULL, STAT_IDLE_CYCLES, 1.0);
 		return;
@@ -809,6 +865,47 @@ void schedule(void)
 		rollback(next);
 		next->state = LP_STATE_READY;
 		send_outgoing_msgs(next);
+=======
+	if (lid == IDLE_PROCESS) {
+		statistics_post_lp_data(lid, STAT_IDLE_CYCLES, 1.0);
+      	return;
+    }
+
+	// If we have to rollback
+    if(LPS[lid]->state == LP_STATE_ROLLBACK) {
+
+		if (has_cancelback_started()) {
+			// stylized_printf("LP cannot rollback in order to sync for Cancelback!\n", CYAN, true);
+		} else {
+			rollback(lid);
+
+			// Discard any possible execution state related to a blocked execution
+			#ifdef ENABLE_ULT
+			memcpy(&LPS[lid]->context, &LPS[lid]->default_context, sizeof(LP_context_t));
+			#endif
+
+			LPS[lid]->state = LP_STATE_READY;
+			send_outgoing_msgs(lid);
+		}
+
+		return;
+
+	} else if (LPS[lid]->state == LP_STATE_CANCELBACK) {
+
+        send_cancelback_messages(lid);
+
+		// LPS[lid]->state = LP_STATE_READY;
+		return;
+	
+	} else if (LPS[lid]->state == LP_STATE_SYNCH_FOR_CANCELBACK) {
+		
+		LPS[lid]->state = LPS[lid]->state_to_resume;
+		LPS[lid]->state_to_resume = 0;
+
+		if (LPS[lid]->state != LP_STATE_READY)
+			log_state_switch(lid);
+
+>>>>>>> origin/cancelback
 		return;
 	}
 
@@ -838,7 +935,11 @@ void schedule(void)
 	if (is_blocked_state(next->state) || next->state == LP_STATE_READY_FOR_SYNCH) {
 		resume_execution = true;
 	}
+<<<<<<< HEAD
 #endif
+=======
+	#endif
+>>>>>>> origin/cancelback
 
 	// Schedule the LP user-level thread
 	if (next->state == LP_STATE_READY_FOR_SYNCH)

@@ -50,6 +50,7 @@
 
 #define LP_STATE_READY			0x00001
 #define LP_STATE_RUNNING		0x00002
+<<<<<<< HEAD
 #define LP_STATE_RUNNING_ECS		0x00004
 #define LP_STATE_ROLLBACK		0x00008
 #define LP_STATE_SILENT_EXEC		0x00010
@@ -65,6 +66,16 @@
 =======
 #define LP_STATE_WAIT_FOR_ROLLBACK_ACK	0x01008
 >>>>>>> origin/asym
+=======
+#define LP_STATE_ROLLBACK		0x00004
+#define LP_STATE_CANCELBACK		0x00100
+#define LP_STATE_SILENT_EXEC		0x00008
+#define LP_STATE_READY_FOR_SYNCH	0x00010
+#define LP_STATE_WAIT_FOR_SYNCH		0x01001
+#define LP_STATE_WAIT_FOR_UNBLOCK	0x01002
+#define LP_STATE_SYNCH_FOR_CANCELBACK	0x00200
+
+>>>>>>> origin/cancelback
 
 #define BLOCKED_STATE			0x01000
 #define is_blocked_state(state)	(bool)(state & BLOCKED_STATE)
@@ -100,14 +111,26 @@ struct lp_struct {
 	/// Current execution state of the LP
 	short unsigned int state;
 
+<<<<<<< HEAD
 	/// This variable maintains the current checkpointing interval for the LP
 	unsigned int ckpt_period;
+=======
+	/// State to resume after Cancelback execution
+	short unsigned int state_to_resume;
+
+	/// This variable mainains the current checkpointing interval for the LP
+	unsigned int	ckpt_period;
+>>>>>>> origin/cancelback
 
 	/// Counts how many events executed from the last checkpoint (to support PSS)
 	unsigned int from_last_ckpt;
 
 	/// If this variable is set, the next invocation to LogState() takes a new state log, independently of the checkpointing interval
+<<<<<<< HEAD
 	bool state_log_forced;
+=======
+	bool		state_log_forced;
+>>>>>>> origin/cancelback
 
 	/// The current state base pointer (updated by SetState())
 	void *current_base_pointer;
