@@ -126,9 +126,9 @@ static bool end_computing(void) {
 		return true;
 	}
 
-	if(rootsim_config.powercap > 0.0) {
-		return current_exploit_steps > 2;
-	}
+	//if(rootsim_config.powercap > 0.0) {
+	//	return current_exploit_steps > 10;
+	//}
 
 	return false;
 }
@@ -236,6 +236,13 @@ static void symmetric_execution(void) {
 				fflush(stdout);
 			}
 		}
+<<<<<<< HEAD
+=======
+		process_statistics();
+#ifdef HAVE_MPI
+		collect_termination();
+#endif
+>>>>>>> origin/energy_tmp
 	}
 >>>>>>> origin/cancelback
 

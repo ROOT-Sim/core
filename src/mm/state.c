@@ -135,6 +135,7 @@ bool LogState(struct lp_struct *lp)
 >>>>>>> origin/approximated
 		// Link the new checkpoint to the state chain
 		list_insert_tail(lp->queue_states, new_state);
+		on_log_state(new_state);
 
 	}
 
@@ -209,6 +210,12 @@ unsigned int silent_execution(struct lp_struct *lp, msg_t *evt, msg_t *final_evt
 		if (unlikely(!reprocess_control_msg(evt))) {
 			continue;
 		}
+<<<<<<< HEAD
+=======
+
+		events++;
+		on_process_event_silent(evt);
+>>>>>>> origin/energy_tmp
 		activate_LP(lp, evt);
 		++events;
 	}
@@ -261,12 +268,22 @@ void rollback(struct lp_struct *lp)
 	// Send antimessages
 	send_antimessages(lp, last_correct_event->timestamp);
 
+	on_log_restore();
 	// Find the state to be restored, and prune the wrongly computed states
+<<<<<<< HEAD
 	state_to_restore = list_tail(lp->queue_states);
 	while (state_to_restore != NULL && state_to_restore->lvt > last_correct_event->timestamp) {	// It's > rather than >= because we have already taken into account simultaneous events
 		s = state_to_restore;
         state_to_restore = list_prev(state_to_restore);
+=======
+	restore_state = list_tail(lp->queue_states);
+	while (restore_state != NULL && restore_state->lvt > last_correct_event->timestamp) {	// It's > rather than >= because we have already taken into account simultaneous events
+		s = restore_state;
+		on_log_discarded(s);
+		restore_state = list_prev(restore_state);
+>>>>>>> origin/energy_tmp
 		log_delete(s->log);
+		statistics_post_data(lp, STAT_ABORT, (double)lp->ckpt_period); 
 #ifndef NDEBUG
 		s->last_event = (void *)0xBABEBEEF;
 #endif
@@ -278,6 +295,9 @@ void rollback(struct lp_struct *lp)
     last_restored_event = state_to_restore->last_event;
 	reprocessed_events = silent_execution(lp, last_restored_event, last_correct_event);
 	statistics_post_data(lp, STAT_SILENT, (double)reprocessed_events);
+statistics_post_data(lp, STAT_ABORT, (double)lp->ckpt_period);
+//	if(lp->ckpt_period < reprocessed_events) printf("AHAH %u %u\n", lp->ckpt_period, reprocessed_events);
+ 	statistics_post_data(lp, STAT_ABORT, (-1.0*reprocessed_events));
 
 	// TODO: silent execution resets the LP state to the previous
 	// value, so it should be the last function to be called within rollback()

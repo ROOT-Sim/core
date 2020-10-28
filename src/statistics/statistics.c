@@ -83,7 +83,7 @@
 #ifdef HAVE_MPI
 #include <communication/mpi.h>
 #endif
-
+ 
 #define GVT_BUFF_ROWS   50
 
 struct _gvt_buffer {
@@ -157,7 +157,19 @@ static double *current_thread_committed_delta;
 struct stat_t global_stats = {.gvt_round_time_min = INFTY};
 #endif
 
-static __thread unsigned int last_cumulated_committed_events = 0;
+static __thread unsigned int  last_cumulated_committed_events = 0;
+static __thread unsigned long last_rolledback_events 		  = 0;
+static __thread unsigned long last_executed_events 			  = 0;
+static __thread unsigned long last_committed_events 		  = 0;
+static __thread unsigned long last_rollbacks 				  = 0;
+
+static unsigned long* res_rolledback_events;
+static unsigned long* res_executed_events;
+static unsigned long* res_committed_events;
+static unsigned long* res_rollbacks;
+
+
+#include "new_stats.c"
 
 /**
  * This is a pseudo asprintf() implementation needed in order to stop GCC 8 from complaining
@@ -821,12 +833,6 @@ void statistics_stop(int exit_code)
 >>>>>>> origin/ecs
 			fflush(f);
 
-			// TERRIBLE HACK FOR STEFANO; REMOVE
-			print_timer_stats(stdout, &simulation_timer, &simulation_finished, total_time);
-			print_common_stats(stdout, &system_wide_stats, total_time, false, true);
-			print_termination_status(stdout, exit_code);
-			fflush(stdout);
-
 			#ifdef HAVE_MPI
 			mpi_reduce_statistics(&global_stats, &system_wide_stats);
 			if(master_kernel() && n_ker > 1){
@@ -912,8 +918,15 @@ inline void statistics_on_gvt(double gvt)
 	current_thread_committed_delta[tid] = (double)(cumulated_committed_events - last_cumulated_committed_events);
 	//printf("Current: %d - last: %d - delta: %f\n", cumulated_committed_events, last_cumulated_committed_events, current_thread_committed_delta[tid]);
 	last_cumulated_committed_events = cumulated_committed_events;
+	__sync_fetch_and_add(&res_executed_events[tid], last_executed_events);
+	__sync_fetch_and_add(&res_rolledback_events[tid], last_rolledback_events);
+	__sync_fetch_and_add(&res_rollbacks[tid], last_rollbacks);
+	__sync_fetch_and_add(&res_committed_events[tid], last_committed_events);
+	last_executed_events 	= 0;
+	last_rolledback_events 	= 0;
+	last_rollbacks 			= 0;
+	last_committed_events 	= 0;
 }
-
 
 inline void statistics_on_gvt_serial(double gvt)
 {
@@ -1015,6 +1028,16 @@ void statistics_init(void)
 	bzero(thread_stats, n_cores * sizeof(struct stat_t));
 	current_thread_committed_delta = rsalloc(n_cores * sizeof(double));
 	bzero(current_thread_committed_delta, n_cores * sizeof(double));
+
+	res_executed_events = rsalloc(n_cores*sizeof(unsigned long));
+	res_committed_events = rsalloc(n_cores*sizeof(unsigned long));
+	res_rollbacks = rsalloc(n_cores*sizeof(unsigned long));
+	res_rolledback_events = rsalloc(n_cores*sizeof(unsigned long));
+	bzero(res_executed_events , n_cores*sizeof(unsigned long));
+	bzero(res_committed_events, n_cores*sizeof(unsigned long));
+    bzero(res_rollbacks, n_cores*sizeof(unsigned long));
+	bzero(res_rolledback_events, n_cores*sizeof(unsigned long));
+	init_new_statistics();
 }
 
 #undef assign_new_file
@@ -1217,19 +1240,27 @@ void statistics_post_data(struct lp_struct *lp, enum stat_msg_t type, double dat
 
 		case STAT_EVENT:
 			lp_stats_gvt[lid].tot_events += 1.0;
-			break;
+		    last_executed_events++;
+            break;
 
 		case STAT_EVENT_TIME:
 			lp_stats_gvt[lid].event_time += data;
 			lp_stats_gvt[lid].exponential_event_time = 0.1 * data + 0.9 * lp_stats_gvt[lid].exponential_event_time;
 			break;
+		
+		case STAT_ABORT:
+			lp_stats_gvt[lid].aborted_events+=data;
+			last_rolledback_events+= ((int) data);
+			break;
 
 		case STAT_COMMITTED:
 			lp_stats_gvt[lid].committed_events += data;
-			break;
+			last_committed_events+=data;
+            break;
 
 		case STAT_ROLLBACK:
 			lp_stats_gvt[lid].tot_rollbacks += 1.0;
+			last_rollbacks++;
 			break;
 
 		case STAT_CKPT:
@@ -1426,22 +1457,67 @@ double statistics_get_current_throughput(void)
 {
 	unsigned int i;
 	double throughput = 0;
+	double returned_throughput = 0;
+	double micro_throughput = 0;
 	static double last_throughput_time = 0;
 	double throughput_time;
+	double events = 0, committed = 0, rolledback = 0, rollbacks = 0;
+	double time_period; // = (throughput_time - last_throughput_time);
 
 	if(!master_thread())
 		return -1.0;
-	
-	for(i = 0; i < active_threads; i++)
-		throughput += current_thread_committed_delta[i];
-//	printf("Cumulated events in phase: %f\n", throughput);
+	throughput_time = timer_value_seconds(simulation_timer); 	
+	time_period = (throughput_time - last_throughput_time);
 
-	throughput_time = timer_value_seconds(simulation_timer);
+	for(i = 0; i < active_threads; i++){
+		// GVT base throughput
+		throughput += current_thread_committed_delta[i];
+
+		// GVT2 approach
+		events += __sync_lock_test_and_set(&res_executed_events[i], 0);
+		committed += __sync_lock_test_and_set(&res_committed_events[i], 0);
+		rolledback += __sync_lock_test_and_set(&res_rolledback_events[i], 0);
+		rollbacks += __sync_lock_test_and_set(&res_rollbacks[i], 0);
+	}
+
+	// GVT base throughput
 	throughput /= (throughput_time - last_throughput_time);
-//	printf("Throughput: %f - time: %f - last time %f\n", throughput, throughput_time, last_throughput_time);
 	last_throughput_time = throughput_time;
 
-	return throughput;
+
+	printf("[GVT BASE STATS] E[Th]: %.2f\n", throughput);
+
+	printf("[GVT2 STATS] Exec: %f.0, ExecTh:%.2f, PA*ExecTh=E[Th]:%.2f, Com: %f.0, ComTh:%.0f, Aborted: %f.0, PA: %.2f%, Rollbacks: %f.0, PR: %.2f%\n", 
+		events, events/time_period, events*(1.0-rolledback/events)/time_period, committed, committed/time_period, rolledback, rolledback*100.0/events, rollbacks, rollbacks*100.0/events);
+
+	// MICRO STATS based throughput. Check statistics/new_stats.c. Also prints
+	micro_throughput = collect_statistics();
+
+	if(heuristic_mode == 17){
+		if(current_pstate == static_pstate && powercap_active_threads == static_threads)
+			printf("[TP-COMPARISON] - BASE - %.2f - %.2f - %.2f\n", throughput, events*(1.0-rolledback/events)/time_period, micro_throughput);
+		else printf("[TP-COMPARISON] - ALTERNATED - %.2f - %.2f - %.2f\n", throughput, events*(1.0-rolledback/events)/time_period, micro_throughput);
+		
+	} else printf("[TP-COMPARISON] %.2f - %.2f - %.2f\n", throughput, events*(1.0-rolledback/events)/time_period, micro_throughput);
+
+
+	// Return a different value of throughput based on the value of throughput_measure in config.txt 
+	switch(throughput_measure){
+		case 0:
+			returned_throughput = throughput;
+			break; 
+		case 1:
+			returned_throughput = events*(1.0-rolledback/events)/time_period;
+			break;
+		case 2:
+			returned_throughput = micro_throughput;
+			break;
+		default: 
+			printf("Invalid value for throughput_measure in config.txt. Aborting ..\n");
+			exit(1);
+	}
+
+	return returned_throughput;
 }
 
 int statistics_get_current_gvt_round(void)
@@ -1453,4 +1529,5 @@ int statistics_get_execution_time(void)
 {
 	return (int)timer_value_seconds(simulation_timer);
 }
+
 

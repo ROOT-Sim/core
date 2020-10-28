@@ -75,6 +75,8 @@ int max_pstate;					// Maximum index of available pstate for the running machine
 int current_pstate;				// Value of current pstate, index of pstate array which contains frequencies
 int total_commits_round; 		// Number of total commits for each heuristics step
 int starting_threads;			// Number of threads running at the start of the heuristic search. Defined in config.txt
+int static_threads;				// Immutable value, initially set as the same value of starting_threads 
+
 int static_pstate;				// Static -state used for the execution with heuristic 8. Defined in config.txt
 int steps;						// Number of steps required for the heuristic to converge
 int exploit_steps;				// Number of steps that should be waited until the next exploration is started. Defined in config.txt
@@ -91,14 +93,17 @@ double** power_profile; 		// Power consumption matrix of the machine. Precompute
 double power_limit;				// Maximum power that should be used by the application expressed in Watt. Defined in config.txt
 double energy_per_tx_limit;		// Maximum energy per tx that should be drawn by the application expressed in micro Joule. Defined in config.txt
 int heuristic_mode;				// Used to switch between different heuristics mode. Can be set from 0 to 14.
-double jump_percentage;			// Used by heuristic mode 2. It defines how near power_limit we expect the optimal configuration to be
 volatile int shutdown;			// Used to check if should shutdown
 long effective_commits; 		// Number of commits during the phase managed by the heuristics. Necessary due to the delay at the end of execution with less than max threads
 int detection_mode; 			// Defines the detection mode. Value 0 means detection is disabled. 1 restarts the exploration from the start. Detection mode 2 resets the execution after a given number of steps. Defined in config.txt and loaded at startup
-double detection_tp_threshold;	// Defines the percentage of throughput variation of the current optimal configuration compared to the results at the moment of convergece that should trigger a new exploration. Defined in config.txt
-double detection_pwr_threshold; // Defines the percentage of power consumption variation of the current optimal configuration compared to the results at the moment of convergece that should trigger a new exploration. Defined in config.txt
 int core_packing;				// 0-> threads scheduling, 1 -> core packing
 int lower_sampled_model_pstate;	// Define the lower sampled pstate to compute the model
+int throughput_measure;			// Defines how the throughput is measured. This is specific for time warp executions. If set to 0, it relies on regular GVT computation, value set to 1 means that it is computed as an estimation from the rate of forward event processed and rollbacks in a given period. If set to 2, the throughput estimation relies on the MACRO-MICRO sample approach 
+int micro_period_ms;			// Defines the duration in milliseconds of the micro period in the MACRO-MICRO sample approach. Only effectively used by the heuristics when throughput_measure is set to 2. 
+int micro_period_dly_ms;		// Defines after how many milliseconds of the macro period the micro period begins in the MACRO-MICRO sample approach. Only effectively used by the heuristics when throughput_measure is set to 2. 
+int alternated_threads;			// Defines the number of threads of the alternated configuration used with heuristic_mode 17. 
+int alternated_pstate;			// Defines the p-state of the alternated configuration used with heuristic_mode 17. 
+
 
 // Barrier detection variables
 int barrier_detected; 			// If set to 1 should drop current statistics round, had to wake up all threads in order to overcome a barrier
@@ -543,13 +548,22 @@ void load_config_file(void) {
 		printf("Error opening POWERCAP configuration file.\n");
 		exit(1);
 	}
-	if (fscanf(config_file, "STARTING_THREADS=%d STATIC_PSTATE=%d POWER_LIMIT=%lf COMMITS_ROUND=%d ENERGY_PER_TX_LIMIT=%lf HEURISTIC_MODE=%d JUMP_PERCENTAGE=%lf DETECTION_MODE=%d DETECTION_TP_THRESHOLD=%lf DETECTION_PWR_THRESHOLD=%lf EXPLOIT_STEPS=%d EXTRA_RANGE_PERCENTAGE=%lf WINDOW_SIZE=%d HYSTERESIS=%lf POWER_UNCORE=%lf CORE_PACKING=%d LOWER_SAMPLED_MODEL_PSTATE=%d", 
-			 &starting_threads, &static_pstate, &power_limit, &total_commits_round, &energy_per_tx_limit, &heuristic_mode, &jump_percentage, &detection_mode, &detection_tp_threshold, &detection_pwr_threshold, &exploit_steps, &extra_range_percentage, &window_size, &hysteresis, &power_uncore, &core_packing, &lower_sampled_model_pstate)!=17) {
+	if (fscanf(config_file, "STARTING_THREADS=%d STATIC_PSTATE=%d POWER_LIMIT=%lf COMMITS_ROUND=%d THROUGHPUT_MEASURE=%d MICRO_PERIOD_MS=%d MICRO_PERIOD_DLY_MS=%d HEURISTIC_MODE=%d DETECTION_MODE=%d EXPLOIT_STEPS=%d EXTRA_RANGE_PERCENTAGE=%lf WINDOW_SIZE=%d HYSTERESIS=%lf POWER_UNCORE=%lf CORE_PACKING=%d LOWER_SAMPLED_MODEL_PSTATE=%d ALTERNATED_THREADS=%d ALTERNATED_PSTATE=%d", 
+			 &starting_threads, &static_pstate, &power_limit, &total_commits_round, &throughput_measure, &micro_period_ms, &micro_period_dly_ms, &heuristic_mode, &detection_mode, &exploit_steps, &extra_range_percentage, &window_size, &hysteresis, &power_uncore, &core_packing, &lower_sampled_model_pstate, &alternated_threads, &alternated_pstate)!=18) {
 		printf("The number of input parameters of the POWERCAP configuration file does not match the number of required parameters.\n");
 		exit(1);
 	}
-	if(detection_tp_threshold < 0.0 || detection_tp_threshold > 100.0 || detection_pwr_threshold < 0.0 || detection_pwr_threshold >100.0){
-		printf("The detection percentage thresholds are set to values outside their valid range.\n");
+	static_threads = starting_threads;
+
+	printf("THE VALUE OF throughput_measure is: %d\n", throughput_measure);
+
+	if(throughput_measure < 0 || throughput_measure > 2){
+		printf("The value throughput_measure in config.txt is set to an invalid value. Should be set to either 0, 1 or 2\n");
+		exit(1);
+	}
+
+	if(micro_period_ms < 0 || micro_period_dly_ms < 0 ){
+		printf("The values micro_period_ms or micro_period_dly_ms in config.txt are set to invalid values. Should be both positive integer\n");
 		exit(1);
 	}
 

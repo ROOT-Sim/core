@@ -857,6 +857,18 @@ void baseline_enhanced(double throughput, double power){
 	heuristic_highest_threads(throughput, power);
 }
 
+// Alternates between the starting configuration and the second configuration provided in config.txt
+void alternate_configuration(double throughput, double power){
+	if(current_pstate == static_pstate && powercap_active_threads == static_threads){
+		set_threads(alternated_threads);
+		set_pstate(alternated_pstate);
+	}
+	else{
+		set_threads(static_threads);
+		set_pstate(static_pstate);
+	}
+}
+
 
 ///////////////////////////////////////////////////////////////
 // Main heuristic function
@@ -866,9 +878,15 @@ void baseline_enhanced(double throughput, double power){
 // Takes decision on frequency and number of active threads based on statistics of current round 
 void heuristic(double throughput, double power, long time){
 	
-	#ifdef DEBUG_HEURISTICS 
-		printf("Throughput: %lf- Power: %lf Watt - Time: %lf microseconds\n",
-			throughput, power, ((double) time/1000000));
+	#ifdef DEBUG_HEURISTICS
+		if(heuristic_mode == 17){
+			if(current_pstate == static_pstate && powercap_active_threads == static_threads)
+				printf("BASE - Throughput: %lf- Power: %lf Watt - Time: %lf microseconds\n",
+					throughput, power, ((double) time/1000000));
+			else printf("ALTERNATED - Throughput: %lf- Power: %lf Watt - Time: %lf microseconds\n",
+					throughput, power, ((double) time/1000000));
+		} else printf("Throughput: %lf- Power: %lf Watt - Time: %lf microseconds\n",
+					throughput, power, ((double) time/1000000));
 	#endif
 
 	#ifdef TIMELINE_PLOT
@@ -920,6 +938,9 @@ void heuristic(double throughput, double power, long time){
 			case 16:
 				baseline_enhanced(throughput, power);
 				break;
+			case 17:
+				alternate_configuration(throughput, power);
+				break;
 		}
 
 		if(!stopped_searching)
@@ -931,15 +952,8 @@ void heuristic(double throughput, double power, long time){
 	}
 	else{	// Workload change detection
 		if(detection_mode == 1){
-			if( throughput > (best_throughput*(1+(detection_tp_threshold/100))) || throughput < (best_throughput*(1-(detection_tp_threshold/100))) || power > (power_limit*(1+(detection_pwr_threshold/100))) || power < (power_limit*(1-(detection_pwr_threshold/100))) ){
-				stopped_searching = 0;
-				set_pstate(max_pstate);
-				set_threads(starting_threads);
-				best_throughput = -1;
-				best_threads = starting_threads;
-				best_pstate = max_pstate;
-				printf("Workload change detected. Restarting heuristic search\n");
-			}		
+				printf("Detection mode 1 is not currently supported\n");
+				exit(1);
 		}
 		else if(detection_mode == 3){
 			if(heuristic_mode == 15){

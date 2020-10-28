@@ -501,7 +501,11 @@ void rebind_LPs(void)
 		if(master_thread()) {
 			atomic_set(&worker_thread_reduction, active_threads);
 			rebinding_completed = true;
+<<<<<<< HEAD
 >>>>>>> origin/energy
+=======
+			start_sampling();
+>>>>>>> origin/energy_tmp
 		}
 
 		//~ if (thread_barrier(&all_thread_barrier)) {

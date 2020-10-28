@@ -99,7 +99,13 @@ enum stat_msg_t {
 	STAT_IDLE_CYCLES,
 	STAT_SILENT,
 	STAT_GVT_ROUND_TIME,
+<<<<<<< HEAD
 	STAT_GET_EVENT_TIME_LP
+=======
+	STAT_GET_SIMTIME_ADVANCEMENT,	//xxx totally unused
+	STAT_GET_EVENT_TIME_LP,
+	STAT_ABORT
+>>>>>>> origin/energy_tmp
 };
 =======
 #define STAT_ANTIMESSAGE	1
@@ -163,6 +169,7 @@ struct stat_t {
 			double tot_antimessages,
 			    tot_events,
 			    committed_events,
+			    aborted_events,
 			    reprocessed_events,
 			    tot_rollbacks,
 			    tot_ckpts,
@@ -246,3 +253,5 @@ extern double statistics_get_lp_data(struct lp_struct *, unsigned int type);
 extern double statistics_get_current_throughput(void);
 extern int statistics_get_current_gvt_round(void);
 extern int statistics_get_execution_time(void);
+extern double collect_statistics(void);
+extern void start_sampling();

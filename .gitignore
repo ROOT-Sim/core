@@ -62,6 +62,10 @@ modules.order
 
 /dymelor
 /numerical
+<<<<<<< HEAD
 =======
 /perf/
 >>>>>>> origin/cancelback
+=======
+models/phold_use/results-*
+>>>>>>> origin/energy_tmp

@@ -270,9 +270,12 @@ inline simtime_t get_last_gvt(void) {
 =======
 inline simtime_t get_last_gvt(void)
 {
+<<<<<<< HEAD
 	if(last_gvt != new_gvt)
 		return new_gvt; // this possibly breaks GVT algorithm in a corner case which I don't remember!
 >>>>>>> origin/energy
+=======
+>>>>>>> origin/energy_tmp
 	return last_gvt;
 }
 
@@ -447,6 +450,7 @@ simtime_t gvt_operations(void) {
 =======
 	if(GVT_flag == 0 && atomic_read(&counter_end) == 0) {
 
+<<<<<<< HEAD
 
 		// When using ULT, creating stacks might require more time than
 		// the first gvt phase. In this case, we enter the GVT reduction
@@ -461,6 +465,11 @@ simtime_t gvt_operations(void) {
 
 		if (start_new_gvt() && iCAS(&current_GVT_round, my_GVT_round, my_GVT_round + 1)) {
 
+=======
+		if (start_new_gvt() &&
+		    iCAS(&current_GVT_round, my_GVT_round, my_GVT_round + 1)) {
+						
+>>>>>>> origin/energy_tmp
 			timer_start(gvt_round_timer);
 
 		    #ifdef HAVE_MPI
