@@ -9,9 +9,19 @@
 
 
 #define CHECK_FADING_TIME	10
+<<<<<<< HEAD
 #define COMPLETE_CALLS		5000
 #ifndef TA
 #define TA			0.08
+=======
+//#define COMPLETE_CALLS		2000
+#define COMPLETE_CALLS		100
+#ifndef TA
+//#define TA			1.2
+//#define TA			0.48 // 25%
+//#define TA			0.24 // 50%
+#define TA			0.16 // 75%
+>>>>>>> origin/reverse
 #endif
 //#define TA_DURATION		120
 #define TA_DURATION		120
@@ -34,7 +44,8 @@
 #define HANDOFF_RECV	31
 #define FADING_RECHECK	40
 
-#define FADING_RECHECK_FREQUENCY	300	// Every 5 Minutes
+//#define FADING_RECHECK_FREQUENCY	300	// Every 5 Minutes
+#define FADING_RECHECK_FREQUENCY	10
 
 #define MSK 0x1
 #define SET_CHANNEL_BIT(B,K) ( B |= (MSK << K) )
@@ -69,6 +80,19 @@ typedef struct _event_content_type {
 #define SIR_AIM			10
 
 // Taglia di 16 byte
+<<<<<<< HEAD
+=======
+typedef struct _sir_data_per_cell{
+    double fading; // Fading of the call
+    double power; // Power allocated to the call
+    double dummy1;
+    double dummy2;
+    double dummy3;
+    double dummy4;
+} sir_data_per_cell;
+
+// Taglia di 16 byte
+>>>>>>> origin/reverse
 typedef struct _channel{
 	double fading; // Fading of the call
 	double power; // Power allocated to the call

@@ -61,6 +61,7 @@ static unsigned long long snapshot_cycles;
 * @param lp A pointer to the lp_struct for which we want to recollect memory
 * @param time_barrier The current barrier
 */
+<<<<<<< HEAD
 void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
 {
 	state_t *state;
@@ -73,6 +74,18 @@ void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
 >>>>>>> origin/cancelback
 
 	//time_barrier *= 0.7;
+=======
+
+#define CUSTOM_CYCLES 2
+
+void fossil_collection(unsigned int lid, simtime_t time_barrier) {
+	state_t *state;
+	msg_t *last_kept_event, *evt;
+	double committed_events = 0;
+
+	//time_barrier = 0.7 * time_barrier;
+	time_barrier = 0.99 * time_barrier;
+>>>>>>> origin/reverse
 
 	// State list must be handled specifically, as nodes point to malloc'd
 	// nodes. We therefore manually scan the list and free the memory.
@@ -100,10 +113,40 @@ void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
 	}
 
 	// Determine queue pruning horizon
+<<<<<<< HEAD
 	state = list_head(lp->queue_states);
 	last_kept_event = state->last_event;
+=======
+	if(list_head(LPS[lid]->queue_states) == NULL)
+		return;
+	last_kept_event = list_head(LPS[lid]->queue_states)->last_event;
+>>>>>>> origin/reverse
+
+	#ifdef HAVE_REVERSE
+	// Destroy reverse windows of events which will be pruned
+	if(last_kept_event != NULL) {
+		last_kept_event->revwin = NULL;
+
+		evt = list_prev(last_kept_event);
+//	printf("******* PRUNING REVWINS ***********\n");
+		while(evt != NULL) {
+			if(evt->revwin != NULL){
+//				printf("evt: %p (%d, %f) - revwin: %p size %d\n", evt, evt->type, evt->timestamp, evt->revwin, revwin_size(evt->revwin));
+//
+//
+				// LEACK 
+				//revwin_free(evt->receiver, evt->revwin);
+				revwin_free(lid, evt->revwin);
+				evt->revwin = NULL;
+			}
+			evt = list_prev(evt);
+		}
+	}
+//	printf("******* DONE ***********\n");
+	#endif
 
 	// Truncate the input queue, accounting for the event which is pointed by the lastly kept state
+<<<<<<< HEAD
 <<<<<<< HEAD
 	committed_events = (double)list_trunc(lp->queue_in, timestamp,last_kept_event->timestamp, msg_release);
     controller_committed_events += committed_events;
@@ -111,10 +154,15 @@ void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
 =======
 	committed_events = (double)list_trunc(LPS(lid)->queue_in, timestamp, last_kept_event->timestamp, msg_release);
 	controller_committed_events += committed_events;
+=======
+	if(last_kept_event != NULL)
+		committed_events = (double)list_trunc_before(lid, LPS[lid]->queue_in, timestamp, last_kept_event->timestamp);
+>>>>>>> origin/reverse
 	statistics_post_lp_data(lid, STAT_COMMITTED, committed_events);
 >>>>>>> origin/power
 
 	// Truncate the output queue
+<<<<<<< HEAD
 <<<<<<< HEAD
 	list_trunc(lp->queue_out, send_time, last_kept_event->timestamp, msg_hdr_release);
 =======
@@ -124,6 +172,11 @@ void fossil_collection(struct lp_struct *lp, simtime_t time_barrier)
         // TODO: check se time_barrier è lo stesso dello stato sopra
         globvars_on_gvt(time_barrier);
 >>>>>>> origin/globvars
+=======
+	if(last_kept_event != NULL)
+		list_trunc_before(lid, LPS[lid]->queue_out, send_time, last_kept_event->timestamp);
+
+>>>>>>> origin/reverse
 }
 
 /**
@@ -157,8 +210,13 @@ void adopt_new_gvt(simtime_t new_gvt, simtime_t new_min_barrier) {
 
 	// Snapshot should be recomputed only periodically
 	snapshot_cycles++;
+<<<<<<< HEAD
 	compute_snapshot = ((snapshot_cycles % rootsim_config.gvt_snapshot_cycles) == 0);
 >>>>>>> origin/approximated
+=======
+	//compute_snapshot = ((snapshot_cycles % rootsim_config.gvt_snapshot_cycles) == 0);
+	compute_snapshot = ((snapshot_cycles % CUSTOM_CYCLES) == 0);
+>>>>>>> origin/reverse
 
 	// Precompute the time barrier for each process
 <<<<<<< HEAD
@@ -202,4 +260,11 @@ void adopt_new_gvt(simtime_t new_gvt, simtime_t new_min_barrier) {
 		clean_buffers_on_gvt(LPS_bound[i]->lid, time_barrier_pointer[i]->lvt);
 >>>>>>> origin/cancelback
 	}
+<<<<<<< HEAD
+=======
+
+	gvt_recompute_models();
+
+	return local_time_barrier;
+>>>>>>> origin/reverse
 }

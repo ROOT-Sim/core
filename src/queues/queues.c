@@ -70,16 +70,45 @@ simtime_t next_event_timestamp(struct lp_struct *lp)
 {
 	msg_t *evt;
 
+	/*
+#ifdef HAVE_REVERSE
+    retry:
+#endif
+*/
 	// The bound can be NULL in the first execution or if it has gone back
+<<<<<<< HEAD
 	if (unlikely(lp->bound == NULL && !list_empty(lp->queue_in))) {
 		return list_head(lp->queue_in)->timestamp;
+=======
+	if (LPS[id]->bound == NULL && !list_empty(LPS[id]->queue_in)) {
+		evt = list_head(LPS[id]->queue_in);
+		ret = evt->timestamp;
+>>>>>>> origin/reverse
 	} else {
 		evt = list_next(lp->bound);
 		if (likely(evt != NULL)) {
             return evt->timestamp;
 		}
 	}
+<<<<<<< HEAD
     return INFTY;
+=======
+
+	/*
+
+#ifdef HAVE_REVERSE
+	// we could potentially select for execution an event which was subject to a lazy cancellation.
+	// In this case, we delete it here and retry again the extraction of the next event.
+	if(evt->marked_by_antimessage) {
+		evt->checkpoint_of_event = NULL;
+		list_delete_by_content(evt->sender, LPS[id]->queue_in, evt);
+		goto retry;
+	}
+#endif
+*/
+
+	return ret;
+>>>>>>> origin/reverse
 
 }
 
@@ -149,20 +178,28 @@ void process_bottom_halves(void)
 
     double straggler_percentage;
 
+<<<<<<< HEAD
 	foreach_bound_lp(lp) {
 
 	    straggler_set = false;
 
 		while ((msg_to_process = get_msg(lp->bottom_halves)) != NULL) {
 			receiver = find_lp_by_gid(msg_to_process->receiver);
+=======
+		while((msg_to_process = (msg_t *)get_BH(LPS_bound[i]->lid)) != NULL) {
+>>>>>>> origin/reverse
 
 
+<<<<<<< HEAD
             if (unlikely (msg_to_process->timestamp < get_last_gvt())) { // Sanity check
                 dump_msg_content(msg_to_process);
                 printf("LAST GVT: %f\n", get_last_gvt());
                 printf("LP's boundTS: %f\n", receiver->bound->timestamp);
                 rootsim_error(true,"I'm receiving a message before the GVT\n");
             }
+=======
+			switch (msg_to_process->message_kind) {
+>>>>>>> origin/reverse
 
 <<<<<<< HEAD
             if (unlikely(!receive_control_msg(msg_to_process))) {   // Handle control messages
@@ -199,6 +236,7 @@ void process_bottom_halves(void)
 						in_msg = list_prev(in_msg);
 					}
 
+<<<<<<< HEAD
 					if(matched_in_msg == NULL) {
 						
 						if (has_cancelback_started())
@@ -207,6 +245,14 @@ void process_bottom_halves(void)
 							stylized_printf("Cancelback did not start!\n", CYAN, true);
 
 						rootsim_error(false, "LP %d Received an antimessage with mark \033[1;31m%llu\033[0m from LP %u, but no such mark found in the input queue!\n", LPS_bound[i]->lid, msg_to_process->mark, msg_to_process->sender);
+=======
+					if(matched_msg == NULL) {
+
+						// That's a serious error: we have received an antimessage but
+						// we are not able to find a matching positive message. This is
+						// an impossible condition, and thus we abort the simulation.
+						rootsim_error(false, "LP %d Received an antimessage with mark %llu at LP %u from LP %u, but no such mark found in the input queue!\n", LPS_bound[i]->lid, msg_to_process->mark, msg_to_process->receiver, msg_to_process->sender);
+>>>>>>> origin/reverse
 						printf("Message Content:"
 							"sender: %d\n"
 							"receiver: %d\n"
@@ -258,6 +304,7 @@ void process_bottom_halves(void)
 					break;
 =======
 
+<<<<<<< HEAD
 					#ifdef HAVE_MPI
 					register_incoming_msg(msg_to_process);
 					#endif
@@ -272,6 +319,61 @@ void process_bottom_halves(void)
                     msg_hdr_t* matched_out_msg = NULL;
                     msg_hdr_t* out_msg = list_tail(LPS[lid_receiver]->queue_out);
                     while(out_msg != NULL) {
+=======
+						// If the matched message is in the past, we have to rollback
+						if(matched_msg->timestamp <= lvt(lid_receiver)) {
+
+#ifdef HAVE_REVERSE
+							if(LPS[lid_receiver]->old_bound == NULL)
+								LPS[lid_receiver]->old_bound = LPS[lid_receiver]->bound;
+#endif
+
+							LPS[lid_receiver]->bound = list_prev(matched_msg);
+							LPS[lid_receiver]->state = LP_STATE_ROLLBACK;
+	
+						} 
+
+						// HERE WE SLIDE ALONG THE ORIGINL PATH
+#ifdef HAVE_REVERSE
+						// In case we support reverse execution, an event pointing to a log could be a candidate
+						// to navigate to the reverse windows list. In this case, therefore, we cannot immediately
+						// delete the event from the queue. Rather, we flag it for later deletion.
+						// The deletion will happen within the next_event_timestamp() function, when
+						// the event is being selected for execution.
+						//
+						/*
+						 
+						 if(0 || matched_msg->checkpoint_of_event != NULL) {
+
+							matched_msg->checkpoint_of_event->last_event = NULL;
+							matched_msg->marked_by_antimessage = true;
+						} else {
+							if(matched_msg == LPS[lid_receiver]->old_bound){
+								printf("panic\n");
+								LPS[lid_receiver]->FCF = 1;
+
+							}	
+							*/
+							// BUG BUG we need lid_receiver as first param
+							//list_delete_by_content(matched_msg->sender, LPS[lid_receiver]->queue_in, matched_msg);
+					 	if (matched_msg->checkpoint_of_event != NULL) {
+							matched_msg->checkpoint_of_event->last_event = NULL;
+						}	
+							list_delete_by_content(lid_receiver, LPS[lid_receiver]->queue_in, matched_msg);
+					//	}
+#else
+						// When we're not supporting the reverse execution, we can immediately delete
+						// the event matched by an antimessage.
+						// BIG BUG we need receiver not sender as first param
+						//list_delete_by_content(matched_msg->sender, LPS[lid_receiver]->queue_in, matched_msg);
+						//
+					 	if (matched_msg->checkpoint_of_event != NULL) {
+							matchd_msg->checkpoint_of_event->last_event = NULL;
+						}	
+							
+						list_delete_by_content(lid_receiver, LPS[lid_receiver]->queue_in, matched_msg);
+#endif
+>>>>>>> origin/reverse
 
 <<<<<<< HEAD
                         if (out_msg->mark == msg_to_process->mark) {
@@ -308,6 +410,7 @@ void process_bottom_halves(void)
 						fflush(stdout);
                         abort();
 
+<<<<<<< HEAD
 					} else {
 
 						// printf("LP %u received Cancelback message \033[1;31m%llu\033[0m from LP %u\n", lid_receiver, msg_to_process->mark, msg_to_process->sender);
@@ -331,6 +434,12 @@ void process_bottom_halves(void)
 =======
 						if(matched_msg->unprocessed == false)
 							goto delete;
+=======
+#ifdef HAVE_REVERSE
+					msg_to_process->revwin = NULL;
+#endif
+					list_place_by_content(lid_receiver, LPS[lid_receiver]->queue_in, timestamp, msg_to_process);
+>>>>>>> origin/reverse
 
 						// Unchain the event from the input queue
 						list_delete_by_content(receiver->queue_in, matched_msg);
@@ -418,6 +527,11 @@ void process_bottom_halves(void)
 =======
 					// Check if we've just inserted an out-of-order event
 					if(msg_to_process->timestamp < lvt(lid_receiver)) {
+#ifdef HAVE_REVERSE
+						if(LPS[lid_receiver]->old_bound == NULL)
+							LPS[lid_receiver]->old_bound = LPS[lid_receiver]->bound;
+#endif
+
 						LPS[lid_receiver]->bound = list_prev(msg_to_process);
 						while ((LPS[lid_receiver]->bound != NULL) && LPS[lid_receiver]->bound->timestamp == msg_to_process->timestamp) {
 							LPS[lid_receiver]->bound = list_prev(LPS[lid_receiver]->bound);
@@ -444,6 +558,7 @@ void process_bottom_halves(void)
 					break;
 >>>>>>> origin/power
 
+<<<<<<< HEAD
 				// It's a control message
 				case other:
 
@@ -538,6 +653,12 @@ void process_bottom_halves(void)
              default:
                  rootsim_error(true, "Received a message which is neither positive nor negative. Aborting...\n");
              }
+=======
+				default:
+					rootsim_error(true, "Received a message which is neither positive nor negative. Aborting...\n");
+			}
+
+>>>>>>> origin/reverse
 		}
 	}
 <<<<<<< HEAD

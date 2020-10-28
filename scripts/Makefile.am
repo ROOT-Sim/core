@@ -1,23 +1,38 @@
 ACLOCAL_AMFLAGS = -I m4
 AM_MAKEFLAGS = --no-print-directory
 
+# Check whether we have to enable using hijacker in rootsim-cc
+if USE_HIJACKER
+CALL_HIJACKER=1
+else
+CALL_HIJACKER=0
+endif
+
 SCRIPT_LINES=@cc_script_lines@
+<<<<<<< HEAD
 LD_DATA1_LINES=@cc_lddata1_lines@
 LD_DATA2_LINES=@cc_lddata2_lines@
 LD_FINAL_LINES=@cc_ldfinal_lines@
 ISS_SUPPORT=@iss_support@
 PMU_SUPPORT=@pmu_support@
+=======
+HIJACKER_CONF_LINES=@cc_hijacker_conf_lines@
+>>>>>>> origin/reverse
 
 
 # Install the compiler!
 
-
 .PHONY: rootsim-cc
 
 dist_bin_SCRIPTS = rootsim-cc
+<<<<<<< HEAD
 CLEANFILES = $(dist_bin_SCRIPTS)
 EXTRA_DIST = ld-data1 ld-data2 ld-final
 
+=======
+CLEANFILES = $(dist_bin_SCRIPTS) 
+EXTRA_DIST = hijacker-conf.xml
+>>>>>>> origin/reverse
 
 do_subst = $(SED)	-e 's,[@]bindir[@],$(bindir),g' \
 	   	  	-e 's,[@]libdir[@],$(libdir),g' \
@@ -30,13 +45,12 @@ do_subst = $(SED)	-e 's,[@]bindir[@],$(bindir),g' \
 			-e 's,[@]iss_support[@],$(ISS_SUPPORT),g' \
 			-e 's,[@]pmu_support[@],$(PMU_SUPPORT),g' \
 			-e 's,[@]scriptlines[@],$(SCRIPT_LINES),g' \
-			-e 's,[@]lddata1lines[@],$(LD_DATA1_LINES),g' \
-			-e 's,[@]lddata2lines[@],$(LD_DATA2_LINES),g' \
-			-e 's,[@]ldfinallines[@],$(LD_FINAL_LINES),g'
+			-e 's,[@]hijackerconflines[@],$(HIJACKER_CONF_LINES),g' \
+			-e 's,[@]use_hijacker[@],$(CALL_HIJACKER),g'
 
 rootsim-cc: rootsim-cc.in
 	@echo "Building compiler..."
 	@$(do_subst) < rootsim-cc.in > rootsim-cc.pre
-	@cat rootsim-cc.pre ld-data1 ld-data2 ld-final > rootsim-cc
+	@cat rootsim-cc.pre hijacker-conf.xml > rootsim-cc
 	@rm rootsim-cc.pre
 	@chmod +x rootsim-cc

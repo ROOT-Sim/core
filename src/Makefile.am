@@ -19,6 +19,7 @@ librootsim_a_SOURCES =	main.c \
 			datatypes/list.c \
 			datatypes/calqueue.c \
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 			datatypes/msgchannel.c \
 			datatypes/slab.c \
@@ -27,6 +28,11 @@ librootsim_a_SOURCES =	main.c \
 >>>>>>> origin/power
 			mm/state.c \
 			mm/globvars.c \
+=======
+			datatypes/slab.c \
+			mm/state.c \
+			mm/reverse.c \
+>>>>>>> origin/reverse
 			queues/queues.c \
 			queues/xxhash.c \
 			core/init.c \
@@ -49,10 +55,12 @@ librootsim_a_SOURCES =	main.c \
 			gvt/fossil.c \
 			gvt/cancelback.c \
 			gvt/ccgs.c \
+			gvt/models.c \
 			communication/window.c \
 			communication/communication.c
 
-libwrapperl_a_SOURCES = lib-wrapper/wrapper.c
+libwrapperl_a_SOURCES = lib-wrapper/stdlib.c \
+			lib-wrapper/math.c
 
 libdymelor_a_SOURCES = 	mm/checkpoints.c \
 			mm/dymelor.c \

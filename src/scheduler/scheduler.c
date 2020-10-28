@@ -38,6 +38,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+<<<<<<< HEAD
+=======
+
+#include <mm/dymelor.h>
+>>>>>>> origin/reverse
 #include <datatypes/list.h>
 #include <datatypes/msgchannel.h>
 #include <communication/communication.h>
@@ -55,6 +60,11 @@
 #include <scheduler/scheduler.h>
 #include <scheduler/stf.h>
 #include <mm/state.h>
+<<<<<<< HEAD
+=======
+#include <statistics/statistics.h>
+#include <arch/thread.h>
+>>>>>>> origin/reverse
 #include <communication/communication.h>
 #include <datatypes/heap.h>
 
@@ -69,8 +79,14 @@
 #include <arch/x86/linux/cross_state_manager/cross_state_manager.h>
 =======
 #include <statistics/statistics.h>
+<<<<<<< HEAD
 #include <arch/x86/linux/rootsim/ioctl.h>
 >>>>>>> origin/incremental
+=======
+#include <mm/reverse.h>
+
+#ifdef EXTRA_CHECKS
+>>>>>>> origin/reverse
 #include <queues/xxhash.h>
 #include <score/score.h>
 
@@ -195,6 +211,14 @@ static void destroy_LPs(void) {
 		rsfree(LPS[i]->queue_out);
 		rsfree(LPS[i]->queue_states);
 		rsfree(LPS[i]->bottom_halves);
+<<<<<<< HEAD
+=======
+		rsfree(LPS[i]->rendezvous_queue);
+
+#ifdef HAVE_REVERSE
+	//	rsfree(LPS[i]->reverse_windows);
+#endif
+>>>>>>> origin/reverse
 
 		// Destroy stacks
 		#ifdef ENABLE_ULT
@@ -245,18 +269,36 @@ void scheduler_fini(void)
 *
 * @param args arguments passed to the LP main loop. Currently, this is not used.
 */
+<<<<<<< HEAD
 void LP_main_loop(void *args) {
 #ifdef EXTRA_CHECKS
+=======
+static void LP_main_loop(void *args) {
+	int delta_event_timer;
+
+	#ifdef EXTRA_CHECKS
+>>>>>>> origin/reverse
 	unsigned long long hash1, hash2;
 	hash1 = hash2 = 0;
 #endif
 
+<<<<<<< HEAD
 	(void)args;		// this is to make the compiler stop complaining about unused args
+=======
+	msg_t * prev_event;
+
+	(void)args; // this is to make the compiler stop complaining about unused args
+>>>>>>> origin/reverse
 
 	// Save a default context
 	context_save(&current->default_context);
 
+<<<<<<< HEAD
 	while (true) {
+=======
+
+	while(true) {
+>>>>>>> origin/reverse
 
 #ifdef EXTRA_CHECKS
 		if (current->bound->size > 0) {
@@ -267,6 +309,7 @@ void LP_main_loop(void *args) {
 
 		idle_thread_activate();
 
+<<<<<<< HEAD
 		timer event_timer;
 		timer_start(event_timer);
 #ifdef HAVE_APPROXIMATED_ROLLBACK
@@ -300,8 +343,72 @@ on_process_event_forward(current_evt);
 		
 		int delta_event_timer = timer_value_micro(event_timer);
 =======
+=======
+		#ifdef HAVE_REVERSE
+		if(!rootsim_config.disable_reverse) {
 
-		int delta_event_timer = timer_value_micro(event_timer);
+			// TODO: change this check to account for the model
+			if(1 || LPS[current_lp]->from_last_ckpt >= LPS[current_lp]->events_in_coasting_forward) {
+			
+		
+			//if(LPS[current_lp]->from_last_ckpt >= 3 * (LPS[current_lp]->ckpt_period / 4)) {
+			//if(LPS[current_lp]->from_last_ckpt >=  (LPS[current_lp]->ckpt_period / 4)) {
+			//if(LPS[current_lp]->from_last_ckpt >= (0.66 * LPS[current_lp]->ckpt_period )) {
+			//if(LPS[current_lp]->from_last_ckpt >= (0.25 * LPS[current_lp]->ckpt_period )) {
+			//	printf("from last is %d - period is %d - barrier is %d\n",(LPS[current_lp]->from_last_ckpt),LPS[current_lp]->ckpt_period, 3*( LPS[current_lp]->ckpt_period/4) );
+			//	_ProcessEvent[current_lp] = ProcessEvent_reverse;//this is for FULL REVERSE or REVERSE
+				_ProcessEvent[current_lp] = ProcessEvent;//this is for the FCF_path
+
+				// Create a new revwin to bind to the current event and bind it. A revwin could be possibly
+				// already allocated, in case an event was undone by a rollback operation. In that case we
+				// reset the revwin, rather than free'ing it, so a buffer could be already allocated.
+				if(current_evt->revwin == NULL)
+					current_evt->revwin = revwin_create();
+				else
+					revwin_reset(current_lp, current_evt->revwin);
+
+				prev_event = list_prev(current_evt);
+
+				if(prev_event){
+					current_evt->revwin->prev = prev_event->revwin; 
+				}
+				else{
+					current_evt->revwin->prev = NULL;
+				}
+
+				LPS[current_lp]->current_revwin = current_evt->revwin;
+
+			} else {
+				_ProcessEvent[current_lp] = ProcessEvent;
+
+				// this stuff below s for mixed model
+				current_evt->revwin = NULL; 
+				LPS[current_lp]->current_revwin = NULL;
+			}
+		}
+		#endif
+
+		// Process the event
+		timer event_timer;
+		timer_start(event_timer);
+
+		if(current_evt->marked_by_antimessage) {
+			printf("ERROR in SCHEDULER: %p (%d, %f) --> marked\n", current_evt, current_evt->type, current_evt->timestamp);
+			fflush(stdout);
+		}
+
+		switch_to_application_mode();
+
+		_ProcessEvent[current_lp](LidToGid(current_lp), current_evt->timestamp, current_evt->type, current_evt->event_content, current_evt->size, current_state);
+
+		switch_to_platform_mode();
+>>>>>>> origin/reverse
+
+		delta_event_timer = timer_value_micro(event_timer);
+
+#ifdef HAVE_REVERSE
+		revwin_flush_cache();
+#endif
 
 		idle_thread_deactivate();
 
@@ -330,12 +437,21 @@ on_process_event_forward(current_evt);
 		}
 #endif
 
+<<<<<<< HEAD
 		statistics_post_data(current, STAT_EVENT, 1.0);
 		statistics_post_data(current, STAT_EVENT_TIME,
 				     delta_event_timer);
 		//on_process_event_forward(current_evt);
 		// Give back control to the simulation kernel's user-level thread
 		context_switch(&current->context, &kernel_context);
+=======
+		#ifdef ENABLE_ULT
+		// Give back control to the simulation kernel's user-level thread
+		context_switch(&LPS[current_lp]->context, &kernel_context);
+		#else
+		return;
+		#endif
+>>>>>>> origin/reverse
 	}
 }
 
@@ -373,9 +489,13 @@ void initialize_LP(LID_t lp) {
 
 	// Set the initial checkpointing period for this LP.
 	// If the checkpointing period is fixed, this will not change during the
-	// execution. Otherwise, new calls to this function will (locally) update
-	// this.
+	// execution. Otherwise, new calls to this function will (locally) update this.
 	set_checkpoint_period(lp, rootsim_config.ckpt_period);
+
+	#ifdef HAVE_REVERSE
+	// We must execute some events to decide how to execute, so just start with traditional execution
+	LPS[lp]->events_in_coasting_forward = rootsim_config.ckpt_period;
+	#endif
 
 
 	// Initially, every LP is ready
@@ -389,11 +509,22 @@ void initialize_LP(LID_t lp) {
 	LPS(lp)->current_base_pointer = NULL;
 
 	// Initialize the queues
+<<<<<<< HEAD
 	LPS(lp)->queue_in = new_list(msg_t);
 	LPS(lp)->queue_out = new_list(msg_hdr_t);
 	LPS(lp)->queue_states = new_list(state_t);
 	LPS(lp)->retirement_queue = new_list(msg_t);
 	LPS(lp)->rendezvous_queue = new_list(msg_t);
+=======
+	LPS[lp]->queue_in = new_list(lp, msg_t);
+	LPS[lp]->queue_out = new_list(lp, msg_hdr_t);
+	LPS[lp]->queue_states = new_list(lp, state_t);
+	LPS[lp]->bottom_halves = new_list(lp, msg_t);
+	LPS[lp]->rendezvous_queue = new_list(lp, msg_t);
+	LPS[lp]->reverse_events = new_list(lp, revwin_t);
+	LPS[lp]->FCF = 0;
+	LPS[lp]->current_revwin = NULL;
+>>>>>>> origin/reverse
 
 	// Initialize the LP lock
 	spinlock_init(&LPS(lp)->lock);
@@ -499,9 +630,22 @@ void initialize_worker_thread(void) {
 >>>>>>> origin/incremental
 	}
 
+<<<<<<< HEAD
     foreach_bound_lp(lp) {
         schedule_on_init(lp);
     }
+=======
+	// Here the init function will initialize a reverse memory region
+	// which is managed by a slab allocator.
+	#ifdef HAVE_REVERSE
+	if(!rootsim_config.disable_reverse)
+		reverse_init(REVWIN_SIZE);
+	#endif
+
+	// TODO: is this double barrier really needed?
+	// Worker Threads synchronization barrier: they all should start working together
+	thread_barrier(&all_thread_barrier);
+>>>>>>> origin/reverse
 
 	if(rootsim_config.num_controllers == 0) {
 		thread_barrier(&all_thread_barrier);
@@ -1500,6 +1644,12 @@ void schedule(void)
 			send_outgoing_msgs(lid);
 		}
 
+<<<<<<< HEAD
+=======
+		LPS[lid]->state = LP_STATE_READY;
+		send_outgoing_msgs(lid);
+		process_bottom_halves();
+>>>>>>> origin/reverse
 		return;
 
 	} else if (LPS[lid]->state == LP_STATE_CANCELBACK) {

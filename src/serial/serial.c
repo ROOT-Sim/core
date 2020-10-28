@@ -141,6 +141,10 @@ void serial_simulation(void)
 #endif
 
 		timer_start(serial_event_execution);
+<<<<<<< HEAD
+=======
+		ProcessEvent(current_lp, current_lvt, event->type, event->event_content, event->size, serial_states[current_lp]);
+>>>>>>> origin/reverse
 
 		if(&abm_settings){
 			ProcessEventABM();
@@ -168,6 +172,7 @@ void serial_simulation(void)
 #endif
 
 		// Termination detection can happen only after the state is initialized
+<<<<<<< HEAD
 		if (likely(current->current_base_pointer != NULL)) {
 
 			// We have just executed a new event at some LP. Depending on the type of requested termination detection,
@@ -203,6 +208,14 @@ void serial_simulation(void)
 				serial_completed_simulation[event->receiver.to_int] = new_termination_decision;
 
 				if (unlikely(completed == n_LP_tot)) {
+=======
+		if(serial_states[event->receiver] != NULL) {
+			// Should we terminate the simulation?
+			if(!serial_completed_simulation[event->receiver] && OnGVT(event->receiver, serial_states[event->receiver])) {
+				completed++;
+				serial_completed_simulation[event->receiver] = true;
+				if(completed == n_prc_tot) {
+>>>>>>> origin/reverse
 					serial_simulation_complete = true;
 				}
 			}

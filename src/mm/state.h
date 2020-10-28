@@ -70,6 +70,7 @@ typedef struct _state_t {
 	/// Execution state
 	short unsigned int state;
 
+<<<<<<< HEAD
 	/// This is a pointer used to keep track of changes to simulation states via SetState()
 	void *base_pointer;
 
@@ -91,6 +92,8 @@ typedef struct _state_t {
 <<<<<<< HEAD
 struct lp_struct;
 =======
+=======
+>>>>>>> origin/reverse
 extern void ParallelSetState(void *new_state);
 extern void LogState(unsigned int);
 extern void RestoreState(unsigned int lid, state_t *restore_state);

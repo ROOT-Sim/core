@@ -254,6 +254,8 @@ msg_t *get_msg_from_slab(void) {
 >>>>>>> origin/power
 	}
 
+//	printf("(%d) Sending antimessages----------\n", lid);
+
 	// Now send all antimessages
 	while(anti_msg != NULL) {
 		bzero(&msg, sizeof(msg_t));
@@ -268,6 +270,8 @@ msg_t *get_msg_from_slab(void) {
 			rootsim_error(true, "LP %u sending a message for which it is not the sender!\n", lid);
 		}
 		
+
+//		printf("\t%p (%llu, %f) to %d\n", anti_msg, anti_msg->mark, anti_msg->timestamp, anti_msg->receiver);
 
 		Send(&msg);
 
@@ -1037,6 +1041,19 @@ unsigned int mark_to_gid(unsigned long long mark)
 		Send(msg);
 >>>>>>> origin/cancelback
 
+<<<<<<< HEAD
+=======
+		// Register the message in the sender's output queue, for antimessage management
+		msg_hdr.sender = msg->sender;
+		msg_hdr.receiver = msg->receiver;
+		msg_hdr.timestamp = msg->timestamp;
+		msg_hdr.send_time = msg->send_time;
+		msg_hdr.mark = msg->mark;
+		(void)list_insert(msg->sender, LPS[msg->sender]->queue_out, send_time, &msg_hdr);
+
+//		printf("Placed in queue event with mark %llu at time %f from %d to %d\n", msg_hdr.mark, msg_hdr.timestamp, msg_hdr.sender, msg_hdr.receiver);
+	}
+>>>>>>> origin/reverse
 
 /**
  * @brief Perform some sanity checks on a message buffer

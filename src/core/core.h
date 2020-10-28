@@ -43,9 +43,15 @@
 
 <<<<<<< HEAD
 #include <lib/numerical.h>
+<<<<<<< HEAD
 #include <arch/atomic.h>
 <<<<<<< HEAD
 =======
+=======
+#include <arch/thread.h>
+#include <statistics/statistics.h>
+#include <mm/reverse.h>
+>>>>>>> origin/reverse
 
 
 extern int controller_committed_events;
@@ -191,6 +197,8 @@ typedef unsigned char phase_colour;
 #define MSG_PADDING offsetof(msg_t, sender)
 #define MSG_META_SIZE (offsetof(msg_t, event_content) - MSG_PADDING)
 
+struct _state_t;
+
 /// Message Type definition
 typedef struct _msg_t {
 
@@ -244,8 +252,10 @@ typedef struct _msg_t {
 	simtime_t		send_time;
 	// TODO: risistemare questa cosa degli antimessaggi
 	message_kind_t		message_kind;
+	bool			marked_by_antimessage;
 	unsigned long long	mark;	/// Unique identifier of the message, used for antimessages
 	unsigned long long	rendezvous_mark;	/// Unique identifier of the message, used for rendez-vous events
+<<<<<<< HEAD
     //	struct _state_t 	*is_first_event_of;
 	// Application informations
 	char event_content[MAX_EVENT_SIZE];
@@ -253,6 +263,22 @@ typedef struct _msg_t {
 >>>>>>> origin/cancelback
 } msg_t;
 
+=======
+	struct _state_t		*checkpoint_of_event;  /// This is used to keep a pointer to the checkpoint taken after the execution of an event. It's NULL if no checkpoint was taken
+	// Application informations
+	char event_content[MAX_EVENT_SIZE];
+	int size;
+
+#ifdef HAVE_REVERSE
+	// Reverse window
+	revwin_t *revwin;
+#endif
+
+} msg_t;
+
+
+
+>>>>>>> origin/reverse
 /// Message envelope definition. This is used to handle the output queue and stores information needed to generate antimessages
 typedef struct _msg_hdr_t {
 	// Pointers to attach messages to chains
@@ -279,8 +305,48 @@ extern unsigned int kid,	/* Kernel ID for the local kernel */
  n_prc,				/* Number of LPs hosted by the current kernel instance */
 *kernel;
 
+<<<<<<< HEAD
 /// Current number of active threads. This is always <= n_cores
 extern volatile unsigned int active_threads;
+=======
+/// Configuration of the execution of the simulator
+typedef struct _simulation_configuration {
+	char *output_dir;		/// Destination Directory of output files
+	int backtrace;			/// Debug mode flag
+	int scheduler;			/// Which scheduler to be used
+	int gvt_time_period;		/// Wall-Clock time to wait before executiong GVT operations
+	int gvt_snapshot_cycles;	/// GVT operations to be executed before rebuilding the state
+	int simulation_time;		/// Wall-clock-time based termination predicate
+	int lps_distribution;		/// Policy for the LP to Kernel mapping
+	int ckpt_mode;			/// Type of checkpointing mode (Synchronous, Semi-Asyncronous, ...)
+	int checkpointing;		/// Type of checkpointing scheme (e.g., PSS, CSS, ...)
+	int ckpt_period;		/// Number of events to execute before taking a snapshot in PSS (ignored otherwise)
+	int snapshot;			/// Type of snapshot (e.g., full, incremental, autonomic, ...)
+	int check_termination_mode;	/// Check termination strategy: standard or incremental
+	bool blocking_gvt;		/// GVT protocol blocking or not
+	bool deterministic_seed;	/// Does not change the seed value config file that will be read during the next runs
+	int verbose;			/// Kernel verbose
+	enum stat_levels stats;		/// Produce performance statistic file (default STATS_ALL)
+	bool serial;			// If the simulation must be run serially
+	seed_type set_seed;		/// The master seed to be used in this run
+
+#ifdef HAVE_PREEMPTION
+	bool disable_preemption;	/// If compiled for preemptive Time Warp, it can be disabled at runtime
+#endif
+
+#ifdef HAVE_PARALLEL_ALLOCATOR
+	bool disable_allocator;
+#endif
+
+#ifdef HAVE_REVERSE
+	bool disable_reverse;
+#endif
+} simulation_configuration;
+
+
+/// Barrier for all worker threads
+extern barrier_t all_thread_barrier;
+>>>>>>> origin/reverse
 
 extern void ProcessEvent_light(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
 bool OnGVT_light(unsigned int me, void *snapshot);
@@ -294,11 +360,27 @@ extern unsigned int	kid,		/* Kernel ID for the local kernel */
 			n_prc,		/* Number of LPs hosted by the current kernel instance */
 			* kernel;
 
+<<<<<<< HEAD
 extern void ProcessEvent(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
 bool OnGVT(unsigned int me, void *snapshot);
 extern void ProcessEvent_instr(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
 bool OnGVT_instr(unsigned int me, void *snapshot);
 >>>>>>> origin/incremental
+=======
+
+extern bool mpi_is_initialized;
+
+extern simulation_configuration rootsim_config;
+
+extern void ProcessEvent_reverse(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
+bool OnGVT_reverse(int gid, void *snapshot);
+extern void ProcessEvent(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
+bool OnGVT(int gid, void *snapshot);
+extern void ProcessEvent_inc(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
+bool OnGVT_inc(int gid, void *snapshot);
+extern bool (**_OnGVT)(int gid, void *snapshot);
+extern void (**_ProcessEvent)(unsigned int me, simtime_t now, int event_type, void *event_content, unsigned int size, void *state);
+>>>>>>> origin/reverse
 
 extern void base_init(void);
 extern void base_fini(void);

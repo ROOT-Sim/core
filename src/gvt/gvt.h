@@ -60,6 +60,7 @@ extern void adopt_new_gvt(simtime_t);
 /** API from fossil.c */
 extern void adopt_new_gvt(simtime_t, simtime_t);
 
+<<<<<<< HEAD
 /** API from cancelback.c */
 extern bool attempt_cancelback(simtime_t);
 extern bool is_memory_limit_exceeded();
@@ -69,6 +70,11 @@ extern bool is_cancelback_started();
 extern int num_unprocessed_msgs(unsigned int);
 extern inline size_t get_cancelback_threshold();
 >>>>>>> origin/cancelback
+=======
+/* API from models.c */
+extern void gvt_recompute_models(void);
+
+>>>>>>> origin/reverse
 
 /* API from ccgs.c */
 extern void ccgs_init(void);

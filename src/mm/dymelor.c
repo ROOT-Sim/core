@@ -242,8 +242,14 @@ void *do_malloc(struct lp_struct *lp, size_t size)
 			m_state->max_num_areas <<= 1;
 
 			rootsim_error(true, "To reimplement\n");
+<<<<<<< HEAD
 //                      tmp = (malloc_area *)pool_realloc_memory(lp->mm->m_state->areas, lp->mm->m_state->max_num_areas * sizeof(malloc_area));
 			if (tmp == NULL) {
+=======
+//			tmp = (malloc_area *)pool_realloc_memory(mem_pool->areas, mem_pool->max_num_areas * sizeof(malloc_area));
+			tmp = NULL;
+			if(tmp == NULL){
+>>>>>>> origin/reverse
 
 				/**
 				* @todo can we find a better way to handle the realloc failure?
@@ -367,12 +373,19 @@ void *do_malloc(struct lp_struct *lp, size_t size)
 	find_next_free(m_area);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #ifndef NDEBUG
 	// In debug mode we set the chunk to a known value. If during a restore
 	// operation we find this value, then the metadata in the log are likely broken.
 	memset(ptr, 0xe8, size);
 #else
 	memset(ptr, 0, size);
+=======
+#ifndef NDEBUG
+	// This is a mark placed in the buffer, so that we can check whether somewhere we are not
+	// correctly using uninitialized memory
+	memset(ptr, 0xe8, size);
+>>>>>>> origin/reverse
 #endif
 
 	// Keep track of the malloc_area which this chunk belongs to

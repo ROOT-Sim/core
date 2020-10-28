@@ -41,6 +41,11 @@
 #include <errno.h>
 
 #include <ROOT-Sim.h>
+<<<<<<< HEAD
+=======
+#include <mm/dymelor.h>
+#include <arch/os.h>
+>>>>>>> origin/reverse
 #include <arch/thread.h>
 #include <communication/communication.h>
 #include <core/core.h>
@@ -51,7 +56,9 @@
 #include <gvt/gvt.h>
 #include <gvt/ccgs.h>
 #include <scheduler/scheduler.h>
+#include <mm/reverse.h>
 #include <mm/state.h>
+<<<<<<< HEAD
 <<<<<<< HEAD
 #include <mm/ecs.h>
 #include <mm/mm.h>
@@ -61,6 +68,9 @@
 #include <mm/malloc.h>
 #include <core/backtrace.h> // Place this after malloc.h!
 >>>>>>> origin/globvars
+=======
+#include <core/backtrace.h>
+>>>>>>> origin/reverse
 #include <statistics/statistics.h>
 #include <lib/numerical.h>
 #include <lib/topology.h>
@@ -474,9 +484,16 @@ static struct option long_options[] = {
 			rootsim_config.deterministic_seed = true;
 			break;
 
+<<<<<<< HEAD
 		case OPT_SEED:
 			rootsim_config.set_seed = parse_ullong_limits(0, UINT64_MAX);
 			break;
+=======
+	#ifdef HAVE_REVERSE
+	rootsim_config.disable_reverse = false;
+	#endif
+
+>>>>>>> origin/reverse
 
 		case OPT_SERIAL:
 			rootsim_config.serial = true;
@@ -558,7 +575,12 @@ static struct option long_options[] = {
 					rootsim_error(false, "Some options are conflicting: Copy State Saving is selected, but I'm requested to set a checkpointing interval. Skipping the -p option.\n");
 				} else {
 					rootsim_config.checkpointing = PERIODIC_STATE_SAVING;
+<<<<<<< HEAD
 					rootsim_config.ckpt_period = parseIntLimits(optarg, 1, 40);
+=======
+					rootsim_config.ckpt_period = parseIntLimits(optarg, 1, 101);
+					// This is a micro optimization that makes the LogState function to avoid checking the checkpointing interval and keeping track of the logs taken
+>>>>>>> origin/reverse
 					if(rootsim_config.ckpt_period == 1) {
 						rootsim_config.checkpointing = COPY_STATE_SAVING;
 					}
@@ -702,9 +724,24 @@ static struct option long_options[] = {
 			#endif
 			break;
 
+<<<<<<< HEAD
 		case OPT_POWERCAP_EXPLORE:
 			rootsim_config.powercap_exploration = parse_ullong_limits(0, UINT64_MAX);
 			break;
+=======
+			#ifdef HAVE_REVERSE
+			case OPT_REVERSE:
+				rootsim_config.disable_reverse = true;
+				break;
+			#endif
+
+			case -1:
+			case '?':
+			default:
+				rootsim_error(false, "Invalid options: %s", optarg);
+				break;
+		}
+>>>>>>> origin/reverse
 
 		case ARGP_KEY_INIT:
 
@@ -858,7 +895,13 @@ void SystemInit(int argc, char **argv)
 		 printf("****************************\n"
 			"*  ROOT-Sim Configuration  *\n"
 			"****************************\n"
+<<<<<<< HEAD
 			"Kernels: %u\n"
+=======
+#ifndef NDEBUG
+			"Debugging Mode is ACTIVE\n"
+#endif
+>>>>>>> origin/reverse
 			"Cores: %ld available, %d used\n"
 			"Controllers: %d\n"
 			"Number of Logical Processes: %u\n"
@@ -927,7 +970,12 @@ void SystemInit(int argc, char **argv)
 	numerical_init();
 	topology_init();
 
-	// This call tells the simulation engine that the sequential initial simulation is complete
+	// #ifdef HAVE_REVERSE
+	// if(!rootsim_config.disable_reverse)
+	// 	reverse_init();
+	// #endif
+
+	// This call tells the simulation engine that the sequential simulation initialization is complete
 	initialization_complete();
 }
 

@@ -17,6 +17,7 @@ AC_ARG_ENABLE([debug],
 AC_ARG_ENABLE([coverage],
     AS_HELP_STRING([--enable-coverage], [Enable code coverage]))
 
+<<<<<<< HEAD
 AM_CONDITIONAL([DEBUG], [test x$enable_debug = xyes])
 
 # Setup compilation flags
@@ -37,6 +38,16 @@ AS_IF([test x$enable_debug = xyes],
 # Flag to enable code coverage
 AS_IF([test x$enable_coverage = xyes],
       [CFLAGS="-coverage $CFLAGS"])
+=======
+if test "x$enable_debug" != "xyes"
+then
+	AC_DEFINE([NDEBUG])
+fi
+
+
+AC_ARG_ENABLE([profile],
+    AS_HELP_STRING([--enable-profile], [Enable profiling the platform]))
+>>>>>>> origin/reverse
 
 # Extra check flags
 AC_ARG_ENABLE(extra-checks,
@@ -176,6 +187,7 @@ AM_PROG_AR
 AC_SUBST(AR_FLAGS, [cr])
 AC_SUBST(ARFLAGS, [cr])
 AM_PROG_AS
+<<<<<<< HEAD
 AC_PROG_AWK
 LT_INIT([dlopen shared])
 AC_ENABLE_SHARED
@@ -191,6 +203,10 @@ if test -z "$OBJDUMP"; then
   AC_MSG_ERROR([Cannot find objdump in your path; please set the OBJDUMP environment variable!])
 fi
 
+=======
+AC_CHECK_PROGS([HIJACKER], [hijacker])
+LT_INIT
+>>>>>>> origin/reverse
 
 
 
@@ -471,7 +487,50 @@ AM_CONDITIONAL([NO_KERNEL_MODULES], [test "x$ac_disable_modules" = "xyes"])
 AS_IF([test x"$with_mpi" = xyes],[
 	CC="OMPI_CC=$BASE_CC MPICH_CC=$BASE_CC $CC"
 ])
+<<<<<<< HEAD
 AC_SUBST([COMPILER], [$CC])
+=======
+
+
+
+# If we are on a NUMA system, try to use the NUMA subsystem
+AC_CHECK_LIB(numa, numa_num_possible_nodes, [numa_cv_libnuma=yes], [numa_cv_libnuma=no])
+AC_CHECK_HEADER(numa.h, [numa_cv_numa_h=yes], [numa_cv_numa_h=no])
+AC_CHECK_PROG([numactl],[numactl],[yes],[no])
+ac_have_numa=no
+
+if test "x$numa_cv_libnuma" = "xyes" -a "x$numa_cv_numa_h" = "xyes" -a "x$numactl" = "xyes" -a "x$ac_have_parallel_allocator" = "xyes"
+then
+        #
+        # We have found everything that we need, but the user can disable the subsystem
+        #
+
+	AC_ARG_ENABLE([numa],
+	AS_HELP_STRING([--disable-numa], [Disable NUMA subsystem on NUMA machines (enabled by default)]))
+
+	AS_IF([test "x$enable_numa" != "xno"], [
+		AC_DEFINE([HAVE_NUMA])
+		ac_have_numa=yes
+		CFLAGS="$CFLAGS -lnuma"
+	])
+fi
+
+
+# If requested, enable reverse computation
+if test "x$HIJACKER" = "xhijacker"
+then
+	AC_ARG_ENABLE([reverse],
+	AS_HELP_STRING([--enable-reverse], [Enable reverse computation]))
+
+	AS_IF([test "x$enable_reverse" = "xyes"], [
+	        AC_DEFINE([HAVE_REVERSE])
+	        ac_have_reverse=yes
+	])
+fi
+
+
+
+>>>>>>> origin/reverse
 
 #----------------------------------------------------------------------------
 # Configure rootsim-cc.
@@ -484,6 +543,7 @@ AC_SUBST([COMPILER], [$CC])
 #----------------------------------------------------------------------------
 AC_MSG_CHECKING([compiler and linker scripts sizes])
 AC_SUBST([cc_script_lines], [$(wc -l scripts/rootsim-cc.in | sed 's,\ .*,,g')])
+<<<<<<< HEAD
 AC_SUBST([cc_lddata1_lines], [$(wc -l scripts/ld-data1 | sed 's,\ .*,,g')])
 AC_SUBST([cc_lddata2_lines], [$(wc -l scripts/ld-data2 | sed 's,\ .*,,g')])
 AC_SUBST([cc_ldfinal_lines], [$(wc -l scripts/ld-final | sed 's,\ .*,,g')])
@@ -491,6 +551,15 @@ AC_SUBST([iss_support], ["x$ac_gcc_headers"])
 AC_SUBST([pmu_support], ["$ac_pmu_cc"])
 AC_MSG_RESULT([ok])
 
+=======
+AC_SUBST([cc_hijacker_conf_lines], [$(wc -l scripts/hijacker-conf.xml | sed 's,\ .*,,g')])
+AC_MSG_RESULT([ok])
+
+# Additionally, test whether we have to call hijacker from rootsim-cc
+AM_CONDITIONAL([USE_HIJACKER], [test "x$enable_reverse" = "xyes"])
+
+
+>>>>>>> origin/reverse
 # Generate Makefiles for all these subfolders
 AC_CONFIG_FILES([Makefile
 		 man/Makefile
@@ -605,6 +674,21 @@ else
 	fi
 fi
 
+# Compose the message regarding reverse computing
+if test "x$ac_have_reverse" = "xyes"
+then
+	ac_reverse="Enabled"
+else
+	ac_reverse="Disabled"
+	if test "x$enable_reverse" = "xyes"
+	then
+		ac_reverse="${ac_reverse} (hijacker not found on the system)"
+	else
+		ac_reverse="${ac_reverse} (use --enable-reverse to activate)"
+	fi
+fi
+
+
 
 # Compose message to tell whether modules are disabled
 ac_modules="Enabled"
@@ -646,6 +730,7 @@ LP Preemption Support..... : ${ac_preemption}
 LP Rebinding.............. : ${ac_lp_rebinding}
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 Approximated Rollback..... : ${ac_approximated_rollback}
 =======
 >>>>>>> origin/energy
@@ -657,5 +742,9 @@ Power Management.......... : ${ac_power}
 Linux Kernel Modules...... : ${ac_modules}
 Incremental State Saving.. : ${ac_iss}
 >>>>>>> origin/incremental
+=======
+Reverse Computing......... : ${ac_reverse}
+
+>>>>>>> origin/reverse
 
 EOF

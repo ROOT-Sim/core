@@ -73,12 +73,17 @@ static unsigned int *new_LPS_binding;
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 //#ifdef HAVE_LP_REBINDING
 static int binding_acquire_phase = 0;
 =======
 static volatile int binding_acquire_phase = 0;
 >>>>>>> origin/energy
 static __thread int local_binding_acquire_phase = 0;
+=======
+#ifdef HAVE_LP_REBINDING
+static timer rebinding_timer;
+>>>>>>> origin/reverse
 
 static volatile int binding_phase = 0;
 =======
@@ -98,6 +103,7 @@ static __thread bool bt_updated = false;
 >>>>>>> origin/energy
 
 static atomic_t worker_thread_reduction;
+<<<<<<< HEAD
 static atomic_t worker_thread_installation;
 
 static bool rebinding_triggered = false;
@@ -105,6 +111,9 @@ static bool rebinding_completed = true;
 
 <<<<<<< HEAD
 static unsigned int binding_threads = 0;
+=======
+#endif
+>>>>>>> origin/reverse
 
 // When calling this function, n_lp_per_thread
 // must have been updated with the new number of bound LPs.
@@ -216,6 +225,7 @@ static inline void LPs_block_binding(void) {
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     // In case we're running with the asymmetric architecture, we have
     // to rebind as well
     if(rootsim_config.num_controllers > 0)
@@ -227,6 +237,9 @@ static inline void LPs_block_binding(void) {
 		rebind_LPs_to_PTs();
 >>>>>>> origin/power
 }
+=======
+#ifdef HAVE_LP_REBINDING
+>>>>>>> origin/reverse
 
 /**
 * Convenience function to compare two elements of struct lp_cost_id.
@@ -444,7 +457,7 @@ void reassignation_rebind(void) {
     initialize_binding_blocks();
     LPs_block_binding();
 }
-
+#endif
 
 /**
 * This function is used to create a temporary binding between LPs and KLT.
@@ -468,6 +481,7 @@ void rebind_LPs(void) {
 
 
 
+<<<<<<< HEAD
     // We determine here the number of threads used for binding, depending on the
     // actual (current) incarnation of available threads.
     if(rootsim_config.num_controllers == 0)
@@ -482,6 +496,15 @@ void rebind_LPs(void) {
         if(rootsim_config.num_controllers == 0){ //SYMMETRIC CASE
             first_lp_binding = false;
         }
+=======
+#ifdef HAVE_LP_REBINDING
+		timer_start(rebinding_timer);
+
+		if(master_thread()) {
+			new_LPS_binding = rsalloc(sizeof(int) * n_prc);
+			lp_cost = rsalloc(sizeof(struct lp_cost_id) * n_prc);
+			memset(lp_cost, 0, sizeof(struct lp_cost_id) * n_prc);
+>>>>>>> origin/reverse
 
         else if (rootsim_config.num_controllers > 0) { //ASYMMETRIC CASE
             binding_counter++;
@@ -500,7 +523,11 @@ void rebind_LPs(void) {
 =======
 			atomic_set(&worker_thread_reduction, binding_threads);
 		}
+<<<<<<< HEAD
 >>>>>>> origin/power
+=======
+#endif
+>>>>>>> origin/reverse
 
         initialize_binding_blocks();
 

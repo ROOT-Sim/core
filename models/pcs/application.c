@@ -137,12 +137,58 @@ void ProcessEvent(unsigned int curr_lp, simtime_t event_ts, int event_type, even
 			SetState(state);
 			bzero(state, sizeof(lp_state_type) + sizeof(unsigned int) * (CHANNELS_PER_CELL / BITS + 1));
 
+<<<<<<< HEAD
 			// Setup channel state
 			state->approximated_data = malloc(sizeof(struct approximated_data_t));
 			bzero(state->approximated_data, sizeof(struct approximated_data_t));
 
                         state->approximated_data->channel_counter = channels_per_cell;
                         state->approximated_data->channels = malloc(sizeof(channel) * channels_per_cell);
+=======
+			bzero(state, sizeof(lp_state_type));
+			state->channel_counter = CHANNELS_PER_CELL;
+
+			/*
+			// Read runtime parameters
+			if(IsParameterPresent(event_content, "pcs_statistics"))
+				pcs_statistics = true;
+				*/
+
+			if(IsParameterPresent(event_content, "ta"))
+				state->ref_ta = state->ta = GetParameterDouble(event_content, "ta");
+			else
+				state->ref_ta = state->ta = TA;
+
+			if(IsParameterPresent(event_content, "ta_duration"))
+				state->ta_duration = GetParameterDouble(event_content, "ta_duration");
+			else
+				state->ta_duration = TA_DURATION;
+
+			if(IsParameterPresent(event_content, "ta_change"))
+				state->ta_change = GetParameterDouble(event_content, "ta_change");
+			else
+				state->ta_change = TA_CHANGE;
+
+			if(IsParameterPresent(event_content, "channels_per_cell"))
+				state->channels_per_cell = GetParameterInt(event_content, "channels_per_cell");
+			else
+				state->channels_per_cell = CHANNELS_PER_CELL;
+
+			if(IsParameterPresent(event_content, "complete_calls"))
+				complete_calls = GetParameterInt(event_content, "complete_calls");
+			else
+				complete_calls = COMPLETE_CALLS;
+
+			state->fading_recheck = false; //IsParameterPresent(event_content, "fading_recheck");
+			state->variable_ta = IsParameterPresent(event_content, "variable_ta");
+
+			// Show current configuration, only once
+			if(me == 0) {
+				printf("CURRENT CONFIGURATION:\ncomplete calls: %d\nTA: %f\nta_duration: %f\nta_change: %f\nchannels_per_cell: %d\nfading_recheck: %d\nvariable_ta: %d\n",
+					complete_calls, state->ta, state->ta_duration, state->ta_change, state->channels_per_cell, state->fading_recheck, state->variable_ta);
+				fflush(stdout);
+			}
+>>>>>>> origin/reverse
 
 			state->ta = ref_ta;
 
@@ -161,11 +207,18 @@ void ProcessEvent(unsigned int curr_lp, simtime_t event_ts, int event_type, even
 			
 =======
 			// If needed, start the first fading recheck
+<<<<<<< HEAD
 			//if (state->fading_recheck) {
 			//	timestamp = (simtime_t) (FADING_RECHECK_FREQUENCY * Random());
 			//	ScheduleNewEvent(curr_lp, timestamp, FADING_RECHECK, NULL, 0);
 		//	}
 >>>>>>> origin/asym
+=======
+			if (state->fading_recheck) {
+				timestamp = (simtime_t) (FADING_RECHECK_FREQUENCY * Random());
+				ScheduleNewEvent(me, timestamp, FADING_RECHECK, NULL, 0);
+			}
+>>>>>>> origin/reverse
 
 			break;
 
@@ -285,11 +338,15 @@ void ProcessEvent(unsigned int curr_lp, simtime_t event_ts, int event_type, even
 			}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 				if(shortcut || new_event_content.call_term_time < handoff_time) {
 					ScheduleNewEvent(curr_lp, new_event_content.call_term_time, END_CALL, &new_event_content, sizeof(new_event_content));
 =======
 				if(1 || new_event_content.call_term_time < handoff_time) {
+=======
+				if( new_event_content.call_term_time < handoff_time) {
+>>>>>>> origin/reverse
 					ScheduleNewEvent(me, new_event_content.call_term_time, END_CALL, &new_event_content, sizeof(new_event_content));
 >>>>>>> origin/power
 				} else {
@@ -459,6 +516,7 @@ void RestoreApproximated(void *ptr) {
 }
 
 bool OnGVT(unsigned int me, lp_state_type *snapshot) {
+<<<<<<< HEAD
 	(void)me;
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -470,8 +528,13 @@ bool OnGVT(unsigned int me, lp_state_type *snapshot) {
 >>>>>>> origin/asym
 =======
 >>>>>>> origin/incremental
+=======
 
-	if (snapshot->complete_calls < complete_calls)
+>>>>>>> origin/reverse
+
+	if (snapshot->complete_calls < complete_calls) {
+		printf("me %d - complete calls are %d\n",me,snapshot->complete_calls);
 		return false;
+	}
 	return true;
 }

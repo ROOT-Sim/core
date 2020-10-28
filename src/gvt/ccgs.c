@@ -156,11 +156,16 @@ void ccgs_compute_snapshot(state_t *time_barrier_pointer[])
 >>>>>>> origin/approximated
 		// Call the application to check termination
 <<<<<<< HEAD
+<<<<<<< HEAD
 		lps_termination[lp->lid.to_int] = time_barrier_pointer[i]->simulation_completed;
 =======
 		lps_termination[lp->lid.to_int] = lp->OnGVT(lp->gid.to_int, lp->current_base_pointer);
 >>>>>>> origin/asym
 		check_res &= lps_termination[lp->lid.to_int];
+=======
+		lps_termination[lid] = _OnGVT[lid](LidToGid(lid), LPS[lid]->current_base_pointer);
+		check_res &= lps_termination[lid];
+>>>>>>> origin/reverse
 
 		// Early stop
 		if (rootsim_config.check_termination_mode == CKTRM_INCREMENTAL && !check_res) {

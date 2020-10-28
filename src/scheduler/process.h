@@ -98,7 +98,11 @@
 #define BLOCKED_STATE			0x01000
 #define is_blocked_state(state)	(bool)(state & BLOCKED_STATE)
 
+<<<<<<< HEAD
 typedef enum { IDLE, REQUESTED, PROCESSING } rb_status;
+=======
+struct _revwin_t;
+>>>>>>> origin/reverse
 
 
 struct lp_struct {
@@ -162,6 +166,14 @@ struct lp_struct {
 	/// Counts how many incremental checkpoints have been taken (to support ISS)
 	unsigned int from_last_full_ckpt;
 
+#ifdef HAVE_REVERSE
+	/// Counter of how many events should be executed withouth creating a reverse window
+	unsigned int	events_in_coasting_forward;
+
+	// This is the list of the reverse events which implement software reversibility
+	list(revwin_t)	reverse_events;
+#endif
+
 	/// If this variable is set, the next invocation to LogState() takes a new state log, independently of the checkpointing interval
 <<<<<<< HEAD
 	bool state_log_forced;
@@ -192,6 +204,9 @@ struct lp_struct {
 
 	/// Send time of the last event extracted from the output port of the PT executing events of this LP
 	simtime_t		last_sent_time;
+
+	/// In case of a rollback operation, this points to the old bound
+	msg_t		*old_bound;
 
 	/// Output messages queue
 	list(msg_hdr_t) queue_out;
@@ -275,12 +290,23 @@ struct lp_struct {
 #endif
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	unsigned long long wait_on_rendezvous;
 	unsigned int wait_on_object;
 =======
 	stat_interval_t		interval_stats;
 } LP_State;
 >>>>>>> origin/power
+=======
+	unsigned long long	wait_on_rendezvous;
+	unsigned int		wait_on_object;
+
+	unsigned int		FCF;
+	struct _revwin_t	*current_revwin;
+	simtime_t		last_correct_log_time;
+
+} LP_state;
+>>>>>>> origin/reverse
 
 	/* Per-Library variables */
 	numerical_state_t numerical;
