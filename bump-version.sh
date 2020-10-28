@@ -16,6 +16,8 @@ echo "Current version is $major.$minor.$hotfix"
 # Check if we have to increment the major
 if [ "$1" == "major" ]; then
 	major=$((major + 1))
+	minor=0
+	hotfix=0
 elif [ "$branchtype" == "hotfix" ]; then
 	hotfix=$((hotfix + 1))
 elif [ "$branchtype" == "release" ]; then
@@ -29,32 +31,13 @@ echo "Applying new version number: $major.$minor.$hotfix. Continue? (y/n)"
 old_stty_cfg=$(stty -g)
 stty raw -echo ; answer=$(head -c 1) ; stty $old_stty_cfg # Careful playing with stty
 if echo "$answer" | grep -iq "^y" ;then
-	echo "Applying changes to configure.ac"
+	echo "Applying changes to meson.build"
 else
 	exit 0
 fi
 
-# Load current configure and build the new one with updated version
-config_line=$(grep AC_INIT configure.ac)
-new_config_line=${config_line//$version/$major.$minor.$hotfix}
+# Update version in meson.build
+sed -i "s/version: \o047.*\o047/version: \o047$major.$minor.$hotfix\o047/" meson.build
 
-# Apply the change to the file
-configure_line=$(grep -n AC_INIT configure.ac | sed 's/:.*//')
-configure_line=$((configure_line-1))
-i=0
-echo "" > configure.new
-IFS=
-while read -r line
-do
-	if [ $i -eq $configure_line ]; then
-		echo $new_config_line >> configure.new
-	else
-		echo $line >> configure.new
-	fi
-	i=$((i+1))
-done < configure.ac
-
-mv configure.ac configure.bak
-mv configure.new configure.ac
 
 echo "Files modified successfully, version bumped to $major.$minor.$hotfix"
