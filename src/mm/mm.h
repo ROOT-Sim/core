@@ -35,6 +35,11 @@
 #include <core/core.h>
 #include <scheduler/process.h>
 #include <arch/atomic.h>
+<<<<<<< HEAD
+=======
+#include <mm/dymelor.h>
+#include <unistd.h>
+>>>>>>> origin/asym
 
 struct _malloc_state;
 

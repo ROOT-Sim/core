@@ -155,7 +155,11 @@ void ccgs_compute_snapshot(state_t *time_barrier_pointer[])
 */
 >>>>>>> origin/approximated
 		// Call the application to check termination
+<<<<<<< HEAD
 		lps_termination[lp->lid.to_int] = time_barrier_pointer[i]->simulation_completed;
+=======
+		lps_termination[lp->lid.to_int] = lp->OnGVT(lp->gid.to_int, lp->current_base_pointer);
+>>>>>>> origin/asym
 		check_res &= lps_termination[lp->lid.to_int];
 
 		// Early stop

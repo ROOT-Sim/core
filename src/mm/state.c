@@ -35,6 +35,7 @@
 #include <math.h>
 #include <string.h>
 
+#include <arch/thread.h>
 #include <core/core.h>
 #include <core/init.h>
 #include <core/timer.h>
@@ -98,8 +99,14 @@ bool LogState(struct lp_struct *lp)
 		new_state = rsalloc(sizeof(*new_state));
 
 		// Associate the checkpoint with current LVT and last-executed event
-		new_state->lvt = lvt(lp);
-		new_state->last_event = lp->bound;
+		if(rootsim_config.num_controllers>0) {
+            new_state->lvt = lp->next_last_processed->timestamp;
+            new_state->last_event = lp->next_last_processed;
+        }
+		else{
+            new_state->lvt = lp->last_processed->timestamp;
+            new_state->last_event = lp->last_processed;
+		}
 
 		// Log simulation model buffers
 		new_state->log = log_state(lp);
@@ -134,19 +141,30 @@ bool LogState(struct lp_struct *lp)
 	return take_snapshot;
 }
 
-void RestoreState(struct lp_struct *lp, state_t * restore_state)
+void RestoreState(struct lp_struct *lp, state_t * state_to_restore)
 {
 	// Restore simulation model buffers
-	log_restore(lp, restore_state);
+	log_restore(lp, state_to_restore);
 
 	// Restore members of lp_struct which have been checkpointed
-	lp->current_base_pointer = restore_state->base_pointer;
-	lp->state = restore_state->state;
+	lp->current_base_pointer = state_to_restore->base_pointer;
+	lp->state = state_to_restore->state;
 
 	// Restore library-related states
-	memcpy(&lp->numerical, &restore_state->numerical,
+	memcpy(&lp->numerical, &state_to_restore->numerical,
 	       sizeof(numerical_state_t));
 
+<<<<<<< HEAD
+=======
+	if(&topology_settings && topology_settings.write_enabled){
+		memcpy(lp->topology, state_to_restore->topology,
+               topology_global.chkp_size);
+	}
+
+	if(&abm_settings)
+		abm_restore_checkpoint(state_to_restore->region_data, lp->region);
+
+>>>>>>> origin/asym
 #ifdef HAVE_CROSS_STATE
 	lp->ECS_index = 0;
 	lp->wait_on_rendezvous = 0;
@@ -155,7 +173,7 @@ void RestoreState(struct lp_struct *lp, state_t * restore_state)
 }
 
 /**
-* This function bring the state pointed by "state" to "final time" by re-executing all the events without sending any messages
+* This function brings the state pointed by "state" to "final time" by re-executing all the events without sending any messages
 *
 * @author Francesco Quaglia
 * @author Alessandro Pellegrini
@@ -213,7 +231,7 @@ unsigned int silent_execution(struct lp_struct *lp, msg_t *evt, msg_t *final_evt
 */
 void rollback(struct lp_struct *lp)
 {
-	state_t *restore_state, *s;
+	state_t *state_to_restore, *s;
 	msg_t *last_correct_event;
 	msg_t *last_restored_event;
 	unsigned int reprocessed_events;
@@ -231,14 +249,16 @@ void rollback(struct lp_struct *lp)
 	statistics_post_data(lp, STAT_ROLLBACK, 1.0);
 
 	last_correct_event = lp->bound;
+
+
 	// Send antimessages
 	send_antimessages(lp, last_correct_event->timestamp);
 
 	// Find the state to be restored, and prune the wrongly computed states
-	restore_state = list_tail(lp->queue_states);
-	while (restore_state != NULL && restore_state->lvt > last_correct_event->timestamp) {	// It's > rather than >= because we have already taken into account simultaneous events
-		s = restore_state;
-		restore_state = list_prev(restore_state);
+	state_to_restore = list_tail(lp->queue_states);
+	while (state_to_restore != NULL && state_to_restore->lvt > last_correct_event->timestamp) {	// It's > rather than >= because we have already taken into account simultaneous events
+		s = state_to_restore;
+        state_to_restore = list_prev(state_to_restore);
 		log_delete(s->log);
 #ifndef NDEBUG
 		s->last_event = (void *)0xBABEBEEF;
@@ -246,9 +266,9 @@ void rollback(struct lp_struct *lp)
 		list_delete_by_content(lp->queue_states, s);
 	}
 	// Restore the simulation state and correct the state base pointer
-	RestoreState(lp, restore_state);
+	RestoreState(lp, state_to_restore);
 
-	last_restored_event = restore_state->last_event;
+    last_restored_event = state_to_restore->last_event;
 	reprocessed_events = silent_execution(lp, last_restored_event, last_correct_event);
 	statistics_post_data(lp, STAT_SILENT, (double)reprocessed_events);
 
@@ -256,6 +276,7 @@ void rollback(struct lp_struct *lp)
 	// value, so it should be the last function to be called within rollback()
 	// Control messages must be rolled back as well
 	rollback_control_message(lp, last_correct_event->timestamp);
+
 }
 
 /**

@@ -44,6 +44,13 @@ const struct argp_option model_options[] = {
 		} \
 	break
 
+/*#define debug(fmt, ...) do { \
+        printf("(MODEL) -> " fmt, ##__VA_ARGS__);\
+        fflush(stdout);\
+    } while(0)*/
+
+#define debug(...) {}
+
 static error_t model_parse (int key, char *arg, struct argp_state *state) {
 	(void)state;
 	
@@ -81,10 +88,19 @@ struct argp model_argp = {model_options, model_parse, NULL, NULL, NULL, NULL, NU
 
 struct _topology_settings_t topology_settings = {.default_geometry = TOPOLOGY_HEXAGON};
 
-void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_type *event_content, unsigned int size, void *ptr) {
+void ProcessEvent(unsigned int curr_lp, simtime_t event_ts, int event_type, event_content_type *event_content, unsigned int size, void *ptr) {
 	(void)size;
+<<<<<<< HEAD
 	
 	event_content_type new_event_content;
+=======
+
+	unsigned int w;
+
+    event_content_type new_event_content;
+
+    bool shortcut = false;      //TRUE FOR DEBUG
+>>>>>>> origin/asym
 
 	new_event_content.cell = -1;
 	new_event_content.channel = -1;
@@ -96,6 +112,14 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 	lp_state_type *state;
 	state = (lp_state_type*)ptr;
 
+<<<<<<< HEAD
+=======
+	if(state != NULL) {
+		state->lvt = event_ts;
+		state->executed_events++;
+	}
+
+>>>>>>> origin/asym
 	switch(event_type) {
 
 		case INIT:
@@ -123,40 +147,76 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 
 			// Start the simulation
 			timestamp = (simtime_t) (20 * Random());
-			ScheduleNewEvent(me, timestamp, START_CALL, NULL, 0);
+            // printf("MODEL CASE <%d - INIT>: FIRST START CALL event (receiver: LP%u, type: %d, ts: %f) \n",
+            //        event_type, curr_lp, START_CALL, timestamp);
+			ScheduleNewEvent(curr_lp, timestamp, START_CALL, NULL, 0);
 
+<<<<<<< HEAD
 			// fading recheck
 			timestamp = (simtime_t) (FADING_RECHECK_FREQUENCY * Random());
 			ScheduleNewEvent(me, timestamp, FADING_RECHECK, NULL, 0);
 			
+=======
+			// If needed, start the first fading recheck
+			//if (state->fading_recheck) {
+			//	timestamp = (simtime_t) (FADING_RECHECK_FREQUENCY * Random());
+			//	ScheduleNewEvent(curr_lp, timestamp, FADING_RECHECK, NULL, 0);
+		//	}
+>>>>>>> origin/asym
 
 			break;
 
 
 		case START_CALL:
+<<<<<<< HEAD
 
 			state->approximated_data->arriving_calls++;
+=======
+			state->arriving_calls++;
+>>>>>>> origin/asym
 
 			if (variable_ta)
 				state->ta = recompute_ta(ref_ta, now);
 
+<<<<<<< HEAD
 			// Determine the time at which a new call will be issued
 			switch (DISTRIBUTION) {
 
 				case UNIFORM:
 					timestamp = now + (simtime_t)(state->ta * Random());
 					break;
+=======
+				new_event_content.channel = allocation(state);
+				new_event_content.from = curr_lp;
+				new_event_content.sent_at = event_ts;
+
+//				printf("(%d) allocation %d at %f\n", curr_lp, new_event_content.channel, event_ts);
+>>>>>>> origin/asym
 
 				case EXPONENTIAL:
 					timestamp = now + (simtime_t)(Expent(state->ta));
 					break;
 
+<<<<<<< HEAD
 				default:
 					timestamp = now + (simtime_t) (5 * Random());
 
 			}
 
 			ScheduleNewEvent(me, timestamp, START_CALL, NULL, 0);
+=======
+					case UNIFORM:
+						new_event_content.call_term_time = event_ts + (simtime_t)(ta_duration * Random());
+						break;
+
+					case EXPONENTIAL:
+						new_event_content.call_term_time = event_ts + (simtime_t)(Expent(ta_duration));
+						break;
+
+					default:
+ 						new_event_content.call_term_time = event_ts + (simtime_t) (5 * Random() );
+				}
+>>>>>>> origin/asym
 
 			if (state->approximated_data->channel_counter == 0) {
 				state->approximated_data->blocked_on_setup++;
@@ -165,6 +225,7 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 
 			state->approximated_data->channel_counter--;
 
+<<<<<<< HEAD
 			new_event_content.channel = allocation(state);
 			new_event_content.from = me;
 			new_event_content.sent_at = now;
@@ -175,11 +236,23 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 				case UNIFORM:
 					new_event_content.call_term_time = now + (simtime_t)(ta_duration * Random());
 					break;
+=======
+						handoff_time  = event_ts + (simtime_t)((ta_change) * Random());
+						break;
+
+					case EXPONENTIAL:
+						handoff_time = event_ts + (simtime_t)(Expent(ta_change));
+						break;
+
+					default:
+						handoff_time = event_ts + (simtime_t)(5 * Random());
+>>>>>>> origin/asym
 
 				case EXPONENTIAL:
 					new_event_content.call_term_time = now + (simtime_t)(Expent(ta_duration));
 					break;
 
+<<<<<<< HEAD
 				default:
 					new_event_content.call_term_time = now + (simtime_t) (5 * Random() );
 			}
@@ -208,19 +281,56 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 				ScheduleNewEvent(me, handoff_time, HANDOFF_LEAVE, &new_event_content, sizeof(new_event_content));
 			}
 
+=======
+				if(shortcut || new_event_content.call_term_time < handoff_time) {
+					ScheduleNewEvent(curr_lp, new_event_content.call_term_time, END_CALL, &new_event_content, sizeof(new_event_content));
+				} else {
+					new_event_content.cell = FindReceiver();
+					ScheduleNewEvent(curr_lp, handoff_time, HANDOFF_LEAVE, &new_event_content, sizeof(new_event_content));
+				}
+			}
+
+
+			if (variable_ta)
+				state->ta = recompute_ta(ref_ta, event_ts);
+
+			// Determine the time at which a new call will be issued
+			switch (DISTRIBUTION) {
+
+				case UNIFORM:
+					timestamp= event_ts + (simtime_t)(state->ta * Random());
+					break;
+
+				case EXPONENTIAL:
+					timestamp= event_ts + (simtime_t)(Expent(state->ta));
+					break;
+
+				default:
+					timestamp= event_ts + (simtime_t) (5 * Random());
+
+			}
+
+			ScheduleNewEvent(curr_lp, timestamp, START_CALL, NULL, 0);
+>>>>>>> origin/asym
 
 			break;
 
-		case END_CALL:
 
+<<<<<<< HEAD
 			state->approximated_data->channel_counter++;
 			state->complete_calls++ ;
 			deallocation(state, event_content->channel);
+=======
+		case END_CALL:
+			state->channel_counter++;
+			state->complete_calls++;
+			deallocation(curr_lp, state, event_content->channel, event_ts);
+>>>>>>> origin/asym
 
 			break;
 
-		case HANDOFF_LEAVE:
 
+<<<<<<< HEAD
 			state->approximated_data->channel_counter++;
 			state->approximated_data->leaving_handoffs++;
 			deallocation(state, event_content->channel);
@@ -228,13 +338,25 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 			new_event_content.call_term_time =  event_content->call_term_time;
 			new_event_content.from = me;
 			ScheduleNewEvent(event_content->cell, now, HANDOFF_RECV, &new_event_content, sizeof(new_event_content));
+=======
+		case HANDOFF_LEAVE:
+			state->channel_counter++;
+			state->leaving_handoffs++;
+			deallocation(curr_lp, state, event_content->channel, event_ts);
+
+			new_event_content.call_term_time =  event_content->call_term_time;
+			new_event_content.from = curr_lp;
+			ScheduleNewEvent(event_content->cell, event_ts, HANDOFF_RECV, &new_event_content, sizeof(new_event_content));
+>>>>>>> origin/asym
 			break;
+
 
 		case HANDOFF_RECV:
 <<<<<<< HEAD
 			state->arriving_handoffs++;
 			state->arriving_calls++;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 			ran = Random();
@@ -250,6 +372,10 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 
 			if (state->approximated_data->channel_counter == 0)
 				state->approximated_data->blocked_on_handoff++;
+=======
+			if (state->channel_counter == 0)
+				state->blocked_on_handoff++;
+>>>>>>> origin/asym
 			else {
 				state->approximated_data->channel_counter--;
 
@@ -259,37 +385,60 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, event_content_
 
 				switch (CELL_CHANGE_DISTRIBUTION) {
 					case UNIFORM:
-						handoff_time  = now + (simtime_t)((ta_change) * Random());
+						handoff_time  = event_ts + (simtime_t)((ta_change) * Random());
 
 						break;
 					case EXPONENTIAL:
-						handoff_time = now + (simtime_t)(Expent(ta_change));
+						handoff_time = event_ts + (simtime_t)(Expent(ta_change));
 
 						break;
 					default:
+<<<<<<< HEAD
 						handoff_time = now + (simtime_t) (5 * Random());
+=======
+						handoff_time = event_ts +
+                                       (simtime_t) (5 * Random());
+>>>>>>> origin/asym
 				}
 
 				if(new_event_content.call_term_time < handoff_time ) {
-					ScheduleNewEvent(me, new_event_content.call_term_time, END_CALL, &new_event_content, sizeof(new_event_content));
+					ScheduleNewEvent(curr_lp, new_event_content.call_term_time, END_CALL, &new_event_content, sizeof(new_event_content));
 				} else {
 					new_event_content.cell = FindReceiver();
-					ScheduleNewEvent(me, handoff_time, HANDOFF_LEAVE, &new_event_content, sizeof(new_event_content));
+					ScheduleNewEvent(curr_lp, handoff_time, HANDOFF_LEAVE, &new_event_content, sizeof(new_event_content));
 				}
 			}
 
 
 			break;
 
+<<<<<<< HEAD
 		case FADING_RECHECK:
 
 			fading_recheck(state);
 			timestamp = now + (simtime_t) (FADING_RECHECK_FREQUENCY );
 			ScheduleNewEvent(me, timestamp, FADING_RECHECK, NULL, 0);
+=======
+
+		case FADING_RECHECK:
+
+/*
+			if(state->check_fading)
+				state->check_fading = false;
+			else
+				state->check_fading = true;
+*/
+
+			fading_recheck(state);
+
+			timestamp = event_ts + (simtime_t) (FADING_RECHECK_FREQUENCY );
+			ScheduleNewEvent(curr_lp, timestamp, FADING_RECHECK, NULL, 0);
+
+>>>>>>> origin/asym
 			break;
 
 		default:
-			fprintf(stdout, "PCS: Unknown event type! (me = %d - event type = %d)\n", me, event_type);
+            fprintf(stdout, "\tMODEL (PCS): UNKNOWN event type! (current LP = %u | MSG type = %d)\n", curr_lp, event_type);
 			abort();
 
 	}
@@ -303,6 +452,13 @@ void RestoreApproximated(void *ptr) {
 
 bool OnGVT(unsigned int me, lp_state_type *snapshot) {
 	(void)me;
+<<<<<<< HEAD
+=======
+    if((double)snapshot->complete_calls/complete_calls*100.0<100.0)
+        fprintf(stdout,"LP%d: %.1f%%\n", me, (double)snapshot->complete_calls/complete_calls*100.0);
+   /* else
+        fprintf(stdout,"LP%d: COMPLETE\n", me);*/
+>>>>>>> origin/asym
 
 	if (snapshot->complete_calls < complete_calls)
 		return false;

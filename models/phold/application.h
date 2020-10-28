@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+<<<<<<< HEAD
 #define MAX_BUFFERS 1000
 #define MAX_BUFFER_SIZE 1024
 #define TAU 1.5
@@ -14,9 +15,31 @@ enum {
 	LOOP = INIT + 1,
 	RECEIVE
 };
+=======
 
-#define COMPLETE_EVENTS 10000	// for the LOOP traditional case
+// Distribution values
+#define NO_DISTR	0  // Not actually used, but 0 might mean 'false'
+#define UNIFORM		1
+#define EXPO	 	2
+
+// Default values
+#define WRITE_DISTRIBUTION	0.1
+#define READ_DISTRIBUTION	0.1
+#define MAX_SIZE		1024
+#define MIN_SIZE		32
+#define OBJECT_TOTAL_SIZE	16000
+#define NUM_BUFFERS		3
+#define TAU		        10.0
+#define COMPLETE_ALLOC		5000
+// Event types
+#define ALLOC		11
+#define DEALLOC 	2
+#define LOOP		3
+>>>>>>> origin/asym
+
+#define COMPLETE_EVENTS 2000	// for the LOOP traditional case
 #define LOOP_COUNT	1000
+//#define FANOUT 1
 
 // This structure defines buffers lists
 typedef struct _buffer {

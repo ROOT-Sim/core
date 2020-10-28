@@ -67,26 +67,25 @@ msg_channel *init_channel(void)
 {
 	msg_channel *mc = rsalloc(sizeof(msg_channel));
 
-	mc->buffers[M_READ] = rsalloc(sizeof(struct _msg_buff));
+    atomic_set(&mc->size,0);
+
+    mc->buffers[M_READ] = rsalloc(sizeof(struct _msg_buff));
 	mc->buffers[M_WRITE] = rsalloc(sizeof(struct _msg_buff));
 
 	if (mc->buffers[M_READ] == NULL || mc->buffers[M_WRITE] == NULL)
 		rootsim_error(true, "Unable to allocate message channel\n");
 
-	mc->buffers[M_READ]->buffer =
-	    rsalloc(INITIAL_CHANNEL_SIZE * sizeof(msg_t *));
+	mc->buffers[M_READ]->buffer = rsalloc(INITIAL_CHANNEL_SIZE * sizeof(msg_t *));
 	mc->buffers[M_READ]->size = INITIAL_CHANNEL_SIZE;
 	mc->buffers[M_READ]->written = 0;
 	mc->buffers[M_READ]->read = 0;
 
-	mc->buffers[M_WRITE]->buffer =
-	    rsalloc(INITIAL_CHANNEL_SIZE * sizeof(msg_t *));
+	mc->buffers[M_WRITE]->buffer = rsalloc(INITIAL_CHANNEL_SIZE * sizeof(msg_t *));
 	mc->buffers[M_WRITE]->size = INITIAL_CHANNEL_SIZE;
 	mc->buffers[M_WRITE]->written = 0;
 	mc->buffers[M_WRITE]->read = 0;
 
-	if (mc->buffers[M_READ]->buffer == NULL
-	    || mc->buffers[M_WRITE]->buffer == NULL)
+	if (mc->buffers[M_READ]->buffer == NULL || mc->buffers[M_WRITE]->buffer == NULL)
 		rootsim_error(true, "Unable to allocate message channel\n");
 
 	spinlock_init(&mc->write_lock);
@@ -94,34 +93,41 @@ msg_channel *init_channel(void)
 	return mc;
 }
 
+
 void insert_msg(msg_channel * mc, msg_t * msg)
 {
-
 	spin_lock(&mc->write_lock);
 
 	// Reallocate the live BH buffer. Don't touch the other buffer,
 	// as in this way the critical section is much shorter
-	if (unlikely
-	    (mc->buffers[M_WRITE]->written == mc->buffers[M_WRITE]->size)) {
+    if (unlikely(mc->buffers[M_WRITE]->written == mc->buffers[M_WRITE]->size)) {
 
 		mc->buffers[M_WRITE]->size *= 2;
-		mc->buffers[M_WRITE]->buffer =
-		    rsrealloc((void *)mc->buffers[M_WRITE]->buffer,
-			      mc->buffers[M_WRITE]->size * sizeof(msg_t *));
+		mc->buffers[M_WRITE]->buffer = rsrealloc((void *)mc->buffers[M_WRITE]->buffer,
+		        mc->buffers[M_WRITE]->size * sizeof(msg_t *));
 
 		if (unlikely(mc->buffers[M_WRITE]->buffer == NULL))
 			rootsim_error(true, "Unable to reallocate message channel\n");
-
 	}
-#ifndef NDEBUG
+
+    #ifndef NDEBUG
 	validate_msg(msg);
-#endif
+    #endif
 
 	int index = mc->buffers[M_WRITE]->written++;
 	mc->buffers[M_WRITE]->buffer[index] = msg;
 
+    /*if(msg->type==65545) {
+        printf("WRITE: Mark: %llu |Sen: %d |Rec: %d |ts: %f |type: %d | kind: %d \n", msg->mark, msg->sender.to_int,
+               msg->receiver.to_int, msg->timestamp, msg->type, msg->message_kind);
+        printf("WRITE: now mc->buffers[M_WRITE]->buffer[%d] points to  %p \n",index,mc->buffers[M_WRITE]->buffer[index]);
+    }*/
+
 	spin_unlock(&mc->write_lock);
+
+    atomic_inc(&mc->size);
 }
+
 
 void *get_msg(msg_channel * mc)
 {
@@ -141,11 +147,29 @@ void *get_msg(msg_channel * mc)
 	msg = mc->buffers[M_READ]->buffer[index];
 	atomic_dec(&mc->size);
 
-#ifndef NDEBUG
+    #ifndef NDEBUG
 	mc->buffers[M_READ]->buffer[index] = (void *)0xDEADB00B;
 	validate_msg(msg);
-#endif
+    #endif
 
  leave:
 	return msg;
+}
+
+
+// Retrieves the current amount of events in the respective input port
+int get_port_current_size(msg_channel *mc){
+    return atomic_read(&mc->size);
+}
+
+
+
+bool are_input_channels_empty(int id){
+    return(get_port_current_size(Threads[id]->input_port[PORT_PRIO_LO]) == 0 &&
+           get_port_current_size(Threads[id]->input_port[PORT_PRIO_HI]) == 0);
+}
+
+
+bool is_out_channel_empty(unsigned int thread_id){
+    return( get_port_current_size(Threads[thread_id]->output_port) == 0);
 }

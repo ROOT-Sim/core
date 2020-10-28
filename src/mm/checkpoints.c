@@ -101,7 +101,7 @@ void *log_full(struct lp_struct *lp)
 	// Copy malloc_state in the ckpt
 	memcpy(ptr, m_state, sizeof(malloc_state));
 	ptr = (void *)((char *)ptr + sizeof(malloc_state));
-	((malloc_state *) ckpt)->timestamp = lvt(lp);
+	((malloc_state *) ckpt)->timestamp = lp->last_processed->timestamp;
 
 	for (i = 0; i < m_state->num_areas; i++) {
 
@@ -175,7 +175,7 @@ void *log_full(struct lp_struct *lp)
 
 	// Sanity check
 	if (unlikely((char *)ckpt + size != ptr))
-		rootsim_error(true, "Actual (full) ckpt size is wrong by %d bytes!\nlid = %d ckpt = %p size = %#x (%d), ptr = %p, ckpt + size = %p\n",
+		rootsim_error(true, "Actual (full) checkpoint size is wrong by %d bytes!\nlid = %d ckpt = %p size = %#x (%d), ptr = %p, ckpt + size = %p\n",
 			      (char *)ckpt + size - (char *)ptr, lp->lid.to_int,
 			      ckpt, size, size, ptr, (char *)ckpt + size);
 

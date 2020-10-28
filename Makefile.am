@@ -83,6 +83,7 @@ librootsim_a_SOURCES =	src/main.c \
 			src/scheduler/scheduler.c \
 			src/serial/serial.c \
 			src/statistics/statistics.c \
+			src/score/score.c \
 			src/queues/queues.h \
 			src/queues/xxhash.h \
 			src/lib/numerical.h \
@@ -131,7 +132,8 @@ librootsim_a_SOURCES =	src/main.c \
 			src/scheduler/binding.h \
 			src/scheduler/process.h \
 			src/scheduler/scheduler.h \
-			src/scheduler/stf.h
+			src/scheduler/stf.h \
+			src/score/score.h
 
 
 libwrapperl_a_SOURCES = src/lib-wrapper/wrapper.c

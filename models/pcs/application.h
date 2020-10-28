@@ -87,8 +87,14 @@ struct approximated_data_t {
 typedef struct _lp_state_type{
 	unsigned int complete_calls; // Number of calls which were completed within this cell
 	double ta; // Current call interarrival frequency for this cell
+<<<<<<< HEAD
 	struct approximated_data_t *approximated_data;
 	unsigned int channel_state[];
+=======
+
+	unsigned int *channel_state;
+	struct _channel *channels;
+>>>>>>> origin/asym
 } lp_state_type;
 
 extern unsigned int channels_per_cell;
