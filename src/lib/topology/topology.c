@@ -1,3 +1,28 @@
+/**
+* @file lib/topology/topology.c
+*
+* @brief Topology library
+*
+* This library is allows models to setup and query different topologies.
+*
+* @copyright
+* Copyright (C) 2008-2020 HPDCS Group
+* https://hpdcs.github.io
+*
+* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
+*
+* ROOT-Sim is free software; you can redistribute it and/or modify it under the
+* terms of the GNU General Public License as published by the Free Software
+* Foundation; only version 3 of the License applies.
+*
+* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along with
+* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
+* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
 #include <lib/topology/topology.h>
 
 #include <lib/lib_internal.h>
@@ -55,7 +80,8 @@ __attribute__ ((pure)) uint64_t RegionsCount(void)
 	return topology_global.regions_cnt;
 }
 
-__attribute__ ((pure)) uint64_t DirectionsCount(void)
+__attribute__ ((pure))
+uint64_t DirectionsCount(void)
 {
 	switch (topology_global.geometry) {
 	case TOPOLOGY_MESH:
@@ -75,7 +101,8 @@ __attribute__ ((pure)) uint64_t DirectionsCount(void)
 	return UINT_MAX;
 }
 
-__attribute__ ((pure)) uint64_t GetReceiver(uint64_t from, enum _direction_t direction)
+__attribute__ ((pure))
+uint64_t GetReceiver(uint64_t from, enum _direction_t direction)
 {
 	const lp_id_t sender = from;
 	const uint32_t edge = topology_global.edge;

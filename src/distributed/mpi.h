@@ -1,3 +1,33 @@
+/**
+* @file distributed/mpi.h
+*
+* @brief MPI Support Module
+*
+* This module implements all basic MPI facilities to let the distributed
+* execution of a simulation model take place consistently.
+*
+* Several facilities are thread-safe, others are not. Check carefully which
+* of these can be used by worker threads without coordination when relying
+* on this module.
+*
+* @copyright
+* Copyright (C) 2008-2020 HPDCS Group
+* https://hpdcs.github.io
+*
+* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
+*
+* ROOT-Sim is free software; you can redistribute it and/or modify it under the
+* terms of the GNU General Public License as published by the Free Software
+* Foundation; only version 3 of the License applies.
+*
+* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along with
+* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
+* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
 #pragma once
 
 #ifdef NEUROME_MPI

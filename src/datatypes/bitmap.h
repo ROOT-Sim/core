@@ -1,3 +1,32 @@
+/**
+* @file datatypes/bitmap.h
+*
+* @brief Bitmap data type
+*
+* This a simple bitmap implemented with some simple macros.
+* Keep in mind that some trust is given to the developer since
+* the implementation, for performances and simplicity
+* reasons, doesn't remember its effective size; consequently
+* it doesn't check boundaries on the array that stores the bits.
+*
+* @copyright
+* Copyright (C) 2008-2020 HPDCS Group
+* https://hpdcs.github.io
+*
+* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
+*
+* ROOT-Sim is free software; you can redistribute it and/or modify it under the
+* terms of the GNU General Public License as published by the Free Software
+* Foundation; only version 3 of the License applies.
+*
+* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along with
+* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
+* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
 #pragma once
 
 #include <core/intrinsics.h>
@@ -31,7 +60,7 @@ typedef unsigned char block_bitmap;
 #define B_CHECK_BIT(A, I) 						\
 	B_CHECK_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
 
-/*!
+/**
  * @brief Computes the required size of a bitmap with @a requested_bits entries.
  * @param requested_bits the requested number of bits.
  * @returns the size in bytes of the requested bitmap.
@@ -47,7 +76,7 @@ typedef unsigned char block_bitmap;
 		(B_MOD_OF_BPB(requested_bits) != 0)			\
 	) * B_BLOCK_SIZE)
 
-/*!
+/**
  * @brief Initializes the bitmap at @a memory_pointer containing @a requested_bits entries.
  * @param memory_pointer the pointer to the bitmap to initialize.
  * @param requested_bits the number of bits contained in the bitmap.
@@ -63,7 +92,7 @@ typedef unsigned char block_bitmap;
 #define bitmap_initialize(memory_pointer, requested_bits)		\
 	memset(memory_pointer, 0, bitmap_required_size(requested_bits))
 
-/*!
+/**
  * @brief This sets the bit with index @a bit_index of the bitmap @a bitmap
  * @param bitmap a pointer to the bitmap to write.
  * @param bit_index the index of the bit to set.
@@ -73,7 +102,7 @@ typedef unsigned char block_bitmap;
 #define bitmap_set(bitmap, bit_index)					\
 	(B_SET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
 
-/*!
+/**
  * @brief This resets the bit with index @a bit_index of the bitmap @a bitmap
  * @param bitmap a pointer to the bitmap to write.
  * @param bit_index the index of the bit to reset.
@@ -83,7 +112,7 @@ typedef unsigned char block_bitmap;
 #define bitmap_reset(bitmap, bit_index)					\
 	(B_RESET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
 
-/*!
+/**
  * @brief This checks if the bit with index @a bit_index of the bitmap @a bitmap is set or unset.
  * @param bitmap a pointer to the bitmap.
  * @param bit_index the index of the bit to read
@@ -94,7 +123,7 @@ typedef unsigned char block_bitmap;
 #define bitmap_check(bitmap, bit_index)					\
 	(B_CHECK_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))) != 0)
 
-/*!
+/**
  * @brief This counts the occurrences of set bits in the bitmap @a bitmap.
  * @param bitmap a pointer to the bitmap.
  * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
@@ -114,7 +143,7 @@ __extension__({ 							\
 	__ret; 								\
 })
 
-/*!
+/**
  * @brief This counts the occurrences of cleared bits in the bitmap @a bitmap.
  * @param bitmap a pointer to the bitmap.
  * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
@@ -128,7 +157,7 @@ __extension__({								\
 	bitmap_size * CHAR_BIT - bitmap_count_set(bitmap, bitmap_size); \
 })
 
-/*!
+/**
  * @brief This returns the index of the first cleared bit in @a bitmap.
  * @param bitmap a pointer to the bitmap.
  * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
@@ -152,7 +181,7 @@ __extension__({								\
 	__ret; 								\
 })
 
-/*!
+/**
  * @brief This executes a user supplied function for each set bit in @a bitmap.
  * @param bitmap a pointer to the bitmap.
  * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
@@ -176,7 +205,7 @@ __extension__({ 							\
 	}								\
 })
 
-/*!
+/**
  * @brief This merges the bitmap @a source into the @a dest bitmap by OR-ing all the bits.
  * @param dest a pointer to the destination bitmap.
  * @param source a pointer to the source bitmap.
