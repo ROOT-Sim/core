@@ -75,7 +75,7 @@ void termination_on_gvt(simtime_t current_gvt)
 		if(!t){
 			atomic_fetch_sub_explicit(&nodes_to_end, 1U,
 				memory_order_relaxed);
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 			mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
 #endif
 		}

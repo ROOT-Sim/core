@@ -25,7 +25,7 @@
  */
 #pragma once
 
-#include <NeuRome.h>
+#include <ROOT-Sim.h>
 #include <log/log.h>
 #include <log/stats.h>
 #include <mm/mm.h>

@@ -34,7 +34,7 @@ extern simtime_t gvt_msg_processed(void);
 extern void gvt_on_start_msg	(void);
 extern void gvt_on_done_msg	(void);
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 
 extern __thread bool gvt_phase_green;
 extern __thread unsigned remote_msg_sent[1 << MAX_NODES_BITS];

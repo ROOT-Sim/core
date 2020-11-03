@@ -30,7 +30,10 @@ static atomic_uint barr_in;
 static atomic_uint barr_out;
 static atomic_uint barr_cr;
 
-#ifdef NEUROME_TEST
+
+// TODO: It's not good practice to write like this. Replace with
+// #ifndef and manually set BARRIER_IN_THRESHOLD in the tests.
+#ifdef ROOTSIM_TEST
 #define BARRIER_IN_THRESHOLD (1024)
 #else
 #define BARRIER_IN_THRESHOLD (UINT_MAX/2)

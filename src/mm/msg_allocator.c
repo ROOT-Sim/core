@@ -33,14 +33,14 @@
 #include <gvt/gvt.h>
 
 static __thread dyn_array(lp_msg *) free_list = {0};
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 static __thread dyn_array(lp_msg *) free_gvt_list = {0};
 #endif
 
 void msg_allocator_init(void)
 {
 	array_init(free_list);
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 	array_init(free_gvt_list);
 #endif
 }
@@ -53,7 +53,7 @@ void msg_allocator_fini(void)
 	}
 	array_fini(free_list);
 
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 	while(!array_is_empty(free_gvt_list)){
 		mm_free(array_pop(free_gvt_list));
 	}
@@ -88,7 +88,7 @@ void msg_allocator_free(lp_msg *msg)
 		mm_free(msg);
 }
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 void msg_allocator_free_at_gvt(lp_msg *msg)
 {
 	array_push(free_gvt_list, msg);

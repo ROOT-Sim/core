@@ -30,7 +30,7 @@
 
 lp_id_t n_lps;
 
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 
 nid_t n_nodes = 1;
 rid_t n_threads;

@@ -35,7 +35,7 @@
 #define B_LOG_FREQUENCY 50
 
 struct _mm_checkpoint { // todo only log longest[] if changed, or incrementally
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	bool is_incremental;
 	block_bitmap dirty [
 		bitmap_required_size(
@@ -61,7 +61,7 @@ struct mm_state { // todo incremental checkpoints
 	uint_fast32_t used_mem;		/// the count of allocated bytes
 	uint_least8_t longest[(1 << (B_TOTAL_EXP - B_BLOCK_EXP + 1))]; // last char is actually unused
 	unsigned char base_mem[1 << B_TOTAL_EXP];
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	uint_fast32_t dirty_mem; 	/// the count of dirty bytes
 	block_bitmap dirty[
 		bitmap_required_size(

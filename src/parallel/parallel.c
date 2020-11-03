@@ -52,7 +52,7 @@ void *parallel_thread_run(void *unused)
 	if(!rid) log_log(LOG_INFO, "Starting simulation");
 
 	while(likely(termination_cant_end())){
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 		mpi_remote_msg_handle();
 #endif
 		unsigned i = 8;
@@ -87,14 +87,14 @@ void parallel_global_init(void)
 	termination_global_init();
 	gvt_global_init();
 	lib_global_init();
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	remote_msg_map_global_init();
 #endif
 }
 
 void parallel_global_fini(void)
 {
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	remote_msg_map_global_fini();
 #endif
 	lib_global_fini();
@@ -104,7 +104,7 @@ void parallel_global_fini(void)
 
 int main(int argc, char **argv)
 {
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	mpi_global_init(&argc, &argv);
 #endif
 	init_args_parse(argc, argv);
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 
 	parallel_global_fini();
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	mpi_global_fini();
 #endif
 }

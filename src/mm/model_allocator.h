@@ -27,7 +27,7 @@
 
 #include <datatypes/array.h>
 
-#ifdef NEUROME_BUDDY_ALLOCATOR
+#ifdef ROOTSIM_BUDDY_ALLOCATOR
 #include <mm/buddy/buddy.h>
 #else
 #include <mm/minm/minm.h>

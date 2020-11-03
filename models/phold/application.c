@@ -1,4 +1,4 @@
-#include "NeuRome.h"
+#include <ROOT-Sim.h>
 
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, unsigned *state)

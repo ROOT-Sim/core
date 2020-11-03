@@ -27,7 +27,7 @@
 
 #include <lib/lib.h>
 
-#ifdef NEUROME_SERIAL
+#ifdef ROOTSIM_SERIAL
 #include <serial/serial.h>
 #define l_s_p			(&cur_lp->ls)
 #define l_s_m_p 		(&cur_lp->lsm)
@@ -39,7 +39,7 @@
 #define current_lid		(current_lp - lps)
 #endif
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 #include <mm/model_allocator.h>
 #define mark_written(ptr, size)	__write_mem(ptr, size)
 #else

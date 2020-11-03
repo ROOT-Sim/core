@@ -36,7 +36,7 @@ enum thread_phase_t {
 	tphase_rdy = 0,
 	tphase_A,
 	tphase_B,
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	tphase_B_reduce,
 	tphase_C,
 	tphase_C_reduce,
@@ -53,7 +53,7 @@ static timer last_gvt;
 static simtime_t reducing_p[1 << MAX_THREADS_BITS];
 static __thread simtime_t current_gvt;
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 
 static atomic_uint sent_tot[1 << MAX_NODES_BITS];
 static unsigned remote_msg_to_receive;
@@ -68,7 +68,7 @@ atomic_int remote_msg_received[2];
 void gvt_global_init(void)
 {
 	last_gvt = timer_new();
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	missing_nodes = 0;
 #endif
 }
@@ -83,7 +83,7 @@ static inline simtime_t gvt_node_reduce(void)
 	return candidate;
 }
 
-#ifndef NEUROME_MPI
+#ifndef ROOTSIM_MPI
 
 simtime_t gvt_msg_processed(void)
 {

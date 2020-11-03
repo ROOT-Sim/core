@@ -5,16 +5,16 @@ else
   log_level_def = '-DLOG_LEVEL=LOG_DEBUG'
 endif
 
-serial_c_args = [log_level_def, '-DNEUROME_SERIAL']
+serial_c_args = [log_level_def, '-DROOTSIM_SERIAL']
 parallel_c_args = [log_level_def]
 
 if get_option('b_coverage')
-  parallel_c_args += '-DNEUROME_COVERAGE=1'
+  parallel_c_args += '-DROOTSIM_COVERAGE=1'
 endif
 
 compiler_c_args = [
-  '-DNEUROME_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"', 
-  '-DNEUROME_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"'
+  '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"', 
+  '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"'
 ]
 
 llvm_plugin_cpp_args = [log_level_def]
@@ -26,17 +26,17 @@ src_inc_dir = include_directories('.')
 llvm_dep = dependency('llvm', version : '>= 9.0', 
   required : get_option('incremental_state_saving'))
 if llvm_dep.found()
-  parallel_c_args += '-DNEUROME_INCREMENTAL=1'
-  compiler_c_args += '-DNEUROME_INCREMENTAL=1'
-  neurome_header = files('NeuRome.h')
+  parallel_c_args += '-DROOTSIM_INCREMENTAL=1'
+  compiler_c_args += '-DROOTSIM_INCREMENTAL=1'
+  rootsim_header = files('ROOT-Sim.h')
   subdir('instr')
 endif
 
 # MPI library dependency
 mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 if mpi_dep.found()
-  parallel_c_args += '-DNEUROME_MPI=1'
-  compiler_c_args += '-DNEUROME_MPI=1'
+  parallel_c_args += '-DROOTSIM_MPI=1'
+  compiler_c_args += '-DROOTSIM_MPI=1'
 endif
 
 # Math library dependency
@@ -54,7 +54,7 @@ lib_srcs = [
   'lib' / 'lib.c'
 ]
 
-# NeuRome serial library sources
+# ROOT-Sim serial library sources
 serial_srcs = [
   'core' / 'core.c',
   'core' / 'init.c',
@@ -67,10 +67,10 @@ serial_srcs = [
 
 serial_srcs += lib_srcs
 
-neurome_serial_lib = static_library('neurome-serial', serial_srcs, 
+rootsim_serial_lib = static_library('rootsim-serial', serial_srcs, 
   c_args : serial_c_args, dependencies: m_dep, install : true)
 
-# NeuRome parallel library sources
+# ROOT-Sim parallel library sources
 parallel_srcs = [
   'arch' / 'arch.c',
   'core' / 'core.c',
@@ -93,7 +93,7 @@ parallel_srcs = [
 
 # Choose from the available memory allocators
 if get_option('memory_allocator') == 'buddy'
-  parallel_c_args += '-DNEUROME_BUDDY_ALLOCATOR=1'
+  parallel_c_args += '-DROOTSIM_BUDDY_ALLOCATOR=1'
   parallel_srcs += 'mm' / 'buddy' / 'buddy.c'
 else
   parallel_srcs += 'mm' / 'minm' / 'minm.c'
@@ -101,11 +101,11 @@ endif
 
 parallel_srcs += lib_srcs
 
-neurome_parallel_lib = static_library('neurome-parallel', parallel_srcs, 
+rootsim_parallel_lib = static_library('rootsim-parallel', parallel_srcs, 
   c_args : parallel_c_args, dependencies : [mpi_dep, m_dep], install : true)
 
-# NeuRome compiler
-executable('neurome-cc', sources : 'compiler.c', c_args : compiler_c_args, install : true)
+# ROOT-Sim compiler
+executable('rootsim-cc', sources : 'compiler.c', c_args : compiler_c_args, install : true)
 
 # Install headers
-install_headers('NeuRome.h', 'ROOT-Sim.h')
+install_headers('ROOT-Sim.h')

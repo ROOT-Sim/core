@@ -1,6 +1,6 @@
 #pragma once
 
-#include <NeuRome.h>
+#include <ROOT-Sim.h>
 #include <test_rng.h>
 #include <memory.h>
 

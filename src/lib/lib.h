@@ -25,7 +25,7 @@
 */
 #pragma once
 
-#include <NeuRome.h>
+#include <ROOT-Sim.h>
 
 #include <argp.h>
 
@@ -54,7 +54,7 @@ extern void lib_global_fini(void);
 extern void lib_lp_init(void);
 extern void lib_lp_fini(void);
 
-#if NEUROME_FULL_ALLOCATOR
+#if ROOTSIM_FULL_ALLOCATOR
 #define current_lp_state
-#else
+#else // TODO: else what?
 #endif

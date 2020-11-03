@@ -26,7 +26,7 @@
 #include <core/core.h>
 #include <datatypes/array.h>
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 #error "The minimal model allocator doesn't support incremental checkpointing"
 #endif
 

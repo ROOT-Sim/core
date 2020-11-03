@@ -1,12 +1,12 @@
 src_dir = meson.source_root() / 'src'
 models_dir = meson.source_root() / 'models'
 # Test dependencies
-serial_dep = declare_dependency(link_whole: neurome_serial_lib)
-parallel_dep = declare_dependency(link_whole: neurome_parallel_lib, 
+serial_dep = declare_dependency(link_whole: rootsim_serial_lib)
+parallel_dep = declare_dependency(link_whole: rootsim_parallel_lib, 
   link_args: '-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc')
 
-neurome_test_dep = declare_dependency(link_whole: 
-  static_library('neurome-test', 'test.c', dependencies : [m_dep, threads_dep]))
+rootsim_test_dep = declare_dependency(link_whole: 
+  static_library('rootsim-test', 'test.c', dependencies : [m_dep, threads_dep]))
 
 fail_tests = [
   'init',
@@ -23,8 +23,8 @@ foreach test_name : fail_tests
   e = executable(
     'test_f' + i.to_string() + '_' + test_name, 
     sources : 'test' / 'fail_' + test_name + '.c', 
-    dependencies : neurome_test_dep, 
-    c_args : ['-DNEUROME_TEST'],
+    dependencies : rootsim_test_dep, 
+    c_args : ['-DROOTSIM_TEST'],
     link_args : '-Wl,--wrap=main', 
   )
   test('test_f' + i.to_string() + '_' + test_name, e, should_fail: true)
@@ -50,8 +50,8 @@ foreach test_name, test_path : unit_tests
   e = executable(
     'test_u' + i.to_string() + '_' + test_name, 
     sources : [test_path + '_test.c', src_dir / test_path + '.c'], 
-    dependencies : neurome_test_dep, 
-    c_args : ['-DNEUROME_TEST'],
+    dependencies : rootsim_test_dep, 
+    c_args : ['-DROOTSIM_TEST'],
     link_args : '-Wl,--wrap=main', 
     include_directories : src_inc_dir
   )
@@ -88,8 +88,8 @@ foreach test_name, test_spec : integration_tests
   e = executable(
     'test_i' + i.to_string() + '_' + test_name, 
     sources : integration_srcs + [test_spec.get('src')], 
-    dependencies : [test_spec.get('dep'), neurome_test_dep], 
-    c_args : ['-DNEUROME_TEST'],
+    dependencies : [test_spec.get('dep'), rootsim_test_dep], 
+    c_args : ['-DROOTSIM_TEST'],
     link_args : '-Wl,--wrap=main', 
     include_directories : src_inc_dir
   )
@@ -118,11 +118,11 @@ foreach model_name, test_spec : models_tests
   e = executable(
     'test_m' + i.to_string() + '_' + model_name, 
     sources : ['models' / 'model_test.c'] + model_srcs,
-    dependencies : [parallel_dep, neurome_test_dep], 
+    dependencies : [parallel_dep, rootsim_test_dep], 
     c_args : [
-      '-DNEUROME_TEST', 
-      '-DNEUROME_TEST_LPS_COUNT="' + test_spec.get('lps').to_string() + '"',
-      '-DNEUROME_TEST_MODEL_NAME="' + model_name + '"'
+      '-DROOTSIM_TEST', 
+      '-DROOTSIM_TEST_LPS_COUNT="' + test_spec.get('lps').to_string() + '"',
+      '-DROOTSIM_TEST_MODEL_NAME="' + model_name + '"'
     ],
     link_args : '-Wl,--wrap=main', 
     include_directories : src_inc_dir

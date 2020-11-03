@@ -27,7 +27,7 @@
 
 #include <lib/lib_internal.h>
 
-static char lib_doc[] = "NeuRome model development libraries";
+static char lib_doc[] = "ROOT-Sim model development libraries";
 // this isn't needed (we haven't got non option arguments to document)
 static char lib_args_doc[] = "";
 

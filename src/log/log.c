@@ -23,7 +23,7 @@
 * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#define NEUROME_LOG_INTERNAL
+#define ROOTSIM_LOG_INTERNAL // TODO: what for?
 #include <log/log.h>
 
 #include <stdarg.h>
@@ -87,14 +87,14 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 void log_logo_print()
 {
 	if(log_colored){
-		fprintf(stderr, "\x1b[94m    \x1b[90m         \x1b[94m _ \x1b[90m               \n");
-		fprintf(stderr, "\x1b[94m|\\ |\x1b[90m  _      \x1b[94m|_)\x1b[90m  _  ._ _   _  \n");
-		fprintf(stderr, "\x1b[94m| \\|\x1b[90m (/_ |_| \x1b[94m| \\\x1b[90m (_) | | | (/_ \n");
+		fprintf(stderr, "\x1b[94m   __ \x1b[90m __   _______   \x1b[94m  _ \x1b[90m       \n");
+		fprintf(stderr, "\x1b[94m  /__)\x1b[90m/  ) /  ) /  __ \x1b[94m ( `\x1b[90m . ___ \n");
+		fprintf(stderr, "\x1b[94m / \\ \x1b[90m(__/ (__/ (      \x1b[94m._)\x1b[90m / / / )\n");
 		fprintf(stderr, "\x1b[0m\n");
 	} else {
-		fprintf(stderr, "              _                 \n");
-		fprintf(stderr, "|\\ |  _      |_)  _  ._ _   _  \n");
-		fprintf(stderr, "| \\| (/_ |_| | \\ (_) | | | (/_ \n");
+		fprintf(stderr, "  __   __   _______    _        \n");
+		fprintf(stderr, " /__) /  ) /  ) /  __ ( ` . ___ \n");
+		fprintf(stderr, "/ \\  (__/ (__/ (     ._) / / / )\n");
 		fprintf(stderr, "\n");
 	}
 }

@@ -30,7 +30,7 @@
 */
 #include <distributed/mpi.h>
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 
 #include <core/core.h>
 #include <core/sync.h>
@@ -43,7 +43,7 @@
 
 #include <mpi.h>
 
-#ifdef NEUROME_MPI_SERIALIZABLE
+#ifdef ROOTSIM_MPI_SERIALIZABLE
 
 static bool mpi_serialize;
 static spinlock_t mpi_spinlock;
@@ -84,12 +84,12 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 				"This MPI implementation does not support threaded access");
 			abort();
 		} else {
-#ifdef NEUROME_MPI_SERIALIZABLE
+#ifdef ROOTSIM_MPI_SERIALIZABLE
 			mpi_serialize = true;
 			spin_init(&mpi_spinlock);
 #else
 			log_log(LOG_FATAL,
-				"This MPI implementation only supports serialized calls: you need to build NeuRome with -Dserialized_mpi=true");
+				"This MPI implementation only supports serialized calls: you need to build ROOT-Sim with -Dserialized_mpi=true");
 			abort();
 #endif
 		}

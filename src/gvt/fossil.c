@@ -69,7 +69,7 @@ static inline void fossil_lp_collect(simtime_t current_gvt)
 
 void fossil_collect(simtime_t current_gvt)
 {
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	remote_msg_map_fossil_collect(current_gvt);
 	msg_allocator_fossil_collect(current_gvt);
 #endif

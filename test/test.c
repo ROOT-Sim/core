@@ -104,7 +104,7 @@ static int init_arguments(int *argc_p, char ***argv_p)
 	if(argv == NULL)
 		return -1;
 
-	argv[0] = "neurome_test";
+	argv[0] = "rootsim_test";
 
 	if(test_config.test_arguments){
 		memcpy(

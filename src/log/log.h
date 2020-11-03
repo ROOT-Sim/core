@@ -43,7 +43,7 @@ extern _Bool log_colored;
 
 #define log_is_lvl(level) ((level) >= LOG_LEVEL && (level) >= log_level)
 
-#ifndef NEUROME_TEST
+#ifndef ROOTSIM_TEST
 
 #define log_log(lvl, ...)						\
 	do {								\

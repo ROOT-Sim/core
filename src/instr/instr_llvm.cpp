@@ -41,26 +41,26 @@ extern "C"
 	#include <log/log.h>
 }
 
-extern const char *neurome_exposed_functions[];
+extern const char *rootsim_exposed_functions[];
 
 using namespace llvm;
 
 namespace {
-class NeuromeCC: public ModulePass {
+class RootsimCC: public ModulePass {
 public:
-	NeuromeCC() : ModulePass(ID)
+	RootsimCC() : ModulePass(ID)
 	{
 		unsigned i = 0;
-		while(neurome_exposed_functions[i]) {
+		while(rootsim_exposed_functions[i]) {
 			++i;
 		}
 
-		neurome_functions = new StringRef*[i + 1];
-		neurome_functions[i] = nullptr;
+		rootsim_functions = new StringRef*[i + 1];
+		rootsim_functions[i] = nullptr;
 
 		while(i--){
-			neurome_functions[i] =
-				new StringRef(neurome_exposed_functions[i]);
+			rootsim_functions[i] =
+				new StringRef(rootsim_exposed_functions[i]);
 		}
 	}
 
@@ -143,7 +143,7 @@ private:
 	static char ID;
 	Module *M = nullptr;
 	FunctionCallee FC = nullptr;
-	StringRef **neurome_functions;
+	StringRef **rootsim_functions;
 
 	unsigned tot_instr = 0;
 	unsigned memset_instr = 0;
@@ -157,8 +157,8 @@ private:
 	{
 		unsigned i = 0;
 		const StringRef Fname = F->getName();
-		while (neurome_functions[i]) {
-			if(Fname.equals(*neurome_functions[i]))
+		while (rootsim_functions[i]) {
+			if(Fname.equals(*rootsim_functions[i]))
 				return true;
 			++i;
 		}
@@ -268,14 +268,14 @@ private:
 };
 }
 
-char NeuromeCC::ID = 0;
+char RootsimCC::ID = 0;
 
 static void loadPass(
 	const PassManagerBuilder &Builder,
 	llvm::legacy::PassManagerBase &PM
 ) {
 	(void)Builder;
-	PM.add(new NeuromeCC());
+	PM.add(new RootsimCC());
 }
 
 static RegisterStandardPasses clangtoolLoader_Ox(

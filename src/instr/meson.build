@@ -1,13 +1,13 @@
-generator_script = find_program('neurome_gen_exposed.py')
+generator_script = find_program('rootsim_gen_exposed.py')
 
-neurome_exposed_cpp = custom_target(
-  'neurome_exposed_cpp',
-  output : 'neurome_exposed.cpp',
-  input : neurome_header,
+rootsim_exposed_cpp = custom_target(
+  'rootsim_exposed_cpp',
+  output : 'rootsim_exposed.cpp',
+  input : rootsim_header,
   command : [generator_script, '@INPUT@', '@OUTPUT@']
 )
 
-# NeuRome LLVM plugin for model instrumentation
-neurome_llvm_lib = shared_library('neurome-llvm', 
-  ['instr_llvm.cpp', neurome_exposed_cpp], cpp_args : llvm_plugin_cpp_args, 
+# ROOT-Sim LLVM plugin for model instrumentation
+rootsim_llvm_lib = shared_library('rootsim-llvm', 
+  ['instr_llvm.cpp', rootsim_exposed_cpp], cpp_args : llvm_plugin_cpp_args, 
   include_directories : src_inc_dir, dependencies : llvm_dep, install : true)

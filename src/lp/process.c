@@ -42,7 +42,7 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type,
 		payload, payload_size);
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	nid_t dest_nid = lid_to_nid(receiver);
 	if (dest_nid != nid) {
 		mpi_remote_msg_send(msg, dest_nid);
@@ -101,7 +101,7 @@ static inline void silent_execution(
 	void *state_p = current_lp->lsm_p->state_s;
 	for (array_count_t k = last_i + 1; k <= past_i; ++k) {
 		const lp_msg *this_msg = array_get_at(proc_p->past_msgs, k);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 		ProcessEvent_instr(
 #else
 		ProcessEvent(
@@ -135,7 +135,7 @@ static inline void send_anti_messages(
 		if(!msg)
 			continue;
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 		nid_t dest_nid = lid_to_nid(msg->dest);
 		if (dest_nid != nid) {
 			mpi_remote_anti_msg_send(msg, dest_nid);
@@ -227,7 +227,7 @@ void process_msg(void)
 	}
 
 	array_push(proc_p->sent_msgs, NULL);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	ProcessEvent_instr(
 #else
 	ProcessEvent(

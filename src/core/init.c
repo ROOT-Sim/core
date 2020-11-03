@@ -47,7 +47,7 @@ enum _opt_codes{
 	OPT_CLOG,
 	OPT_SIMT,
 	OPT_GVT,
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 	OPT_NP,
 	OPT_BIND,
 #endif
@@ -63,7 +63,7 @@ const char *argp_program_bug_address = "piccions@gmx.com";
 // vertical tab ('\v', '\013') character. By convention, the documentation
 // before the options is just a short string explaining what the program does.
 // Documentation printed after the options describe behavior in more detail.
-static char doc[] = "NeuRome";
+static char doc[] = "ROOT-Sim";
 
 // this isn't needed (we haven't got non option arguments to document)
 static char args_doc[] = "";
@@ -74,7 +74,7 @@ static const struct argp_option argp_options[] = {
 	{"verbose", 	OPT_LOG, "TYPE",	OPTION_ALIAS, NULL, 0},
 	{"time", 	OPT_SIMT, "VALUE",	0, "Logical time at which the simulation will be considered completed", 0},
 	{"gvt-period", 	OPT_GVT, "VALUE",	0, "Time between two GVT reductions (in milliseconds)", 0},
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 	{"wt", 		OPT_NP, "VALUE",	0, "Number of total cores being used by the simulation", 0},
 	{"no-bind", 	OPT_BIND, NULL,		0, "Disables thread to core binding", 0},
 #endif
@@ -139,7 +139,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 		global_config.gvt_period = parse_ullong_limits(1, 10000) * 1000;
 		break;
 
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 	case OPT_NP:
 		n_threads = parse_ullong_limits(1, UINT_MAX);
 		break;
@@ -151,7 +151,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 
 	case ARGP_KEY_INIT:
 		memset(&global_config, 0, sizeof(global_config));
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 		n_threads = arch_core_count();
 		global_config.core_binding = true;
 #endif
@@ -170,7 +170,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 				"Number of LPs was not provided \"--lp\"\n"
 			);
 
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 		if(n_threads > arch_core_count())
 			argp_error(
 				state,

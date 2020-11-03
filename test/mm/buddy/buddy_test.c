@@ -1,6 +1,6 @@
 #include <test.h>
 #include <test_rng.h>
-#define NEUROME_BUDDY_ALLOCATOR 1
+#define ROOTSIM_BUDDY_ALLOCATOR 1
 #include <mm/model_allocator.h>
 #include <lp/lp.h>
 

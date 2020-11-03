@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#ifdef NEUROME_SERIAL
+#ifdef ROOTSIM_SERIAL
 
 #define __mm_alloc malloc
 #define __mm_realloc realloc
@@ -51,7 +51,7 @@ extern void __real_free(void *ptr);
 
 #endif
 
-#ifdef NEUROME_TEST
+#ifdef ROOTSIM_TEST
 
 #define mm_alloc malloc
 #define mm_realloc realloc

@@ -27,7 +27,7 @@
 #pragma once
 
 enum stats_time_t {
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 	STATS_ROLLBACK,
 	STATS_MSG_ROLLBACKED,
 #endif

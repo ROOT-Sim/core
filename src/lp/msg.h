@@ -34,7 +34,7 @@
 #define msg_is_before(msg_a, msg_b) ((msg_a)->dest_t < (msg_b)->dest_t)
 #define msg_bare_size(msg) (offsetof(lp_msg, pl) + (msg)->pl_size)
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 #define msg_id_get(msg, cur_phase) 					\
 	((((uintptr_t)msg) ^ ((nid + 1) << 2)) | ((cur_phase) << 1))
 #define msg_id_phase_get(msg_id) ((msg_id) & 1U)
@@ -51,12 +51,12 @@ struct _lp_msg {
 	simtime_t dest_t;
 	uint_fast32_t m_type;
 	uint_fast32_t pl_size;
-#ifndef NEUROME_SERIAL
-#ifdef NEUROME_MPI
+#ifndef ROOTSIM_SERIAL
+#ifdef ROOTSIM_MPI
 	union {
 #endif
 		atomic_int flags;
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 		uintptr_t msg_id;
 	};
 #endif

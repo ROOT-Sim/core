@@ -30,7 +30,7 @@
 */
 #pragma once
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 
 #include <lp/msg.h>
 

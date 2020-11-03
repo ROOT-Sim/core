@@ -32,24 +32,27 @@
 #include <string.h>
 #include <sys/wait.h>
 
-#ifndef NEUROME_CC
-#define NEUROME_CC "/usr/bin/mpicc"
+// FIXME: we don't include absolute paths in code!
+#ifndef ROOTSIM_CC
+#define ROOTSIM_CC "/usr/bin/mpicc"
 #endif
 
-#ifndef NEUROME_LIB_DIR
-#define NEUROME_LIB_DIR "/usr/lib/"
+// FIXME: we don't include absolute paths in code!
+#ifndef ROOTSIM_LIB_DIR
+#define ROOTSIM_LIB_DIR "/usr/lib/"
 #endif
 
-#ifndef NEUROME_INC_DIR
-#define NEUROME_INC_DIR "/usr/include/"
+// FIXME: we don't include absolute paths in code!
+#ifndef ROOTSIM_INC_DIR
+#define ROOTSIM_INC_DIR "/usr/include/"
 #endif
 
 static const char *add_args_serial =
 	"-o "
 	"model_serial "
 	"-O3 "
-	"-I"NEUROME_INC_DIR" "
-	NEUROME_LIB_DIR"libneurome-serial.a "
+	"-I"ROOTSIM_INC_DIR" "
+	ROOTSIM_LIB_DIR"librootsim-serial.a "
 	"-lm"
 ;
 
@@ -57,20 +60,20 @@ static const char *add_args_parallel =
 	"-o "
 	"model_parallel "
 	"-O3 "
-	"-I"NEUROME_INC_DIR" "
-	NEUROME_LIB_DIR"libneurome-parallel.a "
+	"-I"ROOTSIM_INC_DIR" "
+	ROOTSIM_LIB_DIR"librootsim-parallel.a "
 	"-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc "
 	"-lpthread "
 	"-lm "
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 //	"-Xclang -load "
-//	"-Xclang "NEUROME_LIB_DIR"libneurome-llvm.so"
+//	"-Xclang "ROOTSIM_LIB_DIR"librootsim-llvm.so"
 #endif
 ;
 
 static int child_proc(int argc, char **argv, const char *add_args)
 {
-	size_t tot_size = strlen(NEUROME_CC) + argc + strlen(add_args) + 1;
+	size_t tot_size = strlen(ROOTSIM_CC) + argc + strlen(add_args) + 1;
 	unsigned i = 1;
 	while(argv[i]){
 		tot_size += strlen(argv[i]);
@@ -84,8 +87,8 @@ static int child_proc(int argc, char **argv, const char *add_args)
 	}
 
 	char *ptr = cmd_line;
-	strcpy(ptr, NEUROME_CC);
-	ptr += strlen(NEUROME_CC);
+	strcpy(ptr, ROOTSIM_CC);
+	ptr += strlen(ROOTSIM_CC);
 	*ptr = ' ';
 	++ptr;
 
@@ -102,7 +105,7 @@ static int child_proc(int argc, char **argv, const char *add_args)
 
 	if (system(cmd_line)) {
 		free(cmd_line);
-		fprintf(stderr, "Unable to run " NEUROME_CC);
+		fprintf(stderr, "Unable to run " ROOTSIM_CC);
 		return -1;
 	}
 	free(cmd_line);

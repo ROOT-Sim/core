@@ -43,7 +43,7 @@ struct stats_info {
 	uint64_t var_t;
 };
 
-#ifdef NEUROME_SERIAL
+#ifdef ROOTSIM_SERIAL
 
 static struct stats_info thread_stats[STATS_NUM];
 
@@ -86,7 +86,7 @@ void stats_time_take(enum stats_time_t this_stat)
 
 void stats_dump(void)
 {
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 	if(!rid){
 #else
 	{
@@ -96,7 +96,7 @@ void stats_dump(void)
 	}
 }
 
-#ifndef NEUROME_SERIAL
+#ifndef ROOTSIM_SERIAL
 void stats_progress_print(simtime_t current_gvt)
 {
 	if(!rid){

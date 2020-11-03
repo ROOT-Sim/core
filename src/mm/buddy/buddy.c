@@ -36,7 +36,7 @@
 #define is_power_of_2(i) (!((i) & ((i) - 1)))
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - SAFE_CLZ(i))
 
-#ifdef NEUROME_COVERAGE
+#ifdef ROOTSIM_COVERAGE
 extern void *__real_malloc(size_t mem_size);
 extern void *__real_realloc(void *ptr, size_t mem_size);
 extern void __real_free(void *ptr);
@@ -55,7 +55,7 @@ void model_allocator_lp_init(void)
 
 	self->used_mem = 0;
 	array_init(self->logs);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	memset(self->dirty, 0, sizeof(self->dirty));
 	self->dirty_mem = 0;
 #endif
@@ -75,7 +75,7 @@ void *__wrap_malloc(size_t req_size)
 	if(unlikely(!req_size))
 		return NULL;
 
-#ifdef NEUROME_COVERAGE
+#ifdef ROOTSIM_COVERAGE
 	if (unlikely(!current_lp))
 		return __real_malloc(req_size);
 #endif
@@ -103,7 +103,7 @@ void *__wrap_malloc(size_t req_size)
 	/* update the *longest* value back */
 	self->longest[i] = 0;
 	self->used_mem += 1 << node_size;
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 #endif
 	uint_fast32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
@@ -114,7 +114,7 @@ void *__wrap_malloc(size_t req_size)
 			self->longest[left_child(i)],
 			self->longest[right_child(i)]
 		);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 #endif
 	}
@@ -138,7 +138,7 @@ void __wrap_free(void *ptr)
 	if(unlikely(!ptr))
 		return;
 
-#ifdef NEUROME_COVERAGE
+#ifdef ROOTSIM_COVERAGE
 	if (unlikely(!current_lp)) {
 		__real_free(ptr);
 		return;
@@ -157,7 +157,7 @@ void __wrap_free(void *ptr)
 
 	self->longest[i] = node_size;
 	self->used_mem -= 1 << node_size;
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 #endif
 	while (i) {
@@ -171,7 +171,7 @@ void __wrap_free(void *ptr)
 		} else {
 			self->longest[i] = max(left_longest, right_longest);
 		}
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 #endif
 		++node_size;
@@ -221,7 +221,7 @@ __extension__({								\
 	}								\
 })
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 
 void __write_mem(void *ptr, size_t siz)
 {
@@ -344,7 +344,7 @@ static struct _mm_checkpoint *checkpoint_full_take(const struct mm_state *self)
 	struct _mm_checkpoint *ret = mm_alloc(
 		offsetof(struct _mm_checkpoint, base_mem) + self->used_mem);
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	ret->is_incremental = false;
 	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
 #endif
@@ -391,13 +391,13 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 	struct mm_state *self = &current_lp->mm_state;
 	struct _mm_checkpoint *ckp;
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	if (self->dirty_mem < self->used_mem * B_LOG_INCREMENTAL_THRESHOLD) {
 		ckp = checkpoint_incremental_take(self);
 	} else {
 #endif
 		ckp = checkpoint_full_take(self);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	}
 	self->dirty_mem = 0;
 	memset(self->dirty, 0, sizeof(self->dirty));
@@ -412,7 +412,7 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 
 void model_allocator_checkpoint_next_force_full(void)
 {
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	struct mm_state *self = &current_lp->mm_state;
 	self->dirty_mem = self->used_mem * B_LOG_INCREMENTAL_THRESHOLD;
 #endif
@@ -428,13 +428,13 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 	}
 
 	const struct _mm_checkpoint *ckp = array_get_at(self->logs, i).c;
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	if (ckp->is_incremental) {
 		checkpoint_incremental_restore(self, ckp);
 	} else {
 #endif
 		checkpoint_full_restore(self, ckp);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	}
 	memset(self->dirty, 0, sizeof(self->dirty));
 	self->dirty_mem = 0;
@@ -458,7 +458,7 @@ array_count_t model_allocator_fossil_lp_collect(array_count_t tgt_ref_i)
 		ref_i = array_get_at(self->logs, log_i).ref_i;
 	}
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	while (array_get_at(self->logs, log_i).c->is_incremental) {
 		--log_i;
 		ref_i = array_get_at(self->logs, log_i).ref_i;
