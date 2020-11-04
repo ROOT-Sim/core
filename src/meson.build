@@ -1,8 +1,14 @@
+compiler_c_args = [
+  '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
+  '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"'
+]
+
 # Meson build options and common macros
 if get_option('buildtype') == 'release'
   log_level_def = '-DLOG_LEVEL=LOG_INFO'
 else 
   log_level_def = '-DLOG_LEVEL=LOG_DEBUG'
+  compiler_c_args += '-g'
 endif
 
 serial_c_args = [log_level_def, '-DROOTSIM_SERIAL']
@@ -11,11 +17,6 @@ parallel_c_args = [log_level_def]
 if get_option('b_coverage')
   parallel_c_args += '-DROOTSIM_COVERAGE=1'
 endif
-
-compiler_c_args = [
-  '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"', 
-  '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"'
-]
 
 llvm_plugin_cpp_args = [log_level_def]
 
