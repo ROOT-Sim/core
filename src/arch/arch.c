@@ -29,19 +29,45 @@
  * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <arch/arch.h>
-
-#if defined(__linux__)
-
 #define _GNU_SOURCE
+#include <stdbool.h>
+#include <assert.h>
+
+#include <arch/arch.h>
 #include <core/core.h>
-#include <pthread.h>
-#include <sched.h>
+
+#ifdef __POSIX
 #include <signal.h>
 #include <unistd.h>
+#include <sched.h>
 
-static pthread_t *ptids;
+/**
+* @brief Set the affinity of invoking thread
+*
+* If called, the caller thread returns stuck on the specified core
+*
+* @param core The core to run on
+*/
+static void set_my_affinity(unsigned core) {
+	cpu_set_t c_set;
+	CPU_ZERO(&c_set);
+	CPU_SET(core, &c_set);
+	sched_setaffinity(0, sizeof(c_set), &c_set);
+}
 
+static unsigned arch_core_count(void)
+{
+	long int ret = sysconf(_SC_NPROCESSORS_ONLN);
+	return ret < 1 ? 1 : (unsigned)ret;
+}
+
+/**
+* @brief Ignore signals
+*
+* Ignore signals sent to the simulation core.
+*
+* @param ignore_sigint If set to true, SIGINT is ignored
+*/
 static void signal_mask_set(bool ignore_sigint)
 {
 	sigset_t mask, old_mask;
@@ -50,81 +76,126 @@ static void signal_mask_set(bool ignore_sigint)
 		sigaddset(&mask, SIGINT);
 	pthread_sigmask(SIG_BLOCK, &mask, &old_mask);
 }
+#endif
 
-unsigned arch_core_count(void)
-{
-	long int ret = sysconf(_SC_NPROCESSORS_ONLN);
-	return ret < 1 ? 1 : (unsigned)ret;
-}
-
-void arch_thread_create(
-	unsigned t_cnt,
-	bool affinity,
-	void *(*t_fnc)(void *),
-	void *t_fnc_arg
-){
-	ptids = mm_alloc(sizeof(*ptids) * t_cnt);
-
-	pthread_attr_t t_attr;
-	pthread_attr_init(&t_attr);
-
-	signal_mask_set(true);
-
-	while(t_cnt--){
-		cpu_set_t c_set;
-
-		CPU_ZERO(&c_set);
-		CPU_SET(t_cnt, &c_set);
-
-		if(affinity)
-			pthread_attr_setaffinity_np(
-				&t_attr, sizeof(c_set), &c_set);
-
-		pthread_create(&ptids[t_cnt], &t_attr, t_fnc, t_fnc_arg);
-	}
-
-	pthread_attr_destroy(&t_attr);
-
-	signal_mask_set(false);
-}
-
-void arch_thread_wait(unsigned t_cnt)
-{
-	while(t_cnt--){
-		pthread_join(ptids[t_cnt], NULL);
-	}
-
-	mm_free(ptids);
-}
-
-#elif defined(_WIN64)
-
+#ifdef __WINDOWS
 #define WIN32_LEAN_AND_MEAN
-#define _WIN32_WINNT 0x0400
+#define _WIN32_WINNT _WIN32_WINNT_NT4
 #include <windows.h>
 
-unsigned arch_core_count(void)
+static inline void set_my_affinity(unsigned core)
+{
+	SetThreadAffinityMask(GetCurrentThread(), 1 << core);
+}
+
+static inline unsigned arch_core_count(void)
 {
 	SYSTEM_INFO sys_info;
 	GetSystemInfo(&sys_info);
 	return sys_info.dwNumberOfProcessors;
 }
 
-void arch_thread_init(
-	unsigned thread_count,
-	bool set_affinity,
-	void *(*thread_fnc)(void *),
-	void *thread_fnc_arg
-){
-	while (thread_count--) {
-		HANDLE t_new = CreateThread(NULL, 0, thread_fnc, thread_fnc_arg,
-			0, NULL);
+static inline void signal_mask_set(bool ignore_sigint)
+{
+}
+#endif
 
-		if(set_affinity)
-			SetThreadAffinityMask(t_new, 1 << thread_count);
+/// Thread ids of the activated worker threads
+static thrd_t *thr_ids;
+
+/**
+ * This helper function is the actual entry point for every thread created
+ * using the provided internal services.
+ *
+ * Additionally, when the created thread returns, it frees the memory used
+ * to maintain the real entry point and the pointer to its arguments.
+ *
+ * @param arg A pointer to an internally defined structure of type
+ *            struct t_params keeping the real thread's entry point,
+ *            its arguments, and information about affinity.
+ *
+ * @return This function always returns 0
+ */
+static int __helper_create_thread(void *args) {
+	struct t_params *params = (struct t_params *)args;
+	thrd_start_t entry = params->entry;
+	args = params->args;
+
+	if(likely(params->set_affinity)) {
+		set_my_affinity(params->t_cnt);
 	}
+
+	mm_free(params);
+
+	entry(args);
+	return 0;
 }
 
-#else /* OS_LINUX || OS_WINDOWS */
-#error Unsupported operating system
-#endif
+/**
+ * @brief span a number of threads
+ *
+ * This function creates n threads, all having the same entry point and
+ * a pointer to arguments. The entry point is specified by the function t_fnc.
+ * Thread creation relies on the __helper_create_thread() function, to properly
+ * setup affinity in a C11 portable way, without relying on non-portable
+ * pthread interfaces. The startup cost will be a little higher, but in the end
+ * this should allow to compile on more platforms with less hussle.
+ *
+ * Note that the arguments passed to __helper_create_thread are malloc'd
+ * here, and free'd there.
+ * Additionally, note that we don't make a copy of the arguments pointed
+ * by arg, so it is the responsibility of the caller to preserve them
+ * during the thread's lifetime.
+ * Changing passed arguments from one of the newly created threads will result
+ * in all the threads seeing the change.
+ *
+ * @param t_cnt The number of threads which should be created
+ * @param set_affinity If set to true, set threads set_affinity so as to run on
+ *        different cores.
+ * @param t_fnc The new threads' entry point
+ * @param t_fnc_arg A pointer to an array of arguments to be passed to the
+ *            new threads' entry point
+ */
+void arch_thread_create(unsigned t_cnt, bool set_affinity, thrd_start_t t_fnc, void *t_fnc_arg)
+{
+	struct t_params *params;
+	// We are assumed to call this function only once
+	assert(thr_ids == NULL);
+
+	thr_ids = mm_alloc(sizeof(*thr_ids) * t_cnt);
+	thr_ids[t_cnt] = 0;
+
+	signal_mask_set(true);
+
+	while(t_cnt--) {
+		params = mm_alloc(sizeof(*params));
+		params->entry = t_fnc;
+		params->args = t_fnc_arg;
+		params->set_affinity = set_affinity;
+		params->t_cnt = t_cnt;
+
+		thrd_create(&thr_ids[t_cnt], __helper_create_thread, params);
+	}
+
+	signal_mask_set(false);
+}
+
+/**
+ * @brief Wait for processing threads to complete execution
+ *
+ * This function suspends execution in the main thread, until all remainin threads
+ * have correctly returned.
+ * This function shall be called after invoking arch_thread_create().
+ */
+void arch_thread_wait(void)
+{
+	size_t thr = 0;
+	assert(thr_ids != NULL);
+
+	while(thr_ids[thr] != 0) {
+		thrd_join(thr_ids[thr++], NULL);
+	}
+
+	mm_free(thr_ids);
+}
+

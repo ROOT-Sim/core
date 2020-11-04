@@ -38,7 +38,7 @@
 
 #include <unistd.h>
 
-void *parallel_thread_run(void *unused)
+int parallel_thread_run(void *unused)
 {
 	(void)unused;
 
@@ -49,7 +49,8 @@ void *parallel_thread_run(void *unused)
 	lp_init();
 	sync_thread_barrier();
 
-	if(!rid) log_log(LOG_INFO, "Starting simulation");
+	if(!rid)
+		log_log(LOG_INFO, "Starting simulation");
 
 	while(likely(termination_cant_end())){
 #ifdef ROOTSIM_MPI
@@ -70,14 +71,15 @@ void *parallel_thread_run(void *unused)
 
 	stats_dump();
 
-	if(!rid) log_log(LOG_INFO, "Finalizing simulation");
+	if(!rid)
+		log_log(LOG_INFO, "Finalizing simulation");
 
 	lp_fini();
 
 	msg_queue_fini();
 	sync_thread_barrier();
 	msg_allocator_fini();
-	return NULL;
+	return 0;
 }
 
 void parallel_global_init(void)
@@ -113,10 +115,9 @@ int main(int argc, char **argv)
 
 	parallel_global_init();
 
-	arch_thread_create(n_threads, global_config.core_binding,
-		parallel_thread_run, NULL);
+	arch_thread_create(n_threads, global_config.core_binding, parallel_thread_run, NULL);
 
-	arch_thread_wait(n_threads);
+	arch_thread_wait();
 
 	parallel_global_fini();
 

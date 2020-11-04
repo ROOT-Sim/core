@@ -31,11 +31,23 @@
  */
 #pragma once
 
+#include <threads.h>
 #include <stdbool.h>
 
-extern void arch_signal_ignore(void);
-extern void arch_signal_sigint_setup(void (handler)(int));
-extern unsigned arch_core_count(void);
-extern void arch_thread_create(unsigned t_cnt, bool affinity,
-	void *(*t_fnc)(void *), void *t_fnc_arg);
-extern void arch_thread_wait(unsigned t_cnt);
+#if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
+#define __POSIX
+#elif defined(_WIN32)
+#define __WINDOWS
+#else
+#error Unsupported operating system
+#endif
+
+struct t_params {
+    unsigned t_cnt;
+    bool set_affinity;
+    thrd_start_t entry;
+    void *args;
+};
+
+extern void arch_thread_create(unsigned t_cnt, bool set_affinity, thrd_start_t t_fnc, void *t_fnc_arg);
+extern void arch_thread_wait(void);
