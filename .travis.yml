@@ -2,7 +2,7 @@ language: c
 os: linux
 sudo: false
 compiler: gcc
-dist: bionic
+dist: focal
 
 git:
   depth: 1
@@ -24,9 +24,7 @@ jobs:
         - python3-setuptools
         - python3-wheel 
         - ninja-build
-env:
-  global:
-    - CODECOV_TOKEN=56604fc8-dafc-455a-aaca-2f12cc3f30d9
+        - doxygen
 
 before_install:
   - pip3 install --user meson
@@ -45,6 +43,7 @@ script:
   - cd build
   - ninja
   - ninja test
+  - ninja docs
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -X gcov
