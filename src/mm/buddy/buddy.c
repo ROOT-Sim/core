@@ -246,7 +246,7 @@ static struct _mm_checkpoint *checkpoint_incremental_take(struct mm_state *self)
 {
 	uint_fast32_t bset = bitmap_count_set(self->dirty, sizeof(self->dirty));
 
-	struct _mm_checkpoint *ret = mm_alloc(
+	struct mm_checkpoint *ret = mm_alloc(
 		offsetof(struct _mm_checkpoint, longest) +
 		bset * (1 << B_BLOCK_EXP));
 
@@ -269,12 +269,12 @@ __extension__({								\
 }
 
 static void checkpoint_incremental_restore(struct mm_state *self,
-	const struct _mm_checkpoint *ckp)
+	const struct mm_checkpoint *ckp)
 {
 	self->used_mem = ckp->used_mem;
 
 	array_count_t i = array_count(self->logs) - 1;
-	const struct _mm_checkpoint *cur_ckp = array_get_at(self->logs, i).c;
+	const struct mm_checkpoint *cur_ckp = array_get_at(self->logs, i).c;
 
 	while (cur_ckp != ckp) {
 		bitmap_merge_or(self->dirty, cur_ckp->dirty,
@@ -339,10 +339,10 @@ __extension__({								\
 
 #endif
 
-static struct _mm_checkpoint *checkpoint_full_take(const struct mm_state *self)
+static struct mm_checkpoint *checkpoint_full_take(const struct mm_state *self)
 {
-	struct _mm_checkpoint *ret = mm_alloc(
-		offsetof(struct _mm_checkpoint, base_mem) + self->used_mem);
+	struct mm_checkpoint *ret = mm_alloc(
+		offsetof(struct mm_checkpoint, base_mem) + self->used_mem);
 
 #ifdef ROOTSIM_INCREMENTAL
 	ret->is_incremental = false;
@@ -366,7 +366,7 @@ __extension__({								\
 }
 
 static void checkpoint_full_restore(struct mm_state *self,
-	const struct _mm_checkpoint *ckp)
+	const struct mm_checkpoint *ckp)
 {
 	self->used_mem = ckp->used_mem;
 	memcpy(self->longest, ckp->longest, sizeof(self->longest));
@@ -389,7 +389,7 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 		return;
 
 	struct mm_state *self = &current_lp->mm_state;
-	struct _mm_checkpoint *ckp;
+	struct mm_checkpoint *ckp;
 
 #ifdef ROOTSIM_INCREMENTAL
 	if (self->dirty_mem < self->used_mem * B_LOG_INCREMENTAL_THRESHOLD) {
@@ -403,7 +403,7 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 	memset(self->dirty, 0, sizeof(self->dirty));
 #endif
 
-	struct _mm_log mm_log = {
+	struct mm_log mm_log = {
 		.ref_i = ref_i,
 		.c = ckp
 	};
@@ -427,7 +427,7 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 		i--;
 	}
 
-	const struct _mm_checkpoint *ckp = array_get_at(self->logs, i).c;
+	const struct mm_checkpoint *ckp = array_get_at(self->logs, i).c;
 #ifdef ROOTSIM_INCREMENTAL
 	if (ckp->is_incremental) {
 		checkpoint_incremental_restore(self, ckp);

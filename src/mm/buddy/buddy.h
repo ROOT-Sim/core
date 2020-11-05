@@ -34,7 +34,7 @@
 #define B_LOG_INCREMENTAL_THRESHOLD 0.5
 #define B_LOG_FREQUENCY 50
 
-struct _mm_checkpoint { // todo only log longest[] if changed, or incrementally
+struct mm_checkpoint { // todo only log longest[] if changed, or incrementally
 #ifdef ROOTSIM_INCREMENTAL
 	bool is_incremental;
 	block_bitmap dirty [
@@ -53,9 +53,9 @@ struct _mm_checkpoint { // todo only log longest[] if changed, or incrementally
 
 struct mm_state { // todo incremental checkpoints
 	dyn_array(
-		struct _mm_log {
+		struct mm_log {
 			array_count_t ref_i;
-			struct _mm_checkpoint *c;
+			struct mm_checkpoint *c;
 		}
 	) logs;
 	uint_fast32_t used_mem;		/// the count of allocated bytes
