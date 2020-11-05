@@ -3,7 +3,7 @@
 *
 * @brief Heap datatype
 *
-* Heap datatype
+* A very simple binary heap implemented on top of our dynamic array
 *
 * @copyright
 * Copyright (C) 2008-2020 HPDCS Group
@@ -29,13 +29,34 @@
 
 #define binary_heap(type) dyn_array(type)
 
-#define heap_init(self)	array_init(self)
 #define heap_items(self) array_items(self)
 #define heap_count(self) array_count(self)
+
+/**
+ * @brief Initializes an heap. It will be initially empty.
+ * @param self the heap to initialize
+ */
+#define heap_init(self)	array_init(self)
+
+/**
+ * @brief Finalizes an heap. The user is responsible for cleaning up the items.
+ * @param self the heap to finalize
+ */
 #define heap_fini(self)	array_fini(self)
+
 #define heap_is_empty(self) array_is_empty(self)
 #define heap_min(self) ((__typeof(*array_items(self)) const)(array_items(self)[0]))
 
+/**
+ * @brief Inserts an element into the heap
+ * @param self the heap target of the insertion
+ * @param cmp_f a comparing function f(a, b) which returns true iff a < b
+ * @param elem the element to insert
+ * @returns the position of the inserted element in the underlying array
+ *
+ * For correct operation of the heap you need to always pass the same @a cmp_f,
+ * both for insertion and extraction
+ */
 #define heap_insert(self, cmp_f, elem)					\
 __extension__({								\
 	__typeof(array_count(self)) __i_h = array_count(self);		\
@@ -52,7 +73,15 @@ __extension__({								\
 	__i_h;								\
 })
 
-
+/**
+ * @brief Extracts an element from the heap
+ * @param self the heap from where to extract the element
+ * @param cmp_f a comparing function f(a, b) which returns true iff a < b
+ * @returns the extracted element
+ *
+ * For correct operation of the heap you need to always pass the same @a cmp_f
+ * both for insertion and extraction
+ */
 #define heap_extract(self, cmp_f)					\
 __extension__({								\
 	__typeof(*array_items(self)) __ret_h = array_items(self)[0];	\

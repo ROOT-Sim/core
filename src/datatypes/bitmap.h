@@ -67,8 +67,7 @@ typedef unsigned char block_bitmap;
  *
  * For example this statically declares a 100 entries bitmap and initializes it:
  * 		block_bitmap my_bitmap[bitmap_required_size(100)] = {0};
- *
- * 	Avoid side effects in the arguments, they may be evaluated more than once.
+ * Avoid side effects in the arguments, they may be evaluated more than once.
  */
 #define bitmap_required_size(requested_bits)				\
 	((								\
@@ -86,7 +85,6 @@ typedef unsigned char block_bitmap;
  * For example this dynamically declares a 100 entries bitmap and initializes it:
  * 		block_bitmap *my_bitmap = malloc(bitmap_required_size(100));
  * 		bitmap_initialize(my_bitmap, 100);
- *
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
 #define bitmap_initialize(memory_pointer, requested_bits)		\
