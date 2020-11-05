@@ -13,7 +13,7 @@
 
 static atomic_uint insert_calls;
 
-void msg_queue_insert(lp_msg *msg)
+void msg_queue_insert(struct lp_msg *msg)
 {
 	(void)msg;
 	if(atomic_load_explicit(&msg->flags, memory_order_acquire) ==
@@ -24,7 +24,7 @@ void msg_queue_insert(lp_msg *msg)
 
 static int remote_msg_map_test(void)
 {
-	lp_msg *msgs = malloc(sizeof(*msgs) * MSG_COUNT);
+	struct lp_msg *msgs = malloc(sizeof(*msgs) * MSG_COUNT);
 	memset(msgs, 0, sizeof(*msgs) * MSG_COUNT);
 
 	for(uint64_t i = 0; i < MSG_COUNT; ++i){

@@ -29,8 +29,8 @@
 #include <core/timer.h>
 #include <gvt/fossil.h>
 
-__thread lp_struct *current_lp;
-lp_struct *lps;
+__thread struct lp_ctx *current_lp;
+struct lp_ctx *lps;
 unsigned *lid_to_rid;
 lp_id_t n_lps_node;
 

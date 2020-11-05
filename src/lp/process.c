@@ -39,7 +39,7 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 		return;
 
 	struct process_data *proc_p = &current_lp->p;
-	lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type,
+	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type,
 		payload, payload_size);
 
 #ifdef ROOTSIM_MPI
@@ -59,13 +59,14 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 
 void process_lp_init(void)
 {
-	lp_struct *this_lp = current_lp;
+	struct lp_ctx *this_lp = current_lp;
 	struct process_data *proc_p = &current_lp->p;
 
 	array_init(proc_p->past_msgs);
 	array_init(proc_p->sent_msgs);
 
-	lp_msg *this_msg = msg_allocator_pack(this_lp - lps, 0, INIT, NULL, 0U);
+	struct lp_msg *this_msg = msg_allocator_pack(this_lp - lps, 0, INIT,
+		NULL, 0U);
 
 	array_push(proc_p->sent_msgs, NULL);
 	ProcessEvent(this_lp - lps, 0, INIT, NULL, 0, NULL);
@@ -77,7 +78,7 @@ void process_lp_init(void)
 
 void process_lp_deinit(void)
 {
-	lp_struct *this_lp = current_lp;
+	struct lp_ctx *this_lp = current_lp;
 	ProcessEvent(this_lp - lps, 0, DEINIT, NULL, 0, this_lp->lsm_p->state_s);
 }
 
@@ -100,7 +101,7 @@ static inline void silent_execution(
 
 	void *state_p = current_lp->lsm_p->state_s;
 	for (array_count_t k = last_i + 1; k <= past_i; ++k) {
-		const lp_msg *this_msg = array_get_at(proc_p->past_msgs, k);
+		const struct lp_msg *this_msg = array_get_at(proc_p->past_msgs, k);
 #ifdef ROOTSIM_INCREMENTAL
 		ProcessEvent_instr(
 #else
@@ -124,14 +125,14 @@ static inline void send_anti_messages(
 	array_count_t sent_i = array_count(proc_p->sent_msgs) - 1;
 	array_count_t b = array_count(proc_p->past_msgs) - 1 - past_i;
 	do {
-		lp_msg *msg = array_get_at(proc_p->sent_msgs, sent_i);
+		struct lp_msg *msg = array_get_at(proc_p->sent_msgs, sent_i);
 		b -= msg == NULL;
 		--sent_i;
 	} while(b);
 
 	for (array_count_t i = sent_i + 1; i < array_count(proc_p->sent_msgs);
 		++i) {
-		lp_msg *msg = array_get_at(proc_p->sent_msgs, i);
+		struct lp_msg *msg = array_get_at(proc_p->sent_msgs, i);
 		if(!msg)
 			continue;
 
@@ -158,7 +159,7 @@ static inline void reinsert_invalid_past_messages(
 {
 	for (array_count_t i = past_i + 1; i < array_count(proc_p->past_msgs);
 		++i) {
-		lp_msg *msg = array_get_at(proc_p->past_msgs, i);
+		struct lp_msg *msg = array_get_at(proc_p->past_msgs, i);
 		int msg_status = atomic_fetch_add_explicit(&msg->flags,
 			-MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(msg_status & MSG_FLAG_ANTI))
@@ -177,7 +178,7 @@ static void handle_rollback(struct process_data *proc_p, array_count_t past_i)
 }
 
 static inline array_count_t match_anti_msg(
-	const struct process_data *proc_p, const lp_msg *a_msg)
+	const struct process_data *proc_p, const struct lp_msg *a_msg)
 {
 	array_count_t past_i = array_count(proc_p->past_msgs) - 1;
 	while (array_get_at(proc_p->past_msgs, past_i) != a_msg) {
@@ -187,7 +188,7 @@ static inline array_count_t match_anti_msg(
 }
 
 static inline array_count_t match_straggler_msg(
-	const struct process_data *proc_p, const lp_msg *s_msg)
+	const struct process_data *proc_p, const struct lp_msg *s_msg)
 {
 	array_count_t past_i = array_count(proc_p->past_msgs) - 2;
 	while (!msg_is_before(array_get_at(proc_p->past_msgs, past_i), s_msg)) {
@@ -198,13 +199,13 @@ static inline array_count_t match_straggler_msg(
 
 void process_msg(void)
 {
-	lp_msg *this_msg = msg_queue_extract();
+	struct lp_msg *this_msg = msg_queue_extract();
 	if (unlikely(!this_msg)) {
 		current_lp = NULL;
 		return;
 	}
 
-	lp_struct *this_lp = &lps[this_msg->dest];
+	struct lp_ctx *this_lp = &lps[this_msg->dest];
 	struct process_data *proc_p = &this_lp->p;
 	current_lp = this_lp;
 

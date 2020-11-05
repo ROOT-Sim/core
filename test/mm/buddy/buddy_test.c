@@ -9,7 +9,7 @@
 
 static __thread uint128_t rng_state;
 
-__thread lp_struct *current_lp; // needed by the model allocator
+__thread struct lp_ctx *current_lp; // needed by the model allocator
 __thread simtime_t current_gvt; // needed by the model allocator
 
 static int block_size_test(unsigned b_exp)

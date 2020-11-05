@@ -43,8 +43,8 @@ enum _msg_ctrl {
 extern void mpi_global_init(int *argc_p, char ***argv_p);
 extern void mpi_global_fini(void);
 
-extern void mpi_remote_msg_send(lp_msg *msg, nid_t dest_nid);
-extern void mpi_remote_anti_msg_send(lp_msg *msg, nid_t dest_nid);
+extern void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid);
+extern void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 
 extern void mpi_control_msg_broadcast(enum _msg_ctrl ctrl);
 extern void mpi_remote_msg_handle(void);

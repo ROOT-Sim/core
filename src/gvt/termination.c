@@ -51,7 +51,7 @@ void termination_lp_init(void)
 
 void termination_on_msg_process(simtime_t msg_time)
 {
-	lp_struct *this_lp = current_lp;
+	struct lp_ctx *this_lp = current_lp;
 	if(this_lp->t_d) return;
 
 	bool term = CanEnd(this_lp - lps, this_lp->lsm_p->state_s);
@@ -84,7 +84,7 @@ void termination_on_gvt(simtime_t current_gvt)
 
 void termination_on_lp_rollback(simtime_t msg_time)
 {
-	lp_struct *this_lp = current_lp;
+	struct lp_ctx *this_lp = current_lp;
 	simtime_t old_t = this_lp->t_d;
 	bool keep = old_t < msg_time || old_t == SIMTIME_MAX;
 	this_lp->t_d = keep * old_t;

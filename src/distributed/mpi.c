@@ -119,7 +119,7 @@ void mpi_global_fini(void)
 	MPI_Finalize();
 }
 
-void mpi_remote_msg_send(lp_msg *msg, nid_t dest_nid)
+void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	bool phase = gvt_phase_get();
 	msg->msg_id = msg_id_get(msg, phase);
@@ -134,7 +134,7 @@ void mpi_remote_msg_send(lp_msg *msg, nid_t dest_nid)
 	mpi_unlock();
 }
 
-void mpi_remote_anti_msg_send(lp_msg *msg, nid_t dest_nid)
+void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	msg_id_phase_set(msg->msg_id, gvt_phase_get());
 	gvt_on_remote_msg_send(dest_nid);
@@ -206,7 +206,7 @@ void mpi_remote_msg_handle(void)
 			int size;
 			MPI_Get_count(&status, MPI_BYTE, &size);
 
-			if (unlikely(size == sizeof((lp_msg *)0)->msg_id)) {
+			if (unlikely(size == sizeof((struct lp_msg *)0)->msg_id)) {
 				uintptr_t anti_id;
 				MPI_Mrecv(&anti_id, size, MPI_BYTE, &mpi_msg,
 					MPI_STATUS_IGNORE);
@@ -219,8 +219,8 @@ void mpi_remote_msg_handle(void)
 			} else {
 				mpi_unlock();
 
-				lp_msg *msg = msg_allocator_alloc(size -
-					offsetof(lp_msg, pl));
+				struct lp_msg *msg = msg_allocator_alloc(size -
+					offsetof(struct lp_msg, pl));
 
 				mpi_lock();
 				MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,

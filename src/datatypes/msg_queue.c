@@ -32,7 +32,7 @@
 #include <mm/msg_allocator.h>
 
 #define inner_queue {			\
-	binary_heap(lp_msg *) q;	\
+	binary_heap(struct lp_msg *) q;	\
 	spinlock_t lck;			\
 }
 
@@ -71,7 +71,7 @@ void msg_queue_fini(void)
 		struct queue_t *this_q = &mqueue(i, rid);
 		array_count_t j = heap_count(this_q->q);
 		while(j--) {
-			lp_msg *msg = heap_items(this_q->q)[j];
+			struct lp_msg *msg = heap_items(this_q->q)[j];
 			if(!(atomic_load_explicit(
 				&msg->flags, memory_order_relaxed) & MSG_FLAG_PROCESSED))
 				msg_allocator_free(msg);
@@ -85,11 +85,11 @@ void msg_queue_global_fini(void)
 	mm_free(queues);
 }
 
-lp_msg *msg_queue_extract(void)
+struct lp_msg *msg_queue_extract(void)
 {
 	unsigned i = n_threads;
 	struct queue_t *bid_q = &mqueue(rid, rid);
-	lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
+	struct lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
 
 	while(i--) {
 		struct queue_t *this_q = &mqueue(i, rid);
@@ -142,7 +142,7 @@ simtime_t msg_queue_time_peek(void)
 	return t_min;
 }
 
-void msg_queue_insert(lp_msg *msg)
+void msg_queue_insert(struct lp_msg *msg)
 {
 	unsigned dest_rid = lid_to_rid[msg->dest];
 	struct queue_t *this_q = &mqueue(rid, dest_rid);

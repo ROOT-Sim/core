@@ -35,7 +35,7 @@
 struct serial_lp *lps;
 struct serial_lp *cur_lp;
 
-static binary_heap(lp_msg *) queue;
+static binary_heap(struct lp_msg *) queue;
 
 static void serial_simulation_init(void)
 {
@@ -81,7 +81,7 @@ void serial_simulation_run(void)
 	timer last_vt = timer_new();
 	uint64_t to_terminate = n_lps;
 	while(likely(!heap_is_empty(queue))) {
-		const lp_msg *cur_msg = heap_min(queue);
+		const struct lp_msg *cur_msg = heap_min(queue);
 		struct serial_lp *this_lp = &lps[cur_msg->dest];
 		cur_lp = this_lp;
 
@@ -139,7 +139,7 @@ void serial_simulation_run(void)
 void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size)
 {
-	lp_msg *msg = msg_allocator_pack(
+	struct lp_msg *msg = msg_allocator_pack(
 		receiver, timestamp, event_type, payload, payload_size);
 	heap_insert(queue, msg_is_before, msg);
 }

@@ -44,7 +44,7 @@ struct msg_map_node_t {
 	_Atomic(uintptr_t) msg_id;
 	nid_t msg_nid;
 	simtime_t until;
-	lp_msg *msg;
+	struct lp_msg *msg;
 };
 
 #define inner_map {							\
@@ -202,11 +202,11 @@ static void msg_map_size_increase(void)
 	mm_free(old_nodes);
 }
 
-void remote_msg_map_match(uintptr_t msg_id, nid_t nid, lp_msg *msg)
+void remote_msg_map_match(uintptr_t msg_id, nid_t nid, struct lp_msg *msg)
 {
 	msg_id &= ~HB_LCK;
 	map_size_t cdib = 0;
-	lp_msg *cmsg = msg;
+	struct lp_msg *cmsg = msg;
 	simtime_t cuntil = msg ? msg->dest_t : SIMTIME_MAX;
 	nid_t cnid = nid;
 	uintptr_t cd = msg_id | HB_LCK;
@@ -294,7 +294,7 @@ void remote_msg_map_match(uintptr_t msg_id, nid_t nid, lp_msg *msg)
 				td &= ~HB_LCK;
 				goto retry_dib_check;
 			}
-			lp_msg *tmsg = n[i].msg;
+			struct lp_msg *tmsg = n[i].msg;
 			simtime_t tuntil = n[i].until;
 			nid_t tnid = n[i].msg_nid;
 			n[i].msg = cmsg;

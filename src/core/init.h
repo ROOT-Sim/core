@@ -32,11 +32,11 @@
 #include <log/log.h>
 
 typedef struct {
-	int verbosity;
-	simtime_t termination_time;
-	unsigned gvt_period; // expressed in microseconds
+	int verbosity; //!< the log verbosity level
+	simtime_t termination_time; //!< the logical target termination time
+	unsigned gvt_period; //!< the gvt period expressed in microseconds
 #ifndef ROOTSIM_SERIAL
-	bool core_binding;
+	bool core_binding; //!< if set, worker threads are bound to physical cores
 #endif
 } simulation_configuration;
 
