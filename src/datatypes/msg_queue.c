@@ -3,7 +3,12 @@
 *
 * @brief Message queue datatype
 *
-* Message queue datatype
+* This is the message queue for the parallel runtime.
+* The design is pretty simple. A queue for n thread is composed by n * n square
+* matrix of simpler queues. If thread t1 wants to send a message to thread t2 it
+* puts a message in the i-th queue where i = t2 * n + t1. Insertions are then
+* cheap, while extractions lazily lock the queues (costing linear time in the
+* number of worked threads, which seems to be acceptable in practice).
 *
 * @copyright
 * Copyright (C) 2008-2020 HPDCS Group
@@ -31,29 +36,30 @@
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
-#define inner_queue {			\
-	binary_heap(struct lp_msg *) q;	\
-	spinlock_t lck;			\
-}
+static struct {
+    struct inner_q {
+	binary_heap(struct lp_msg *) q; //<! The actual queue
+	spinlock_t lck; //<! Synchronizes access to the queue
+    } i; //<! this is needed to elegantly cache align this stuff
+    unsigned char padding[CACHE_LINE_SIZE - sizeof(struct inner_q)]; //<! Cache line alignment
+} *queues;
 
-struct queue_t {
-	struct inner_queue;
-	unsigned char padding[CACHE_LINE_SIZE - sizeof(struct inner_queue)];
-};
+/**
+ * @brief Utility macro to fetch the correct inner queue
+ */
+#define mqueue(from, to) (queues[to * n_threads + from].i)
 
-#define mqueue(from, to) queues[to * n_threads + from]
-
-static struct queue_t *queues;
-
+/**
+ * @brief Initializes the message queue at a node level
+ */
 void msg_queue_global_init(void)
 {
-	queues = mm_alloc(
-		n_threads *
-		n_threads *
-		sizeof(*queues)
-	);
+	queues = mm_alloc(n_threads * n_threads * sizeof(*queues));
 }
 
+/**
+ * @brief Initializes the message queue at a thread level
+ */
 void msg_queue_init(void)
 {
 	unsigned i = n_threads;
@@ -63,12 +69,15 @@ void msg_queue_init(void)
 	}
 }
 
+/**
+ * @brief Finalizes the message queue at a node level
+ */
 void msg_queue_fini(void)
 {
 	log_log(LOG_TRACE, "[T %u] msg queue fini", rid);
 	unsigned i = n_threads;
 	while(i--) {
-		struct queue_t *this_q = &mqueue(i, rid);
+		struct inner_q *this_q = &mqueue(i, rid);
 		array_count_t j = heap_count(this_q->q);
 		while(j--) {
 			struct lp_msg *msg = heap_items(this_q->q)[j];
@@ -80,24 +89,35 @@ void msg_queue_fini(void)
 	}
 }
 
+/**
+ * @brief Finalizes the message queue at a global level
+ */
 void msg_queue_global_fini(void)
 {
 	mm_free(queues);
 }
 
+/**
+ * @brief Extracts the next message from the queue
+ * @returns a pointer to the message to be processed
+ *
+ * The extracted message is a best effort lowest timestamp for the current
+ * thread. Guaranteeing the lowest timestamp may increase the contention on the
+ * queues.
+ */
 struct lp_msg *msg_queue_extract(void)
 {
 	unsigned i = n_threads;
-	struct queue_t *bid_q = &mqueue(rid, rid);
+	struct inner_q *bid_q = &mqueue(rid, rid);
 	struct lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
 
 	while(i--) {
-		struct queue_t *this_q = &mqueue(i, rid);
+		struct inner_q *this_q = &mqueue(i, rid);
 		if(!spin_trylock(&this_q->lck))
 			continue;
 
 		if (heap_count(this_q->q) &&
-			(!msg || msg_is_before(heap_min(this_q->q), msg))) {
+		    (!msg || msg_is_before(heap_min(this_q->q), msg))) {
 			msg = heap_min(this_q->q);
 			bid_q = this_q;
 		}
@@ -115,6 +135,14 @@ struct lp_msg *msg_queue_extract(void)
 	return msg;
 }
 
+/**
+ * @brief Peeks the timestamp of the next message from the queue
+ * @returns the lowest timestamp of the next message to be processed
+ *
+ * This returns the lowest timestamp of the next message to be processed for the
+ * current thread. This is calculated in a precise fashion since this value is
+ * used in the gvt calculation.
+ */
 simtime_t msg_queue_time_peek(void)
 {
 	const unsigned t_cnt = n_threads;
@@ -126,14 +154,14 @@ simtime_t msg_queue_time_peek(void)
 		if(done[i])
 			continue;
 
-		struct queue_t *this_q = &mqueue(i, rid);
+		struct inner_q *this_q = &mqueue(i, rid);
 		if(!spin_trylock(&this_q->lck))
 			continue;
 
 		done[i] = true;
 		--r;
 		if (heap_count(this_q->q) && t_min >
-			heap_min(this_q->q)->dest_t) {
+					     heap_min(this_q->q)->dest_t) {
 			t_min = heap_min(this_q->q)->dest_t;
 		}
 		spin_unlock(&this_q->lck);
@@ -142,10 +170,15 @@ simtime_t msg_queue_time_peek(void)
 	return t_min;
 }
 
+/**
+ * @brief Inserts a message in the queue
+ * @param msg the message to insert in the queue
+ *
+ */
 void msg_queue_insert(struct lp_msg *msg)
 {
 	unsigned dest_rid = lid_to_rid[msg->dest];
-	struct queue_t *this_q = &mqueue(rid, dest_rid);
+	struct inner_q *this_q = &mqueue(rid, dest_rid);
 	spin_lock(&this_q->lck);
 	heap_insert(this_q->q, msg_is_before, msg);
 	spin_unlock(&this_q->lck);
