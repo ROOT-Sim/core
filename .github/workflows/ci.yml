@@ -1,0 +1,52 @@
+name: ROOT-Sim core CI
+
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+      - develop
+  schedule:
+    - cron: "0 2 * * 1"
+
+jobs:
+  linux:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+
+      - name: Test
+        uses: BSFishy/meson-build@v1.0.1
+        with:
+          action: test
+          setup-options: -Db_coverage=true
+          
+      - name: Codecov
+        uses: codecov/codecov-action@v1.0.14
+        with:
+          fail_ci_if_error: true
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+
+      - name: Test
+        uses: BSFishy/meson-build@v1.0.1
+        with:
+          action: test
+          setup-options: -Db_coverage=true
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+
+      - name: Test
+        uses: BSFishy/meson-build@v1.0.1
+        with:
+          action: test
+          setup-options: -Db_coverage=true
