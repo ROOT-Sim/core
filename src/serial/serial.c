@@ -78,7 +78,7 @@ static void serial_simulation_fini(void)
 
 void serial_simulation_run(void)
 {
-	timer last_vt = timer_new();
+	timer_uint last_vt = timer_new();
 	uint64_t to_terminate = n_lps;
 	while(likely(!heap_is_empty(queue))) {
 		const struct lp_msg *cur_msg = heap_min(queue);

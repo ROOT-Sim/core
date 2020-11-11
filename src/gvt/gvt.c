@@ -49,7 +49,7 @@ enum thread_phase_t {
 
 static __thread enum thread_phase_t thread_phase = tphase_rdy;
 
-static timer last_gvt;
+static timer_uint last_gvt;
 static simtime_t reducing_p[1 << MAX_THREADS_BITS];
 static __thread simtime_t current_gvt;
 
