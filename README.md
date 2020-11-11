@@ -1,11 +1,10 @@
 # The ROme OpTimistic Simulator (ROOT-Sim) 3.0.0
 
-[![Build Status](https://travis-ci.org/HPDCS/ROOT-Sim.svg?branch=master)](https://travis-ci.org/HPDCS/ROOT-Sim)
-[![codecov.io](https://codecov.io/gh/HPDCS/ROOT-Sim/branch/master/graphs/badge.svg)](http://codecov.io/github/HPDCS/ROOT-Sim)
-[![coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fhpdcs.github.io%2FROOT-Sim%2Fdocs%2Fcoverage%2Fmaster.json)](https://hpdcs.github.io/ROOT-Sim//documentation.html)
-[![GitHub issues](https://img.shields.io/github/issues/HPDCS/ROOT-Sim)](https://github.com/HPDCS/ROOT-Sim/issues)
-[![GitHub](https://img.shields.io/github/license/HPDCS/ROOT-Sim)](https://github.com/HPDCS/ROOT-Sim/blob/master/COPYING)
-
+[![Build Status](https://github.com/ROOT-Sim/core/workflows/ROOT-Sim%20core%20CI/badge.svg)](https://github.com/ROOT-Sim/core/actions)
+[![codecov.io](https://codecov.io/gh/ROOT-Sim/branch/master/graphs/badge.svg)](https://codecov.io/gh/ROOT-Sim/core)
+[![doc coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Froot-sim.github.io%2Fcore%2Fdocs%2Fcoverage%2Fmaster.json)](https://root-sim.github.io/core/documentation.html)
+[![GitHub issues](https://img.shields.io/github/issues/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/issues)
+[![GitHub](https://img.shields.io/github/license/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/blob/master/COPYING)
 
 *Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/) Research Group*
 
@@ -120,9 +119,9 @@ For example, to compile the pcs model simply run:
 
 	cd models/pcs
 	{installdir}/bin/neurome-cc *.c
-	
+
 If you installed Neurome system-wide the second command becomes simply:
 
 	neurome-cc *.c
-	
+
 This will create two files named `model_serial` and `model_parallel` which are respectively the single core and multithreaded version of the model.
