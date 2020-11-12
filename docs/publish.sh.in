@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 cd @TOP_BUILDDIR@/docs || exit
 
@@ -7,9 +7,11 @@ coverxygen="python3 -m coverxygen --xml-dir xml/ --src-dir @TOP_SRCDIR@/ --kind 
 # Run the doc coverage pipeline
 REPORT=$($coverxygen --format summary --output - | tee doc-coverage.resume)
 covpercent=$(cat doc-coverage.resume | grep Total | sed 's/.*://' | sed 's/%.*//' | xargs)
+$coverxygen --output doc-coverage.info
+genhtml --no-function-coverage --no-branch-coverage -t "ROOT-Sim @VERSION@ Documentation Coverage" @TOP_BUILDDIR@/docs/doc-coverage.info -o @TOP_BUILDDIR@/docs/coverage/
 
 # Post process and store the results
-export acceptable=$(echo $covpercent'>'60 | bc -l) # 60% is considered an acceptable threshold for now
+acceptable=$(echo $covpercent'>'50 | bc -l) # 60% is considered an acceptable threshold for now
 color="red"
 icon=":exclamation:"
 if [ "$acceptable" -eq "1" ] ; then
@@ -40,4 +42,6 @@ EOT
 echo "$COMMENT"
 
 # Escape json stuff
-export COMMENT=$(jq -aRs . <<< "$COMMENT")
+COMMENT=$(jq -aRs . <<< "$COMMENT")
+
+# TODO: Upload as a comment on github
