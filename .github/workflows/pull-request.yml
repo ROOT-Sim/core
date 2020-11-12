@@ -1,0 +1,58 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+
+jobs:
+  doc-coverage:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - uses: BSFishy/pip-action@v1
+        with:
+          packages: |
+            meson
+            ninja
+            coverxygen 
+
+      - name: Generate Documentation
+        run: |
+          sudo apt-get install doxygen
+          meson build
+          cd build
+          ninja docs
+
+      - name: Inspect Documentation
+        run: |
+          resume=$(python3 -m coverxygen --xml-dir build/docs/xml/ --src-dir . --kind enum,enumvalue,typedef,variable,function,struct,union,define,file --exclude README.md --format summary --output - | tee resume)
+          covpercent=$(cat resume | grep Total | sed 's/.*://' | sed 's/%.*//' | xargs)
+          icon=":exclamation:"
+          acceptable=$(echo $covpercent'>'60 | bc -l)
+          if [ $acceptable -eq 1 ]; then icon=":+1"; fi
+          message=$"Documentation coverage is **$covpercent%** $icon"
+          message+=$'\n```\n'
+          message+="$resume"
+          message+=$'\n```'
+          echo 'COMMENT<<EOF' >> $GITHUB_ENV
+          jq -aRs . <<< "$message" >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+          echo "acceptable=$acceptable" >> $GITHUB_ENV
+
+      - name: Comment PR
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: ${{env.COMMENT}}
+            })
+
+      - name: Determine success
+        run: |
+          if [ ${{env.acceptable}} -eq 0 ]; then exit 1; fi
+          exit 0;
