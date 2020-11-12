@@ -35,11 +35,3 @@ html_target = custom_target('htmldocs',
                             command: [doxygen, doxyfile])
 
 run_target('docs', command : '', depends : html_target)
-
-coverage = configure_file(input: 'coverage.sh.in',
-                          output : 'coverage.sh',
-                          configuration : cdata)
-
-run_target('docs-coverage',
-           command: coverage,
-           depends: html_target)
