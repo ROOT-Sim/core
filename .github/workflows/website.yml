@@ -1,0 +1,62 @@
+name: Website update
+
+on:
+  push:
+    - master
+    - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - uses: BSFishy/pip-action@v1
+        with:
+          packages: |
+            meson
+            ninja
+            coverxygen 
+
+      - name: Generate Documentation
+        run: |
+          sudo apt-get install doxygen lcov graphviz
+          meson build
+          cd build
+          ninja docs
+          echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+          mv docs/html ../../
+
+      - name: Generate Documentation Coverage
+        run: |
+          covpercent=$(python3 -m coverxygen --xml-dir build/docs/xml/ --src-dir . --kind enum,enumvalue,typedef,variable,function,struct,union,define,file --exclude README.md --format summary --output - | grep Total | sed 's/.*://' | sed 's/%.*//' | xargs)
+          python3 -m coverxygen --xml-dir build/docs/xml/ --src-dir . --kind enum,enumvalue,typedef,variable,function,struct,union,define,file --exclude README.md --output doc-coverage.info
+          mkdir -p ../coverage/${{ env.BRANCH_NAME }}
+          genhtml --no-function-coverage --no-branch-coverage -t "ROOT-Sim ${{ env.BRANCH_NAME }} Documentation Coverage" doc-coverage.info -o ../coverage/${{ env.BRANCH_NAME }}
+          color="red"
+          acceptable=$(echo $covpercent'>'60 | bc -l)
+          if [ $acceptable -eq 1 ]; then color="green"; fi
+          echo "{\"schemaVersion\": 1, \"label\": \"doc coverage\", \"message\": \"$covpercent%\", \"color\": \"$color\"}" > ../coverage/${{ env.BRANCH_NAME }}.json
+
+      - name: Get current website
+        uses: actions/checkout@v2
+        with:
+          ref: gh-pages
+
+      - name: Update website
+        run: |
+          [ ! -e docs/coverage/${{ env.BRANCH_NAME }} ] || rm -rf docs/coverage/${{ env.BRANCH_NAME }}
+          mv ../coverage/${{ env.BRANCH_NAME }}* docs/coverage/
+          mv ../html docs/${{ env.BRANCH_NAME }}
+          git config --local user.email "rootsim@bot.local"
+          git config --local user.name "ROOT-Sim Bot"
+          git add docs/${{ env.BRANCH_NAME }} docs/coverage/${{ env.BRANCH_NAME }}.json docs/coverage/${{ env.BRANCH_NAME }}
+          git commit -m "Update website"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          
