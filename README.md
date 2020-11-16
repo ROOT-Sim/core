@@ -33,7 +33,7 @@ ninja install
 ```
 
 where `{installdir}` is your preferred installation directory expressed as an absolute path.\
-Alternatively you can skip the `-Dprefix` altogether: NeuRome will be installed in your system directories.
+Alternatively you can skip the `-Dprefix` altogether: ROOT-Sim will be installed in your system directories.
 
 ## Compile a model
 
@@ -41,7 +41,7 @@ ROOT-Sim ships with two sample models in the `models` folder of the project: `pc
 
 ```bash
 cd models/pcs
-{installdir}/bin/neurome-cc *.c
+{installdir}/bin/rootsim-cc *.c
 ```
 
 If you installed ROOT-Sim system-wide the second command becomes simply:
