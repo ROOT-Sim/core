@@ -27,10 +27,9 @@
  * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <stdlib.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/wait.h>
+
 
 // FIXME: we don't include absolute paths in code!
 #ifndef ROOTSIM_CC
@@ -114,23 +113,10 @@ static int child_proc(int argc, char **argv, const char *add_args)
 
 int main(int argc, char **argv)
 {
-	pid_t this_pid;
-	int s_stat = -1, p_stat = -1;
-	if (!(this_pid = fork())) {
-		return child_proc(argc, argv, add_args_serial);
-	}
+	int s_stat, p_stat;
 
-	while (waitpid(this_pid, &s_stat, 0) != this_pid) {
-		sleep(1);
-	}
-
-	if (!(this_pid = fork())) {
-		return child_proc(argc, argv, add_args_parallel);
-	}
-
-	while (waitpid(this_pid, &p_stat, 0) != this_pid) {
-		sleep(1);
-	}
+	s_stat = child_proc(argc, argv, add_args_serial);
+	p_stat = child_proc(argc, argv, add_args_parallel);
 
 	return s_stat + p_stat;
 }
