@@ -9,11 +9,11 @@
 #define TEST_BAD_FAIL_EXIT_CODE 99
 
 typedef struct {
-    unsigned count;
-    unsigned waiters;
-    uint64_t sequence;
-    mtx_t mutex;
-    cnd_t condvar;
+	unsigned count;
+	unsigned waiters;
+	uint64_t sequence;
+	mtx_t mutex;
+	cnd_t condvar;
 } barrier_t;
 
 extern const struct _test_config_t {
@@ -27,9 +27,7 @@ extern const struct _test_config_t {
 	const char **test_arguments;
 } test_config;
 
-extern FILE *test_output_file;
-
-extern void test_abort(void);
+extern int test_printf(const char *restrict fmt, ...);
 extern bool test_thread_barrier(void);
 
 // core.c mock

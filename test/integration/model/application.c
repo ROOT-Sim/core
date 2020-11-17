@@ -13,7 +13,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 	lp_state_t *state = st;
 	if (state && state->events >= COMPLETE_EVENTS){
 		if(event_type == DEINIT){
-			fprintf(test_output_file, "%" PRIu32 "\n", state->total_checksum);
+			test_printf("%" PRIu32 "\n", state->total_checksum);
 			while(state->head)
 				state->head = deallocate_buffer(state->head, 0);
 			free(state);

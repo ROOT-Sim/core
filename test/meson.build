@@ -13,7 +13,8 @@ fail_tests = [
   'body',
   'fini',
   'main',
-  'cmp_len',
+  'cmp_short',
+  'cmp_long',
   'cmp_str'
 ]
 
