@@ -3,8 +3,18 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <threads.h>
 
 #define TEST_BAD_FAIL_EXIT_CODE 99
+
+typedef struct {
+    unsigned count;
+    unsigned waiters;
+    uint64_t sequence;
+    mtx_t mutex;
+    cnd_t condvar;
+} barrier_t;
 
 extern const struct _test_config_t {
 	int (*test_init_fnc)(void);
@@ -20,7 +30,7 @@ extern const struct _test_config_t {
 extern FILE *test_output_file;
 
 extern void test_abort(void);
-extern int test_thread_barrier(void);
+extern bool test_thread_barrier(void);
 
 // core.c mock
 typedef uint64_t lp_id_t;

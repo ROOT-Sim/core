@@ -73,6 +73,7 @@ static int msg_queue_test(void)
 	}
 
 	test_thread_barrier();
+
 	// to test msg cleanup
 	msg = malloc(sizeof(*msg));
 	memset(msg, 0, sizeof(*msg));

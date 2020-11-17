@@ -1,12 +1,13 @@
 #include <test.h>
 
-#include <pthread.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
-#include <stdint.h>
+#include <assert.h>
+#include <threads.h>
 
 FILE *test_output_file;
-static pthread_barrier_t t_barrier;
+static barrier_t thread_barrier;
 static char **test_argv;
 static char *test_output;
 
@@ -21,10 +22,52 @@ struct stub_arguments {
 	unsigned tid;
 };
 
+// TODO: migrate this barrier implementation into src/core/sync.c, as it's neater than the current
+static inline void barrier_init(barrier_t *barrier, unsigned count)
+{
+    barrier->count = count;
+    barrier->waiters = 0;
+    barrier->sequence = 0;
+    (void) mtx_init(&barrier->mutex, mtx_plain);
+    cnd_init(&barrier->condvar);
+}
+
+static inline void barrier_destroy(barrier_t *barrier)
+{
+    assert(barrier->waiters == 0);
+    mtx_destroy(&barrier->mutex);
+    cnd_destroy(&barrier->condvar);
+}
+
+static inline bool barrier_wait(barrier_t *barrier)
+{
+    bool leader = false;
+    mtx_lock(&barrier->mutex);
+
+    assert(barrier->waiters < barrier->count);
+    barrier->waiters++;
+
+    if (barrier->waiters < barrier->count) {
+        uint64_t sequence = barrier->sequence;
+
+        do {
+            cnd_wait(&barrier->condvar, &barrier->mutex);
+        } while (sequence == barrier->sequence);
+    } else {
+        leader = true;
+        barrier->waiters = 0;
+        barrier->sequence++;
+        cnd_broadcast(&barrier->condvar);
+    }
+
+    mtx_unlock(&barrier->mutex);
+    return leader;
+}
+
 __attribute__((weak)) void* __real_malloc(size_t mem_size);
 __attribute__((weak)) void __real_free(void *ptr);
 
-void* test_malloc(size_t mem_size)
+void *test_malloc(size_t mem_size)
 {
 	if (__real_malloc)
 		return __real_malloc(mem_size);
@@ -40,12 +83,12 @@ void test_free(void *ptr)
 		free(ptr);
 }
 
-static void* test_run_stub(void* arg)
+static int test_run_stub(void *arg)
 {
 	struct stub_arguments *args = arg;
 	rid = args->tid;
 	int ret = args->test_fnc();
-	return (void *)(intptr_t)ret;
+	return ret;
 }
 
 int __real_main(int argc, char **argv);
@@ -55,7 +98,7 @@ int test_main(int argc, char **argv)
 {
 	(void)argc; (void)argv;
 	int ret = 0;
-	pthread_t threads[test_config.threads_count];
+	thrd_t threads[test_config.threads_count];
 	struct stub_arguments args[test_config.threads_count];
 
 	if(test_config.test_init_fnc && (ret = test_config.test_init_fnc())){
@@ -66,17 +109,17 @@ int test_main(int argc, char **argv)
 	for(unsigned i = 0; i < test_config.threads_count; ++i){
 		args[i].test_fnc = test_config.test_fnc;
 		args[i].tid = i;
-		if(pthread_create(&threads[i], NULL, test_run_stub, &args[i])) {
+		if(thrd_create(&threads[i], test_run_stub, &args[i])) {
 			return TEST_BAD_FAIL_EXIT_CODE;
 		}
 	}
 
 	for(unsigned i = 0; i < test_config.threads_count; ++i){
-		void *ret_tv = NULL;
-		if(pthread_join(threads[i], &ret_tv)) {
+		int ret_tv = 0;
+		if(thrd_join(threads[i], &ret_tv)) {
 			return TEST_BAD_FAIL_EXIT_CODE;
 		}
-		if((ret = (intptr_t)ret_tv)) {
+		if((ret = ret_tv)) {
 			printf("Thread %u failed the test with code %d\n", i, ret);
 			return ret;
 		}
@@ -127,7 +170,7 @@ static void test_atexit(void)
 	if(test_output_file)
 		fclose(test_output_file);
 	test_free(test_output);
-	pthread_barrier_destroy(&t_barrier);
+    barrier_destroy(&thread_barrier);
 }
 
 int __wrap_main(void)
@@ -141,8 +184,7 @@ int __wrap_main(void)
 
 	atexit(test_atexit);
 
-	if(pthread_barrier_init(&t_barrier, NULL, n_threads))
-		return TEST_BAD_FAIL_EXIT_CODE;
+    barrier_init(&thread_barrier, n_threads);
 
 	if(init_arguments(&test_argc, &test_argv) == -1)
 		return TEST_BAD_FAIL_EXIT_CODE;
@@ -173,7 +215,7 @@ int __wrap_main(void)
 	return 0;
 }
 
-int test_thread_barrier(void)
+bool test_thread_barrier(void)
 {
-	return pthread_barrier_wait(&t_barrier) == PTHREAD_BARRIER_SERIAL_THREAD;
+    return barrier_wait(&thread_barrier);
 }
