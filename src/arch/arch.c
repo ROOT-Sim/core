@@ -162,7 +162,7 @@ void arch_thread_create(unsigned t_cnt, bool set_affinity, thrd_start_t t_fnc, v
 	// We are assumed to call this function only once
 	assert(thr_ids == NULL);
 
-	thr_ids = mm_alloc(sizeof(*thr_ids) * t_cnt);
+	thr_ids = mm_alloc(sizeof(*thr_ids) * (t_cnt + 1));
 	thr_ids[t_cnt] = 0;
 
 	signal_mask_set(true);
