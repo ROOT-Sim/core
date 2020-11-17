@@ -1,12 +1,13 @@
-name: Website update
+name: Update website
 
 on:
   push:
-    - master
-    - develop
+    branches:
+      - master
+      - develop
 
 jobs:
-  build:
+  update-website:
     runs-on: ubuntu-20.04
 
     steps:
@@ -43,20 +44,23 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: gh-pages
+          persist-credentials: false
 
       - name: Update website
         run: |
           [ ! -e docs/coverage/${{ env.BRANCH_NAME }} ] || rm -rf docs/coverage/${{ env.BRANCH_NAME }}
+          [ ! -e docs/${{ env.BRANCH_NAME }} ] || rm -rf docs/${{ env.BRANCH_NAME }}
           mv ../coverage/${{ env.BRANCH_NAME }}* docs/coverage/
           mv ../html docs/${{ env.BRANCH_NAME }}
-          git config --local user.email "rootsim@bot.local"
-          git config --local user.name "ROOT-Sim Bot"
-          git add docs/${{ env.BRANCH_NAME }} docs/coverage/${{ env.BRANCH_NAME }}.json docs/coverage/${{ env.BRANCH_NAME }}
-          git commit -m "Update website"
 
-      - name: Push changes
-        uses: ad-m/github-push-action@master
+      - name: Deploy website
+        uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gh-pages
-          
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_CONFIG_NAME: "ROOT-Sim Bot"
+          GIT_CONFIG_EMAIL: "bot@rootsim.local"
+          BASE_BRANCH: gh-pages
+          BRANCH: gh-pages
+          FOLDER: .
+          CLEAN: false
+          SINGLE_COMMIT: true
