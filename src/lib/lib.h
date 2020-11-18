@@ -27,13 +27,9 @@
 
 #include <ROOT-Sim.h>
 
-#include <argp.h>
-
 #include <lib/random/random.h>
 #include <lib/topology/topology.h>
 #include <lib/state/state.h>
-
-extern const struct argp lib_argp;
 
 struct lib_state_managed {
 	// random library

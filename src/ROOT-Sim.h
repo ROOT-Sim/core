@@ -30,7 +30,6 @@
  */
 #pragma once
 
-#include <argp.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -42,7 +41,24 @@
 typedef double simtime_t;
 typedef uint64_t lp_id_t;
 
-__attribute((weak)) extern struct argp model_argp;
+/* A description of a particular option. */
+struct ap_option {
+	const char *name; /*!< The long option name. */
+	int key; /*!< What key is returned for this option. */
+	const char *arg; /*!< If non-NULL, this is the name of the argument
+	associated with this option, which is required if set. */
+	const char *doc; /*!< The doc string for this option. */
+};
+
+__attribute((weak)) extern struct ap_option model_options[];
+__attribute((weak)) extern int model_parse(int key, const char *arg);
+
+enum
+{
+	AP_KEY_INIT = 1 << 14,
+	AP_KEY_FINI,
+	AP_ERR_UNKNOWN
+};
 
 extern lp_id_t n_lps;
 

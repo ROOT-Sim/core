@@ -14,7 +14,7 @@ double 	ref_ta = TA,   // Initial call interarrival frequency (same for all cell
 	ta_change = TA_CHANGE; // Average time after which a call is diverted to another cell
 
 enum {
-	OPT_STAT = 128, /// this tells argp to not assign short options
+	OPT_STAT,
 	OPT_TA,
 	OPT_TAD,
 	OPT_TAC,
@@ -24,15 +24,15 @@ enum {
 	OPT_VTA,
 };
 
-const struct argp_option model_options[] = {
-		{"pcs-statistics", OPT_STAT, NULL, 0, NULL, 0},
-		{"ta", OPT_TA, "FLOAT", 0, NULL, 0},
-		{"ta-duration", OPT_TAD, "FLOAT", 0, NULL, 0},
-		{"ta-change", OPT_TAC, "FLOAT", 0, NULL, 0},
-		{"channels-per-cell", OPT_CPC, "UINT", 0, NULL, 0},
-		{"complete-calls", OPT_CC, "INT", 0, NULL, 0},
-		{"fading-recheck", OPT_FR, NULL, 0, NULL, 0},
-		{"variable-ta", OPT_VTA, NULL, 0, NULL, 0},
+struct ap_option model_options[] = {
+		{"pcs-statistics", OPT_STAT, NULL, NULL},
+		{"ta", OPT_TA, "FLOAT", NULL},
+		{"ta-duration", OPT_TAD, "FLOAT", NULL},
+		{"ta-change", OPT_TAC, "FLOAT", NULL},
+		{"channels-per-cell", OPT_CPC, "UINT", NULL},
+		{"complete-calls", OPT_CC, "INT", NULL},
+		{"fading-recheck", OPT_FR, NULL, NULL},
+		{"variable-ta", OPT_VTA, NULL, NULL},
 		{0}
 };
 
@@ -40,12 +40,11 @@ const struct argp_option model_options[] = {
 #define HANDLE_CASE(label, fmt, var)	\
 	case label: \
 		if(sscanf(arg, fmt, &var) != 1){ \
-			return ARGP_ERR_UNKNOWN; \
+			return AP_ERR_UNKNOWN; \
 		} \
 	break
 
-static error_t model_parse (int key, char *arg, struct argp_state *state) {
-	(void)state;
+int model_parse(int key, const char *arg) {
 	
 	switch (key) {
 		HANDLE_CASE(OPT_TA, "%lf", ref_ta);
@@ -64,20 +63,18 @@ static error_t model_parse (int key, char *arg, struct argp_state *state) {
 			variable_ta = true;
 			break;
 
-		case ARGP_KEY_SUCCESS:
+		case AP_KEY_FINI:
 			printf("CURRENT CONFIGURATION:\ncomplete calls: %d\nTA: %f\nta_duration: %f\nta_change: %f\nchannels_per_cell: %d\nfading_recheck: %d\nvariable_ta: %d\n",
 				complete_calls, ref_ta, ta_duration, ta_change, channels_per_cell, fading_check, variable_ta);
 			fflush(stdout);
 			break;
 		default:
-			return ARGP_ERR_UNKNOWN;
+			return AP_ERR_UNKNOWN;
 	}
 	return 0;
 }
 
 #undef HANDLE_CASE
-
-struct argp model_argp = {model_options, model_parse, NULL, NULL, NULL, NULL, NULL};
 
 struct _topology_settings_t topology_settings = {.default_geometry = TOPOLOGY_HEXAGON};
 

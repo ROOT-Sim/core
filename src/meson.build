@@ -57,6 +57,7 @@ lib_srcs = [
 
 # ROOT-Sim serial library sources
 serial_srcs = [
+  'core' / 'arg_parse.c',
   'core' / 'core.c',
   'core' / 'init.c',
   'log' / 'log.c',
@@ -74,6 +75,7 @@ rootsim_serial_lib = static_library('rootsim-serial', serial_srcs,
 # ROOT-Sim parallel library sources
 parallel_srcs = [
   'arch' / 'arch.c',
+  'core' / 'arg_parse.c',
   'core' / 'core.c',
   'core' / 'init.c',
   'core' / 'sync.c',

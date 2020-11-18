@@ -26,22 +26,22 @@
 #include <core/init.h>
 
 #include <arch/arch.h>
+#include <core/arg_parse.h>
 #include <core/core.h>
 #include <lib/lib.h>
 
-#include <argp.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <memory.h>
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <stdarg.h>
+
 simulation_configuration global_config;
 
 /// This is the list of mnemonics for arguments
 enum _opt_codes{
-	OPT_FIRST = 128, /**< we don't want argp short options */
-
 	OPT_NPRC,
 	OPT_LOG,
 	OPT_CLOG,
@@ -54,71 +54,56 @@ enum _opt_codes{
 	OPT_LAST
 };
 
-const char *argp_program_version = "\nCopyright (C) 2020-2020 Andrea Piccione";
-const char *argp_program_bug_address = "piccions@gmx.com";
-
-// Directly from argp documentation:
-// If non-zero, a string containing extra text to be printed before and after
-// the options in a long help message, with the two sections separated by a
-// vertical tab ('\v', '\013') character. By convention, the documentation
-// before the options is just a short string explaining what the program does.
-// Documentation printed after the options describe behavior in more detail.
-static char doc[] = "ROOT-Sim";
-
-// this isn't needed (we haven't got non option arguments to document)
-static char args_doc[] = "";
-// the options recognized by argp
-static const struct argp_option argp_options[] = {
-	{"lp", 		OPT_NPRC, "VALUE", 	0, "Total number of Logical Processes being launched at simulation startup", 0},
-	{"log-level", 	OPT_LOG, "TYPE",	0, "Logging level", 0},
-	{"verbose", 	OPT_LOG, "TYPE",	OPTION_ALIAS, NULL, 0},
-	{"time", 	OPT_SIMT, "VALUE",	0, "Logical time at which the simulation will be considered completed", 0},
-	{"gvt-period", 	OPT_GVT, "VALUE",	0, "Time between two GVT reductions (in milliseconds)", 0},
+static struct ap_option ap_options[] = {
+	{"lp", 		OPT_NPRC, "VALUE", "Total number of Logical Processes being launched at simulation startup"},
+	{"log-level", 	OPT_LOG,  "TYPE",  "Logging level"},
+	{"time", 	OPT_SIMT, "VALUE", "Logical time at which the simulation will be considered completed"},
+	{"gvt-period", 	OPT_GVT,  "VALUE", "Time between two GVT reductions (in milliseconds)"},
 #ifndef ROOTSIM_SERIAL
-	{"wt", 		OPT_NP, "VALUE",	0, "Number of total cores being used by the simulation", 0},
-	{"no-bind", 	OPT_BIND, NULL,		0, "Disables thread to core binding", 0},
+	{"wt",		OPT_NP,   "VALUE", "Number of total cores being used by the simulation"},
+	{"no-bind",	OPT_BIND, NULL,    "Disables thread to core binding"},
 #endif
 	{0}
 };
 
 static void print_config(void)
 {
-	//TODO
+	// TODO
 }
 
-#define malformed_option_failure() argp_error(state, "invalid value \"%s\" in %s option.\nAborting!", arg, state->argv[state->next -1 -(arg != NULL)])
+#define malformed_option_failure() 					\
+__extension__({								\
+	size_t __i;							\
+	for (__i = 0; ap_options[__i].key != key; ++__i);		\
+	arg_parse_error("invalid value \"%s\" in the %s option.", arg, 	\
+			ap_options[__i].name);				\
+})
 
 #define parse_ullong_limits(low, high)					\
-	__extension__({							\
-		unsigned long long int __value;				\
-		char *__endptr;						\
-		__value = strtoull(arg, &__endptr, 10);			\
-		if(							\
-			*arg == '\0' 		||			\
-			*__endptr != '\0' 	||			\
-			__value < low 		||			\
-			__value > high) {				\
-			malformed_option_failure();			\
-		}							\
-		__value;						\
-	})
+__extension__({								\
+	unsigned long long int __value;					\
+	char *__endptr;							\
+	__value = strtoull(arg, &__endptr, 10);				\
+	if (*arg == '\0' || *__endptr != '\0' ||			\
+		__value < low || __value > high) {			\
+		malformed_option_failure();				\
+	}								\
+	__value;							\
+})
 
 #define parse_ldouble_limits(low, high)					\
-	__extension__({							\
-		long double __value;					\
-		char *__endptr;						\
-		__value = strtold(arg, &__endptr);			\
-		if(							\
-			*arg == '\0' 		||			\
-			*__endptr != '\0' 	||			\
-			__value < low 		||			\
-			__value > high) {				\
-			malformed_option_failure();			\
-		}							\
-		__value;						\
-	})
+__extension__({								\
+	long double __value;						\
+	char *__endptr;							\
+	__value = strtold(arg, &__endptr);				\
+	if (*arg == '\0' || *__endptr != '\0' ||			\
+		__value < low || __value > high) {			\
+		malformed_option_failure();				\
+	}								\
+	__value;							\
+})
 
-static error_t parse_opt (int key, char *arg, struct argp_state *state)
+static int parse_opt (int key, const char *arg)
 {
 	switch (key) {
 
@@ -149,7 +134,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 		break;
 #endif
 
-	case ARGP_KEY_INIT:
+	case AP_KEY_INIT:
 		memset(&global_config, 0, sizeof(global_config));
 #ifndef ROOTSIM_SERIAL
 		n_threads = arch_core_count();
@@ -162,29 +147,22 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 		// TODO
 		break;
 
-	case ARGP_KEY_SUCCESS:
+	case AP_KEY_FINI:
 
 		if(n_lps == 0)
-			argp_error(
-				state,
-				"Number of LPs was not provided \"--lp\"\n"
-			);
+			arg_parse_error("number of LPs was not provided \"--lp\"");
 
 #ifndef ROOTSIM_SERIAL
 		if(n_threads > arch_core_count())
-			argp_error(
-				state,
-				"Demanding %u cores, which are more than available (%u)\n",
-				n_threads,
-				arch_core_count()
-			);
+			arg_parse_error("demanding %u cores, which are more than available (%u)",
+				n_threads, arch_core_count());
 #endif
 
 		log_logo_print();
 		print_config();
 		break;
 	default:
-		return ARGP_ERR_UNKNOWN;
+		return AP_ERR_UNKNOWN;
 	}
 	return 0;
 }
@@ -193,16 +171,21 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 #undef handle_string_option
 #undef malformed_option_failure
 
-static struct argp_child argp_child[] = {
-		{&lib_argp, 0, "Model library options", 0},
-		{&model_argp, 0, "Model specific options", 0},
+struct ap_section ap_sects[] = {
+		{NULL, ap_options, parse_opt},
+		{"Model specific options", model_options, model_parse},
 		{0}
 };
 
-static const struct argp argp = {
-	argp_options, parse_opt, args_doc, doc, argp_child, 0, 0};
+struct ap_settings ap_sets = {
+		"ROOT-Sim",	// TODO properly fill these fields
+		"Proper version string",
+		"piccione@diag.uniroma1.it",
+		ap_sects
+};
 
 void init_args_parse(int argc, char **argv)
 {
-	argp_parse (&argp, argc, argv, 0, NULL, NULL);
+	(void) argc;
+	arg_parse_run(&ap_sets, argv);
 }

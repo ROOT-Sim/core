@@ -1,12 +1,15 @@
 #include <test.h>
 
 #include <core/init.h>
+#include <core/arg_parse.h>
 
 void log_logo_print(void){}
 unsigned arch_core_count(void){return 10;}
 
+void arg_parse_run(struct ap_settings *s, char **a){(void) s; (void) a;}
+void arg_parse_error(const char *fmt, ...){(void) fmt;}
+
 bool log_colored;
-__attribute__((weak)) const struct argp lib_argp;
 
 char *args_lp_wt_1[] = {
 	"init_test",
