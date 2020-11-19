@@ -1,12 +1,12 @@
 #include <test.h>
 
+#include <arch/threads.h>
 #include <assert.h>
 #include <memory.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <threads.h>
 
 static char *t_out_buf;
 static size_t t_out_buf_size;

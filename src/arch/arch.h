@@ -31,16 +31,8 @@
  */
 #pragma once
 
-#include <threads.h>
+#include <arch/threads.h>
 #include <stdbool.h>
-
-#if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
-#define __POSIX
-#elif defined(_WIN32)
-#define __WINDOWS
-#else
-#error Unsupported operating system
-#endif
 
 struct t_params {
     unsigned t_cnt;

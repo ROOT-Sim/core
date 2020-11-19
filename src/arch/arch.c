@@ -29,11 +29,10 @@
  * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#define _GNU_SOURCE
+#include <arch/arch.h>
 #include <stdbool.h>
 #include <assert.h>
 
-#include <arch/arch.h>
 #include <core/core.h>
 
 #ifdef __POSIX

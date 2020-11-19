@@ -6,7 +6,7 @@ compiler_c_args = [
 # Meson build options and common macros
 if get_option('buildtype') == 'release'
   log_level_def = '-DLOG_LEVEL=LOG_INFO'
-else 
+else
   log_level_def = '-DLOG_LEVEL=LOG_DEBUG'
   compiler_c_args += '-g'
 endif
@@ -24,7 +24,7 @@ llvm_plugin_cpp_args = [log_level_def]
 src_inc_dir = include_directories('.')
 
 # LLVM library dependency
-llvm_dep = dependency('llvm', version : '>= 9.0', 
+llvm_dep = dependency('llvm', version : '>= 9.0',
   required : get_option('incremental_state_saving'))
 if llvm_dep.found()
   parallel_c_args += '-DROOTSIM_INCREMENTAL=1'
@@ -69,12 +69,13 @@ serial_srcs = [
 
 serial_srcs += lib_srcs
 
-rootsim_serial_lib = static_library('rootsim-serial', serial_srcs, 
+rootsim_serial_lib = static_library('rootsim-serial', serial_srcs,
   c_args : serial_c_args, dependencies: m_dep, install : true)
 
 # ROOT-Sim parallel library sources
 parallel_srcs = [
   'arch' / 'arch.c',
+  'arch' / 'threads.c',
   'core' / 'arg_parse.c',
   'core' / 'core.c',
   'core' / 'init.c',
@@ -104,7 +105,7 @@ endif
 
 parallel_srcs += lib_srcs
 
-rootsim_parallel_lib = static_library('rootsim-parallel', parallel_srcs, 
+rootsim_parallel_lib = static_library('rootsim-parallel', parallel_srcs,
   c_args : parallel_c_args, dependencies : [mpi_dep, m_dep], install : true)
 
 # ROOT-Sim compiler

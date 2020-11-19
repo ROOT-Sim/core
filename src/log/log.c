@@ -32,6 +32,42 @@
 #include <string.h>
 #include <time.h>
 
+_Thread_local static char time_buffer[32];
+
+#ifdef __POSIX
+static inline char *get_local_time(void)
+{
+	time_t t = time(NULL);
+	struct tm *loc_t = localtime(&t);
+	strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", loc_t);
+	time_buffer[sizeof(time_buffer) - 1] = '\0';
+	return time_buffer;
+}
+#endif
+#ifdef __WINDOWS
+static inline char *get_local_time(void)
+{
+	struct tm newtime;
+    __time64_t long_time;
+    errno_t err;
+
+    _time64( &long_time );
+    err = _localtime64_s( &newtime, &long_time );
+    if (unlikely(err)) {
+        printf("Invalid argument to _localtime64_s.");
+        exit(1);
+    }
+    err = asctime_s(time_buffer, sizeof(time_buffer) - 1, &newtime);
+    if (err)
+    {
+        printf("Invalid argument to asctime_s.");
+        exit(1);
+    }
+
+    return time_buffer;
+}
+#endif
+
 int log_level = LOG_LEVEL;
 _Bool log_colored;
 
@@ -51,12 +87,10 @@ static const struct {
 void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 {
 	va_list args;
-	char time_buffer[32];
-	time_t t = time(NULL);
-	struct tm *loc_t = localtime(&t);
 
-	strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", loc_t);
-	time_buffer[sizeof(time_buffer) - 1] = '\0';
+	struct tm *loc_t = get_local_time()
+
+
 	if(log_colored)
 		fprintf(
 			stderr,
