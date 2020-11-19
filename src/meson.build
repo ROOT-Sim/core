@@ -1,4 +1,5 @@
 compiler_c_args = [
+  '-flto',
   '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
   '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"'
 ]
@@ -80,6 +81,7 @@ parallel_srcs = [
   'core' / 'core.c',
   'core' / 'init.c',
   'core' / 'sync.c',
+  'core' / 'timer.c',
   'datatypes' / 'msg_queue.c',
   'datatypes' / 'remote_msg_map.c',
   'distributed' / 'mpi.c',

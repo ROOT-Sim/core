@@ -27,37 +27,25 @@
 #pragma once
 
 #include <time.h>
-#include <sys/time.h>
-
-/* TODO this is Linux-only, port to Windows using QueryPerformanceFrequency()
- * and QueryPerformanceCounter() */
 
 /** The type used to store results of timer related calls */
 typedef uint_fast64_t timer_uint;
 
 /**
  * @brief Gets a new starting point for an time interval measure
- * @returns a timer_uint value, a not meaningful value by itself
  *
  * The returned value can be used in the timer_value() macro to obtain a time
  * interval with microsecond resolution
+ *
+ * @returns a timer_uint value, a not meaningful value by itself
  */
-#define timer_new()							\
-__extension__({								\
-	struct timeval __tmptv;						\
-	gettimeofday(&__tmptv, NULL);					\
-	(timer_uint) __tmptv.tv_sec * 1000000 + __tmptv.tv_usec;	\
-})
+extern timer_uint timer_new(void);
 
 /**
  * @brief Computes a time interval measure using a previous timer_uint value
- * @param timer a timer_uint value obtained from a previous timer_new() call
- * @returns a timer_uint value, the count of microseconds of the time interval
  *
+ *
+ * @param timer a timer_uint value obtained from a previous timer_new() call
+ * @return a timer_uint value, the count of microseconds of the time interval
  */
-#define timer_value(timer)						\
-__extension__({								\
-	struct timeval __tmptv;						\
-	gettimeofday(&__tmptv, NULL);					\
-	(timer_uint) __tmptv.tv_sec * 1000000 + __tmptv.tv_usec - timer;\
-})
+extern timer_uint timer_value(timer_uint start);

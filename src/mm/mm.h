@@ -67,7 +67,7 @@ inline void *mm_alloc(size_t mem_size)
 
 	if (__builtin_expect(mem_size && !ret, 0)) {
 		log_log(LOG_FATAL, "Out of memory!");
-		abort();
+		abort(); // TODO: this can be criticized as xmalloc() in gcc. We shall dump partial stats before.
 	}
 	return ret;
 }
@@ -78,7 +78,7 @@ inline void *mm_realloc(void *ptr, size_t mem_size)
 
 	if(__builtin_expect(mem_size && !ret, 0)) {
 		log_log(LOG_FATAL, "Out of memory!");
-		abort();
+		abort(); // TODO: this can be criticized as xmalloc() in gcc. We shall dump partial stats before.
 	}
 	return ret;
 }

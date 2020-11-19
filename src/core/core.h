@@ -39,6 +39,9 @@
 #define CACHE_LINE_SIZE 64
 #endif
 
+#ifdef max
+#undef max
+#endif
 #define max(a, b) 			\
 __extension__({				\
 	__typeof__ (a) _a = (a);	\
@@ -46,7 +49,9 @@ __extension__({				\
 	_a > _b ? _a : _b;		\
 })
 
-
+#ifdef min
+#undef min
+#endif
 #define min(a, b) 			\
 __extension__({				\
 	__typeof__ (a) _a = (a);	\

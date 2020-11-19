@@ -34,7 +34,17 @@
 #include <limits.h>
 #include <memory.h>
 #include <stdlib.h>
+
+#ifdef __POSIX
 #include <unistd.h>
+#define can_colorize() isatty(STDERR_FILENO)
+#endif
+
+#ifdef __WINDOWS
+#include <stdio.h>
+#include <io.h>
+#define can_colorize() (_fileno(stderr) > 0 ? _isatty(_fileno(stderr)) : false)
+#endif
 
 #include <stdarg.h>
 
@@ -142,7 +152,7 @@ static int parse_opt (int key, const char *arg)
 #endif
 		global_config.gvt_period = 200000;
 		global_config.termination_time = SIMTIME_MAX;
-		log_colored = isatty(STDERR_FILENO);
+		log_colored = can_colorize();
 		// Store the predefined values, before reading any overriding one
 		// TODO
 		break;

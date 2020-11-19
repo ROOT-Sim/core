@@ -43,3 +43,4 @@ struct t_params {
 
 extern void arch_thread_create(unsigned t_cnt, bool set_affinity, thrd_start_t t_fnc, void *t_fnc_arg);
 extern void arch_thread_wait(void);
+extern unsigned arch_core_count(void);

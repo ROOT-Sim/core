@@ -36,8 +36,6 @@
 #include <gvt/termination.h>
 #include <lib/lib.h>
 
-#include <unistd.h>
-
 int parallel_thread_run(void *unused)
 {
 	(void)unused;

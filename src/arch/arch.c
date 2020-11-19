@@ -54,7 +54,7 @@ static void set_my_affinity(unsigned core) {
 	sched_setaffinity(0, sizeof(c_set), &c_set);
 }
 
-static unsigned arch_core_count(void)
+unsigned arch_core_count(void)
 {
 	long int ret = sysconf(_SC_NPROCESSORS_ONLN);
 	return ret < 1 ? 1 : (unsigned)ret;
@@ -79,7 +79,9 @@ static void signal_mask_set(bool ignore_sigint)
 
 #ifdef __WINDOWS
 #define WIN32_LEAN_AND_MEAN
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT _WIN32_WINNT_NT4
+#endif
 #include <windows.h>
 
 static inline void set_my_affinity(unsigned core)
@@ -87,7 +89,7 @@ static inline void set_my_affinity(unsigned core)
 	SetThreadAffinityMask(GetCurrentThread(), 1 << core);
 }
 
-static inline unsigned arch_core_count(void)
+unsigned arch_core_count(void)
 {
 	SYSTEM_INFO sys_info;
 	GetSystemInfo(&sys_info);
@@ -96,6 +98,7 @@ static inline unsigned arch_core_count(void)
 
 static inline void signal_mask_set(bool ignore_sigint)
 {
+	(void)ignore_sigint;
 }
 #endif
 

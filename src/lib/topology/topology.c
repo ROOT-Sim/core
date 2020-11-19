@@ -195,7 +195,7 @@ uint64_t GetReceiver(uint64_t from, enum _direction_t direction)
 		return y * edge + x;
 
 	case TOPOLOGY_MESH:
-		return likely(direction < regions_cnt) ? direction : DIRECTION_INVALID;
+		return likely((uint64_t)direction < regions_cnt) ? direction : DIRECTION_INVALID;
 
 	case TOPOLOGY_BIDRING:
 		switch (direction) {
@@ -214,7 +214,7 @@ uint64_t GetReceiver(uint64_t from, enum _direction_t direction)
 			if(!direction)
 				return 0;
 		} else {
-			if(direction + 1 < regions_cnt)
+			if((uint64_t)direction + 1 < regions_cnt)
 				return direction + 1;
 		}
 	}
