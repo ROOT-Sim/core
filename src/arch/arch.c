@@ -36,13 +36,66 @@
 #include <signal.h>
 #include <unistd.h>
 
+#ifdef __MACOS
+#define _DARWIN_C_SOURCE
+#include <stdint.h>
+#include <mach/mach_types.h>
+#include <mach/thread_act.h>
+#include <pthread.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+
+typedef struct cpu_set {
+	uint32_t count;
+} cpu_set_t;
+
+static inline void CPU_ZERO(cpu_set_t *cs)
+{
+	cs->count = 0;
+}
+
+static inline void CPU_SET(int num, cpu_set_t *cs) {
+	cs->count |= (1 << num);
+}
+
+static inline int CPU_ISSET(int num, cpu_set_t *cs)
+{
+	return (cs->count & (1 << num));
+}
+
+static inline int pthread_setaffinity_np(pthread_t thread, size_t cpu_size, cpu_set_t *cpu_set)
+{
+	thread_port_t mach_thread;
+	unsigned core = 0;
+
+	for(core = 0; core < 8 * cpu_size; core++) {
+		if(CPU_ISSET(core, cpu_set))
+			break;
+	}
+
+	thread_affinity_policy_data_t policy = {core};
+	mach_thread = pthread_mach_thread_np(thread);
+	thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t) &policy, 1);
+	return 0;
+}
+#endif
+
 /**
  * @brief Computes the count of available cores on the machine
  * @return the count of the processing cores available on the machine
  */
 unsigned arch_core_count(void)
 {
+#ifdef __MACOS
+	int32_t ret = 0;
+	size_t  len = sizeof(ret);
+	if(sysctlbyname("machdep.cpu.core_count", &ret, &len, 0, 0)) {
+		ret = 0;
+	}
+#else
 	long int ret = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
 	return ret < 1 ? 1 : (unsigned)ret;
 }
 
@@ -70,15 +123,10 @@ int arch_thread_create(arch_thr_t *thr_p, arch_thr_fnc t_fnc, void *t_fnc_arg)
  */
 int arch_thread_affinity_set(arch_thr_t thr, unsigned core)
 {
-#if defined(__MACOS)
-	// TODO implement MacOS specific stuff
-	return 0;
-#else
 	cpu_set_t cpuset;
 	CPU_ZERO(&cpuset);
 	CPU_SET(core, &cpuset);
 	return -(pthread_setaffinity_np(thr, sizeof(cpuset), &cpuset) != 0);
-#endif
 }
 
 /**
