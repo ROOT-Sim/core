@@ -72,13 +72,13 @@ void model_allocator_lp_fini(void)
 
 void *__wrap_malloc(size_t req_size)
 {
-	if(unlikely(!req_size))
-		return NULL;
-
 #ifdef ROOTSIM_COVERAGE
 	if (unlikely(!current_lp))
 		return __real_malloc(req_size);
 #endif
+
+	if(unlikely(!req_size))
+		return NULL;
 
 	struct mm_state *self = &current_lp->mm_state;
 
@@ -135,15 +135,15 @@ void *__wrap_calloc(size_t nmemb, size_t size)
 
 void __wrap_free(void *ptr)
 {
-	if(unlikely(!ptr))
-		return;
-
 #ifdef ROOTSIM_COVERAGE
 	if (unlikely(!current_lp)) {
 		__real_free(ptr);
 		return;
 	}
 #endif
+
+	if(unlikely(!ptr))
+		return;
 
 	struct mm_state *self = &current_lp->mm_state;
 	uint_fast8_t node_size = B_BLOCK_EXP;
@@ -180,6 +180,11 @@ void __wrap_free(void *ptr)
 
 void *__wrap_realloc(void *ptr, size_t req_size)
 {
+#ifdef ROOTSIM_COVERAGE
+	if (unlikely(!current_lp))
+		return __real_realloc(ptr, req_size);
+#endif
+
 	if (!req_size) {
 		__wrap_free(ptr);
 		return NULL;

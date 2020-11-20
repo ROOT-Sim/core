@@ -30,6 +30,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef NDEBUG
+#define OPTIMIZATION_OPTIONS "-O3 -flto "
+#else
+#define OPTIMIZATION_OPTIONS "-g -O0 "
+#endif
 
 // FIXME: we don't include absolute paths in code!
 #ifndef ROOTSIM_CC
@@ -49,7 +54,7 @@
 static const char *add_args_serial =
 	"-o "
 	"model_serial "
-	"-O3 "
+	OPTIMIZATION_OPTIONS
 	"-I"ROOTSIM_INC_DIR" "
 	ROOTSIM_LIB_DIR"librootsim-serial.a "
 	"-lm"
@@ -58,7 +63,7 @@ static const char *add_args_serial =
 static const char *add_args_parallel =
 	"-o "
 	"model_parallel "
-	"-O3 "
+	OPTIMIZATION_OPTIONS
 	"-I"ROOTSIM_INC_DIR" "
 	ROOTSIM_LIB_DIR"librootsim-parallel.a "
 	"-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc "

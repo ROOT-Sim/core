@@ -36,7 +36,7 @@
 
 #include <arch/platform.h>
 
-_Thread_local static char time_buffer[26];
+static _Thread_local char time_buffer[26];
 
 #ifdef __POSIX
 static inline char *get_local_time(void)

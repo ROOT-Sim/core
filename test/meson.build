@@ -1,8 +1,8 @@
 src_dir = meson.source_root() / 'src'
 models_dir = meson.source_root() / 'models'
 # Test dependencies
-serial_dep = declare_dependency(link_whole: rootsim_serial_lib)
-parallel_dep = declare_dependency(link_whole: rootsim_parallel_lib,
+serial_dep = declare_dependency(link_with: rootsim_serial_lib)
+parallel_dep = declare_dependency(link_with: rootsim_parallel_lib,
   link_args: '-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc')
 
 test_model_srcs = [

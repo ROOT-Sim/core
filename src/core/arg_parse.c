@@ -341,10 +341,9 @@ void arg_parse_run(struct ap_settings *ap_s, char **argv)
 	sort_and_setup_settings();
 
 	struct ap_section *s = ap_s->sects;
-	while (s->opts) {
+	do {
 		s->parser(AP_KEY_INIT, NULL);
-		++s;
-	}
+	} while ((s++)->opts != ap_internal_opts);
 
 	++argv;
 	while (*argv) {
@@ -360,10 +359,9 @@ void arg_parse_run(struct ap_settings *ap_s, char **argv)
 	}
 
 	s = ap_s->sects;
-	while (s->opts) {
+	do {
 		s->parser(AP_KEY_FINI, NULL);
-		++s;
-	}
+	} while ((s++)->opts != ap_internal_opts);
 }
 
 /**

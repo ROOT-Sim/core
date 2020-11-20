@@ -5,8 +5,6 @@
 #define N_LPS 90
 #define N_THREADS 16
 
-uint64_t n_lps = N_LPS;
-
 static int trm_calls[N_LPS];
 static int proc_calls[N_LPS];
 static int deinit_calls[N_LPS];
@@ -38,6 +36,7 @@ void lib_lp_fini(void){ lib_calls[current_lp - lps]--;}
 
 static int lp_test_init(void)
 {
+	n_lps = N_LPS;
 	lp_global_init();
 	return 0;
 }

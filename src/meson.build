@@ -1,5 +1,4 @@
 compiler_c_args = [
-  '-flto',
   '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
   '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"'
 ]
@@ -9,7 +8,6 @@ if get_option('buildtype') == 'release'
   log_level_def = '-DLOG_LEVEL=LOG_INFO'
 else
   log_level_def = '-DLOG_LEVEL=LOG_DEBUG'
-  compiler_c_args += '-g'
 endif
 
 serial_c_args = [log_level_def, '-DROOTSIM_SERIAL']
