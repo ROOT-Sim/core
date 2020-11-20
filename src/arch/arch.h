@@ -36,6 +36,7 @@
 #include <arch/platform.h>
 
 #if defined(__POSIX)
+#define _GNU_SOURCE
 #include <pthread.h>
 
 #define ARCH_CALL_CONV
