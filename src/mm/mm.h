@@ -28,8 +28,6 @@
 */
 #pragma once
 
-#include <log/log.h>
-
 #include <stdlib.h>
 #include <stddef.h>
 
@@ -58,6 +56,8 @@ extern void __real_free(void *ptr);
 #define mm_free free
 
 #else
+
+#include <log/log.h>
 
 #pragma GCC poison malloc realloc free
 

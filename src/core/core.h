@@ -26,11 +26,10 @@
 #pragma once
 
 #include <ROOT-Sim.h>
+#include <arch/platform.h>
 #include <log/log.h>
-#include <log/stats.h>
 #include <mm/mm.h>
 
-#include <assert.h>
 #include <float.h>
 #include <stdint.h>
 #include <stdbool.h>

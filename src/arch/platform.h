@@ -29,10 +29,15 @@
  */
 #pragma once
 
-#if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
-#define __POSIX
-#elif defined(_WIN32)
+#if defined(_WIN32)
 #define __WINDOWS
+#elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#define __POSIX
+
+#if defined(__APPLE__) && defined(__MACH__)
+#define __MACOS
+#endif
+
 #else
 #error Unsupported operating system
 #endif

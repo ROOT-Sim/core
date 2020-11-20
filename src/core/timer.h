@@ -26,6 +26,7 @@
 */
 #pragma once
 
+#include <stdint.h>
 #include <time.h>
 
 /** The type used to store results of timer related calls */

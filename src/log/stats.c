@@ -28,14 +28,12 @@
  */
 #include <log/stats.h>
 
-#include <core/core.h>
-#include <core/timer.h>
-
 #include <inttypes.h>
 #include <stdatomic.h>
 #include <stdint.h>
+#include <stdio.h>
 
-extern __thread simtime_t current_gvt;
+#include <core/timer.h>
 
 struct stats_info {
 	uint64_t count;
@@ -96,15 +94,18 @@ void stats_dump(void)
 	}
 }
 
-#ifndef ROOTSIM_SERIAL
 void stats_progress_print(simtime_t current_gvt)
 {
+#ifndef ROOTSIM_SERIAL
 	if(!rid){
+#else
+	{
+#endif
 		printf("\rVirtual time: %lf", current_gvt);
 		fflush(stdout);
 	}
 }
-#endif
+
 /*
 static void stats_threads_reduce(void)
 {

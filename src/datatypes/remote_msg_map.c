@@ -25,6 +25,7 @@
 */
 #include <datatypes/remote_msg_map.h>
 
+#include <datatypes/msg_queue.h>
 #include <core/intrinsics.h>
 #include <core/sync.h>
 #include <gvt/gvt.h>

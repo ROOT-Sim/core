@@ -1,20 +1,11 @@
 #pragma once
 
-#include <arch/threads.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 
 #define TEST_BAD_FAIL_EXIT_CODE 99
-
-typedef struct {
-	unsigned count;
-	unsigned waiters;
-	uint64_t sequence;
-	mtx_t mutex;
-	cnd_t condvar;
-} barrier_t;
 
 extern const struct _test_config_t {
 	int (*test_init_fnc)(void);

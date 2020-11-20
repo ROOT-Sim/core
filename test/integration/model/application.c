@@ -93,7 +93,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 	}
 }
 
-bool CanEnd(unsigned me, const void *snapshot)
+bool CanEnd(lp_id_t me, const void *snapshot)
 {
 	(void)me;
 	const lp_state_t *state = snapshot;

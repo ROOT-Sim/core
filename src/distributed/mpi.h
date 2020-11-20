@@ -47,6 +47,7 @@ extern void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid);
 extern void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 
 extern void mpi_control_msg_broadcast(enum _msg_ctrl ctrl);
+extern void mpi_control_msg_send_to(enum _msg_ctrl ctrl, nid_t dest);
 extern void mpi_remote_msg_handle(void);
 
 extern bool mpi_reduce_remote_sent_done(void);

@@ -4,7 +4,6 @@
 #include <core/arg_parse.h>
 
 void log_logo_print(void){}
-unsigned arch_core_count(void){return 10;}
 
 void arg_parse_run(struct ap_settings *s, char **a){(void) s; (void) a;}
 void arg_parse_error(const char *fmt, ...){(void) fmt;}

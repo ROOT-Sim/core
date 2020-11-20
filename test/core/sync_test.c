@@ -7,12 +7,12 @@
 
 static atomic_uint counter;
 
-#define THREAD_CNT 2
+#define THREAD_CNT 6
 
 static int sync_test(void)
 {
 	int ret = 0;
-	unsigned i = THREAD_CNT * 10000;
+	unsigned i = THREAD_CNT * 100000;
 	while(i--){
 		atomic_fetch_add_explicit(&counter, 1U, memory_order_relaxed);
 		sync_thread_barrier();

@@ -5,12 +5,9 @@ serial_dep = declare_dependency(link_whole: rootsim_serial_lib)
 parallel_dep = declare_dependency(link_whole: rootsim_parallel_lib,
   link_args: '-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc')
 
-# Include directory used in tests
-src_inc_dir = include_directories(src_dir)
-
-
-rootsim_test_dep = declare_dependency(link_whole:
-  static_library('rootsim-test', 'test.c', dependencies : [m_dep, threads_dep]))
+rootsim_test_dep = declare_dependency(link_with: static_library('rootsim-test', 
+  files('test.c'), dependencies: rs_thr_dep, c_args : ['-DROOTSIM_TEST'],
+  include_directories : src_inc_dir))
 
 fail_tests = [
   'init',

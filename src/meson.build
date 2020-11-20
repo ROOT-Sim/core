@@ -21,9 +21,6 @@ endif
 
 llvm_plugin_cpp_args = [log_level_def]
 
-# Include directory used in tests and llvm plugin compilation
-src_inc_dir = include_directories('.')
-
 # LLVM library dependency
 llvm_dep = dependency('llvm', version : '>= 9.0',
   required : get_option('incremental_state_saving'))
@@ -41,13 +38,6 @@ if mpi_dep.found()
   compiler_c_args += '-DROOTSIM_MPI=1'
 endif
 
-# Math library dependency
-cc = meson.get_compiler('c')
-m_dep = cc.find_library('m', required : false)
-
-# Threads library dependency
-threads_dep = dependency('threads')
-
 # Model helper library sources
 lib_srcs = [
   'lib' / 'random' / 'random.c',
@@ -61,6 +51,7 @@ serial_srcs = [
   'core' / 'arg_parse.c',
   'core' / 'core.c',
   'core' / 'init.c',
+  'core' / 'timer.c',
   'log' / 'log.c',
   'log' / 'stats.c',
   'mm' / 'mm.c',
@@ -75,8 +66,6 @@ rootsim_serial_lib = static_library('rootsim-serial', serial_srcs,
 
 # ROOT-Sim parallel library sources
 parallel_srcs = [
-  'arch' / 'arch.c',
-  'arch' / 'threads.c',
   'core' / 'arg_parse.c',
   'core' / 'core.c',
   'core' / 'init.c',
@@ -92,23 +81,16 @@ parallel_srcs = [
   'log' / 'stats.c',
   'lp' / 'lp.c',
   'lp' / 'process.c',
+  'mm' / 'buddy' / 'buddy.c',
   'mm' / 'mm.c',
   'mm' / 'msg_allocator.c',
   'parallel' / 'parallel.c'
 ]
 
-# Choose from the available memory allocators
-if get_option('memory_allocator') == 'buddy'
-  parallel_c_args += '-DROOTSIM_BUDDY_ALLOCATOR=1'
-  parallel_srcs += 'mm' / 'buddy' / 'buddy.c'
-else
-  parallel_srcs += 'mm' / 'minm' / 'minm.c'
-endif
-
 parallel_srcs += lib_srcs
 
 rootsim_parallel_lib = static_library('rootsim-parallel', parallel_srcs,
-  c_args : parallel_c_args, dependencies : [mpi_dep, m_dep], install : true)
+  c_args : parallel_c_args, dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
 
 # ROOT-Sim compiler
 executable('rootsim-cc', sources : 'compiler.c', c_args : compiler_c_args, install : true)

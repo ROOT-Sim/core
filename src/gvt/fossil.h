@@ -26,4 +26,6 @@
 */
 #pragma once
 
+#include <core/core.h>
+
 extern void fossil_collect(simtime_t current_gvt);

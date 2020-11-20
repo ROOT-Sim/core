@@ -34,6 +34,8 @@
 #include <time.h>
 #include <stdio.h>
 
+#include <arch/platform.h>
+
 _Thread_local static char time_buffer[26];
 
 #ifdef __POSIX

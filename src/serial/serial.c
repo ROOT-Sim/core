@@ -122,8 +122,7 @@ void serial_simulation_run(void)
 		}
 
 		if (global_config.gvt_period <= timer_value(last_vt)) {
-			printf("\rVirtual time: %lf", cur_msg->dest_t);
-			fflush(stdout);
+			stats_progress_print(cur_msg->dest_t);
 			if (unlikely(cur_msg->dest_t >=
 				global_config.termination_time))
 				break;

@@ -27,6 +27,7 @@
 
 #include <gvt/fossil.h>
 
+#include <datatypes/remote_msg_map.h>
 #include <gvt/gvt.h>
 #include <lp/lp.h>
 #include <lp/process.h>

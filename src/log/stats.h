@@ -26,6 +26,8 @@
  */
 #pragma once
 
+#include <core/core.h>
+
 enum stats_time_t {
 #ifndef ROOTSIM_SERIAL
 	STATS_ROLLBACK,

@@ -25,8 +25,8 @@
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <core/timer.h>
-#include <arch/platform.h>
 #include <core/core.h>
+#include "../arch/platform.h"
 
 #ifdef __POSIX
 #include <sys/time.h>

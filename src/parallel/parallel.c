@@ -28,15 +28,17 @@
 #include <core/init.h>
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
-#include <log/stats.h>
-#include <lp/lp.h>
-#include <mm/msg_allocator.h>
+#include <datatypes/remote_msg_map.h>
+#include <distributed/mpi.h>
 #include <gvt/fossil.h>
 #include <gvt/gvt.h>
 #include <gvt/termination.h>
 #include <lib/lib.h>
+#include <log/stats.h>
+#include <lp/lp.h>
+#include <mm/msg_allocator.h>
 
-int parallel_thread_run(void *unused)
+static arch_thr_ret_t ARCH_CALL_CONV parallel_thread_run(void *unused)
 {
 	(void)unused;
 
@@ -60,7 +62,7 @@ int parallel_thread_run(void *unused)
 		}
 
 		simtime_t current_gvt;
-		if(unlikely(current_gvt = gvt_msg_processed())){
+		if(unlikely(current_gvt = gvt_phase_run())){
 			termination_on_gvt(current_gvt);
 			fossil_collect(current_gvt);
 			stats_progress_print(current_gvt);
@@ -77,7 +79,8 @@ int parallel_thread_run(void *unused)
 	msg_queue_fini();
 	sync_thread_barrier();
 	msg_allocator_fini();
-	return 0;
+
+	return ARCH_THR_RET_SUCCESS;
 }
 
 void parallel_global_init(void)
@@ -113,9 +116,23 @@ int main(int argc, char **argv)
 
 	parallel_global_init();
 
-	arch_thread_create(n_threads, global_config.core_binding, parallel_thread_run, NULL);
+	arch_thr_t thrs[n_threads];
+	rid_t i = n_threads;
+	while (i--) {
+		if (arch_thread_create(&thrs[i], parallel_thread_run, NULL)) {
+			log_log(LOG_FATAL, "Unable to create a thread!");
+			abort();
+		}
+		if (global_config.core_binding &&
+				arch_thread_affinity_set(thrs[i], i)) {
+			log_log(LOG_FATAL, "Unable to set a thread affinity!");
+			abort();
+		}
+	}
 
-	arch_thread_wait();
+	i = n_threads;
+	while (i--)
+		arch_thread_wait(thrs[i], NULL);
 
 	parallel_global_fini();
 

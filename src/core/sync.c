@@ -26,48 +26,27 @@
 #include <core/sync.h>
 #include <core/core.h>
 
-static atomic_uint barr_in;
-static atomic_uint barr_out;
-static atomic_uint barr_cr;
-
-
-// TODO: It's not good practice to write like this. Replace with
-// #ifndef and manually set BARRIER_IN_THRESHOLD in the tests.
-#ifdef ROOTSIM_TEST
-#define BARRIER_IN_THRESHOLD (1024)
-#else
-#define BARRIER_IN_THRESHOLD (UINT_MAX/2)
-#endif
-
 bool sync_thread_barrier(void)
 {
-	unsigned i;
-	const unsigned count = n_threads;
-	const unsigned max_in_before_reset = BARRIER_IN_THRESHOLD - BARRIER_IN_THRESHOLD % count;
-	do {
-		i = atomic_fetch_add_explicit(&barr_in, 1U, memory_order_acq_rel) + 1;
-	} while (unlikely(i > max_in_before_reset));
+	static _Thread_local unsigned phase;
+	static atomic_uint cs[2];
+	atomic_uint *c = cs + (phase & 1U);
 
-	unsigned cr = atomic_load_explicit(&barr_cr, memory_order_relaxed);
-
-	bool leader = i == cr + count;
-	if (leader) {
-		atomic_store_explicit(&barr_cr, cr + count, memory_order_release);
+	bool l;
+	unsigned r;
+	if (phase & 2U) {
+		l = atomic_fetch_add_explicit(c, -1, memory_order_release) == 1;
+		do {
+			r = atomic_load_explicit(c, memory_order_relaxed);
+		} while(r);
 	} else {
-		while (i > cr) {
-			cr = atomic_load_explicit (&barr_cr, memory_order_relaxed);
-			spin_pause();
-		}
-	}
-	atomic_thread_fence(memory_order_acquire);
-
-	unsigned o = atomic_fetch_add_explicit(&barr_out, 1, memory_order_release) + 1;
-	if (unlikely(o == max_in_before_reset)) {
-		atomic_thread_fence(memory_order_acquire);
-		atomic_store_explicit(&barr_cr, 0, memory_order_relaxed);
-		atomic_store_explicit(&barr_out, 0, memory_order_relaxed);
-		atomic_store_explicit(&barr_in, 0, memory_order_release);
+		l = !atomic_fetch_add_explicit(c, 1, memory_order_release);
+		rid_t thr_cnt = n_threads;
+		do {
+			r = atomic_load_explicit(c, memory_order_relaxed);
+		} while(r != thr_cnt);
 	}
 
-	return leader;
+	phase = (phase + 1) & 3U;
+	return l;
 }

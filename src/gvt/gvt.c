@@ -29,8 +29,10 @@
 #include <core/init.h>
 #include <core/timer.h>
 #include <datatypes/msg_queue.h>
+#include <distributed/mpi.h>
 
 #include <stdatomic.h>
+#include <memory.h>
 
 enum thread_phase_t {
 	tphase_rdy = 0,
@@ -85,7 +87,7 @@ static inline simtime_t gvt_node_reduce(void)
 
 #ifndef ROOTSIM_MPI
 
-simtime_t gvt_msg_processed(void)
+simtime_t gvt_phase_run(void)
 {
 	static atomic_uint c_a = 0;
 	static atomic_uint c_b = 0;
@@ -150,19 +152,19 @@ simtime_t gvt_msg_processed(void)
 
 static atomic_uint c_a = 0;
 
-void gvt_on_start_msg(void)
+void gvt_on_start_ctrl_msg(void)
 {
 	current_gvt = SIMTIME_MAX;
 	thread_phase = tphase_A;
 	atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
 }
 
-void gvt_on_done_msg(void)
+void gvt_on_done_ctrl_msg(void)
 {
 	atomic_fetch_sub_explicit(&missing_nodes, 1U, memory_order_relaxed);
 }
 
-simtime_t gvt_msg_processed(void)
+simtime_t gvt_phase_run(void)
 {
 	static atomic_uint c_b = 0;
 	static __thread bool red_round = false;

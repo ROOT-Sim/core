@@ -30,30 +30,16 @@
  * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <arch/arch.h>
-#include <stdbool.h>
-#include <assert.h>
-
-#include <core/core.h>
 
 #ifdef __POSIX
+#include <sched.h>
 #include <signal.h>
 #include <unistd.h>
-#include <sched.h>
 
 /**
-* @brief Set the affinity of invoking thread
-*
-* If called, the caller thread returns stuck on the specified core
-*
-* @param core The core to run on
-*/
-static void set_my_affinity(unsigned core) {
-	cpu_set_t c_set;
-	CPU_ZERO(&c_set);
-	CPU_SET(core, &c_set);
-	sched_setaffinity(0, sizeof(c_set), &c_set);
-}
-
+ * @brief Computes the count of available cores on the machine
+ * @return the count of the processing cores available on the machine
+ */
 unsigned arch_core_count(void)
 {
 	long int ret = sysconf(_SC_NPROCESSORS_ONLN);
@@ -61,20 +47,53 @@ unsigned arch_core_count(void)
 }
 
 /**
-* @brief Ignore signals
-*
-* Ignore signals sent to the simulation core.
-*
-* @param ignore_sigint If set to true, SIGINT is ignored
-*/
-static void signal_mask_set(bool ignore_sigint)
+ * @brief Creates a thread
+ *
+ * @param thr_p A pointer to the location where the created thread identifier
+ *              will be copied
+ * @param t_fnc The new thread entry point
+ * @param t_fnc_arg A pointer to the argument to be passed to the new thread
+ *                  entry point
+ * @return 0 if successful, -1 otherwise
+ */
+int arch_thread_create(arch_thr_t *thr_p, arch_thr_fnc t_fnc, void *t_fnc_arg)
 {
-	sigset_t mask, old_mask;
-	sigemptyset(&mask);
-	if (ignore_sigint)
-		sigaddset(&mask, SIGINT);
-	pthread_sigmask(SIG_BLOCK, &mask, &old_mask);
+	return -(pthread_create(thr_p, NULL, t_fnc, t_fnc_arg) != 0);
 }
+
+/**
+ * @brief Sets a core affinity for a thread
+ *
+ * @param thr The identifier of the thread targeted for the affinity change
+ * @param core The core id where the target thread will be pinned on
+ * @return 0 if successful, -1 otherwise
+ */
+int arch_thread_affinity_set(arch_thr_t thr, unsigned core)
+{
+#if defined(__MACOS)
+	// TODO implement MacOS specific stuff
+	return 0;
+#else
+	cpu_set_t cpuset;
+	CPU_ZERO(&cpuset);
+	CPU_SET(core, &cpuset);
+	return -(pthread_setaffinity_np(thr, sizeof(cpuset), &cpuset) != 0);
+#endif
+}
+
+/**
+ * @brief Wait for specified thread to complete execution
+ *
+ * @param thr The identifier of the thread to wait for
+ * @param ret A pointer to the location where the return value will be copied,
+ *            or alternatively NULL
+ * @return 0 if successful, -1 otherwise
+ */
+int arch_thread_wait(arch_thr_t thr, arch_thr_ret_t *ret)
+{
+	return -(pthread_join(thr, ret) != 0);
+}
+
 #endif
 
 #ifdef __WINDOWS
@@ -84,11 +103,6 @@ static void signal_mask_set(bool ignore_sigint)
 #endif
 #include <windows.h>
 
-static inline void set_my_affinity(unsigned core)
-{
-	SetThreadAffinityMask(GetCurrentThread(), 1 << core);
-}
-
 unsigned arch_core_count(void)
 {
 	SYSTEM_INFO sys_info;
@@ -96,108 +110,26 @@ unsigned arch_core_count(void)
 	return sys_info.dwNumberOfProcessors;
 }
 
-static inline void signal_mask_set(bool ignore_sigint)
+int arch_thread_create(arch_thr_t *thr_p, arch_thr_fnc t_fnc, void *arg)
 {
-	(void)ignore_sigint;
+	*thr_p = CreateThread(NULL, 0, t_fnc, arg, 0, NULL);
+	return -(*thr_p == NULL);
 }
-#endif
 
-/// Thread ids of the activated worker threads
-static thrd_t *thr_ids;
+int arch_thread_affinity_set(arch_thr_t thr, unsigned core)
+{
+	return -(SetThreadAffinityMask(thr, 1 << core) != 0);
+}
 
-/**
- * This helper function is the actual entry point for every thread created
- * using the provided internal services.
- *
- * Additionally, when the created thread returns, it frees the memory used
- * to maintain the real entry point and the pointer to its arguments.
- *
- * @param arg A pointer to an internally defined structure of type
- *            struct t_params keeping the real thread's entry point,
- *            its arguments, and information about affinity.
- *
- * @return This function always returns 0
- */
-static int __helper_create_thread(void *args) {
-	struct t_params *params = (struct t_params *)args;
-	thrd_start_t entry = params->entry;
-	args = params->args;
+int arch_thread_wait(arch_thr_t thr, arch_thr_ret_t *ret)
+{
+	if (WaitForSingleObject(thr, INFINITE) == WAIT_FAILED)
+		return -1;
 
-	if(likely(params->set_affinity)) {
-		set_my_affinity(params->t_cnt);
-	}
+	if (ret)
+		return -(GetExitCodeThread(thr, ret) == 0);
 
-	mm_free(params);
-
-	entry(args);
 	return 0;
 }
 
-/**
- * @brief span a number of threads
- *
- * This function creates n threads, all having the same entry point and
- * a pointer to arguments. The entry point is specified by the function t_fnc.
- * Thread creation relies on the __helper_create_thread() function, to properly
- * setup affinity in a C11 portable way, without relying on non-portable
- * pthread interfaces. The startup cost will be a little higher, but in the end
- * this should allow to compile on more platforms with less hussle.
- *
- * Note that the arguments passed to __helper_create_thread are malloc'd
- * here, and free'd there.
- * Additionally, note that we don't make a copy of the arguments pointed
- * by arg, so it is the responsibility of the caller to preserve them
- * during the thread's lifetime.
- * Changing passed arguments from one of the newly created threads will result
- * in all the threads seeing the change.
- *
- * @param t_cnt The number of threads which should be created
- * @param set_affinity If set to true, set threads set_affinity so as to run on
- *        different cores.
- * @param t_fnc The new threads' entry point
- * @param t_fnc_arg A pointer to an array of arguments to be passed to the
- *            new threads' entry point
- */
-void arch_thread_create(unsigned t_cnt, bool set_affinity, thrd_start_t t_fnc, void *t_fnc_arg)
-{
-	struct t_params *params;
-	// We are assumed to call this function only once
-	assert(thr_ids == NULL);
-
-	thr_ids = mm_alloc(sizeof(*thr_ids) * (t_cnt + 1));
-	thr_ids[t_cnt] = 0;
-
-	signal_mask_set(true);
-
-	while(t_cnt--) {
-		params = mm_alloc(sizeof(*params));
-		params->entry = t_fnc;
-		params->args = t_fnc_arg;
-		params->set_affinity = set_affinity;
-		params->t_cnt = t_cnt;
-
-		thrd_create(&thr_ids[t_cnt], __helper_create_thread, params);
-	}
-
-	signal_mask_set(false);
-}
-
-/**
- * @brief Wait for processing threads to complete execution
- *
- * This function suspends execution in the main thread, until all remainin threads
- * have correctly returned.
- * This function shall be called after invoking arch_thread_create().
- */
-void arch_thread_wait(void)
-{
-	size_t thr = 0;
-	assert(thr_ids != NULL);
-
-	while(thr_ids[thr] != 0) {
-		thrd_join(thr_ids[thr++], NULL);
-	}
-
-	mm_free(thr_ids);
-}
-
+#endif

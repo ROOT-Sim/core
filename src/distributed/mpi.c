@@ -193,10 +193,10 @@ void mpi_remote_msg_handle(void)
 			mpi_unlock();
 			switch(status.MPI_TAG){
 			case MSG_CTRL_GVT_START:
-				gvt_on_start_msg();
+				gvt_on_start_ctrl_msg();
 				break;
 			case MSG_CTRL_GVT_DONE:
-				gvt_on_done_msg();
+				gvt_on_done_ctrl_msg();
 				break;
 			case MSG_CTRL_TERMINATION:
 				termination_on_ctrl_msg();
