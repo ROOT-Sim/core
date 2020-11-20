@@ -94,6 +94,4 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-const struct _test_config_t test_config = {
-	.test_name = "init"
-};
+const struct _test_config_t test_config;

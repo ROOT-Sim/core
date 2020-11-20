@@ -8,6 +8,5 @@ static const char *test_arguments[] = {
 };
 
 const struct _test_config_t test_config = {
-	.test_name = "compiler",
 	.test_arguments = test_arguments
 };

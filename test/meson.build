@@ -5,132 +5,87 @@ serial_dep = declare_dependency(link_whole: rootsim_serial_lib)
 parallel_dep = declare_dependency(link_whole: rootsim_parallel_lib,
   link_args: '-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc')
 
-rootsim_test_dep = declare_dependency(link_with: static_library('rootsim-test', 
-  files('test.c'), dependencies: rs_thr_dep, c_args : ['-DROOTSIM_TEST'],
-  include_directories : src_inc_dir))
-
-fail_tests = [
-  'init',
-  'body',
-  'fini',
-  'main',
-  'cmp_short',
-  'cmp_long',
-  'cmp_str'
-]
-
-# Fail tests builds
-i = 1
-foreach test_name : fail_tests
-  e = executable(
-    'test_f' + i.to_string() + '_' + test_name,
-    sources : 'test' / 'fail_' + test_name + '.c',
-    dependencies : rootsim_test_dep,
-    c_args : ['-DROOTSIM_TEST'],
-    link_args : '-Wl,--wrap=main',
-    include_directories : src_inc_dir
-  )
-  test('test_f' + i.to_string() + '_' + test_name, e, should_fail: true)
-  i = i + 1
-endforeach
-
-# Unit tests names and tested sources
-unit_tests = {
-  'init' : 'core' / 'init',
-  'sync' : 'core' / 'sync',
-  'msg_queue' : 'datatypes' / 'msg_queue',
-  'remote_msg_map' : 'datatypes' / 'remote_msg_map',
-#  'gvt' : 'gvt' / 'gvt',
-  'msg_allocator' : 'mm' / 'msg_allocator',
-  'lp' : 'lp' / 'lp',
-  'buddy_allocator' : 'mm' / 'buddy' / 'buddy',
-  'compiler' : 'compiler'
-}
-
-# Unit tests builds
-i = 1
-foreach test_name, test_path : unit_tests
-  e = executable(
-    'test_u' + i.to_string() + '_' + test_name,
-    sources : [test_path + '_test.c', src_dir / test_path + '.c'],
-    dependencies : rootsim_test_dep,
-    c_args : ['-DROOTSIM_TEST'],
-    link_args : '-Wl,--wrap=main',
-    include_directories : src_inc_dir
-  )
-  test('test_u' + i.to_string() + '_' + test_name, e)
-  i = i + 1
-endforeach
-
-# Common integration tests srcs
-integration_srcs = [
+test_model_srcs = [
   'integration' / 'model' / 'application.c',
   'integration' / 'model' / 'functions.c',
   'integration' / 'model' / 'output.c'
 ]
+test_model_dep = declare_dependency(link_with: static_library('test-model', 
+  test_model_srcs, include_directories : src_inc_dir))
 
-# Integration tests specs
-integration_tests = {
-  'serial': {
-    'src' : 'integration' / 'integration_serial.c',
-    'dep' : serial_dep
+test_specs = {
+  'fail_init': {'src' : ['test' / 'fail_init.c'], 'fail' : true},
+  'fail_body': {'src' : ['test' / 'fail_body.c'], 'fail' : true},
+  'fail_fini': {'src' : ['test' / 'fail_fini.c'], 'fail' : true},
+  'fail_main': {'src' : ['test' / 'fail_main.c'], 'fail' : true, 'has_main' : true},
+  'fail_cmp_short': {'src' : ['test' / 'fail_cmp_short.c'], 'fail' : true, 'has_main' : true},
+  'fail_cmp_long': {'src' : ['test' / 'fail_cmp_long.c'], 'fail' : true, 'has_main' : true},
+  'fail_cmp_str': {'src' : ['test' / 'fail_cmp_str.c'], 'fail' : true, 'has_main' : true},
+  
+  'unit_init' : {'src' : ['core' / 'init_test.c', src_dir / 'core' / 'init.c'], 'has_main' : true},
+  'unit_sync' : {'src' : ['core' / 'sync_test.c', src_dir / 'core' / 'sync.c']},
+  'unit_msg_queue' : {'src' : ['datatypes' / 'msg_queue_test.c', src_dir / 'datatypes' / 'msg_queue.c']},
+  'unit_remote_msg_map' : {'src' : ['datatypes' / 'remote_msg_map_test.c', src_dir / 'datatypes' / 'remote_msg_map.c']},
+# 'unit_gvt' : {'src' : ['gvt' / 'gvt_test.c', src_dir / 'gvt' / 'gvt.c']},
+  'unit_msg_allocator' : {'src' : ['mm' / 'msg_allocator_test.c', src_dir / 'mm' / 'msg_allocator.c']},
+  'unit_lp' : {'src' : ['lp' / 'lp_test.c', src_dir / 'lp' / 'lp.c']},
+  'unit_buddy_allocator' : {'src' : ['mm' / 'buddy' / 'buddy_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c']},
+  'unit_compiler' : {'src' : ['compiler_test.c', src_dir / 'compiler.c'], 'has_main' : true},
+  
+  'integration_serial': {
+    'src' : ['integration' / 'integration_serial.c'],
+    'has_main' : true,
+    'dep' : [serial_dep, test_model_dep]
   },
-  'parallel_single':  {
-    'src' : 'integration' / 'integration_parallel_single.c',
-    'dep' : parallel_dep
+  'integration_single':  {
+    'src' : ['integration' / 'integration_parallel_single.c'],
+    'has_main' : true,
+    'dep' : [parallel_dep, test_model_dep]
   },
-  'parallel_multi': {
-    'src' : 'integration' / 'integration_parallel_multi.c',
-    'dep' : parallel_dep
-  }
-}
-
-# Integration tests builds
-i = 1
-foreach test_name, test_spec : integration_tests
-  e = executable(
-    'test_i' + i.to_string() + '_' + test_name,
-    sources : integration_srcs + [test_spec.get('src')],
-    dependencies : [test_spec.get('dep'), rootsim_test_dep],
-    c_args : ['-DROOTSIM_TEST'],
-    link_args : '-Wl,--wrap=main',
-    include_directories : src_inc_dir
-  )
-  test('test_i' + i.to_string() + '_' + test_name, e, is_parallel: false)
-  i = i + 1
-endforeach
-
-models_tests = {
-  'pcs' : {
-    'srcs' : ['application.c', 'functions_app.c'],
-    'lps' : 256
+  'integration_multi': {
+    'src' : ['integration' / 'integration_parallel_multi.c'],
+    'has_main' : true,
+    'dep' : [parallel_dep, test_model_dep]
   },
-  'phold' : {
-    'srcs' : ['application.c'],
-    'lps' : 256
-  }
-}
-
-i = 1
-foreach model_name, test_spec : models_tests
-  model_srcs = []
-  foreach src_name : test_spec.get('srcs')
-    model_srcs += [models_dir / model_name / src_name]
-  endforeach
-
-  e = executable(
-    'test_m' + i.to_string() + '_' + model_name,
-    sources : ['models' / 'model_test.c'] + model_srcs,
-    dependencies : [parallel_dep, rootsim_test_dep],
-    c_args : [
-      '-DROOTSIM_TEST',
-      '-DROOTSIM_TEST_LPS_COUNT="' + test_spec.get('lps').to_string() + '"',
-      '-DROOTSIM_TEST_MODEL_NAME="' + model_name + '"',
-      '-I' + src_dir
+  
+  'model_pcs': {
+    'src' : [
+      'models' / 'model_test.c', 
+      models_dir / 'pcs' / 'application.c', 
+      models_dir / 'pcs' / 'functions_app.c'
     ],
+    'c_args' : ['-DROOTSIM_TEST_LPS_COUNT="256"', '-DROOTSIM_TEST_MODEL_NAME="pcs"'],
+    'has_main' : true,
+    'dep' : [parallel_dep]
+  },
+  'model_phold':  {
+    'src' : [
+      'models' / 'model_test.c', 
+      models_dir / 'phold' / 'application.c', 
+    ],
+    'c_args' : ['-DROOTSIM_TEST_LPS_COUNT="256"', '-DROOTSIM_TEST_MODEL_NAME="phold"'],
+    'has_main' : true,
+    'dep' : [parallel_dep]
+  }
+}
+
+# Tests builds
+i = 1
+foreach test_name, test_spec : test_specs
+  test_srcs = test_spec.get('src')
+  test_srcs += 'test.c'
+  if not test_spec.get('has_main', false)
+    test_srcs += 'test_main.c'
+  endif
+  
+  full_test_name = 'test_' + i.to_string() + '_' + test_name
+  e = executable(full_test_name,
+    sources : test_srcs,
+    dependencies : [rs_thr_dep] + test_spec.get('dep', []),
+    c_args : ['-DROOTSIM_TEST', '-DROOTSIM_TEST_NAME="' + test_name + '"'] + test_spec.get('c_args', []),
     link_args : '-Wl,--wrap=main',
     include_directories : src_inc_dir
   )
-  test('test_m' + i.to_string() + '_' + model_name, e, is_parallel: false)
+  test(full_test_name, e, should_fail: test_spec.get('fail', false), is_parallel: false)
   i = i + 1
 endforeach

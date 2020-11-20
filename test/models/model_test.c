@@ -1,11 +1,7 @@
 #include <test.h>
 
 #ifndef ROOTSIM_TEST_LPS_COUNT
-#define ROOTSIM_TEST_LPS_COUNT 64
-#endif
-
-#ifndef ROOTSIM_TEST_MODEL_NAME
-#define ROOTSIM_TEST_MODEL_NAME "model"
+#define ROOTSIM_TEST_LPS_COUNT 256
 #endif
 
 static const char *test_arguments[] = {
@@ -17,6 +13,5 @@ static const char *test_arguments[] = {
 };
 
 const struct _test_config_t test_config = {
-	.test_name = "model " ROOTSIM_TEST_MODEL_NAME,
 	.test_arguments = test_arguments,
 };

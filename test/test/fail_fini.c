@@ -6,6 +6,5 @@ static int fail_test(void)
 }
 
 const struct _test_config_t test_config = {
-	.test_name = "fail_fini",
 	.test_fini_fnc = fail_test
 };

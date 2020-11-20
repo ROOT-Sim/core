@@ -86,7 +86,6 @@ static int msg_queue_test(void)
 }
 
 const struct _test_config_t test_config = {
-	.test_name = "msg queue",
 	.threads_count = THREAD_CNT,
 	.test_init_fnc = msg_queue_test_init,
 	.test_fini_fnc = msg_queue_test_fini,

@@ -45,7 +45,6 @@ static int gvt_test(void)
 }
 
 const struct _test_config_t test_config = {
-	.test_name = "gvt",
 	.threads_count = N_THREADS,
 	.test_init_fnc = gvt_test_init,
 	.test_fnc = gvt_test

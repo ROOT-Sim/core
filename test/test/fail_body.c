@@ -15,7 +15,6 @@ static int fail_test(void)
 }
 
 const struct _test_config_t test_config = {
-	.test_name = "fail body",
 	.threads_count = THREADS_CNT,
 	.test_fnc = fail_test
 };

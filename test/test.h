@@ -14,7 +14,6 @@ extern const struct _test_config_t {
 	unsigned threads_count;
 	const char *expected_output;
 	size_t expected_output_size;
-	const char *test_name;
 	const char **test_arguments;
 } test_config;
 

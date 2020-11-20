@@ -7,7 +7,7 @@
 
 static atomic_uint counter;
 
-#define THREAD_CNT 6
+#define THREAD_CNT 2
 
 static int sync_test(void)
 {
@@ -24,7 +24,6 @@ static int sync_test(void)
 }
 
 const struct _test_config_t test_config = {
-	.test_name = "sync",
 	.threads_count = THREAD_CNT,
 	.test_fnc = sync_test,
 };

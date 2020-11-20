@@ -74,7 +74,6 @@ static int remote_msg_map_test_fini(void)
 }
 
 const struct _test_config_t test_config = {
-	.test_name = "remote msg map",
 	.threads_count = THREAD_CNT,
 	.test_init_fnc = remote_msg_map_test_init,
 	.test_fini_fnc = remote_msg_map_test_fini,

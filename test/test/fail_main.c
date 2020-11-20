@@ -7,6 +7,4 @@ int main(int argc, char **argv)
 	return -1;
 }
 
-const struct _test_config_t test_config = {
-	.test_name = "fail main",
-};
+const struct _test_config_t test_config;

@@ -1,6 +1,5 @@
 #include <test.h>
 #include <test_rng.h>
-#define ROOTSIM_BUDDY_ALLOCATOR 1
 #include <mm/model_allocator.h>
 #include <lp/lp.h>
 
@@ -110,7 +109,6 @@ static int model_allocator_test(void)
 }
 
 const struct _test_config_t test_config = {
-	.test_name = "model allocator",
 	.threads_count = 4,
 	.test_fnc = model_allocator_test
 };
