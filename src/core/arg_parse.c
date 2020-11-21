@@ -258,15 +258,22 @@ static void sort_and_setup_settings(void)
  * @param s the section of the option currently parsed
  * @param o the option currently parsed
  * @param arg the argument associated with the option (can be NULL)
- * @return 1 if the argument has been consumed during parsing, 0 otherwise
+ * @param arg_explicit a flag indicating if the argument has been supplied
+ *                     explicitly (with an option formatted as --option=value)
+ * @return 1 if a non explicit argument has been consumed during parsing,
+ *         0 otherwise
  */
-static int parse_option(struct ap_section *s, struct ap_option *o, const char *arg)
+static int parse_option(struct ap_section *s, struct ap_option *o,
+			const char *arg, bool arg_explicit)
 {
 	if (!arg && o->arg)
 		arg_parse_error("option '--%s' requires an argument", o->name);
 
 	if (arg && !o->arg) {
-		if (arg[0] != '-')
+		if (arg_explicit)
+			arg_parse_error(
+				"option '--%s' does not require an argument", o->name);
+		else if (arg[0] != '-')
 			arg_parse_error("too many arguments");
 		else
 			arg = NULL;
@@ -276,7 +283,7 @@ static int parse_option(struct ap_section *s, struct ap_option *o, const char *a
 		arg_parse_error(
 			"--%s: (PROGRAM ERROR) Option should have been recognized!?", o->name);
 
-	return arg != NULL;
+	return arg != NULL && !arg_explicit;
 }
 
 /**
@@ -302,7 +309,7 @@ static int process_option(const char *o_name, const char *arg)
 				++i;
 
 			if (o_name[i] == o->name[i])
-				return parse_option(s, o, arg);
+				return parse_option(s, o, arg, false);
 
 			if (max_s == i)
 				cand_o = NULL;
@@ -317,13 +324,16 @@ static int process_option(const char *o_name, const char *arg)
 		}
 	} while ((s++)->opts != ap_internal_opts);
 
-	if (!max_s)
+	if (!max_s || (o_name[max_s] && o_name[max_s] != '='))
 		arg_parse_error("unrecognized option '--%s'", o_name);
 
 	if (!cand_o)
 		arg_parse_error("ambiguous option '--%s'", o_name);
 
-	return parse_option(cand_s, cand_o, arg);
+	if (o_name[max_s] == '=')
+		return parse_option(cand_s, cand_o, &o_name[max_s + 1], true);
+
+	return parse_option(cand_s, cand_o, arg, false);
 }
 
 /**
