@@ -234,13 +234,13 @@ simtime_t gvt_phase_run(void)
 		// acquire is needed to sync with all threads aggregated values
 		if (atomic_load_explicit(&c_b, memory_order_acquire) ==
 			n_threads) {
-			mpi_reduce_remote_sent((unsigned *)sent_tot,
+			mpi_reduce_sum_scatter((unsigned *)sent_tot,
 				&remote_msg_to_receive);
 			thread_phase = tphase_B_rdone;
 		}
 		break;
 	case tphase_B_rdone:
-		if (mpi_reduce_remote_sent_done()) {
+		if (mpi_reduce_sum_scatter_done()) {
 			atomic_fetch_sub_explicit(remote_msg_received +
 				!gvt_phase_green, remote_msg_to_receive,
 				memory_order_relaxed);
@@ -265,12 +265,12 @@ simtime_t gvt_phase_run(void)
 		if (atomic_load_explicit(&c_b, memory_order_acquire) ==
 			n_threads) {
 			*reducing_p = gvt_node_reduce();
-			mpi_reduce_local_min(reducing_p);
+			mpi_reduce_min(reducing_p);
 			thread_phase = tphase_C_rdone;
 		}
 		break;
 	case tphase_C_rdone:
-		if (mpi_reduce_local_min_done()) {
+		if (mpi_reduce_min_done()) {
 			atomic_fetch_sub_explicit(&c_b, 1U,
 				memory_order_relaxed);
 			// no sync needed

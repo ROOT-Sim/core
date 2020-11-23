@@ -50,10 +50,10 @@ extern void mpi_control_msg_broadcast(enum _msg_ctrl ctrl);
 extern void mpi_control_msg_send_to(enum _msg_ctrl ctrl, nid_t dest);
 extern void mpi_remote_msg_handle(void);
 
-extern bool mpi_reduce_remote_sent_done(void);
-extern void mpi_reduce_remote_sent(const uint32_t *sent_msgs, uint32_t *result);
+extern void mpi_reduce_sum_scatter(const unsigned node_vals[n_nodes], unsigned *result);
+extern bool mpi_reduce_sum_scatter_done(void);
 
-extern bool mpi_reduce_local_min_done(void);
-extern void mpi_reduce_local_min(simtime_t *local_min_p);
+extern void mpi_reduce_min(simtime_t *node_min_p);
+extern bool mpi_reduce_min_done(void);
 
 #endif

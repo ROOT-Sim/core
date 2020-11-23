@@ -60,6 +60,15 @@ static spinlock_t mpi_spinlock;
 
 #endif
 
+/**
+ * @brief Handles a MPI error
+ * @param comm the MPI communicator involved in the error
+ * @param err_code_p a pointer to the error code
+ * @param ... an implementation specific list of additional arguments in which
+ *            we are not interested
+ *
+ * This handler is registered in mpi_global_init() to print meaningful MPI errors
+ */
 static void comm_error_handler(MPI_Comm *comm, int *err_code_p, ...)
 {
 	(void) comm;
@@ -70,9 +79,14 @@ static void comm_error_handler(MPI_Comm *comm, int *err_code_p, ...)
 	MPI_Error_string(*err_code_p, err_str, &err_len);
 	log_log(LOG_FATAL, "MPI error msg is %s ", err_str);
 
-	abort();
+	exit(-1);
 }
 
+/**
+ * @brief Initializes the MPI environment
+ * @param argc_p a pointer to the OS supplied argc
+ * @param argv_p a pointer to the OS supplied argv
+ */
 void mpi_global_init(int *argc_p, char ***argv_p)
 {
 	int thread_lvl = MPI_THREAD_SINGLE;
@@ -96,7 +110,7 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 	}
 
 	MPI_Errhandler err_handler;
-	if (MPI_Comm_create_errhandler(comm_error_handler, &err_handler)){
+	if (MPI_Comm_create_errhandler(comm_error_handler, &err_handler)) {
 		log_log(LOG_FATAL, "Unable to create MPI error handler");
 		abort();
 	}
@@ -110,6 +124,9 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 	n_nodes = helper;
 }
 
+/**
+ * @brief Finalizes the MPI environment
+ */
 void mpi_global_fini(void)
 {
 	MPI_Errhandler err_handler;
@@ -119,6 +136,11 @@ void mpi_global_fini(void)
 	MPI_Finalize();
 }
 
+/**
+ * @brief Sends a model message to a LP residing on another node
+ * @param msg the message to send
+ * @param dest_nid the id of the node where the targeted LP resides
+ */
 void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	bool phase = gvt_phase_get();
@@ -134,6 +156,11 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	mpi_unlock();
 }
 
+/**
+ * @brief Sends a model anti-message to a LP residing on another node
+ * @param msg the message to rollback
+ * @param dest_nid the id of the node where the targeted LP resides
+ */
 void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	msg_id_phase_set(msg->msg_id, gvt_phase_get());
@@ -147,6 +174,10 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	mpi_unlock();
 }
 
+/**
+ * @brief Sends a platform control message to all the other nodes
+ * @param ctrl the control message to send
+ */
 void mpi_control_msg_broadcast(enum _msg_ctrl ctrl)
 {
 	MPI_Request req;
@@ -161,6 +192,11 @@ void mpi_control_msg_broadcast(enum _msg_ctrl ctrl)
 	mpi_unlock();
 }
 
+/**
+ * @brief Sends a platform control message to a specific nodes
+ * @param ctrl the control message to send
+ * @param dest the id of the destination node
+ */
 void mpi_control_msg_send_to(enum _msg_ctrl ctrl, nid_t dest)
 {
 	MPI_Request req;
@@ -170,20 +206,30 @@ void mpi_control_msg_send_to(enum _msg_ctrl ctrl, nid_t dest)
 	mpi_unlock();
 }
 
+/**
+ * @brief Empties the queue of incoming MPI messages, doing the right thing for
+ *        each of of them.
+ *
+ * This routine checks, using the MPI probing mechanism, for new remote messages
+ * and it handles them accordingly.
+ * Control messages are handled by the respective platform handler.
+ * Simulation messages are unpacked and put in the queue.
+ * Anti-messages are matched and accordingly processed by the message map.
+ */
 void mpi_remote_msg_handle(void)
 {
 	int pending;
 	MPI_Message mpi_msg;
 	MPI_Status status;
 
-	do {
-		if(!mpi_trylock())
+	while (1) {
+		if (!mpi_trylock())
 			return;
 
 		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
 			&pending, &mpi_msg, &status);
 
-		if (!pending){
+		if (!pending) {
 			mpi_unlock();
 			return;
 		}
@@ -237,47 +283,79 @@ void mpi_remote_msg_handle(void)
 					msg_id_phase_get(msg_id));
 			}
 		}
-	} while (1);
+	}
 }
 
-static MPI_Request reduce_remote_sent_req = MPI_REQUEST_NULL;
+static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
 
-bool mpi_reduce_remote_sent_done(void)
+/**
+ * @brief Computes the sum-reduction-scatter operation across all nodes.
+ * @param node_vals a pointer to the addendum vector from the calling node.
+ * @param result a pointer where the nid-th component of the sum will be stored.
+ *
+ * Each node supplies a n_nodes components vector. The sum of all these vector
+ * is computed and the nid-th component of this vector is stored in @a result.
+ * Each node has to call this function else the result can't be computed.
+ * It is possible to have a single mpi_reduce_sum operation pending at a time.
+ * Both arguments must point to valid memory regions until mpi_reduce_sum_done()
+ * returns true.
+ */
+void mpi_reduce_sum_scatter(const unsigned node_vals[n_nodes], unsigned *result)
+{
+	mpi_lock();
+	MPI_Ireduce_scatter_block(node_vals, result, 1, MPI_UNSIGNED, MPI_SUM,
+		MPI_COMM_WORLD, &reduce_sum_scatter_req);
+	mpi_unlock();
+}
+
+/**
+ * @brief Checks if a previous mpi_reduce_sum_scatter() operation has completed.
+ * @return true if the previous operation has been completed, false otherwise.
+ */
+bool mpi_reduce_sum_scatter_done(void)
 {
 	int flag = 0;
 	mpi_lock();
-	MPI_Test(&reduce_remote_sent_req, &flag, MPI_STATUS_IGNORE);
+	MPI_Test(&reduce_sum_scatter_req, &flag, MPI_STATUS_IGNORE);
 	mpi_unlock();
 	return flag;
 }
 
-void mpi_reduce_remote_sent(const unsigned *sent_msgs, unsigned *result)
-{
-	mpi_lock();
-	MPI_Ireduce_scatter_block(sent_msgs, result, 1, MPI_UNSIGNED, MPI_SUM,
-		MPI_COMM_WORLD, &reduce_remote_sent_req);
-	mpi_unlock();
-}
+static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
 
-static MPI_Request reduce_local_min_req = MPI_REQUEST_NULL;
-
-bool mpi_reduce_local_min_done(void)
-{
-	int flag = 0;
-	mpi_lock();
-	MPI_Test(&reduce_local_min_req, &flag, MPI_STATUS_IGNORE);
-	mpi_unlock();
-	return flag;
-}
-
-void mpi_reduce_local_min(simtime_t *local_min_p)
+/**
+ * @brief Computes the min-reduction operation across all nodes.
+ * @param node_min_p a pointer to the value from the calling node which will
+ *                   also be used to store the computed minimum.
+ *
+ * Each node supplies a aingle simtime_t value. The minimum of all these values
+ * is computed and stored in @a node_min_p itself.
+ * Each node has to call this function else the result can't be computed.
+ * It is possible to have a single mpi_reduce_sum operation pending at a time.
+ * Both arguments must point to valid memory regions until mpi_reduce_sum_done()
+ * returns true.
+ */
+void mpi_reduce_min(simtime_t *node_min_p)
 {
 	static simtime_t min_buff;
-	min_buff = *local_min_p;
+	min_buff = *node_min_p;
 	mpi_lock();
-	MPI_Iallreduce(&min_buff, local_min_p, 1, MPI_DOUBLE, MPI_MIN,
-		MPI_COMM_WORLD, &reduce_local_min_req);
+	MPI_Iallreduce(&min_buff, node_min_p, 1, MPI_DOUBLE, MPI_MIN,
+		MPI_COMM_WORLD, &reduce_min_req);
 	mpi_unlock();
+}
+
+/**
+ * @brief Checks if a previous mpi_reduce_min() operation has completed.
+ * @return true if the previous operation has been completed, false otherwise.
+ */
+bool mpi_reduce_min_done(void)
+{
+	int flag = 0;
+	mpi_lock();
+	MPI_Test(&reduce_min_req, &flag, MPI_STATUS_IGNORE);
+	mpi_unlock();
+	return flag;
 }
 
 #endif
