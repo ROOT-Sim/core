@@ -51,13 +51,12 @@ struct ap_option {
 };
 
 __attribute((weak)) extern struct ap_option model_options[];
-__attribute((weak)) extern int model_parse(int key, const char *arg);
+__attribute((weak)) extern void model_parse(int key, const char *arg);
 
 enum
 {
 	AP_KEY_INIT = 1 << 14,
-	AP_KEY_FINI,
-	AP_ERR_UNKNOWN
+	AP_KEY_FINI
 };
 
 extern lp_id_t n_lps;

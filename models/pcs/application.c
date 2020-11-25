@@ -39,12 +39,13 @@ struct ap_option model_options[] = {
 // this macro abuse looks so elegant though...
 #define HANDLE_CASE(label, fmt, var)	\
 	case label: \
-		if(sscanf(arg, fmt, &var) != 1){ \
-			return AP_ERR_UNKNOWN; \
+		if(sscanf(arg, fmt, &var) != 1) { \
+			printf("Bad model argument in PCS!\n"); \
+			abort(); \
 		} \
 	break
 
-int model_parse(int key, const char *arg) {
+void model_parse(int key, const char *arg) {
 	
 	switch (key) {
 		HANDLE_CASE(OPT_TA, "%lf", ref_ta);
@@ -67,11 +68,7 @@ int model_parse(int key, const char *arg) {
 			printf("CURRENT CONFIGURATION:\ncomplete calls: %d\nTA: %f\nta_duration: %f\nta_change: %f\nchannels_per_cell: %d\nfading_recheck: %d\nvariable_ta: %d\n",
 				complete_calls, ref_ta, ta_duration, ta_change, channels_per_cell, fading_check, variable_ta);
 			fflush(stdout);
-			break;
-		default:
-			return AP_ERR_UNKNOWN;
 	}
-	return 0;
 }
 
 #undef HANDLE_CASE

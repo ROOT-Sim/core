@@ -3,7 +3,7 @@
 struct ap_section {
 	const char *header;
 	struct ap_option *opts;
-	int (*parser)(int key, const char *arg);
+	void (*parser)(int key, const char *arg);
 };
 
 struct ap_settings

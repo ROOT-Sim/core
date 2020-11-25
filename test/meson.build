@@ -22,7 +22,7 @@ test_specs = {
   'fail_cmp_long': {'src' : ['test' / 'fail_cmp_long.c'], 'fail' : true, 'has_main' : true},
   'fail_cmp_str': {'src' : ['test' / 'fail_cmp_str.c'], 'fail' : true, 'has_main' : true},
   
-  'unit_init' : {'src' : ['core' / 'init_test.c', src_dir / 'core' / 'init.c'], 'has_main' : true},
+  'unit_init' : {'src' : ['core' / 'init_test.c', src_dir / 'core' / 'init.c', src_dir / 'core' / 'arg_parse.c'], 'has_main' : true},
   'unit_sync' : {'src' : ['core' / 'sync_test.c', src_dir / 'core' / 'sync.c']},
   'unit_msg_queue' : {'src' : ['datatypes' / 'msg_queue_test.c', src_dir / 'datatypes' / 'msg_queue.c']},
   'unit_remote_msg_map' : {'src' : ['datatypes' / 'remote_msg_map_test.c', src_dir / 'datatypes' / 'remote_msg_map.c']},
@@ -54,7 +54,6 @@ test_specs = {
       models_dir / 'pcs' / 'application.c', 
       models_dir / 'pcs' / 'functions_app.c'
     ],
-    'c_args' : ['-DROOTSIM_TEST_LPS_COUNT="256"', '-DROOTSIM_TEST_MODEL_NAME="pcs"'],
     'has_main' : true,
     'dep' : [parallel_dep]
   },
@@ -63,7 +62,6 @@ test_specs = {
       'models' / 'model_test.c', 
       models_dir / 'phold' / 'application.c', 
     ],
-    'c_args' : ['-DROOTSIM_TEST_LPS_COUNT="256"', '-DROOTSIM_TEST_MODEL_NAME="phold"'],
     'has_main' : true,
     'dep' : [parallel_dep]
   }
@@ -82,8 +80,7 @@ foreach test_name, test_spec : test_specs
   e = executable(full_test_name,
     sources : test_srcs,
     dependencies : [rs_thr_dep] + test_spec.get('dep', []),
-    c_args : ['-DROOTSIM_TEST', '-DROOTSIM_TEST_NAME="' + test_name + '"'] + test_spec.get('c_args', []),
-    link_args : '-Wl,--wrap=main',
+    c_args : ['-DROOTSIM_TEST', '-DROOTSIM_TEST_NAME="' + test_name + '"'],
     include_directories : src_inc_dir
   )
   test(full_test_name, e, should_fail: test_spec.get('fail', false), is_parallel: false)

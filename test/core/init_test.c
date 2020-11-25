@@ -5,9 +5,6 @@
 
 void log_logo_print(void){}
 
-void arg_parse_run(struct ap_settings *s, char **a){(void) s; (void) a;}
-void arg_parse_error(const char *fmt, ...){(void) fmt;}
-
 bool log_colored;
 
 char *args_lp_wt_1[] = {
@@ -91,7 +88,11 @@ int main(int argc, char **argv)
 		&& global_config.gvt_period == 200000
 		&& global_config.termination_time == 1437.23);
 
+	test_printf("test done");
 	return 0;
 }
 
-const struct _test_config_t test_config;
+const struct _test_config_t test_config = {
+	.expected_output = "test done",
+	.expected_output_size = sizeof("test done") - 1
+};

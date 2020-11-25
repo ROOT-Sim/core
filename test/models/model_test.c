@@ -1,8 +1,6 @@
 #include <test.h>
 
-#ifndef ROOTSIM_TEST_LPS_COUNT
-#define ROOTSIM_TEST_LPS_COUNT 256
-#endif
+#define ROOTSIM_TEST_LPS_COUNT "256"
 
 static const char *test_arguments[] = {
 	"--lp",

@@ -113,7 +113,7 @@ __extension__({								\
 	__value;							\
 })
 
-static int parse_opt (int key, const char *arg)
+static void parse_opt (int key, const char *arg)
 {
 	switch (key) {
 
@@ -170,11 +170,7 @@ static int parse_opt (int key, const char *arg)
 
 		log_logo_print();
 		print_config();
-		break;
-	default:
-		return AP_ERR_UNKNOWN;
 	}
-	return 0;
 }
 
 #undef parse_ullong_limits

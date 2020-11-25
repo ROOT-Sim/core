@@ -27,7 +27,7 @@ __attribute__((weak)) __thread rid_t rid;
 
 __attribute__((weak)) void *__real_malloc(size_t mem_size);
 __attribute__((weak)) void __real_free(void *ptr);
-int __real_main(int argc, char **argv);
+int main(int argc, char **argv);
 
 static void *test_malloc(size_t mem_size)
 {
@@ -48,9 +48,9 @@ static void test_free(void *ptr)
 static int init_arguments(int *argc_p, char ***argv_p)
 {
 	int argc = 0;
-	if(test_config.test_arguments){
-		while(test_config.test_arguments[argc]){
-			argc++;
+	if (test_config.test_arguments) {
+		while (test_config.test_arguments[argc]) {
+			++argc;
 		}
 	}
 	++argc;
@@ -61,12 +61,9 @@ static int init_arguments(int *argc_p, char ***argv_p)
 
 	argv[0] = "rootsim_test";
 
-	if(test_config.test_arguments){
-		memcpy(
-			&argv[1],
-			test_config.test_arguments,
-			sizeof(*argv) * argc
-		);
+	if (test_config.test_arguments) {
+		memcpy(&argv[1], test_config.test_arguments,
+		       sizeof(*argv) * argc);
 	} else {
 		argv[1] = NULL;
 	}
@@ -82,7 +79,8 @@ static void test_atexit(void)
 	test_free(t_out_buf);
 }
 
-int __wrap_main(void)
+__attribute__((constructor))
+void main_wrapper(void)
 {
 	int test_argc = 0;
 
@@ -92,18 +90,17 @@ int __wrap_main(void)
 
 	atexit(test_atexit);
 
-	if(init_arguments(&test_argc, &test_argv) == -1)
-		return TEST_BAD_FAIL_EXIT_CODE;
+	if (init_arguments(&test_argc, &test_argv) == -1)
+		exit(TEST_BAD_FAIL_EXIT_CODE);
 
 	t_out_buf_size = 1;
 	t_out_buf = test_malloc(t_out_buf_size);
 	if (t_out_buf == NULL)
-		return TEST_BAD_FAIL_EXIT_CODE;
+		exit(TEST_BAD_FAIL_EXIT_CODE);
 
-	int test_ret = __real_main(test_argc, test_argv);
-	if (test_ret) {
-		return test_ret;
-	}
+	int test_ret = main(test_argc, test_argv);
+	if (test_ret)
+		exit(test_ret);
 
 	if (t_out_wrote < test_config.expected_output_size) {
 		puts("Test failed: output is shorter than the expected one");
@@ -111,7 +108,7 @@ int __wrap_main(void)
 	}
 
 	puts("Successfully run " ROOTSIM_TEST_NAME " test");
-	return 0;
+	exit(0);
 }
 
 
@@ -159,7 +156,7 @@ bool test_thread_barrier(void)
 
 	unsigned i;
 	unsigned count = test_config.threads_count;
-	unsigned max_in_before_reset = (UINT_MAX/2) - (UINT_MAX/2) % count;
+	unsigned max_in_before_reset = (UINT_MAX / 2) - (UINT_MAX / 2) % count;
 	do {
 		i = atomic_fetch_add_explicit(
 			&b_in, 1U, memory_order_acq_rel) + 1;

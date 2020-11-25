@@ -18,7 +18,7 @@
 static const char *ap_pname;
 static const struct ap_settings *ap_settings;
 
-enum {AP_HELP = AP_ERR_UNKNOWN + 1, AP_USAGE, AP_VERSION};
+enum {AP_HELP = AP_KEY_FINI + 1, AP_USAGE, AP_VERSION};
 
 static struct ap_option ap_internal_opts[] = {
 	{"help", AP_HELP, NULL, "Give this help list"},
@@ -202,7 +202,7 @@ static void print_usage(void)
  * @param key the currently parsed key
  * @param arg the currently parsed argument
  */
-static int internal_opt_parse(int key, const char *arg)
+static void internal_opt_parse(int key, const char *arg)
 {
 	(void)arg;
 	switch (key) {
@@ -216,7 +216,7 @@ static int internal_opt_parse(int key, const char *arg)
 			puts(ap_settings->prog_version);
 			break;
 		default:
-			return 0;
+			return;
 	}
 	exit(0);
 }
@@ -253,6 +253,18 @@ static void sort_and_setup_settings(void)
 }
 
 /**
+ * @brief Undos the injection of the internal ap_section struct
+ */
+static void undo_setup_settings(void)
+{
+	struct ap_section *s = ap_settings->sects;
+	while (s->opts != ap_internal_opts)
+		++s;
+	s->opts = NULL;
+	s->parser = NULL;
+}
+
+/**
  * @brief Parses a single option by calling the appropriate parser or throwing
  *        an error
  * @param s the section of the option currently parsed
@@ -279,9 +291,7 @@ static int parse_option(struct ap_section *s, struct ap_option *o,
 			arg = NULL;
 	}
 
-	if (s->parser(o->key, arg))
-		arg_parse_error(
-			"--%s: (PROGRAM ERROR) Option should have been recognized!?", o->name);
+	s->parser(o->key, arg);
 
 	return arg != NULL && !arg_explicit;
 }
@@ -372,6 +382,8 @@ void arg_parse_run(struct ap_settings *ap_s, char **argv)
 	do {
 		s->parser(AP_KEY_FINI, NULL);
 	} while ((s++)->opts != ap_internal_opts);
+
+	undo_setup_settings();
 }
 
 /**
