@@ -28,7 +28,7 @@ char *args_lp_wt_2[] = {
 char *args_no_bind[] = {
 	"init_test",
 	"--wt",
-	"10",
+	"1",
 	"--lp",
 	"40",
 	"--no-bind",
@@ -38,7 +38,7 @@ char *args_no_bind[] = {
 char *args_gvt[] = {
 	"init_test",
 	"--wt",
-	"10",
+	"2",
 	"--lp",
 	"40",
 	"--gvt-period",
@@ -77,10 +77,10 @@ int main(int argc, char **argv)
 		n_lps == 80 && n_threads == 1 && global_config.core_binding);
 
 	TEST_INIT(args_no_bind,
-		n_lps == 40 && n_threads == 10 && !global_config.core_binding);
+		n_lps == 40 && n_threads == 1 && !global_config.core_binding);
 
 	TEST_INIT(args_gvt,
-		n_lps == 40 && n_threads == 10 && global_config.core_binding
+		n_lps == 40 && n_threads == 2 && global_config.core_binding
 		&& global_config.gvt_period == 500000);
 
 	TEST_INIT(args_termination,
