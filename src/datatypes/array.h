@@ -25,8 +25,10 @@
 */
 #pragma once
 
-#include <mm/mm.h>
+#include <memory.h>
 #include <stdint.h>
+
+#include <mm/mm.h>
 
 #define arr_realloc mm_realloc
 #define arr_alloc mm_alloc
