@@ -31,6 +31,8 @@
 #include <math.h>
 #include <memory.h>
 
+__attribute((weak)) struct _topology_settings_t topology_settings;
+
 /// this is used to store the common characteristics of the topology
 struct {
 	lp_id_t regions_cnt; 			/**< the number of LPs involved in the topology */
@@ -44,8 +46,9 @@ struct {
  */
 void topology_global_init(void)
 {
-	if(!&topology_settings)
-		// the weak symbol isn't defined: we aren't needed
+	if (!topology_settings.default_geometry &&
+		!topology_settings.out_of_topology)
+		// the strong symbol isn't defined: we aren't needed
 		return;
 
 	// set default values

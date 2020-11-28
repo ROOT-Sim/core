@@ -177,6 +177,9 @@ static void parse_opt (int key, const char *arg)
 #undef handle_string_option
 #undef malformed_option_failure
 
+__attribute__((weak)) struct ap_option model_options[] = {0};
+__attribute__((weak)) void model_parse(int key, const char *arg){(void) key; (void) arg;}
+
 struct ap_section ap_sects[] = {
 		{NULL, ap_options, parse_opt},
 		{"Model specific options", model_options, model_parse},

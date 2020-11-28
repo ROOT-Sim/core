@@ -135,14 +135,15 @@ static void print_help(void)
 	do {
 		struct ap_option *o = s->opts;
 
+		if (!o->name)
+			continue;
+
 		if (s->header)
 			printf(" %s\n", s->header);
 
-		while (o->name) {
+		do {
 			print_help_option(o->name, o->arg, o->doc);
-
-			++o;
-		}
+		} while ((o++)->name);
 
 		puts("");
 	} while ((s++)->opts != ap_internal_opts);

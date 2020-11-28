@@ -72,7 +72,7 @@ extern double Expent(double mean);
 extern double Normal(void);
 
 enum _topology_geometry_t {
-	TOPOLOGY_HEXAGON,	//!< hexagonal grid topology
+	TOPOLOGY_HEXAGON = 1,	//!< hexagonal grid topology
 	TOPOLOGY_SQUARE,	//!< square grid topology
 	TOPOLOGY_RING,		//!< a ring shaped topology walkable in a single direction
 	TOPOLOGY_BIDRING,	//!< a ring shaped topology
@@ -96,8 +96,8 @@ enum _direction_t {
 };
 
 __attribute((weak)) extern struct _topology_settings_t {
-	const enum _topology_geometry_t default_geometry;	//!< The default geometry to use when nothing else is specified
-	const unsigned out_of_topology;				//!< The minimum number of LPs needed out of the topology
+	enum _topology_geometry_t default_geometry;	//!< The default geometry to use when nothing else is specified
+	unsigned out_of_topology;			//!< The minimum number of LPs needed out of the topology
 } topology_settings;
 
 extern __attribute__ ((pure)) lp_id_t RegionsCount(void);

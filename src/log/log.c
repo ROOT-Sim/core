@@ -102,7 +102,7 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 	if(log_colored) {
 		fprintf(
 				stderr,
-				"%26s %s%-5s\x1b[0m \x1b[90m%s:%u:\x1b[0m ",
+				"%s %s%-5s\x1b[0m \x1b[90m%s:%u:\x1b[0m ",
 				time_string,
 				levels[level].color,
 				levels[level].name,
