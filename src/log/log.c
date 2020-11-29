@@ -48,7 +48,7 @@ static inline char *get_local_time(void)
 	strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", loc_t);
 	time_buffer[sizeof(time_buffer) - 1] = '\0';
 	#else
-	err = asctime_s(time_buffer, sizeof(time_buffer) - 1, &newtime);
+	err = asctime_s(time_buffer, sizeof(time_buffer), &newtime);
 	if(err) {
 		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
 	}
@@ -62,14 +62,14 @@ static inline char *get_local_time(void)
 	struct tm newtime;
 	__time64_t long_time;
 	errno_t err;
-	_time64( &long_time );
+	_time64(&long_time);
 
-	err = _localtime64_s( &newtime, &long_time );
-	if(unlikely(err)) {
+	err = _localtime64_s(&newtime, &long_time);
+	if (unlikely(err)) {
 		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
 	}
-	err = asctime_s(time_buffer, sizeof(time_buffer) - 1, &newtime);
-	if(err) {
+	err = asctime_s(time_buffer, sizeof(time_buffer), &newtime);
+	if (unlikely(err)) {
 		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
 	}
 
