@@ -86,7 +86,7 @@ void lp_init(void)
 
 		model_allocator_lp_init();
 
-		current_lp->lsm_p = __wrap_malloc(sizeof(*current_lp->lsm_p));
+		current_lp->lsm_p = malloc_wrapped(sizeof(*current_lp->lsm_p));
 		lib_lp_init();
 		process_lp_init();
 		termination_lp_init();

@@ -69,7 +69,7 @@ void process_lp_init(void)
 		NULL, 0U);
 
 	array_push(proc_p->sent_msgs, NULL);
-	ProcessEvent(this_lp - lps, 0, INIT, NULL, 0, NULL);
+	ProcessEvent_instr(this_lp - lps, 0, INIT, NULL, 0, NULL);
 
 	model_allocator_checkpoint_next_force_full();
 	model_allocator_checkpoint_take(0);
@@ -79,7 +79,7 @@ void process_lp_init(void)
 void process_lp_deinit(void)
 {
 	struct lp_ctx *this_lp = current_lp;
-	ProcessEvent(this_lp - lps, 0, DEINIT, NULL, 0, this_lp->lsm_p->state_s);
+	ProcessEvent_instr(this_lp - lps, 0, DEINIT, NULL, 0, this_lp->lsm_p->state_s);
 }
 
 void process_lp_fini(void)
@@ -105,7 +105,7 @@ static inline void silent_execution(
 #ifdef ROOTSIM_INCREMENTAL
 		ProcessEvent_instr(
 #else
-		ProcessEvent(
+		ProcessEvent_instr(
 #endif
 			this_msg->dest,
 			this_msg->dest_t,
@@ -231,7 +231,7 @@ void process_msg(void)
 #ifdef ROOTSIM_INCREMENTAL
 	ProcessEvent_instr(
 #else
-	ProcessEvent(
+	ProcessEvent_instr(
 #endif
 		this_msg->dest,
 		this_msg->dest_t,

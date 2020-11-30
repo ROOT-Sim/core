@@ -31,24 +31,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#ifdef ROOTSIM_SERIAL
-
-#define __mm_alloc malloc
-#define __mm_realloc realloc
-#define __mm_free free
-
-#else
-
-extern void *__real_malloc(size_t mem_size);
-extern void *__real_realloc(void *ptr, size_t mem_size);
-extern void __real_free(void *ptr);
-
-#define __mm_alloc __real_malloc
-#define __mm_realloc __real_realloc
-#define __mm_free __real_free
-
-#endif
-
 #ifdef ROOTSIM_TEST
 
 #define mm_alloc malloc
@@ -59,11 +41,9 @@ extern void __real_free(void *ptr);
 
 #include <log/log.h>
 
-#pragma GCC poison malloc realloc free
-
 inline void *mm_alloc(size_t mem_size)
 {
-	void *ret = __mm_alloc(mem_size);
+	void *ret = malloc(mem_size);
 
 	if (__builtin_expect(mem_size && !ret, 0)) {
 		log_log(LOG_FATAL, "Out of memory!");
@@ -74,7 +54,7 @@ inline void *mm_alloc(size_t mem_size)
 
 inline void *mm_realloc(void *ptr, size_t mem_size)
 {
-	void *ret = __mm_realloc(ptr, mem_size);
+	void *ret = realloc(ptr, mem_size);
 
 	if(__builtin_expect(mem_size && !ret, 0)) {
 		log_log(LOG_FATAL, "Out of memory!");
@@ -85,7 +65,9 @@ inline void *mm_realloc(void *ptr, size_t mem_size)
 
 inline void mm_free(void *ptr)
 {
-	__mm_free(ptr);
+	free(ptr);
 }
+
+#pragma GCC poison malloc realloc free
 
 #endif

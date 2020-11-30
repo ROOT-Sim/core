@@ -25,25 +25,7 @@ __attribute__((weak)) rid_t n_threads;
 __attribute__((weak)) nid_t nid;
 __attribute__((weak)) __thread rid_t rid;
 
-__attribute__((weak)) void *__real_malloc(size_t mem_size);
-__attribute__((weak)) void __real_free(void *ptr);
 int main(int argc, char **argv);
-
-static void *test_malloc(size_t mem_size)
-{
-	if (__real_malloc)
-		return __real_malloc(mem_size);
-	else
-		return malloc(mem_size);
-}
-
-static void test_free(void *ptr)
-{
-	if (__real_free)
-		__real_free(ptr);
-	else
-		free(ptr);
-}
 
 static int init_arguments(int *argc_p, char ***argv_p)
 {
@@ -55,7 +37,7 @@ static int init_arguments(int *argc_p, char ***argv_p)
 	}
 	++argc;
 
-	char **argv = test_malloc(sizeof(*argv) * (argc + 1));
+	char **argv = malloc(sizeof(*argv) * (argc + 1));
 	if(argv == NULL)
 		return -1;
 
@@ -75,8 +57,8 @@ static int init_arguments(int *argc_p, char ***argv_p)
 
 static void test_atexit(void)
 {
-	test_free(test_argv);
-	test_free(t_out_buf);
+	free(test_argv);
+	free(t_out_buf);
 }
 
 __attribute__((constructor))
@@ -94,7 +76,7 @@ void main_wrapper(void)
 		exit(TEST_BAD_FAIL_EXIT_CODE);
 
 	t_out_buf_size = 1;
-	t_out_buf = test_malloc(t_out_buf_size);
+	t_out_buf = malloc(t_out_buf_size);
 	if (t_out_buf == NULL)
 		exit(TEST_BAD_FAIL_EXIT_CODE);
 
@@ -131,8 +113,8 @@ int test_printf(const char *restrict fmt, ...)
 			t_out_buf_size *= 2;
 		} while(p_size >= t_out_buf_size);
 
-		test_free(t_out_buf);
-		t_out_buf = test_malloc(t_out_buf_size);
+		free(t_out_buf);
+		t_out_buf = malloc(t_out_buf_size);
 		if (t_out_buf == NULL)
 			return TEST_BAD_FAIL_EXIT_CODE;
 

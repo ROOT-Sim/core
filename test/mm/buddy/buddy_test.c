@@ -20,7 +20,7 @@ static int block_size_test(unsigned b_exp)
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		allocations[i] = __wrap_malloc(block_size);
+		allocations[i] = malloc_wrapped(block_size);
 
 		if (allocations[i] == NULL) {
 			++errs;
@@ -32,7 +32,7 @@ static int block_size_test(unsigned b_exp)
 		}
 	}
 
-	errs += __wrap_malloc(block_size) != NULL;
+	errs += malloc_wrapped(block_size) != NULL;
 
 	model_allocator_checkpoint_take(0);
 	uint128_t rng_snap_b = rng_state;
@@ -43,7 +43,7 @@ static int block_size_test(unsigned b_exp)
 		}
 	}
 
-	errs += __wrap_malloc(block_size) != NULL;
+	errs += malloc_wrapped(block_size) != NULL;
 
 	model_allocator_checkpoint_take(B_LOG_FREQUENCY);
 
@@ -54,7 +54,7 @@ static int block_size_test(unsigned b_exp)
 		}
 	}
 
-	errs += __wrap_malloc(block_size) != NULL;
+	errs += malloc_wrapped(block_size) != NULL;
 
 	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2 - 1);
 	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2);
@@ -66,7 +66,7 @@ static int block_size_test(unsigned b_exp)
 			errs += allocations[i][j] != lcg_random_u(rng_snap_b);
 		}
 
-		__wrap_free(allocations[i]);
+		free_wrapped(allocations[i]);
 	}
 
 	model_allocator_checkpoint_restore(0);
@@ -76,7 +76,7 @@ static int block_size_test(unsigned b_exp)
 			errs += allocations[i][j] != lcg_random_u(rng_snap_a);
 		}
 
-		__wrap_free(allocations[i]);
+		free_wrapped(allocations[i]);
 	}
 
 	free(allocations);
@@ -94,14 +94,14 @@ static int model_allocator_test(void)
 		errs += block_size_test(j) < 0;
 	}
 
-	errs += __wrap_malloc(0) != NULL;
-	errs += __wrap_calloc(0, sizeof(uint64_t)) != NULL;
+	errs += malloc_wrapped(0) != NULL;
+	errs +=calloc_wrapped(0, sizeof(uint64_t)) != NULL;
 
-	__wrap_free(NULL);
+	free_wrapped(NULL);
 
-	uint64_t *mem = __wrap_calloc(1, sizeof(uint64_t));
+	uint64_t *mem = calloc_wrapped(1, sizeof(uint64_t));
 	errs += *mem;
-	__wrap_free(mem);
+	free_wrapped(mem);
 
 	model_allocator_lp_fini();
 	free(current_lp);

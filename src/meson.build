@@ -20,14 +20,11 @@ endif
 llvm_plugin_cpp_args = [log_level_def]
 
 # LLVM library dependency
-llvm_dep = dependency('llvm', version : '>= 9.0',
-  required : get_option('incremental_state_saving'))
-if llvm_dep.found()
-  parallel_c_args += '-DROOTSIM_INCREMENTAL=1'
-  compiler_c_args += '-DROOTSIM_INCREMENTAL=1'
-  rootsim_header = files('ROOT-Sim.h')
-  subdir('instr')
-endif
+llvm_dep = dependency('llvm', version : '>= 9.0', required : true)
+#  parallel_c_args += '-DROOTSIM_INCREMENTAL=1'
+#  compiler_c_args += '-DROOTSIM_INCREMENTAL=1'
+rootsim_header = files('ROOT-Sim.h')
+subdir('instr')
 
 # MPI library dependency
 mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))

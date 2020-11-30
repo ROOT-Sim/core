@@ -12,7 +12,7 @@ static int mmem_calls[N_LPS];
 static int lib_calls[N_LPS];
 static int wrapm_calls[N_LPS];
 
-void *__wrap_malloc(size_t siz)
+void *malloc_wrapped(size_t siz)
 {
 	(void) siz;
 	wrapm_calls[current_lp - lps]++;

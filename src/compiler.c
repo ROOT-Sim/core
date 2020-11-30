@@ -38,7 +38,7 @@
 
 // FIXME: we don't include absolute paths in code!
 #ifndef ROOTSIM_CC
-#define ROOTSIM_CC "/usr/bin/mpicc"
+#define ROOTSIM_CC "/usr/bin/clang"
 #endif
 
 // FIXME: we don't include absolute paths in code!
@@ -66,13 +66,10 @@ static const char *add_args_parallel =
 	OPTIMIZATION_OPTIONS
 	"-I"ROOTSIM_INC_DIR" "
 	ROOTSIM_LIB_DIR"librootsim-parallel.a "
-	"-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc "
 	"-lpthread "
 	"-lm "
-#ifdef ROOTSIM_INCREMENTAL
-//	"-Xclang -load "
-//	"-Xclang "ROOTSIM_LIB_DIR"librootsim-llvm.so"
-#endif
+	"-Xclang -load "
+	"-Xclang "ROOTSIM_LIB_DIR"librootsim-llvm.so"
 ;
 
 static int child_proc(int argc, char **argv, const char *add_args)
