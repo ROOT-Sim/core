@@ -32,10 +32,10 @@
 
 static __thread bool silent_processing = false;
 
-void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
+void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size)
 {
-	if(silent_processing)
+	if (unlikely(silent_processing))
 		return;
 
 	struct process_data *proc_p = &current_lp->p;
@@ -65,21 +65,22 @@ void process_lp_init(void)
 	array_init(proc_p->past_msgs);
 	array_init(proc_p->sent_msgs);
 
-	struct lp_msg *this_msg = msg_allocator_pack(this_lp - lps, 0, INIT,
+	struct lp_msg *msg = msg_allocator_pack(this_lp - lps, 0, INIT,
 		NULL, 0U);
 
 	array_push(proc_p->sent_msgs, NULL);
-	ProcessEvent_instr(this_lp - lps, 0, INIT, NULL, 0, NULL);
+	ProcessEvent_pr(this_lp - lps, 0, INIT, NULL, 0, NULL);
 
 	model_allocator_checkpoint_next_force_full();
 	model_allocator_checkpoint_take(0);
-	array_push(proc_p->past_msgs, this_msg);
+	array_push(proc_p->past_msgs, msg);
 }
 
 void process_lp_deinit(void)
 {
 	struct lp_ctx *this_lp = current_lp;
-	ProcessEvent_instr(this_lp - lps, 0, DEINIT, NULL, 0, this_lp->lsm_p->state_s);
+	ProcessEvent_pr(this_lp - lps, 0, DEINIT, NULL, 0,
+			   this_lp->lib_ctx_p->state_s);
 }
 
 void process_lp_fini(void)
@@ -94,24 +95,21 @@ void process_lp_fini(void)
 	array_fini(proc_p->past_msgs);
 }
 
-static inline void silent_execution(
-	struct process_data *proc_p, array_count_t last_i, array_count_t past_i)
+static inline void silent_execution(struct process_data *proc_p,
+				    array_count_t last_i, array_count_t past_i)
 {
 	silent_processing = true;
 
-	void *state_p = current_lp->lsm_p->state_s;
+	void *state_p = current_lp->lib_ctx_p->state_s;
 	for (array_count_t k = last_i + 1; k <= past_i; ++k) {
-		const struct lp_msg *this_msg = array_get_at(proc_p->past_msgs, k);
-#ifdef ROOTSIM_INCREMENTAL
-		ProcessEvent_instr(
-#else
-		ProcessEvent_instr(
-#endif
-			this_msg->dest,
-			this_msg->dest_t,
-			this_msg->m_type,
-			this_msg->pl,
-			this_msg->pl_size,
+		const struct lp_msg *msg = array_get_at(proc_p->past_msgs, k);
+
+		ProcessEvent_pr(
+			msg->dest,
+			msg->dest_t,
+			msg->m_type,
+			msg->pl,
+			msg->pl_size,
 			state_p
 		);
 	}
@@ -119,8 +117,8 @@ static inline void silent_execution(
 	silent_processing = false;
 }
 
-static inline void send_anti_messages(
-	struct process_data *proc_p, array_count_t past_i)
+static inline void send_anti_messages(struct process_data *proc_p,
+				      array_count_t past_i)
 {
 	array_count_t sent_i = array_count(proc_p->sent_msgs) - 1;
 	array_count_t b = array_count(proc_p->past_msgs) - 1 - past_i;
@@ -133,7 +131,7 @@ static inline void send_anti_messages(
 	for (array_count_t i = sent_i + 1; i < array_count(proc_p->sent_msgs);
 		++i) {
 		struct lp_msg *msg = array_get_at(proc_p->sent_msgs, i);
-		if(!msg)
+		if (!msg)
 			continue;
 
 #ifdef ROOTSIM_MPI
@@ -154,8 +152,8 @@ static inline void send_anti_messages(
 	array_count(proc_p->sent_msgs) = sent_i + 1;
 }
 
-static inline void reinsert_invalid_past_messages(
-	struct process_data *proc_p, array_count_t past_i)
+static inline void reinsert_invalid_past_messages(struct process_data *proc_p,
+						  array_count_t past_i)
 {
 	for (array_count_t i = past_i + 1; i < array_count(proc_p->past_msgs);
 		++i) {
@@ -199,50 +197,46 @@ static inline array_count_t match_straggler_msg(
 
 void process_msg(void)
 {
-	struct lp_msg *this_msg = msg_queue_extract();
-	if (unlikely(!this_msg)) {
+	struct lp_msg *msg = msg_queue_extract();
+	if (unlikely(!msg)) {
 		current_lp = NULL;
 		return;
 	}
 
-	struct lp_ctx *this_lp = &lps[this_msg->dest];
+	struct lp_ctx *this_lp = &lps[msg->dest];
 	struct process_data *proc_p = &this_lp->p;
 	current_lp = this_lp;
 
-	int msg_status = atomic_fetch_add_explicit(&this_msg->flags,
+	int msg_status = atomic_fetch_add_explicit(&msg->flags,
 		MSG_FLAG_PROCESSED, memory_order_relaxed);
 	if (unlikely(msg_status & MSG_FLAG_ANTI)) {
-		if(msg_status == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)){
-			array_count_t past_i = match_anti_msg(proc_p, this_msg);
+		if (msg_status == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
+			array_count_t past_i = match_anti_msg(proc_p, msg);
 			handle_rollback(proc_p, past_i);
-			termination_on_lp_rollback(this_msg->dest_t);
+			termination_on_lp_rollback(msg->dest_t);
 		}
-		msg_allocator_free(this_msg);
+		msg_allocator_free(msg);
 		return;
 	}
 
-	if (unlikely(!msg_is_before(array_peek(proc_p->past_msgs), this_msg))){
-		array_count_t past_i = match_straggler_msg(proc_p, this_msg);
+	if (unlikely(!msg_is_before(array_peek(proc_p->past_msgs), msg))) {
+		array_count_t past_i = match_straggler_msg(proc_p, msg);
 		handle_rollback(proc_p, past_i);
-		termination_on_lp_rollback(this_msg->dest_t);
+		termination_on_lp_rollback(msg->dest_t);
 	}
 
 	array_push(proc_p->sent_msgs, NULL);
-#ifdef ROOTSIM_INCREMENTAL
-	ProcessEvent_instr(
-#else
-	ProcessEvent_instr(
-#endif
-		this_msg->dest,
-		this_msg->dest_t,
-		this_msg->m_type,
-		this_msg->pl,
-		this_msg->pl_size,
-		this_lp->lsm_p->state_s
+	ProcessEvent_pr(
+		msg->dest,
+		msg->dest_t,
+		msg->m_type,
+		msg->pl,
+		msg->pl_size,
+		this_lp->lib_ctx_p->state_s
 	);
 
 	model_allocator_checkpoint_take(array_count(proc_p->past_msgs));
-	array_push(proc_p->past_msgs, this_msg);
-	termination_on_msg_process(this_msg->dest_t);
-	gvt_on_msg_process(this_msg->dest_t);
+	array_push(proc_p->past_msgs, msg);
+	termination_on_msg_process(msg->dest_t);
+	gvt_on_msg_process(msg->dest_t);
 }

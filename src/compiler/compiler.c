@@ -31,9 +31,9 @@
 #include <string.h>
 
 #ifdef NDEBUG
-#define OPTIMIZATION_OPTIONS "-O3 -flto "
+#define OPTIMIZATION_OPTIONS "-O3"
 #else
-#define OPTIMIZATION_OPTIONS "-g -O0 "
+#define OPTIMIZATION_OPTIONS "-g -O0"
 #endif
 
 // FIXME: we don't include absolute paths in code!
@@ -51,58 +51,50 @@
 #define ROOTSIM_INC_DIR "/usr/include/"
 #endif
 
-static const char *add_args_serial =
-	"-o "
-	"model_serial "
-	OPTIMIZATION_OPTIONS
-	"-I"ROOTSIM_INC_DIR" "
-	ROOTSIM_LIB_DIR"librootsim-serial.a "
-	"-lm"
-;
-
-static const char *add_args_parallel =
-	"-o "
-	"model_parallel "
-	OPTIMIZATION_OPTIONS
-	"-I"ROOTSIM_INC_DIR" "
-	ROOTSIM_LIB_DIR"librootsim-parallel.a "
+static const char cmd_line_prefix[] =
+	ROOTSIM_CC " "
+	OPTIMIZATION_OPTIONS " "
+	"-I" ROOTSIM_INC_DIR " "
 	"-lpthread "
 	"-lm "
 	"-Xclang -load "
-	"-Xclang "ROOTSIM_LIB_DIR"librootsim-llvm.so"
+	"-Xclang " ROOTSIM_LIB_DIR "librootsim-llvm.so "
+	ROOTSIM_LIB_DIR "librootsim.a "
+	ROOTSIM_LIB_DIR "librootsim-mods.a"
 ;
 
-static int child_proc(int argc, char **argv, const char *add_args)
+int main(int argc, char **argv)
 {
-	size_t tot_size = strlen(ROOTSIM_CC) + argc + strlen(add_args) + 1;
-	unsigned i = 1;
-	while(argv[i]){
-		tot_size += strlen(argv[i]);
-		++i;
+	(void) argc;
+	++argv;
+	size_t tot_size = sizeof(cmd_line_prefix) - 1;
+	char **argv_tmp = argv;
+	while (*argv_tmp) {
+		tot_size += strlen(*argv_tmp) + 1;
+		++argv_tmp;
 	}
 
 	char *cmd_line = malloc(tot_size);
-	if (cmd_line == NULL){
+	if (cmd_line == NULL) {
 		fprintf(stderr, "Unable to allocate memory!");
 		return -1;
 	}
 
 	char *ptr = cmd_line;
-	strcpy(ptr, ROOTSIM_CC);
-	ptr += strlen(ROOTSIM_CC);
-	*ptr = ' ';
-	++ptr;
+	memcpy(ptr, cmd_line_prefix, sizeof(cmd_line_prefix) - 1);
+	ptr += sizeof(cmd_line_prefix) - 1;
 
-	i = 1;
-	while(argv[i]){
-		strcpy(ptr, argv[i]);
-		ptr += strlen(argv[i]);
+	while (*argv) {
+
 		*ptr = ' ';
 		++ptr;
-		++i;
-	}
 
-	strcpy(ptr, add_args);
+		size_t l = strlen(*argv);
+		memcpy(ptr, *argv, l);
+		ptr += l;
+
+		++argv;
+	}
 
 	if (system(cmd_line)) {
 		free(cmd_line);
@@ -111,15 +103,5 @@ static int child_proc(int argc, char **argv, const char *add_args)
 	}
 	free(cmd_line);
 	return 0;
-}
-
-int main(int argc, char **argv)
-{
-	int s_stat, p_stat;
-
-	s_stat = child_proc(argc, argv, add_args_serial);
-	p_stat = child_proc(argc, argv, add_args_parallel);
-
-	return s_stat + p_stat;
 }
 

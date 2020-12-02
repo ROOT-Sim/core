@@ -95,9 +95,9 @@ enum _direction_t {
 	DIRECTION_INVALID = INT_MAX	//!< A generic invalid direction
 };
 
-__attribute((weak)) extern struct _topology_settings_t {
+extern struct _topology_settings_t {
 	enum _topology_geometry_t default_geometry;	//!< The default geometry to use when nothing else is specified
-	unsigned out_of_topology;			//!< The minimum number of LPs needed out of the topology
+	lp_id_t out_of_topology;			//!< The minimum number of LPs needed out of the topology
 } topology_settings;
 
 extern __attribute__ ((pure)) lp_id_t RegionsCount(void);

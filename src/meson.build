@@ -1,8 +1,3 @@
-compiler_c_args = [
-  '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
-  '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"'
-]
-
 # Meson build options and common macros
 if get_option('buildtype') == 'release'
   log_level_def = '-DLOG_LEVEL=LOG_INFO'
@@ -10,57 +5,24 @@ else
   log_level_def = '-DLOG_LEVEL=LOG_DEBUG'
 endif
 
-serial_c_args = [log_level_def, '-DROOTSIM_SERIAL']
-parallel_c_args = [log_level_def]
+rootsim_c_args = [log_level_def]
 
+# TODO maybe not needed anymore
 if get_option('b_coverage')
-  parallel_c_args += '-DROOTSIM_COVERAGE=1'
+  rootsim_c_args += '-DROOTSIM_COVERAGE=1'
 endif
 
-llvm_plugin_cpp_args = [log_level_def]
-
-# LLVM library dependency
-llvm_dep = dependency('llvm', version : '>= 9.0', required : true)
 #  parallel_c_args += '-DROOTSIM_INCREMENTAL=1'
 #  compiler_c_args += '-DROOTSIM_INCREMENTAL=1'
-rootsim_header = files('ROOT-Sim.h')
 subdir('instr')
+subdir('lib')
 
-# MPI library dependency
-mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 if mpi_dep.found()
-  parallel_c_args += '-DROOTSIM_MPI=1'
-  compiler_c_args += '-DROOTSIM_MPI=1'
+  rootsim_c_args += '-DROOTSIM_MPI=1'
 endif
 
-# Model helper library sources
-lib_srcs = [
-  'lib' / 'random' / 'random.c',
-  'lib' / 'state' / 'state.c',
-  'lib' / 'topology' / 'topology.c',
-  'lib' / 'lib.c'
-]
-
-# ROOT-Sim serial library sources
-serial_srcs = [
-  'core' / 'arg_parse.c',
-  'core' / 'core.c',
-  'core' / 'init.c',
-  'core' / 'timer.c',
-  'log' / 'log.c',
-  'log' / 'stats.c',
-  'mm' / 'mm.c',
-  'mm' / 'msg_allocator.c',
-  'serial' / 'serial.c'
-]
-
-serial_srcs += lib_srcs
-
-rootsim_serial_lib = static_library('rootsim-serial', serial_srcs,
-  c_args : serial_c_args, dependencies: m_dep, install : true)
-
-# ROOT-Sim parallel library sources
-parallel_srcs = [
+# ROOT-Sim library sources
+rootsim_srcs = [
   'core' / 'arg_parse.c',
   'core' / 'core.c',
   'core' / 'init.c',
@@ -79,16 +41,24 @@ parallel_srcs = [
   'mm' / 'buddy' / 'buddy.c',
   'mm' / 'mm.c',
   'mm' / 'msg_allocator.c',
-  'parallel' / 'parallel.c'
+  'parallel' / 'parallel.c',
+  'serial' / 'serial.c',
+  'main.c'
 ]
 
-parallel_srcs += lib_srcs
+rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
+  dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
 
-rootsim_parallel_lib = static_library('rootsim-parallel', parallel_srcs,
-  c_args : parallel_c_args, dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
+# ROOT-Sim compiler defines
+compiler_c_args = [
+  '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
+  '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"',
+  '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
+]
 
 # ROOT-Sim compiler
-executable('rootsim-cc', sources : 'compiler.c', c_args : compiler_c_args, install : true)
+rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c', 
+  c_args : compiler_c_args, install : true)
 
 # Install headers
 install_headers('ROOT-Sim.h')

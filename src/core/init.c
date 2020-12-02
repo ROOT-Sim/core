@@ -46,21 +46,18 @@
 #define can_colorize() (_fileno(stderr) > 0 ? _isatty(_fileno(stderr)) : false)
 #endif
 
-#include <stdarg.h>
-
 simulation_configuration global_config;
 
 /// This is the list of mnemonics for arguments
-enum _opt_codes{
+enum _opt_codes {
 	OPT_NPRC,
 	OPT_LOG,
 	OPT_CLOG,
 	OPT_SIMT,
 	OPT_GVT,
-#ifndef ROOTSIM_SERIAL
 	OPT_NP,
 	OPT_BIND,
-#endif
+	OPT_SERIAL,
 	OPT_LAST
 };
 
@@ -69,10 +66,9 @@ static struct ap_option ap_options[] = {
 	{"log-level", 	OPT_LOG,  "TYPE",  "Logging level"},
 	{"time", 	OPT_SIMT, "VALUE", "Logical time at which the simulation will be considered completed"},
 	{"gvt-period", 	OPT_GVT,  "VALUE", "Time between two GVT reductions (in milliseconds)"},
-#ifndef ROOTSIM_SERIAL
+	{"serial", 	OPT_SERIAL, NULL,  "Runs a simulation with the serial runtime"},
 	{"wt",		OPT_NP,   "VALUE", "Number of total cores being used by the simulation"},
 	{"no-bind",	OPT_BIND, NULL,    "Disables thread to core binding"},
-#endif
 	{0}
 };
 
@@ -134,7 +130,6 @@ static void parse_opt (int key, const char *arg)
 		global_config.gvt_period = parse_ullong_limits(1, 10000) * 1000;
 		break;
 
-#ifndef ROOTSIM_SERIAL
 	case OPT_NP:
 		n_threads = parse_ullong_limits(1, UINT_MAX);
 		break;
@@ -142,14 +137,14 @@ static void parse_opt (int key, const char *arg)
 	case OPT_BIND:
 		global_config.core_binding = false;
 		break;
-#endif
+
+	case OPT_SERIAL:
+		global_config.is_serial = true;
+		break;
 
 	case AP_KEY_INIT:
 		memset(&global_config, 0, sizeof(global_config));
-#ifndef ROOTSIM_SERIAL
-		n_threads = arch_core_count();
 		global_config.core_binding = true;
-#endif
 		global_config.gvt_period = 200000;
 		global_config.termination_time = SIMTIME_MAX;
 		log_colored = can_colorize();
@@ -158,15 +153,25 @@ static void parse_opt (int key, const char *arg)
 		break;
 
 	case AP_KEY_FINI:
+		// if the threads count has not been supplied, the other checks
+		// are superfluous: the serial runtime simply will ignore the
+		// field while the parallel one will use the set count of cores
+		// (spitting a warning if it will use less cores than available)
+		if (n_threads == 0) {
+			n_threads = arch_core_count();
+		} else if (global_config.is_serial) {
+			arg_parse_error("requested a serial simulation with %u threads",
+					n_threads);
+		} else if (n_threads > n_lps) {
+			arg_parse_error("requested a simulation with %u threads and %"PRIu64" LPs",
+					n_threads, n_lps);
+		} else if(n_threads > arch_core_count()) {
+			arg_parse_error("demanding %u cores, which are more than available (%u)",
+					n_threads, arch_core_count());
+		}
 
 		if(n_lps == 0)
 			arg_parse_error("number of LPs was not provided \"--lp\"");
-
-#ifndef ROOTSIM_SERIAL
-		if(n_threads > arch_core_count())
-			arg_parse_error("demanding %u cores, which are more than available (%u)",
-				n_threads, arch_core_count());
-#endif
 
 		log_logo_print();
 		print_config();

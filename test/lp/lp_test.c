@@ -12,7 +12,7 @@ static int mmem_calls[N_LPS];
 static int lib_calls[N_LPS];
 static int wrapm_calls[N_LPS];
 
-void *malloc_wrapped(size_t siz)
+void *malloc_mt(size_t siz)
 {
 	(void) siz;
 	wrapm_calls[current_lp - lps]++;
@@ -31,8 +31,8 @@ void process_lp_deinit(void){ deinit_calls[current_lp - lps] += UCHAR_MAX;}
 void model_allocator_lp_init(void){ mmem_calls[current_lp - lps]++;}
 void model_allocator_lp_fini(void){ mmem_calls[current_lp - lps]--;}
 
-void lib_lp_init(void){ lib_calls[current_lp - lps]++;}
-void lib_lp_fini(void){ lib_calls[current_lp - lps]--;}
+void lib_lp_init_pr(void){ lib_calls[current_lp - lps]++;}
+void lib_lp_fini_pr(void){ lib_calls[current_lp - lps]--;}
 
 static int lp_test_init(void)
 {

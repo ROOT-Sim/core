@@ -30,8 +30,6 @@
 
 lp_id_t n_lps;
 
-#ifndef ROOTSIM_SERIAL
-
 nid_t n_nodes = 1;
 rid_t n_threads;
 nid_t nid;
@@ -55,5 +53,3 @@ void core_abort(void)
 	// BUG: Undefined behavior: exit_jmp_buf was set in a function which returned
 	longjmp(exit_jmp_buf, -1);
 }
-
-#endif

@@ -70,7 +70,7 @@ void model_allocator_lp_fini(void)
 	array_fini(current_lp->mm_state.logs);
 }
 
-void *malloc_wrapped(size_t req_size)
+void *malloc_mt(size_t req_size)
 {
 #ifdef ROOTSIM_COVERAGE
 	if (unlikely(!current_lp))
@@ -122,10 +122,10 @@ void *malloc_wrapped(size_t req_size)
 	return ((char *)self->base_mem) + offset;
 }
 
-void *calloc_wrapped(size_t nmemb, size_t size)
+void *calloc_mt(size_t nmemb, size_t size)
 {
 	size_t tot = nmemb * size;
-	void *ret = malloc_wrapped(tot);
+	void *ret = malloc_mt(tot);
 
 	if (likely(ret))
 		memset(ret, 0, tot);
@@ -133,7 +133,7 @@ void *calloc_wrapped(size_t nmemb, size_t size)
 	return ret;
 }
 
-void free_wrapped(void *ptr)
+void free_mt(void *ptr)
 {
 #ifdef ROOTSIM_COVERAGE
 	if (unlikely(!current_lp)) {
@@ -178,7 +178,7 @@ void free_wrapped(void *ptr)
 	}
 }
 
-void *realloc_wrapped(void *ptr, size_t req_size)
+void *realloc_mt(void *ptr, size_t req_size)
 {
 #ifdef ROOTSIM_COVERAGE
 	if (unlikely(!current_lp))
@@ -186,11 +186,11 @@ void *realloc_wrapped(void *ptr, size_t req_size)
 #endif
 
 	if (!req_size) {
-		free_wrapped(ptr);
+		free_mt(ptr);
 		return NULL;
 	}
 	if (!ptr) {
-		return malloc_wrapped(req_size);
+		return malloc_mt(req_size);
 	}
 
 	abort();

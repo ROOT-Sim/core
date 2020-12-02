@@ -90,6 +90,6 @@ extern void core_abort(void);
 
 extern void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, void *state);
-extern void ProcessEvent_instr(lp_id_t me, simtime_t now, unsigned event_type,
+extern void ProcessEvent_pr(lp_id_t me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, void *state);
 extern bool CanEnd(lp_id_t me, const void *state);

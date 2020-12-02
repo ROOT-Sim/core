@@ -1,7 +1,7 @@
 /**
 * @file parallel/parallel.h
 *
-* @brief Concurrent simlation engine
+* @brief Concurrent simulation engine
 *
 * @copyright
 * Copyright (C) 2008-2020 HPDCS Group
@@ -23,11 +23,4 @@
 */
 #pragma once
 
-#include <core/core.h>
-
-extern int main(int argc, char **argv);
-
-extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
-	unsigned event_type, const void *payload, unsigned payload_size);
-
-extern void SetState(void *state);
+extern void parallel_simulation(void);

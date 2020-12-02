@@ -41,7 +41,7 @@ void lp_global_init(void)
 	if(n_lps_node < n_threads){
 		log_log(
 			LOG_WARN,
-			"The simulation will run with %u threads instead of %u",
+			"The simulation will run with %u threads instead of the available %u",
 			n_lps_node,
 			n_threads
 		);
@@ -86,8 +86,8 @@ void lp_init(void)
 
 		model_allocator_lp_init();
 
-		current_lp->lsm_p = malloc_wrapped(sizeof(*current_lp->lsm_p));
-		lib_lp_init();
+		current_lp->lib_ctx_p = malloc_mt(sizeof(*current_lp->lib_ctx_p));
+		lib_lp_init_pr();
 		process_lp_init();
 		termination_lp_init();
 
@@ -119,7 +119,7 @@ void lp_fini(void)
 		current_lp = &lps[i];
 
 		process_lp_fini();
-		lib_lp_fini();
+		lib_lp_fini_pr();
 		model_allocator_lp_fini();
 
 		i++;
@@ -127,3 +127,6 @@ void lp_fini(void)
 
 	current_lp = NULL;
 }
+
+__attribute__ ((pure)) extern lp_id_t lp_id_get_mt(void);
+__attribute__ ((pure)) extern struct lib_ctx *lib_ctx_get_mt(void);

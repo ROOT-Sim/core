@@ -33,16 +33,12 @@
 #include <gvt/gvt.h>
 
 static __thread dyn_array(struct lp_msg *) free_list = {0};
-#ifndef ROOTSIM_SERIAL
 static __thread dyn_array(struct lp_msg *) free_gvt_list = {0};
-#endif
 
 void msg_allocator_init(void)
 {
 	array_init(free_list);
-#ifndef ROOTSIM_SERIAL
 	array_init(free_gvt_list);
-#endif
 }
 
 void msg_allocator_fini(void)
@@ -53,12 +49,10 @@ void msg_allocator_fini(void)
 	}
 	array_fini(free_list);
 
-#ifndef ROOTSIM_SERIAL
 	while(!array_is_empty(free_gvt_list)){
 		mm_free(array_pop(free_gvt_list));
 	}
 	array_fini(free_gvt_list);
-#endif
 }
 
 struct lp_msg* msg_allocator_alloc(unsigned payload_size)

@@ -34,7 +34,6 @@
 #define msg_is_before(msg_a, msg_b) ((msg_a)->dest_t < (msg_b)->dest_t)
 #define msg_bare_size(msg) (offsetof(struct lp_msg, pl) + (msg)->pl_size)
 
-#ifdef ROOTSIM_MPI
 #define msg_id_get(msg, cur_phase) 					\
 	((((uintptr_t)msg) ^ ((nid + 1) << 2)) | ((cur_phase) << 1))
 #define msg_id_phase_get(msg_id) ((msg_id) & 1U)
@@ -44,23 +43,15 @@ __extension__({								\
 	(msg_id) += (phase);						\
 })
 
-#endif
-
 struct lp_msg {
 	lp_id_t dest; //!< the id of the recipient lp
 	simtime_t dest_t; //!< the intended logical time of this msg
 	uint_fast32_t m_type; //!< the msg type, a user controlled field
 	uint_fast32_t pl_size; //!< the payload size
-#ifndef ROOTSIM_SERIAL
-#ifdef ROOTSIM_MPI
 	union {
-#endif
 		atomic_int flags; //!< flags used when handling the msg locally
-#ifdef ROOTSIM_MPI
 		uintptr_t msg_id; //!< the unique id of the msg if it is cross node
 	};
-#endif
-#endif
 	unsigned char pl[BASE_PAYLOAD_SIZE]; //!< the initial part of the payload
 	unsigned char extra_pl[]; //!< the continuation of the payload
 };

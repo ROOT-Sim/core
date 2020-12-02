@@ -259,7 +259,7 @@ static void loadPass(
 }
 
 static RegisterStandardPasses clangtoolLoader_Ox(
-	PassManagerBuilder::EP_OptimizerLast,
+	PassManagerBuilder::EP_ModuleOptimizerEarly,
 	loadPass
 );
 static RegisterStandardPasses clangtoolLoader_O0(

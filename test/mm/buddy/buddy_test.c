@@ -20,41 +20,41 @@ static int block_size_test(unsigned b_exp)
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		allocations[i] = malloc_wrapped(block_size);
+		allocations[i] = malloc_mt(block_size);
 
 		if (allocations[i] == NULL) {
 			++errs;
 			continue;
 		}
 
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			allocations[i][j] = lcg_random_u(rng_state);
 		}
 	}
 
-	errs += malloc_wrapped(block_size) != NULL;
+	errs += malloc_mt(block_size) != NULL;
 
 	model_allocator_checkpoint_take(0);
 	uint128_t rng_snap_b = rng_state;
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			allocations[i][j] = lcg_random_u(rng_state);
 		}
 	}
 
-	errs += malloc_wrapped(block_size) != NULL;
+	errs += malloc_mt(block_size) != NULL;
 
 	model_allocator_checkpoint_take(B_LOG_FREQUENCY);
 
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			allocations[i][j] = lcg_random_u(rng_state);
 		}
 	}
 
-	errs += malloc_wrapped(block_size) != NULL;
+	errs += malloc_mt(block_size) != NULL;
 
 	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2 - 1);
 	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2);
@@ -62,21 +62,21 @@ static int block_size_test(unsigned b_exp)
 	model_allocator_checkpoint_restore(B_LOG_FREQUENCY);
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			errs += allocations[i][j] != lcg_random_u(rng_snap_b);
 		}
 
-		free_wrapped(allocations[i]);
+		free_mt(allocations[i]);
 	}
 
 	model_allocator_checkpoint_restore(0);
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			errs += allocations[i][j] != lcg_random_u(rng_snap_a);
 		}
 
-		free_wrapped(allocations[i]);
+		free_mt(allocations[i]);
 	}
 
 	free(allocations);
@@ -94,14 +94,14 @@ static int model_allocator_test(void)
 		errs += block_size_test(j) < 0;
 	}
 
-	errs += malloc_wrapped(0) != NULL;
-	errs +=calloc_wrapped(0, sizeof(uint64_t)) != NULL;
+	errs += malloc_mt(0) != NULL;
+	errs += calloc_mt(0, sizeof(uint64_t)) != NULL;
 
-	free_wrapped(NULL);
+	free_mt(NULL);
 
-	uint64_t *mem = calloc_wrapped(1, sizeof(uint64_t));
+	uint64_t *mem = calloc_mt(1, sizeof(uint64_t));
 	errs += *mem;
-	free_wrapped(mem);
+	free_mt(mem);
 
 	model_allocator_lp_fini();
 	free(current_lp);

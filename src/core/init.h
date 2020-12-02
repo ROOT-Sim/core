@@ -33,11 +33,10 @@
 
 typedef struct {
 	int verbosity; //!< the log verbosity level
-	simtime_t termination_time; //!< the logical target termination time
+	simtime_t termination_time; //!< the target termination logical time
 	unsigned gvt_period; //!< the gvt period expressed in microseconds
-#ifndef ROOTSIM_SERIAL
 	bool core_binding; //!< if set, worker threads are bound to physical cores
-#endif
+	bool is_serial; //!< if set, the simulation will run on the serial runtime
 } simulation_configuration;
 
 extern simulation_configuration global_config;

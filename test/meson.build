@@ -1,15 +1,14 @@
 src_dir = meson.source_root() / 'src'
 models_dir = meson.source_root() / 'models'
 # Test dependencies
-serial_dep = declare_dependency(link_with: rootsim_serial_lib)
-parallel_dep = declare_dependency(link_with: rootsim_parallel_lib)
+rootsim_dep = declare_dependency(link_with : rootsim_lib)
 
 test_model_srcs = [
   'integration' / 'model' / 'application.c',
   'integration' / 'model' / 'functions.c',
   'integration' / 'model' / 'output.c'
 ]
-test_model_dep = declare_dependency(link_with: static_library('test-model', 
+test_model_dep = declare_dependency(link_with : static_library('test-model', 
   test_model_srcs, include_directories : src_inc_dir))
 
 test_specs = {
@@ -29,24 +28,23 @@ test_specs = {
   'unit_msg_allocator' : {'src' : ['mm' / 'msg_allocator_test.c', src_dir / 'mm' / 'msg_allocator.c']},
   'unit_lp' : {'src' : ['lp' / 'lp_test.c', src_dir / 'lp' / 'lp.c']},
   'unit_buddy_allocator' : {'src' : ['mm' / 'buddy' / 'buddy_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c']},
-  'unit_compiler' : {'src' : ['compiler_test.c', src_dir / 'compiler.c'], 'has_main' : true},
+  'unit_compiler' : {'src' : ['compiler' / 'compiler_test.c', src_dir / 'compiler' / 'compiler.c'], 'has_main' : true},
 }
-# TODO: re-enable these tests when the test build process has been fixed
-test_disabled = {  
+kappa = {
   'integration_serial': {
     'src' : ['integration' / 'integration_serial.c'],
     'has_main' : true,
-    'dep' : [serial_dep, test_model_dep]
+    'dep' : [rootsim_dep, test_model_dep]
   },
   'integration_single':  {
     'src' : ['integration' / 'integration_parallel_single.c'],
     'has_main' : true,
-    'dep' : [parallel_dep, test_model_dep]
+    'dep' : [rootsim_dep, test_model_dep]
   },
   'integration_multi': {
     'src' : ['integration' / 'integration_parallel_multi.c'],
     'has_main' : true,
-    'dep' : [parallel_dep, test_model_dep]
+    'dep' : [rootsim_dep, test_model_dep]
   },
   
   'model_pcs': {
@@ -56,7 +54,7 @@ test_disabled = {
       models_dir / 'pcs' / 'functions_app.c'
     ],
     'has_main' : true,
-    'dep' : [parallel_dep]
+    'dep' : [rootsim_dep]
   },
   'model_phold': {
     'src' : [
@@ -64,7 +62,7 @@ test_disabled = {
       models_dir / 'phold' / 'application.c', 
     ],
     'has_main' : true,
-    'dep' : [parallel_dep]
+    'dep' : [rootsim_dep]
   }
 }
 

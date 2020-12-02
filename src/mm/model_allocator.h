@@ -38,7 +38,7 @@ extern array_count_t model_allocator_fossil_lp_collect(array_count_t tgt_ref_i);
 
 extern void __write_mem(void *ptr, size_t siz);
 
-extern void *malloc_wrapped(size_t req_size);
-extern void *calloc_wrapped(size_t nmemb, size_t req_size);
-extern void free_wrapped(void *ptr);
-extern void *realloc_wrapped(void *ptr, size_t req_size);
+extern void *malloc_mt(size_t req_size);
+extern void *calloc_mt(size_t nmemb, size_t req_size);
+extern void free_mt(void *ptr);
+extern void *realloc_mt(void *ptr, size_t req_size);

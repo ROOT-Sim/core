@@ -34,7 +34,7 @@
 
 struct lp_ctx {
 	simtime_t t_d; //!< The termination time of this LP, handled by the termination module
-	struct lib_state_managed *lsm_p; //!< The additional libraries context for this LP
+	struct lib_ctx *lib_ctx_p; //!< The additional libraries context for this LP
 	struct process_data p; //!< The processing context for this LP
 	struct mm_state mm_state; //!< The memory allocator state for this LP
 };
@@ -65,3 +65,13 @@ extern void lp_init(void);
 extern void lp_fini(void);
 
 extern void lp_cleanup(void);
+
+__attribute__ ((pure)) inline lp_id_t lp_id_get_mt(void)
+{
+	return current_lp - lps;
+}
+
+__attribute__ ((pure)) inline struct lib_ctx *lib_ctx_get_mt(void)
+{
+	return current_lp->lib_ctx_p;
+}

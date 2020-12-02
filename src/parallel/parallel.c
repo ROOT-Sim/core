@@ -1,7 +1,7 @@
 /**
 * @file parallel/parallel.c
 *
-* @brief Concurrent simlation engine
+* @brief Concurrent simulation engine
 *
 * @copyright
 * Copyright (C) 2008-2020 HPDCS Group
@@ -49,29 +49,29 @@ static arch_thr_ret_t ARCH_CALL_CONV parallel_thread_run(void *unused)
 	lp_init();
 	sync_thread_barrier();
 
-	if(!rid)
+	if (!rid)
 		log_log(LOG_INFO, "Starting simulation");
 
-	while(likely(termination_cant_end())){
+	while (likely(termination_cant_end())) {
 #ifdef ROOTSIM_MPI
 		mpi_remote_msg_handle();
 #endif
 		unsigned i = 8;
-		while(i--){
+		while (i--) {
 			process_msg();
 		}
 
 		simtime_t current_gvt;
-		if(unlikely(current_gvt = gvt_phase_run())){
+		if (unlikely(current_gvt = gvt_phase_run())) {
 			termination_on_gvt(current_gvt);
 			fossil_collect(current_gvt);
-			stats_progress_print(current_gvt);
+			stats_on_gvt(current_gvt);
 		}
 	}
 
 	stats_dump();
 
-	if(!rid)
+	if (!rid)
 		log_log(LOG_INFO, "Finalizing simulation");
 
 	lp_fini();
@@ -83,7 +83,7 @@ static arch_thr_ret_t ARCH_CALL_CONV parallel_thread_run(void *unused)
 	return ARCH_THR_RET_SUCCESS;
 }
 
-void parallel_global_init(void)
+static void parallel_global_init(void)
 {
 	lp_global_init();
 	msg_queue_global_init();
@@ -95,7 +95,7 @@ void parallel_global_init(void)
 #endif
 }
 
-void parallel_global_fini(void)
+static void parallel_global_fini(void)
 {
 #ifdef ROOTSIM_MPI
 	remote_msg_map_global_fini();
@@ -105,13 +105,8 @@ void parallel_global_fini(void)
 	lp_global_fini();
 }
 
-int main(int argc, char **argv)
+void parallel_simulation(void)
 {
-#ifdef ROOTSIM_MPI
-	mpi_global_init(&argc, &argv);
-#endif
-	init_args_parse(argc, argv);
-
 	log_log(LOG_INFO, "Initializing parallel simulation");
 
 	parallel_global_init();
@@ -135,8 +130,4 @@ int main(int argc, char **argv)
 		arch_thread_wait(thrs[i], NULL);
 
 	parallel_global_fini();
-
-#ifdef ROOTSIM_MPI
-	mpi_global_fini();
-#endif
 }

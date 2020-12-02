@@ -26,19 +26,28 @@
 #include <core/core.h>
 #include <lib/lib.h>
 
-struct serial_lp {
-	struct lib_state ls;
-	struct lib_state_managed lsm;
+struct s_lp_ctx {
+	struct lib_ctx lib_ctx;
 #if LOG_DEBUG >= LOG_LEVEL
 	simtime_t last_evt_time;
 #endif
 	bool terminating;
 };
 
-extern struct serial_lp *lps;
-extern struct serial_lp *cur_lp;
+extern struct s_lp_ctx *s_lps;
+extern struct s_lp_ctx *s_current_lp;
 
-extern int main(int argc, char **argv);
+extern void serial_simulation(void);
 
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size);
+
+__attribute__ ((pure)) inline lp_id_t lp_id_get(void)
+{
+	return s_current_lp - s_lps;
+}
+
+__attribute__ ((pure)) inline struct lib_ctx *lib_ctx_get(void)
+{
+	return &s_current_lp->lib_ctx;
+}

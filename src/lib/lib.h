@@ -28,20 +28,15 @@
 #include <ROOT-Sim.h>
 
 #include <lib/random/random.h>
-#include <lib/topology/topology.h>
 #include <lib/state/state.h>
+#include <lib/topology/topology.h>
 
-struct lib_state_managed {
+struct lib_ctx {
 	// random library
 	uint64_t rng_s[4];
 	double unif;
 	// todo remove
 	void *state_s;
-};
-
-struct lib_state {
-	unsigned fake_member;
-	// topology
 };
 
 extern void lib_global_init(void);
@@ -50,7 +45,6 @@ extern void lib_global_fini(void);
 extern void lib_lp_init(void);
 extern void lib_lp_fini(void);
 
-#if ROOTSIM_FULL_ALLOCATOR
-#define current_lp_state
-#else // TODO: else what?
-#endif
+extern void lib_lp_init_pr(void);
+extern void lib_lp_fini_pr(void);
+
