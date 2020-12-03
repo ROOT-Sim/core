@@ -30,10 +30,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef NDEBUG
-#define OPTIMIZATION_OPTIONS "-O3"
-#else
-#define OPTIMIZATION_OPTIONS "-g -O0"
+#ifndef ROOTSIM_OPT_OPT
+#define ROOTSIM_OPT_OPT "-O3 -flto"
 #endif
 
 // FIXME: we don't include absolute paths in code!
@@ -53,7 +51,7 @@
 
 static const char cmd_line_prefix[] =
 	ROOTSIM_CC " "
-	OPTIMIZATION_OPTIONS " "
+	ROOTSIM_OPT_OPT " "
 	"-I" ROOTSIM_INC_DIR " "
 	"-lpthread "
 	"-lm "

@@ -1,2 +1,2 @@
 option('incremental_state_saving', type : 'feature', value : 'disabled', description : '')
-option('mpi', type : 'feature', value : 'auto', description : '')
+option('mpi', type : 'feature', value : 'disabled', description : '')

@@ -39,10 +39,9 @@
 #include <math.h>
 #include <memory.h>
 
-
 void random_lib_lp_init(void)
 {
-	uint64_t lid = lp_id_get();
+	lp_id_t lid = lp_id_get();
 	struct lib_ctx *ctx = lib_ctx_get();
 	random_init(ctx->rng_s, lid);
 	ctx->unif = NAN;
@@ -52,9 +51,8 @@ double Random(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
 	uint64_t u_val = random_u64(ctx->rng_s);
-	if (unlikely(!u_val)) {
+	if (unlikely(!u_val))
 		return 0.0;
-	}
 
 	double ret = 0.0;
 	unsigned lzs = SAFE_CLZ(u_val) + 1;

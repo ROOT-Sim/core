@@ -155,5 +155,12 @@ void serial_simulation(void)
 	serial_simulation_fini();
 }
 
-__attribute__ ((pure)) extern lp_id_t lp_id_get(void);
-__attribute__ ((pure)) extern struct lib_ctx *lib_ctx_get(void);
+lp_id_t lp_id_get(void)
+{
+	return s_current_lp - s_lps;
+}
+
+struct lib_ctx *lib_ctx_get(void)
+{
+	return &s_current_lp->lib_ctx;
+}

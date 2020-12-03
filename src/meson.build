@@ -1,9 +1,9 @@
-# Meson build options and common macros
-if get_option('buildtype') == 'release'
-  log_level_def = '-DLOG_LEVEL=LOG_INFO'
-else
-  log_level_def = '-DLOG_LEVEL=LOG_DEBUG'
-endif
+# Build the LLVM instrumentation plugin
+# TODO re-enable incremental state saving
+subdir('instr')
+# Build the model libraries
+# TODO integrate the plugin system
+subdir('lib')
 
 rootsim_c_args = [log_level_def]
 
@@ -11,11 +11,6 @@ rootsim_c_args = [log_level_def]
 if get_option('b_coverage')
   rootsim_c_args += '-DROOTSIM_COVERAGE=1'
 endif
-
-#  parallel_c_args += '-DROOTSIM_INCREMENTAL=1'
-#  compiler_c_args += '-DROOTSIM_INCREMENTAL=1'
-subdir('instr')
-subdir('lib')
 
 if mpi_dep.found()
   rootsim_c_args += '-DROOTSIM_MPI=1'
@@ -53,7 +48,8 @@ rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
 compiler_c_args = [
   '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
   '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"',
-  '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
+  '-DROOTSIM_CC="' + clang_compiler.full_path() + '"',
+  '-DROOTSIM_OPT_OPT="' + ' '.join(c_optimization_options) + '"'
 ]
 
 # ROOT-Sim compiler

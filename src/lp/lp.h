@@ -66,12 +66,5 @@ extern void lp_fini(void);
 
 extern void lp_cleanup(void);
 
-__attribute__ ((pure)) inline lp_id_t lp_id_get_mt(void)
-{
-	return current_lp - lps;
-}
-
-__attribute__ ((pure)) inline struct lib_ctx *lib_ctx_get_mt(void)
-{
-	return current_lp->lib_ctx_p;
-}
+__attribute__ ((pure)) extern lp_id_t lp_id_get_mt(void);
+__attribute__ ((pure)) extern struct lib_ctx *lib_ctx_get_mt(void);

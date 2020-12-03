@@ -1,16 +1,26 @@
 project('ROOT-Sim', ['c', 'cpp'], version: '3.0.0', 
   default_options: ['c_std=c11', 'cpp_std=c++14', 'buildtype=release', 
-  'warning_level=3', 'unity=on', 'unity_size=10000', 'b_lto=false'])
+  'warning_level=3', 'unity=on', 'unity_size=10000', 'b_lto=true'])
+
+add_global_link_arguments(['-no-pie'], language : 'c')
+if meson.get_compiler('c').get_id() == 'gcc'
+  add_global_arguments(['-no-pie', '-fno-pic'], language : 'c')
+endif
+
+assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
+  'LTO builds are only supported by using the clang compiler')
 
 # Include directory used explicitly in tests and llvm plugin compilation
 src_inc_dir = include_directories('src')
 
-# Math library dependency
-cc = meson.get_compiler('c')
-m_dep = cc.find_library('m', required : false)
+# C math library dependency
+m_dep = meson.get_compiler('c').find_library('m', required : false)
 
 # LLVM library dependency
 llvm_dep = dependency('llvm', version : '>= 9.0', required : true)
+
+# MPI library dependency
+mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 
 # Clang compiler
 clang_compiler = find_program('clang')
@@ -19,9 +29,22 @@ clang_compiler = find_program('clang')
 rs_thr_dep = declare_dependency(link_with: 
   static_library('rootsim-threads', 'src' / 'arch' / 'arch.c', 
     dependencies: dependency('threads'), include_directories : src_inc_dir))
-    
-# MPI library dependency
-mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
+
+# Used in some defines, the llvm plugin and the tests    
+c_optimization_options = ['-O' + get_option('optimization')]
+if get_option('debug')
+  c_optimization_options += '-g'
+endif
+if get_option('b_lto')
+  c_optimization_options += '-flto'
+endif
+
+# Logging level define
+if get_option('debug')
+  log_level_def = '-DLOG_LEVEL=LOG_TRACE'
+else
+  log_level_def = '-DLOG_LEVEL=LOG_INFO'
+endif
 
 subdir('src')
 subdir('test')

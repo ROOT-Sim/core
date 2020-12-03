@@ -41,7 +41,7 @@ static int init_arguments(int *argc_p, char ***argv_p)
 	if(argv == NULL)
 		return -1;
 
-	argv[0] = "rootsim_test";
+	argv[0] = ROOTSIM_TEST_NAME;
 
 	if (test_config.test_arguments) {
 		memcpy(&argv[1], test_config.test_arguments,
@@ -68,7 +68,7 @@ void main_wrapper(void)
 
 	puts("Starting " ROOTSIM_TEST_NAME " test");
 
-	n_threads = test_config.threads_count ? test_config.threads_count : 1;
+	n_threads = test_config.threads_count;
 
 	atexit(test_atexit);
 
@@ -93,14 +93,12 @@ void main_wrapper(void)
 	exit(0);
 }
 
-
-int test_printf(const char *restrict fmt, ...)
+static int test_printf_internal(const char *restrict fmt, va_list args)
 {
-	va_list args;
-
-	va_start(args, fmt);
-	size_t p_size = vsnprintf(t_out_buf, t_out_buf_size, fmt, args);
-	va_end(args);
+	va_list args_cpy;
+	va_copy(args_cpy, args);
+	size_t p_size = vsnprintf(t_out_buf, t_out_buf_size, fmt, args_cpy);
+	va_end(args_cpy);
 
 	if (t_out_wrote + p_size > test_config.expected_output_size) {
 		puts("Test failed: output is longer than the expected one");
@@ -108,7 +106,6 @@ int test_printf(const char *restrict fmt, ...)
 	}
 
 	if (p_size >= t_out_buf_size) {
-
 		do {
 			t_out_buf_size *= 2;
 		} while(p_size >= t_out_buf_size);
@@ -118,18 +115,35 @@ int test_printf(const char *restrict fmt, ...)
 		if (t_out_buf == NULL)
 			return TEST_BAD_FAIL_EXIT_CODE;
 
-		va_start(args, fmt);
 		vsnprintf(t_out_buf, t_out_buf_size, fmt, args);
-		va_end(args);
 	}
 
 	if (memcmp(t_out_buf, test_config.expected_output + t_out_wrote, p_size)) {
-		puts("Test failed: output is different from the expected one");
+		printf("Test failed: output is different from the expected one %lu\n", t_out_wrote);
 		exit(-1);
 	}
 	t_out_wrote += p_size;
-
 	return p_size;
+}
+
+int test_printf_pr(const char *restrict fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	int ret = test_printf_internal(fmt, args);
+	va_end(args);
+
+	return ret;
+}
+
+int test_printf(const char *restrict fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	int ret = test_printf_internal(fmt, args);
+	va_end(args);
+
+	return ret;
 }
 
 bool test_thread_barrier(void)

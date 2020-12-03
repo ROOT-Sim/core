@@ -128,5 +128,12 @@ void lp_fini(void)
 	current_lp = NULL;
 }
 
-__attribute__ ((pure)) extern lp_id_t lp_id_get_mt(void);
-__attribute__ ((pure)) extern struct lib_ctx *lib_ctx_get_mt(void);
+lp_id_t lp_id_get_mt(void)
+{
+	return current_lp - lps;
+}
+
+struct lib_ctx *lib_ctx_get_mt(void)
+{
+	return current_lp->lib_ctx_p;
+}

@@ -17,6 +17,7 @@ extern const struct _test_config_t {
 	const char **test_arguments;
 } test_config;
 
+extern int test_printf_br(const char *restrict fmt, ...);
 extern int test_printf(const char *restrict fmt, ...);
 extern bool test_thread_barrier(void);
 

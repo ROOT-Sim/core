@@ -7,6 +7,7 @@
 static const char *test_arguments[] = {
 	"--lp",
 	"64",
+	"--serial",
 	NULL
 };
 

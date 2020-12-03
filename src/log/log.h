@@ -32,7 +32,7 @@
 #endif
 
 extern int log_level;
-extern _Bool log_colored;
+extern bool log_colored;
 
 #define LOG_TRACE 	0
 #define LOG_DEBUG 	1

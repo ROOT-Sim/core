@@ -1,15 +1,17 @@
 src_dir = meson.source_root() / 'src'
 models_dir = meson.source_root() / 'models'
 # Test dependencies
-rootsim_dep = declare_dependency(link_with : rootsim_lib)
+rootsim_dep = declare_dependency(link_with : [rootsim_lib, rootsim_mods_lib])
 
 test_model_srcs = [
   'integration' / 'model' / 'application.c',
   'integration' / 'model' / 'functions.c',
   'integration' / 'model' / 'output.c'
 ]
+
+test_model_objs = clang_with_plugin.process(test_model_srcs)
 test_model_dep = declare_dependency(link_with : static_library('test-model', 
-  test_model_srcs, include_directories : src_inc_dir))
+  test_model_objs), link_args : '-no-pie')
 
 test_specs = {
   'fail_init': {'src' : ['test' / 'fail_init.c'], 'fail' : true},
@@ -29,8 +31,7 @@ test_specs = {
   'unit_lp' : {'src' : ['lp' / 'lp_test.c', src_dir / 'lp' / 'lp.c']},
   'unit_buddy_allocator' : {'src' : ['mm' / 'buddy' / 'buddy_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c']},
   'unit_compiler' : {'src' : ['compiler' / 'compiler_test.c', src_dir / 'compiler' / 'compiler.c'], 'has_main' : true},
-}
-kappa = {
+
   'integration_serial': {
     'src' : ['integration' / 'integration_serial.c'],
     'has_main' : true,
@@ -46,7 +47,8 @@ kappa = {
     'has_main' : true,
     'dep' : [rootsim_dep, test_model_dep]
   },
-  
+}
+kappa = {  
   'model_pcs': {
     'src' : [
       'models' / 'model_test.c', 
