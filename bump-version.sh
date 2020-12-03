@@ -4,11 +4,11 @@ describe=$(git describe)
 branchname=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
 
 # Split version in major, minor, hotfix
-IFS='-' read version garbage <<< "$describe"
+IFS='-' read version _ <<< "$describe"
 IFS='.' read major minor hotfix <<< "$version"
 
 # Get the type of branch, depending on the name
-IFS='-' read branchtype garbage <<< "$branchname"
+IFS='-' read branchtype _ <<< "$branchname"
 
 echo "The current branch ($branchname) is of type $branchtype"
 echo "Current version is $major.$minor.$hotfix"
@@ -29,7 +29,7 @@ fi
 
 echo "Applying new version number: $major.$minor.$hotfix. Continue? (y/n)"
 old_stty_cfg=$(stty -g)
-stty raw -echo ; answer=$(head -c 1) ; stty $old_stty_cfg # Careful playing with stty
+stty raw -echo ; answer=$(head -c 1) ; stty "$old_stty_cfg" # Careful playing with stty
 if echo "$answer" | grep -iq "^y" ;then
 	echo "Applying changes to meson.build"
 else
