@@ -36,12 +36,6 @@
 #define is_power_of_2(i) (!((i) & ((i) - 1)))
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - SAFE_CLZ(i))
 
-#ifdef ROOTSIM_COVERAGE
-extern void *__real_malloc(size_t mem_size);
-extern void *__real_realloc(void *ptr, size_t mem_size);
-extern void __real_free(void *ptr);
-#endif
-
 void model_allocator_lp_init(void)
 {
 	struct mm_state *self = &current_lp->mm_state;
@@ -72,11 +66,6 @@ void model_allocator_lp_fini(void)
 
 void *malloc_mt(size_t req_size)
 {
-#ifdef ROOTSIM_COVERAGE
-	if (unlikely(!current_lp))
-		return __real_malloc(req_size);
-#endif
-
 	if(unlikely(!req_size))
 		return NULL;
 
@@ -135,13 +124,6 @@ void *calloc_mt(size_t nmemb, size_t size)
 
 void free_mt(void *ptr)
 {
-#ifdef ROOTSIM_COVERAGE
-	if (unlikely(!current_lp)) {
-		__real_free(ptr);
-		return;
-	}
-#endif
-
 	if(unlikely(!ptr))
 		return;
 
@@ -180,11 +162,6 @@ void free_mt(void *ptr)
 
 void *realloc_mt(void *ptr, size_t req_size)
 {
-#ifdef ROOTSIM_COVERAGE
-	if (unlikely(!current_lp))
-		return __real_realloc(ptr, req_size);
-#endif
-
 	if (!req_size) {
 		free_mt(ptr);
 		return NULL;

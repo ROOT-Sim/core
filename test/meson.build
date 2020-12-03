@@ -11,7 +11,7 @@ test_model_srcs = [
 
 test_model_objs = clang_with_plugin.process(test_model_srcs)
 test_model_dep = declare_dependency(link_with : static_library('test-model', 
-  test_model_objs), link_args : '-no-pie')
+  test_model_objs))
 
 test_specs = {
   'fail_init': {'src' : ['test' / 'fail_init.c'], 'fail' : true},
@@ -84,7 +84,8 @@ foreach test_name, test_spec : test_specs
     sources : test_srcs,
     dependencies : [rs_thr_dep] + test_spec.get('dep', []),
     c_args : ['-DROOTSIM_TEST', '-DROOTSIM_TEST_NAME="' + test_name + '"'],
-    include_directories : src_inc_dir
+    include_directories : src_inc_dir,
+    link_args : '-no-pie'
   )
   
   test(

@@ -7,11 +7,6 @@ subdir('lib')
 
 rootsim_c_args = [log_level_def]
 
-# TODO maybe not needed anymore
-if get_option('b_coverage')
-  rootsim_c_args += '-DROOTSIM_COVERAGE=1'
-endif
-
 if mpi_dep.found()
   rootsim_c_args += '-DROOTSIM_MPI=1'
 endif
