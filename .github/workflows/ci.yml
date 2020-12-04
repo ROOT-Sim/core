@@ -43,10 +43,10 @@ jobs:
       with:
         python-version: '3.x'
     - name: Download and install LLVM
-      shell: powershell
+      shell: cmd
       run: |
-        iex (new-object net.webclient).downloadstring('https://get.scoop.sh')
-        scoop install llvm --global
+        curl -fsSL -o "LLVM-11.0.0-win64.exe" "https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/LLVM-11.0.0-win64.exe"
+        LLVM-11.0.0-win64.exe /S
     - name: Install Meson and Ninja
       run: pip install meson ninja
     - name: Set up build folder
