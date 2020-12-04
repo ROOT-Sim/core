@@ -71,7 +71,7 @@ jobs:
     - name: Install Meson and Ninja
       run: pip install meson ninja
     - name: Set up build folder
-      run: meson setup builddir/
+      run: meson setup builddir/ --native-file macos-native.ini
       env:
         CC: clang
         CXX: clang++
