@@ -24,17 +24,17 @@
  * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Config/llvm-config.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/IR/InstIterator.h"
-#include "llvm/Transforms/Utils/Cloning.h"
-#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/GlobalValue.h"
+#include "llvm/IR/InstIterator.h"
+#include "llvm/IR/IntrinsicInst.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Pass.h"
 #include "llvm/Support/Casting.h"
-#include "llvm/PassAnalysisSupport.h"
-#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/Utils/Cloning.h"
 
 #include <instr/instr_cfg.hpp>
 
