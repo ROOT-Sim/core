@@ -222,7 +222,7 @@ void remote_msg_map_match(uintptr_t msg_id, nid_t nid, struct lp_msg *msg)
 	// linear probing with robin hood hashing
 	// https://cs.uwaterloo.ca/research/tr/1986/CS-86-14.pdf by Pedro Celis
 	while (1) {
-		uint64_t td = atomic_load_explicit(&n[i].msg_id,
+		uintptr_t td = atomic_load_explicit(&n[i].msg_id,
 			memory_order_relaxed);
 
 		retry_zero_check:
