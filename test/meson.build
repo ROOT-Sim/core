@@ -9,10 +9,6 @@ test_model_srcs = [
   'integration' / 'model' / 'output.c'
 ]
 
-test_model_objs = clang_with_plugin.process(test_model_srcs)
-test_model_dep = declare_dependency(link_with : static_library('test-model', 
-  test_model_objs))
-
 test_specs = {
   'fail_init': {'src' : ['test' / 'fail_init.c'], 'fail' : true},
   'fail_body': {'src' : ['test' / 'fail_body.c'], 'fail' : true},
@@ -33,22 +29,24 @@ test_specs = {
   'unit_compiler' : {'src' : ['compiler' / 'compiler_test.c', src_dir / 'compiler' / 'compiler.c'], 'has_main' : true},
 
   'integration_serial': {
-    'src' : ['integration' / 'integration_serial.c'],
+    'src' : ['integration' / 'integration_serial.c'] + test_model_srcs,
     'has_main' : true,
-    'dep' : [rootsim_dep, test_model_dep]
+    'run_plugin' : true,
+    'dep' : [rootsim_dep]
   },
   'integration_single':  {
-    'src' : ['integration' / 'integration_parallel_single.c'],
+    'src' : ['integration' / 'integration_parallel_single.c'] + test_model_srcs,
     'has_main' : true,
-    'dep' : [rootsim_dep, test_model_dep]
+    'run_plugin' : true,
+    'dep' : [rootsim_dep]
   },
   'integration_multi': {
-    'src' : ['integration' / 'integration_parallel_multi.c'],
+    'src' : ['integration' / 'integration_parallel_multi.c'] + test_model_srcs,
     'has_main' : true,
-    'dep' : [rootsim_dep, test_model_dep]
+    'run_plugin' : true,
+    'dep' : [rootsim_dep]
   },
-}
-kappa = {  
+
   'model_pcs': {
     'src' : [
       'models' / 'model_test.c', 
@@ -56,6 +54,7 @@ kappa = {
       models_dir / 'pcs' / 'functions_app.c'
     ],
     'has_main' : true,
+    'run_plugin' : true,
     'dep' : [rootsim_dep]
   },
   'model_phold': {
@@ -64,6 +63,7 @@ kappa = {
       models_dir / 'phold' / 'application.c', 
     ],
     'has_main' : true,
+    'run_plugin' : true,
     'dep' : [rootsim_dep]
   }
 }
@@ -72,6 +72,10 @@ kappa = {
 i = 1
 foreach test_name, test_spec : test_specs
   test_srcs = test_spec.get('src')
+  if test_spec.get('run_plugin', false)
+    test_srcs = [clang_with_plugin.process(test_srcs)]
+  endif
+
   test_srcs += 'test.c'
   if not test_spec.get('has_main', false)
     test_srcs += 'test_main.c'
@@ -81,7 +85,7 @@ foreach test_name, test_spec : test_specs
   
   test_executable = executable(
     full_test_name,
-    sources : test_srcs,
+    test_srcs,
     dependencies : [rs_thr_dep] + test_spec.get('dep', []),
     c_args : ['-DROOTSIM_TEST', '-DROOTSIM_TEST_NAME="' + test_name + '"'],
     include_directories : src_inc_dir,
