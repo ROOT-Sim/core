@@ -20,7 +20,7 @@ jobs:
       - name: Generate Documentation
         run: |
           sudo apt-get install doxygen
-          meson build
+          meson build -Db_coverage=false -Db_lto=false
           cd build
           ninja docs
 
