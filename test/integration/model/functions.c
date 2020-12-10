@@ -67,11 +67,10 @@ void crc_table_init(void)
 	if(atomic_flag_test_and_set_explicit(&done, memory_order_relaxed))
 		return;
 
-	int k;
-	uint32_t c, n = 256;
+	uint32_t n = 256;
 	while(n--) {
-		c = n;
-		k = 8;
+		uint32_t c = n;
+		int k = 8;
 		while(k--) {
 			if (c & 1) {
 				c = 0xedb88320UL ^ (c >> 1);

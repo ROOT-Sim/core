@@ -65,7 +65,7 @@ void model_parse(int key, const char *arg) {
 			break;
 
 		case AP_KEY_FINI:
-			printf("CURRENT CONFIGURATION:\ncomplete calls: %d\nTA: %f\nta_duration: %f\nta_change: %f\nchannels_per_cell: %d\nfading_recheck: %d\nvariable_ta: %d\n",
+			printf("CURRENT CONFIGURATION:\ncomplete calls: %u\nTA: %f\nta_duration: %f\nta_change: %f\nchannels_per_cell: %d\nfading_recheck: %d\nvariable_ta: %d\n",
 				complete_calls, ref_ta, ta_duration, ta_change, channels_per_cell, fading_check, variable_ta);
 			fflush(stdout);
 	}
@@ -294,7 +294,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, int event_type, event_content_type 
 		case DEINIT:
 			break;
 		default:
-			fprintf(stdout, "PCS: Unknown event type! (me = %d - event type = %d)\n", (unsigned)me, event_type);
+			fprintf(stdout, "PCS: Unknown event type! (me = %lu - event type = %d)\n", me, event_type);
 			abort();
 
 	}
