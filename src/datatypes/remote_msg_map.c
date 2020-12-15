@@ -23,6 +23,8 @@
 * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
+
+#include <stdalign.h>
 #include <datatypes/remote_msg_map.h>
 
 #include <datatypes/msg_queue.h>
@@ -56,10 +58,8 @@ struct msg_map_node_t {
 
 static struct msg_map_t {
 	struct inner_map;
-	char padding[CACHE_LINE_SIZE - sizeof(struct inner_map)];
 	struct {
-		spinlock_t l;
-		char l_padding[CACHE_LINE_SIZE - sizeof(spinlock_t)];
+		_Alignas(CACHE_LINE_SIZE) spinlock_t l;
 	} locks[1 << MAX_THREADS_BITS];
 } re_map;
 

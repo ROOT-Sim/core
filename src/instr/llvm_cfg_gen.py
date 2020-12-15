@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import re
 import sys
 
@@ -48,17 +47,17 @@ if __name__ == '__main__':
 
     with open(source_output, 'w') as f:
         f.write(copyright_str) # TODO do we need this?
-        
+
         f.write('#include <instr/instr_cfg.hpp>\n\n')
-        
-        f.write('const char *const to_substitute[] = ') 
+
+        f.write('const char *const to_substitute[] = ')
         f.write(collection_to_c_array(instr_specs["to_substitute"], 1))
         f.write(';\n\n')
 
-        f.write('const char *const to_ignore[] = ') 
+        f.write('const char *const to_ignore[] = ')
         f.write(collection_to_c_array(instr_specs["to_ignore"], 1))
         f.write(';\n\n')
-        
+
         f.write('struct instr_cfg instr_cfg = {\n')
         f.write(f'\t"{instr_specs["processed_suffix"]}",\n')
         f.write(f'\t"{instr_specs["substituted_suffix"]}",\n')

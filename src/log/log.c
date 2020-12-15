@@ -48,7 +48,7 @@ static inline char *get_local_time(void)
 	strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", loc_t);
 	time_buffer[sizeof(time_buffer) - 1] = '\0';
 	#else
-	err = asctime_s(time_buffer, sizeof(time_buffer), &newtime);
+	err = asctime_s(time_buffer, sizeof(time_buffer), &loc_t);
 	if(err) {
 		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
 	}

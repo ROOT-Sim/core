@@ -97,7 +97,7 @@ void deallocation(unsigned int me, lp_state_type *pointer, int ch, simtime_t lvt
 
 		free(c);
 	} else {
-		printf("(%d) Unable to deallocate on %p, channel is %d at time %f\n", me, (void*)c, ch, lvt);
+		printf("(%u) Unable to deallocate on %p, channel is %d at time %f\n", me, (void*)c, ch, lvt);
 		abort();
 	}
 	return;
@@ -115,10 +115,8 @@ void fading_recheck(lp_state_type *pointer) {
 }
 
 int allocation(lp_state_type *pointer) {
-
 	unsigned int i;
   	int index;
-	double summ;
 
 	channel *c, *ch;
 
@@ -153,7 +151,7 @@ int allocation(lp_state_type *pointer) {
 			pointer->channels->next = c;
 		pointer->channels = c;
 
-		summ = 0.0;
+		double summ = 0.0;
 
 	//	if (pointer->check_fading) {
 	//force this
@@ -180,9 +178,9 @@ int allocation(lp_state_type *pointer) {
 		}
 
 	} else {
-		printf("Unable to allocate channel, but the counter says I have %d available channels\n", pointer->channel_counter);
+		printf("Unable to allocate channel, but the counter says I have %u available channels\n", pointer->channel_counter);
+        fflush(stdout);
 		abort();
-		fflush(stdout);
 	}
 
         return index;
