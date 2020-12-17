@@ -23,62 +23,15 @@
 * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#define ROOTSIM_LOG_INTERNAL // TODO: what for?
-
 #include <log/log.h>
 
+#include <arch/io.h>
+
 #include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-#define __STDC_WANT_LIB_EXT1__ 1
-#include <time.h>
 #include <stdio.h>
 
-#include <arch/platform.h>
-
-static _Thread_local char time_buffer[26];
-
-#ifdef __POSIX
-static inline char *get_local_time(void)
-{
-	time_t t = time(NULL);
-	struct tm *loc_t = localtime(&t);
-
-	#ifndef __STDC_LIB_EXT1__
-	strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", loc_t);
-	time_buffer[sizeof(time_buffer) - 1] = '\0';
-	#else
-	err = asctime_s(time_buffer, sizeof(time_buffer), &loc_t);
-	if(err) {
-		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
-	}
-	#endif
-	return time_buffer;
-}
-#endif
-#ifdef __WINDOWS
-static inline char *get_local_time(void)
-{
-	struct tm newtime;
-	__time64_t long_time;
-	errno_t err;
-	_time64(&long_time);
-
-	err = _localtime64_s(&newtime, &long_time);
-	if (unlikely(err)) {
-		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
-	}
-	err = asctime_s(time_buffer, sizeof(time_buffer), &newtime);
-	if (unlikely(err)) {
-		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
-	}
-
-	return time_buffer;
-}
-#endif
-
 int log_level = LOG_LEVEL;
-_Bool log_colored;
+bool log_colored;
 
 static const struct {
 	const char *name;
@@ -97,7 +50,8 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 {
 	va_list args;
 
-	char *time_string = get_local_time();
+	char time_string[IO_TIME_BUFFER_LEN];
+	io_local_time_get(time_string);
 
 	if(log_colored) {
 		fprintf(

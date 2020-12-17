@@ -26,6 +26,8 @@
 */
 #pragma once
 
+#include <arch/platform.h>
+
 #include <stdint.h>
 #include <time.h>
 

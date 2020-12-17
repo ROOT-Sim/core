@@ -23,7 +23,7 @@
 */
 #include <parallel/parallel.h>
 
-#include <arch/arch.h>
+#include <arch/thread.h>
 #include <core/core.h>
 #include <core/init.h>
 #include <core/sync.h>
@@ -38,11 +38,12 @@
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
-static arch_thr_ret_t ARCH_CALL_CONV parallel_thread_run(void *unused)
+static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *unused)
 {
 	(void)unused;
 
 	core_init();
+	stats_init();
 	msg_allocator_init();
 	msg_queue_init();
 	sync_thread_barrier();
@@ -69,22 +70,24 @@ static arch_thr_ret_t ARCH_CALL_CONV parallel_thread_run(void *unused)
 		}
 	}
 
-	stats_dump();
-
-	if (!rid)
+	if (!rid) {
+		stats_dump();
 		log_log(LOG_INFO, "Finalizing simulation");
+	}
 
 	lp_fini();
 
 	msg_queue_fini();
 	sync_thread_barrier();
 	msg_allocator_fini();
+	stats_fini();
 
-	return ARCH_THR_RET_SUCCESS;
+	return THREAD_RET_SUCCESS;
 }
 
 static void parallel_global_init(void)
 {
+	stats_global_init();
 	lp_global_init();
 	msg_queue_global_init();
 	termination_global_init();
@@ -103,6 +106,7 @@ static void parallel_global_fini(void)
 	lib_global_fini();
 	msg_queue_global_fini();
 	lp_global_fini();
+	stats_global_fini();
 }
 
 void parallel_simulation(void)
@@ -111,15 +115,15 @@ void parallel_simulation(void)
 
 	parallel_global_init();
 
-	arch_thr_t thrs[n_threads];
+	thr_id_t thrs[n_threads];
 	rid_t i = n_threads;
 	while (i--) {
-		if (arch_thread_create(&thrs[i], parallel_thread_run, NULL)) {
+		if (thread_create(&thrs[i], parallel_thread_run, NULL)) {
 			log_log(LOG_FATAL, "Unable to create a thread!");
 			abort();
 		}
 		if (global_config.core_binding &&
-				arch_thread_affinity_set(thrs[i], i)) {
+				thread_affinity_set(thrs[i], i)) {
 			log_log(LOG_FATAL, "Unable to set a thread affinity!");
 			abort();
 		}
@@ -127,7 +131,7 @@ void parallel_simulation(void)
 
 	i = n_threads;
 	while (i--)
-		arch_thread_wait(thrs[i], NULL);
+		thread_wait(thrs[i], NULL);
 
 	parallel_global_fini();
 }

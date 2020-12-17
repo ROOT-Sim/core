@@ -24,9 +24,9 @@
 #include <serial/serial.h>
 #include <stdlib.h>
 
+#include <arch/timer.h>
 #include <core/core.h>
 #include <core/init.h>
-#include <core/timer.h>
 #include <datatypes/heap.h>
 #include <log/stats.h>
 #include <lp/msg.h>
@@ -39,12 +39,14 @@ static binary_heap(struct lp_msg *) queue;
 
 static void serial_simulation_init(void)
 {
+	stats_global_init();
+	stats_init();
+
 	s_lps = mm_alloc(sizeof(*s_lps) * n_lps);
 	memset(s_lps, 0, sizeof(*s_lps) * n_lps);
+
 	msg_allocator_init();
-
 	heap_init(queue);
-
 	lib_global_init();
 
 	for (uint64_t i = 0; i < n_lps; ++i) {
@@ -73,7 +75,10 @@ static void serial_simulation_fini(void)
 
 	heap_fini(queue);
 	msg_allocator_fini();
+	stats_fini();
 	mm_free(s_lps);
+	stats_fini();
+	stats_global_fini();
 }
 
 static void serial_simulation_run(void)
@@ -109,9 +114,9 @@ static void serial_simulation_run(void)
 			s_current_lp->lib_ctx.state_s
 		);
 
-		bool can_end = CanEnd(cur_msg->dest, s_current_lp->lib_ctx.state_s);
-
 		stats_time_take(STATS_MSG_PROCESSED);
+
+		bool can_end = CanEnd(cur_msg->dest, s_current_lp->lib_ctx.state_s);
 
 		if (can_end != s_current_lp->terminating) {
 			s_current_lp->terminating = can_end;

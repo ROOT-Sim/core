@@ -26,6 +26,7 @@
  #pragma once
 
 #include <core/core.h>
+
 #include <stdatomic.h>
 #include <stddef.h>
 

@@ -24,7 +24,7 @@
 * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#include <core/timer.h>
+#include <arch/timer.h>
 
 #ifdef __WINDOWS
 timer_uint timer_perf_freq = 0;

@@ -13,11 +13,12 @@ endif
 
 # ROOT-Sim library sources
 rootsim_srcs = [
+  'arch' / 'io.c',
+  'arch' / 'timer.c',
   'core' / 'arg_parse.c',
   'core' / 'core.c',
   'core' / 'init.c',
   'core' / 'sync.c',
-  'core' / 'timer.c',
   'datatypes' / 'msg_queue.c',
   'datatypes' / 'remote_msg_map.c',
   'distributed' / 'mpi.c',

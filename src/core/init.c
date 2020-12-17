@@ -25,7 +25,8 @@
 */
 #include <core/init.h>
 
-#include <arch/arch.h>
+#include <arch/io.h>
+#include <arch/thread.h>
 #include <core/arg_parse.h>
 #include <core/core.h>
 #include <lib/lib.h>
@@ -34,17 +35,6 @@
 #include <limits.h>
 #include <memory.h>
 #include <stdlib.h>
-
-#ifdef __POSIX
-#include <unistd.h>
-#define can_colorize() isatty(STDERR_FILENO)
-#endif
-
-#ifdef __WINDOWS
-#include <stdio.h>
-#include <io.h>
-#define can_colorize() (_fileno(stderr) > 0 ? _isatty(_fileno(stderr)) : false)
-#endif
 
 simulation_configuration global_config;
 
@@ -147,7 +137,7 @@ static void parse_opt (int key, const char *arg)
 		global_config.core_binding = true;
 		global_config.gvt_period = 200000;
 		global_config.termination_time = SIMTIME_MAX;
-		log_colored = can_colorize();
+		log_colored = io_terminal_can_colorize();
 		// Store the predefined values, before reading any overriding one
 		// TODO
 		break;
@@ -158,16 +148,16 @@ static void parse_opt (int key, const char *arg)
 		// field while the parallel one will use the set count of cores
 		// (spitting a warning if it will use less cores than available)
 		if (n_threads == 0) {
-			n_threads = arch_core_count();
+			n_threads = thread_cores_count();
 		} else if (global_config.is_serial) {
 			arg_parse_error("requested a serial simulation with %u threads",
 					n_threads);
 		} else if (n_threads > n_lps) {
 			arg_parse_error("requested a simulation with %u threads and %"PRIu64" LPs",
 					n_threads, n_lps);
-		} else if(n_threads > arch_core_count()) {
+		} else if(n_threads > thread_cores_count()) {
 			arg_parse_error("demanding %u cores, which are more than available (%u)",
-					n_threads, arch_core_count());
+					n_threads, thread_cores_count());
 		}
 
 		if(n_lps == 0)

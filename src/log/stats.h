@@ -29,11 +29,15 @@
 #include <core/core.h>
 
 enum stats_time_t {
-	STATS_ROLLBACK,
-	STATS_MSG_ROLLBACKED,
 	STATS_MSG_PROCESSED,
+	STATS_GVT,
+	STATS_ROLLBACK,
+	STATS_MSG_SILENT,
 	STATS_NUM
 };
+
+extern void stats_init(void);
+extern void stats_fini(void);
 
 extern void stats_time_start(enum stats_time_t this_stat);
 extern void stats_time_take(enum stats_time_t this_stat);

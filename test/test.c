@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <arch/arch.h>
+#include "../src/arch/thread.h"
 
 #ifndef ROOTSIM_TEST_NAME
 #define ROOTSIM_TEST_NAME "rs_test"

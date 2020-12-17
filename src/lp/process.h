@@ -26,7 +26,6 @@
 #pragma once
 
 #include <datatypes/array.h>
-#include <gvt/gvt.h>
 #include <lp/msg.h>
 
 struct process_data {

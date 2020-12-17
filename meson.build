@@ -27,7 +27,7 @@ clang_compiler = find_program('clang')
 
 # Custom threads library dependency
 rs_thr_dep = declare_dependency(link_with: 
-  static_library('rootsim-threads', 'src' / 'arch' / 'arch.c', 
+  static_library('rootsim-threads', 'src' / 'arch' / 'thread.c', 
     dependencies: dependency('threads'), include_directories : src_inc_dir))
 
 # Used in some defines, the llvm plugin and the tests    

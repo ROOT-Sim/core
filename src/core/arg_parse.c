@@ -388,6 +388,16 @@ void arg_parse_run(struct ap_settings *ap_s, char **argv)
 }
 
 /**
+ * @brief Gets the program name
+ * @return a C string containing the program name, or NULL if arg_parse_run
+ *           hasn't been called yet.
+ */
+const char *arg_parse_program_name(void)
+{
+	return ap_pname;
+}
+
+/**
  * @brief Prints a parsing related error message and exits with a bad exit code
  * @param fmt the printf-style format string
  * @param ... the arguments required to fill in the format string

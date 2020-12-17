@@ -31,20 +31,18 @@
  */
 #pragma once
 
-#include <stdbool.h>
-
 #include <arch/platform.h>
 
 #if defined(__POSIX)
 #define _GNU_SOURCE
 #include <pthread.h>
 
-#define ARCH_CALL_CONV
-typedef void * arch_thr_ret_t;
-typedef pthread_t arch_thr_t;
+#define THREAD_CALL_CONV
+typedef void * thr_ret_t;
+typedef pthread_t thr_id_t;
 
-#define ARCH_THR_RET_FAILURE ((void *) 1)
-#define ARCH_THR_RET_SUCCESS ((void *) 0)
+#define THREAD_RET_FAILURE ((void *) 1)
+#define THREAD_RET_SUCCESS ((void *) 0)
 
 #elif defined(__WINDOWS)
 
@@ -52,18 +50,18 @@ typedef pthread_t arch_thr_t;
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 
-#define ARCH_CALL_CONV WINAPI
+#define THREAD_CALL_CONV WINAPI
 typedef DWORD arch_thr_ret_t;
 typedef HANDLE arch_thr_t;
 
-#define ARCH_THR_RET_FAILURE (1)
-#define ARCH_THR_RET_SUCCESS (0)
+#define THREAD_RET_FAILURE (1)
+#define THREAD_RET_SUCCESS (0)
 
 #endif
 
-typedef arch_thr_ret_t ARCH_CALL_CONV (*arch_thr_fnc)(void *);
+typedef thr_ret_t THREAD_CALL_CONV (*thr_run_fnc)(void *);
 
-extern int arch_thread_create(arch_thr_t *thr_p, arch_thr_fnc t_fnc, void *t_fnc_arg);
-extern int arch_thread_affinity_set(arch_thr_t thr, unsigned core);
-extern int arch_thread_wait(arch_thr_t thr, arch_thr_ret_t *ret);
-extern unsigned arch_core_count(void);
+extern int thread_create(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);
+extern int thread_affinity_set(thr_id_t thr, unsigned core);
+extern int thread_wait(thr_id_t thr, thr_ret_t *ret);
+extern unsigned thread_cores_count(void);

@@ -26,7 +26,6 @@
 #pragma once
 
 #include <datatypes/array.h>
-
 #include <mm/buddy/buddy.h>
 
 extern void model_allocator_lp_init(void);

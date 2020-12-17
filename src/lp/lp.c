@@ -26,7 +26,6 @@
 #include <lp/lp.h>
 
 #include <core/sync.h>
-#include <core/timer.h>
 #include <gvt/fossil.h>
 
 __thread struct lp_ctx *current_lp;

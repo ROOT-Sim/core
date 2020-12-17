@@ -26,10 +26,11 @@
 */
 #include <gvt/gvt.h>
 
+#include <arch/timer.h>
 #include <core/init.h>
-#include <core/timer.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
+#include <log/stats.h>
 
 #include <stdatomic.h>
 #include <memory.h>
@@ -103,6 +104,7 @@ simtime_t gvt_phase_run(void)
 				&c_b, memory_order_relaxed)))
 				return false;
 		}
+		stats_time_start(STATS_GVT);
 		current_gvt = SIMTIME_MAX;
 		thread_phase = tphase_A;
 		atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
@@ -141,6 +143,7 @@ simtime_t gvt_phase_run(void)
 			atomic_fetch_sub_explicit(&c_b, 1U,
 				memory_order_relaxed);
 			thread_phase = tphase_rdy;
+			stats_time_take(STATS_GVT);
 		}
 		break;
 	}
@@ -184,6 +187,7 @@ simtime_t gvt_phase_run(void)
 				memory_order_relaxed);
 			mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 		}
+		stats_time_start(STATS_GVT);
 		current_gvt = SIMTIME_MAX;
 		thread_phase = tphase_A;
 		atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
@@ -302,6 +306,7 @@ simtime_t gvt_phase_run(void)
 				if(!rid)
 					mpi_control_msg_send_to(
 						MSG_CTRL_GVT_DONE, 0);
+				stats_time_take(STATS_GVT);
 			}
 		}
 		break;
