@@ -50,14 +50,12 @@ struct msg_map_node_t {
 	struct lp_msg *msg;
 };
 
-#define inner_map {							\
-	struct msg_map_node_t *nodes;					\
-	map_size_t capacity_mo;						\
-	atomic_int count;						\
-}
-
 static struct msg_map_t {
-	struct inner_map;
+	_Alignas(CACHE_LINE_SIZE) struct {
+		struct msg_map_node_t *nodes;
+		map_size_t capacity_mo;
+		atomic_int count;
+	};
 	struct {
 		_Alignas(CACHE_LINE_SIZE) spinlock_t l;
 	} locks[1 << MAX_THREADS_BITS];

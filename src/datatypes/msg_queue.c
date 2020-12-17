@@ -36,18 +36,17 @@
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
-static struct {
-    struct inner_q {
-	binary_heap(struct lp_msg *) q; //<! The actual queue
-	spinlock_t lck; //<! Synchronizes access to the queue
-    } i; //<! this is needed to elegantly cache align this stuff
-    unsigned char padding[CACHE_LINE_SIZE - sizeof(struct inner_q)]; //<! Cache line alignment
+static struct msg_queue {
+	_Alignas(CACHE_LINE_SIZE) struct {
+		spinlock_t lck; //<! Synchronizes access to the queue
+		binary_heap(struct lp_msg *) q; //<! The actual queue
+	}; //<! this is needed to elegantly cache align this stuff
 } *queues;
 
 /**
  * @brief Utility macro to fetch the correct inner queue
  */
-#define mqueue(from, to) (queues[to * n_threads + from].i)
+#define mqueue(from, to) (&queues[to * n_threads + from])
 
 /**
  * @brief Initializes the message queue at a node level
@@ -62,10 +61,10 @@ void msg_queue_global_init(void)
  */
 void msg_queue_init(void)
 {
-	unsigned i = n_threads;
+	rid_t i = n_threads;
 	while(i--) {
-		heap_init(mqueue(i, rid).q);
-		spin_init(&(mqueue(i, rid).lck));
+		heap_init(mqueue(i, rid)->q);
+		spin_init(&(mqueue(i, rid)->lck));
 	}
 }
 
@@ -75,9 +74,9 @@ void msg_queue_init(void)
 void msg_queue_fini(void)
 {
 	log_log(LOG_TRACE, "[T %u] msg queue fini", rid);
-	unsigned i = n_threads;
+	rid_t i = n_threads;
 	while(i--) {
-		struct inner_q *this_q = &mqueue(i, rid);
+		struct msg_queue *this_q = mqueue(i, rid);
 		array_count_t j = heap_count(this_q->q);
 		while(j--) {
 			struct lp_msg *msg = heap_items(this_q->q)[j];
@@ -107,12 +106,12 @@ void msg_queue_global_fini(void)
  */
 struct lp_msg *msg_queue_extract(void)
 {
-	unsigned i = n_threads;
-	struct inner_q *bid_q = &mqueue(rid, rid);
+	rid_t i = n_threads;
+	struct msg_queue *bid_q = mqueue(rid, rid);
 	struct lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
 
 	while(i--) {
-		struct inner_q *this_q = &mqueue(i, rid);
+		struct msg_queue *this_q = mqueue(i, rid);
 		if(!spin_trylock(&this_q->lck))
 			continue;
 
@@ -145,16 +144,16 @@ struct lp_msg *msg_queue_extract(void)
  */
 simtime_t msg_queue_time_peek(void)
 {
-	const unsigned t_cnt = n_threads;
+	const rid_t t_cnt = n_threads;
 	simtime_t t_min = SIMTIME_MAX;
 	bool done[t_cnt];
 	memset(done, 0, sizeof(done));
 
-	for(unsigned i = 0, r = t_cnt; r; i = (i + 1) % t_cnt){
+	for(rid_t i = 0, r = t_cnt; r; i = (i + 1) % t_cnt){
 		if(done[i])
 			continue;
 
-		struct inner_q *this_q = &mqueue(i, rid);
+		struct msg_queue *this_q = mqueue(i, rid);
 		if(!spin_trylock(&this_q->lck))
 			continue;
 
@@ -177,8 +176,8 @@ simtime_t msg_queue_time_peek(void)
  */
 void msg_queue_insert(struct lp_msg *msg)
 {
-	unsigned dest_rid = lid_to_rid[msg->dest];
-	struct inner_q *this_q = &mqueue(rid, dest_rid);
+	rid_t dest_rid = lid_to_rid[msg->dest];
+	struct msg_queue *this_q = mqueue(rid, dest_rid);
 	spin_lock(&this_q->lck);
 	heap_insert(this_q->q, msg_is_before, msg);
 	spin_unlock(&this_q->lck);

@@ -56,7 +56,7 @@ struct lp_ctx {
 extern uint64_t n_lps_node;
 extern __thread struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
-extern unsigned *lid_to_rid;
+extern rid_t *lid_to_rid;
 
 extern void lp_global_init(void);
 extern void lp_global_fini(void);
