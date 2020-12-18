@@ -34,6 +34,7 @@
 #include <core/core.h>
 
 #include <inttypes.h>
+#include <memory.h>
 #include <stdarg.h>
 #include <stdatomic.h>
 #include <stdint.h>
@@ -59,6 +60,7 @@ struct stats_info {
 
 const char * const s_names[] = {
 	[STATS_ROLLBACK] = "rollbacks",
+	[STATS_GVT] = "gvt",
 	[STATS_MSG_SILENT] = "silent messages",
 	[STATS_MSG_PROCESSED] = "processed messages"
 };
@@ -82,13 +84,11 @@ static FILE *file_open(const char *open_type, const char *fmt, ...)
 	va_end(args);
 
 	FILE *ret = fopen(f_name, open_type);
-	mm_free(f_name);
+	if (ret == NULL)
+		log_log(LOG_ERROR, "Unable to open \"%s\" in %s mode", f_name,
+			open_type);
 
-	if (ret == NULL) {
-		log_log(LOG_FATAL, "Unable to open file named %s in %s mode",
-			f_name, open_type);
-		core_abort();
-	}
+	mm_free(f_name);
 	return ret;
 }
 
@@ -200,6 +200,10 @@ void stats_global_fini(void)
 	}
 #endif
 	FILE *o = file_open("w", "%s_stats.csv", arg_parse_program_name());
+	if (o == NULL) {
+		log_log(LOG_WARN, "Unavailable stats file: stats will be printed on the terminal");
+		o = stdout;
+	}
 
 	fprintf(o, "node id,resource id,gvt");
 	for (unsigned i = 0; i < STATS_NUM; ++i) {
@@ -221,7 +225,8 @@ void stats_global_fini(void)
 #ifdef ROOTSIM_MPI
 	receive_stats_files(o);
 #endif
-	fclose(o);
+	if (o != stdout)
+		fclose(o);
 }
 
 void stats_time_start(enum stats_time_t this_stat)

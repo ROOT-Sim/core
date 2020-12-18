@@ -27,6 +27,8 @@
 
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
+#include <gvt/gvt.h>
+#include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 

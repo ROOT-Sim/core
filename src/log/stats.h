@@ -36,6 +36,8 @@ enum stats_time_t {
 	STATS_NUM
 };
 
+extern void stats_global_init(void);
+extern void stats_global_fini(void);
 extern void stats_init(void);
 extern void stats_fini(void);
 

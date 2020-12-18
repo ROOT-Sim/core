@@ -38,11 +38,10 @@
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
-static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *unused)
+static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
-	(void)unused;
+	rid = (uintptr_t)rid_arg;
 
-	core_init();
 	stats_init();
 	msg_allocator_init();
 	msg_queue_init();
@@ -118,7 +117,8 @@ void parallel_simulation(void)
 	thr_id_t thrs[n_threads];
 	rid_t i = n_threads;
 	while (i--) {
-		if (thread_create(&thrs[i], parallel_thread_run, NULL)) {
+		if (thread_create(&thrs[i], parallel_thread_run,
+				  (void *)(uintptr_t)i)) {
 			log_log(LOG_FATAL, "Unable to create a thread!");
 			abort();
 		}

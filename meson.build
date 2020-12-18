@@ -2,15 +2,23 @@ project('ROOT-Sim', ['c', 'cpp'], version: '3.0.0',
   default_options: ['c_std=c11', 'cpp_std=c++14', 'buildtype=release', 
   'warning_level=3', 'unity=on', 'unity_size=10000', 'b_lto=true'])
 
+# This is needed since our compiler uses a LLVM plugin
+assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
+  'LTO builds are only supported by using the clang compiler')
+
+# This stuff would otherwise break our fragile linking process
 add_global_link_arguments(['-no-pie'], language : 'c')
 if meson.get_compiler('c').get_id() == 'gcc'
   add_global_arguments(['-no-pie', '-fno-pic'], language : 'c')
 endif
 
-assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
-  'LTO builds are only supported by using the clang compiler')
+# Workaround to have reproducible unity builds
+if get_option('unity') == 'on'
+  add_global_arguments(['-ffile-prefix-map=' + meson.build_root() / '..=..'], 
+    language : 'c')
+endif
 
-# Include directory used explicitly in tests and llvm plugin compilation
+# Include directory used explicitly in tests and LLVM plugin compilation
 src_inc_dir = include_directories('src')
 
 # C math library dependency

@@ -85,6 +85,7 @@ static void serial_simulation_run(void)
 {
 	timer_uint last_vt = timer_new();
 	uint64_t to_terminate = n_lps;
+
 	while(likely(!heap_is_empty(queue))) {
 		const struct lp_msg *cur_msg = heap_min(queue);
 		struct s_lp_ctx *this_lp = &s_lps[cur_msg->dest];
@@ -158,6 +159,11 @@ void serial_simulation(void)
 	serial_simulation_run();
 	log_log(LOG_INFO, "Finalizing simulation");
 	serial_simulation_fini();
+}
+
+void serial_termination_force(void)
+{
+	heap_count(queue) = 0;
 }
 
 lp_id_t lp_id_get(void)

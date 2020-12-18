@@ -26,11 +26,11 @@
 #pragma once
 
 #include <ROOT-Sim.h>
-#include <arch/platform.h>
 #include <log/log.h>
 #include <mm/mm.h>
 
 #include <float.h>
+#include <setjmp.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -84,9 +84,7 @@ extern nid_t nid;
 
 extern rid_t n_threads;
 extern __thread rid_t rid;
-
-extern void core_init(void);
-extern void core_abort(void);
+extern __thread jmp_buf exit_jmp_buf;
 
 extern void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, void *state);

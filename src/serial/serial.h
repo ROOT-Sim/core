@@ -38,6 +38,7 @@ extern struct s_lp_ctx *s_lps;
 extern struct s_lp_ctx *s_current_lp;
 
 extern void serial_simulation(void);
+extern void serial_termination_force(void);
 
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size);

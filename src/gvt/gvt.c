@@ -135,6 +135,7 @@ simtime_t gvt_phase_run(void)
 			if(!rid){
 				last_gvt = timer_new();
 			}
+			stats_time_take(STATS_GVT);
 			return gvt_node_reduce();
 		}
 		break;
@@ -143,7 +144,6 @@ simtime_t gvt_phase_run(void)
 			atomic_fetch_sub_explicit(&c_b, 1U,
 				memory_order_relaxed);
 			thread_phase = tphase_rdy;
-			stats_time_take(STATS_GVT);
 		}
 		break;
 	}

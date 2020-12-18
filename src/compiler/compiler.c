@@ -53,10 +53,13 @@ static const char cmd_line_prefix[] =
 	ROOTSIM_CC " "
 	ROOTSIM_OPT_OPT " "
 	"-I" ROOTSIM_INC_DIR " "
+	"-Xclang -load "
+	"-Xclang " ROOTSIM_LIB_DIR "librootsim-llvm.so"
+;
+static const char cmd_line_suffix[] =
+	" -Wl,--as-needed "
 	"-lpthread "
 	"-lm "
-	"-Xclang -load "
-	"-Xclang " ROOTSIM_LIB_DIR "librootsim-llvm.so "
 	ROOTSIM_LIB_DIR "librootsim.a "
 	ROOTSIM_LIB_DIR "librootsim-mods.a"
 ;
@@ -65,7 +68,7 @@ int main(int argc, char **argv)
 {
 	(void) argc;
 	++argv;
-	size_t tot_size = sizeof(cmd_line_prefix) - 1;
+	size_t tot_size = sizeof(cmd_line_prefix) + sizeof(cmd_line_suffix)- 1;
 	char **argv_tmp = argv;
 	while (*argv_tmp) {
 		tot_size += strlen(*argv_tmp) + 1;
@@ -93,6 +96,8 @@ int main(int argc, char **argv)
 
 		++argv;
 	}
+
+	memcpy(ptr, cmd_line_suffix, sizeof(cmd_line_suffix));
 
 	if (system(cmd_line)) {
 		free(cmd_line);
