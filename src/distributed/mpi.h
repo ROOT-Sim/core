@@ -37,7 +37,8 @@
 enum _msg_ctrl {
 	MSG_CTRL_GVT_START = 1,
 	MSG_CTRL_GVT_DONE,
-	MSG_CTRL_TERMINATION
+	MSG_CTRL_TERMINATION,
+	MSG_CTRL_RAW
 };
 
 extern void mpi_global_init(int *argc_p, char ***argv_p);
@@ -55,5 +56,9 @@ extern bool mpi_reduce_sum_scatter_done(void);
 
 extern void mpi_reduce_min(simtime_t *node_min_p);
 extern bool mpi_reduce_min_done(void);
+
+extern void mpi_node_barrier(void);
+extern void mpi_raw_data_blocking_send(const char *buf, int buf_size, nid_t dest);
+extern int mpi_raw_data_blocking_rcv(char *buf, int expected_buf_size, nid_t dest);
 
 #endif
