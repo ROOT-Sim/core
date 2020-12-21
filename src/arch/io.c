@@ -5,8 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifdef __POSIX
+
+bool io_terminal_can_colorize(void)
+{
+	return isatty(STDERR_FILENO);
+}
 
 void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 {
@@ -15,18 +21,18 @@ void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 	strftime(res, IO_TIME_BUFFER_LEN, "%H:%M:%S", loc_t);
 }
 
-io_tmp_file_t io_tmp_file_get(void)
+io_file_t io_file_tmp_get(void)
 {
 	return tmpfile();
 }
 
-int io_tmp_file_append(io_tmp_file_t f, const void *data, size_t data_size)
+int io_file_append(io_file_t f, const void *data, size_t data_size)
 {
 	return -(fwrite(data, data_size, 1, f) != 1);
 }
 
-int io_tmp_file_process(io_tmp_file_t f, void *buffer, size_t buffer_size,
-			void (*proc_fnc)(size_t, void *), void *proc_fnc_arg)
+int io_file_process(io_file_t f, void *buffer, size_t buffer_size,
+		    void (*proc_fnc)(size_t, void *), void *proc_fnc_arg)
 {
 	if (fseek(f, 0, SEEK_SET))
 		return -1;
@@ -49,6 +55,17 @@ int io_tmp_file_process(io_tmp_file_t f, void *buffer, size_t buffer_size,
 #include <stdio.h>
 #include <io.h>
 
+bool io_terminal_can_colorize(void)
+{
+	HANDLE term = GetStdHandle(STD_ERROR_HANDLE);
+	if (term == NULL || term == INVALID_HANDLE_VALUE)
+		return false;
+	DWORD cmode;
+	if (!GetConsoleMode(term, &cmode))
+		return false;
+	return SetConsoleMode(term, cmode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
+
 void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 {
 	struct tm loc_t;
@@ -59,7 +76,7 @@ void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 	strftime(res, IO_TIME_BUFFER_LEN, "%H:%M:%S", &loc_t);
 }
 
-io_tmp_file_t io_tmp_file_get(void)
+io_file_t io_file_tmp_get(void)
 {
 	TCHAR tmp_folder_path[MAX_PATH + 1];
 	if (!GetTempPath(MAX_PATH + 1, tmp_folder_path))
@@ -76,14 +93,14 @@ io_tmp_file_t io_tmp_file_get(void)
 	return ret == INVALID_HANDLE_VALUE ? NULL : ret;
 }
 
-int io_tmp_file_append(io_tmp_file_t f, const void *data, size_t data_size)
+int io_file_append(io_file_t f, const void *data, size_t data_size)
 {
 	LDWORD written;
 	return -(!WriteFile(f, data, data_size, &written, NULL));
 }
 
-int io_tmp_file_process(io_tmp_file_t f, void *buffer, size_t buffer_size,
-			void (*proc_fnc)(size_t, void *), void *proc_fnc_arg)
+int io_file_process(io_file_t f, void *buffer, size_t buffer_size,
+		    void (*proc_fnc)(size_t, void *), void *proc_fnc_arg)
 {
 	if (SetFilePointer(f, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
 		return -1;
@@ -101,6 +118,5 @@ int io_tmp_file_process(io_tmp_file_t f, void *buffer, size_t buffer_size,
 		proc_fnc(res, proc_fnc_arg);
 	}
 }
-
 
 #endif

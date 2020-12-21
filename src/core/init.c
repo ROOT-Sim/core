@@ -29,7 +29,6 @@
 #include <arch/thread.h>
 #include <core/arg_parse.h>
 #include <core/core.h>
-#include <lib/lib.h>
 
 #include <inttypes.h>
 #include <limits.h>
@@ -38,8 +37,8 @@
 
 simulation_configuration global_config;
 
-/// This is the list of mnemonics for arguments
-enum _opt_codes {
+/// This is the list of mnemonics for command line arguments
+enum option_key {
 	OPT_NPRC,
 	OPT_LOG,
 	OPT_CLOG,
@@ -133,10 +132,13 @@ static void parse_opt (int key, const char *arg)
 		break;
 
 	case AP_KEY_INIT:
-		memset(&global_config, 0, sizeof(global_config));
-		global_config.core_binding = true;
-		global_config.gvt_period = 200000;
+		n_lps = 0;
+		n_threads = 0;
 		global_config.termination_time = SIMTIME_MAX;
+		global_config.gvt_period = 200000;
+		global_config.verbosity = 0;
+		global_config.is_serial = false;
+		global_config.core_binding = true;
 		log_colored = io_terminal_can_colorize();
 		// Store the predefined values, before reading any overriding one
 		// TODO
@@ -146,14 +148,14 @@ static void parse_opt (int key, const char *arg)
 		// if the threads count has not been supplied, the other checks
 		// are superfluous: the serial runtime simply will ignore the
 		// field while the parallel one will use the set count of cores
-		// (spitting a warning if it will use less cores than available)
+		// (spitting a warning if it must use less cores than available)
 		if (n_threads == 0) {
 			n_threads = thread_cores_count();
 		} else if (global_config.is_serial) {
 			arg_parse_error("requested a serial simulation with %u threads",
 					n_threads);
 		} else if (n_threads > n_lps) {
-			arg_parse_error("requested a simulation with %u threads and %"PRIu64" LPs",
+			arg_parse_error("requested a simulation with %u threads and %" PRIu64 " LPs",
 					n_threads, n_lps);
 		} else if(n_threads > thread_cores_count()) {
 			arg_parse_error("demanding %u cores, which are more than available (%u)",
@@ -176,16 +178,16 @@ __attribute__((weak)) struct ap_option model_options[] = {0};
 __attribute__((weak)) void model_parse(int key, const char *arg){(void) key; (void) arg;}
 
 struct ap_section ap_sects[] = {
-		{NULL, ap_options, parse_opt},
-		{"Model specific options", model_options, model_parse},
-		{0}
+	{NULL, ap_options, parse_opt},
+	{"Model specific options", model_options, model_parse},
+	{0}
 };
 
 struct ap_settings ap_sets = {
-		"ROOT-Sim",	// TODO properly fill these fields
-		"Proper version string",
-		"piccione@diag.uniroma1.it",
-		ap_sects
+	"ROOT-Sim",	// TODO properly fill these fields
+	"Proper version string",
+	"piccione@diag.uniroma1.it",
+	ap_sects
 };
 
 void init_args_parse(int argc, char **argv)

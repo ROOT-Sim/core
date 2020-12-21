@@ -49,15 +49,26 @@
 #define is_stats_thread() (!rid)
 #endif
 
-struct stats_info {
-	simtime_t gvt;
-	struct stats_measure {
-		uint64_t count;
-		uint64_t sum_t;
-		uint64_t var_t;
-	} s[STATS_NUM];
+/// A set of statistical values of a single metric
+/** The form of these values is designed for easier incremental updates */
+struct stats_measure {
+	/// The count of events of this type
+	uint64_t count;
+	/// The mean time to complete an event multiplied by the events count
+	uint64_t sum_t;
+	/// The variance of the time to complete multiplied by the events count
+	uint64_t var_t;
 };
 
+/// A container for statistics in a logical time period
+struct stats_info {
+	/// The end of the logical time period for these statistics
+	simtime_t gvt;
+	/// The array of statistics taken in the period
+	struct stats_measure s[STATS_NUM];
+};
+
+/// The statistics names, used to fill in the header of the final csv
 const char * const s_names[] = {
 	[STATS_ROLLBACK] = "rollbacks",
 	[STATS_GVT] = "gvt",
@@ -65,11 +76,17 @@ const char * const s_names[] = {
 	[STATS_MSG_PROCESSED] = "processed messages"
 };
 
-static io_tmp_file_t *stats_tmp_fs;
+static io_file_t *stats_tmp_fs;
 static __thread struct stats_info stats_buf[STATS_BUFFER_ENTRIES];
 static __thread struct stats_info *stats_cur;
 static __thread timer_uint last_ts[STATS_NUM];
 
+/**
+ * @brief A version of the standard fopen() which accepts a printf style format
+ * @param open_type a string which controls how the file is opened (check fopen())
+ * @param fmt the file name expressed as a printf style format string
+ * @param ... the list of additional arguments used in @a fmt (check printf())
+ */
 static FILE *file_open(const char *open_type, const char *fmt, ...)
 {
 	va_list args, args_cp;
@@ -92,23 +109,31 @@ static FILE *file_open(const char *open_type, const char *fmt, ...)
 	return ret;
 }
 
+/**
+ * @brief Flushes the stats buffer onto the temporary file
+ */
 static void flush_stats_buffer(void)
 {
-	int res = io_tmp_file_append(stats_tmp_fs[rid], stats_buf,
-				     sizeof(stats_buf));
+	int res = io_file_append(stats_tmp_fs[rid], stats_buf, sizeof(stats_buf));
 	if (unlikely(res))
 		log_log(LOG_ERROR, "Error during disk write!");
 
 	memset(stats_buf, 0, sizeof(stats_buf));
 }
 
+/**
+ * @brief Initializes the stats subsystem in the node
+ */
 void stats_global_init(void)
 {
 	stats_tmp_fs = mm_alloc(n_threads * sizeof(*stats_tmp_fs));
 	for (rid_t i = 0; i < n_threads; ++i)
-		stats_tmp_fs[i] = io_tmp_file_get();
+		stats_tmp_fs[i] = io_file_tmp_get();
 }
 
+/**
+ * @brief Initializes the stats subsystem in the current thread
+ */
 void stats_init(void)
 {
 	stats_cur = stats_buf;
@@ -142,6 +167,9 @@ static void chunk_append_proc(size_t chunk_size, void *args_p)
 	}
 }
 
+/**
+ * @brief Finalizes the stats subsystem in the current thread
+ */
 void stats_fini(void)
 {
 	flush_stats_buffer();
@@ -169,7 +197,7 @@ static void receive_stats_files(FILE *o)
 	}
 }
 
-static void tmp_file_send_proc(size_t chunk_size, void *args_p)
+static void file_send_proc(size_t chunk_size, void *args_p)
 {
 	(void) args_p;
 	mpi_raw_data_blocking_send(stats_buf, chunk_size, 0);
@@ -180,9 +208,8 @@ static void send_stats_files(void)
 {
 	mpi_raw_data_blocking_send(&n_threads, sizeof(n_threads), 0);
 	for (rid_t i = 0; i < n_threads; ++i) {
-		int res = io_tmp_file_process(stats_tmp_fs[rid], stats_buf,
-					      sizeof(stats_buf),
-					      tmp_file_send_proc, NULL);
+		int res = io_file_process(stats_tmp_fs[rid], stats_buf,
+					  sizeof(stats_buf), file_send_proc, NULL);
 		if (unlikely(res))
 			log_log(LOG_ERROR, "Error during disk read!");
 	}
@@ -190,6 +217,14 @@ static void send_stats_files(void)
 
 #endif
 
+/**
+ * @brief Finalizes the stats subsystem in the node
+ *
+ * When finalizing this subsystem the master node formats and dumps his
+ * statistics from his temporary files onto the final csv. Then, in a
+ * distributed setting, he receives the slaves temporary files, formatting and
+ * dumping their statistics as well.
+ */
 void stats_global_fini(void)
 {
 #ifdef ROOTSIM_MPI
@@ -215,9 +250,9 @@ void stats_global_fini(void)
 	for (rid_t i = 0; i < n_threads; ++i) {
 		struct tmp_file_proc_args args = {.o = o, .n = nid, .r = i};
 
-		int res = io_tmp_file_process(stats_tmp_fs[i], stats_buf,
-					      sizeof(stats_buf),
-					      chunk_append_proc, &args);
+		int res = io_file_process(stats_tmp_fs[i], stats_buf,
+					  sizeof(stats_buf), chunk_append_proc,
+					  &args);
 		if (unlikely(res))
 			log_log(LOG_ERROR, "Error during disk read!");
 	}
