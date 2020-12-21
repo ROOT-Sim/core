@@ -25,16 +25,16 @@
 */
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <core/core.h>
 #include <log/log.h>
 
 typedef struct {
-	int verbosity; //!< the log verbosity level
 	simtime_t termination_time; //!< the target termination logical time
 	unsigned gvt_period; //!< the gvt period expressed in microseconds
+	int verbosity; //!< the log verbosity level
 	bool core_binding; //!< if set, worker threads are bound to physical cores
 	bool is_serial; //!< if set, the simulation will run on the serial runtime
 } simulation_configuration;

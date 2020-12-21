@@ -25,9 +25,9 @@
 */
 #pragma once
 
-#include <stdint.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef atomic_flag spinlock_t;
 

@@ -68,7 +68,7 @@ void termination_on_ctrl_msg(void)
 
 void termination_on_gvt(simtime_t current_gvt)
 {
-	if (unlikely((max_t < current_gvt && !lps_to_end) ||
+	if (unlikely((!lps_to_end && max_t < current_gvt) ||
 			current_gvt >= global_config.termination_time)) {
 		max_t = SIMTIME_MAX;
 		unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U,

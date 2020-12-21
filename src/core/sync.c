@@ -24,6 +24,7 @@
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <core/sync.h>
+
 #include <core/core.h>
 
 bool sync_thread_barrier(void)

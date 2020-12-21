@@ -27,8 +27,8 @@
 #include <lp/lp.h>
 #include <core/intrinsics.h>
 
-#include <stdlib.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define left_child(i) (((i) << 1U) + 1U)
 #define right_child(i) (((i) << 1U) + 2U)
@@ -224,12 +224,12 @@ void __write_mem(void *ptr, size_t siz)
 	} while(siz--);
 }
 
-static struct _mm_checkpoint *checkpoint_incremental_take(struct mm_state *self)
+static struct mm_checkpoint *checkpoint_incremental_take(struct mm_state *self)
 {
 	uint_fast32_t bset = bitmap_count_set(self->dirty, sizeof(self->dirty));
 
 	struct mm_checkpoint *ret = mm_alloc(
-		offsetof(struct _mm_checkpoint, longest) +
+		offsetof(struct mm_checkpoint, longest) +
 		bset * (1 << B_BLOCK_EXP));
 
 	unsigned char *ptr = ret->longest;
@@ -381,7 +381,6 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 		ckp = checkpoint_full_take(self);
 #ifdef ROOTSIM_INCREMENTAL
 	}
-	self->dirty_mem = 0;
 	memset(self->dirty, 0, sizeof(self->dirty));
 #endif
 
