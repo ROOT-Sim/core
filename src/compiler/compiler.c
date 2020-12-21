@@ -30,28 +30,33 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef ROOTSIM_OPT_OPT
-#define ROOTSIM_OPT_OPT "-O3 -flto"
+#ifndef ROOTSIM_OPTIMIZATION_OPTIONS
+/// The optimization options to be used when compiling models
+/** This macro is filled in at build time */
+#define ROOTSIM_OPTIMIZATION_OPTIONS ""
 #endif
 
-// FIXME: we don't include absolute paths in code!
 #ifndef ROOTSIM_CC
-#define ROOTSIM_CC "/usr/bin/clang"
+/// The path of the C compiler to use when compiling models
+/** This macro is filled in at build time */
+#define ROOTSIM_CC ""
 #endif
 
-// FIXME: we don't include absolute paths in code!
 #ifndef ROOTSIM_LIB_DIR
-#define ROOTSIM_LIB_DIR "/usr/lib/"
+/// The path of the installed ROOT-Sim libraries
+/** This macro is filled in at build time */
+#define ROOTSIM_LIB_DIR ""
 #endif
 
-// FIXME: we don't include absolute paths in code!
 #ifndef ROOTSIM_INC_DIR
-#define ROOTSIM_INC_DIR "/usr/include/"
+/// The path of the installed ROOT-Sim headers
+/** This macro is filled in at build time */
+#define ROOTSIM_INC_DIR ""
 #endif
 
 static const char cmd_line_prefix[] =
 	ROOTSIM_CC " "
-	ROOTSIM_OPT_OPT " "
+	ROOTSIM_OPTIMIZATION_OPTIONS " "
 	"-I" ROOTSIM_INC_DIR " "
 	"-Xclang -load "
 	"-Xclang " ROOTSIM_LIB_DIR "librootsim-llvm.so"
@@ -64,6 +69,11 @@ static const char cmd_line_suffix[] =
 	ROOTSIM_LIB_DIR "librootsim-mods.a"
 ;
 
+/**
+ * @brief The main entry point of the custom compiler
+ * @param argc The count of command line arguments, as per ISO C standard
+ * @param argv The list of command line arguments, as per ISO C standard
+ */
 int main(int argc, char **argv)
 {
 	(void) argc;

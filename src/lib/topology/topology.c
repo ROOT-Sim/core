@@ -25,13 +25,13 @@
 */
 #include <lib/topology/topology.h>
 
-#include <lib/lib_internal.h>
 #include <core/intrinsics.h>
+#include <lib/lib_internal.h>
 
 #include <math.h>
 #include <memory.h>
 
-__attribute((weak)) struct _topology_settings_t topology_settings;
+__attribute((weak)) struct topology_settings_t topology_settings;
 
 /// this is used to store the common characteristics of the topology
 struct {

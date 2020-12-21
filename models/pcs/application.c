@@ -73,7 +73,7 @@ void model_parse(int key, const char *arg) {
 
 #undef HANDLE_CASE
 
-struct _topology_settings_t topology_settings = {.default_geometry = TOPOLOGY_HEXAGON};
+struct topology_settings_t topology_settings = {.default_geometry = TOPOLOGY_HEXAGON};
 
 void ProcessEvent(lp_id_t me, simtime_t now, int event_type, event_content_type *event_content, unsigned int size, void *ptr) {
 	(void)size;

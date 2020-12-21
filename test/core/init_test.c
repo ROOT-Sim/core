@@ -1,7 +1,7 @@
 #include <test.h>
 
-#include <core/init.h>
 #include <core/arg_parse.h>
+#include <core/init.h>
 
 void log_logo_print(void) {}
 

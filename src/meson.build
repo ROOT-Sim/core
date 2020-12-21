@@ -45,7 +45,7 @@ compiler_c_args = [
   '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
   '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"',
   '-DROOTSIM_CC="' + clang_compiler.full_path() + '"',
-  '-DROOTSIM_OPT_OPT="' + ' '.join(c_optimization_options) + '"'
+  '-DROOTSIM_OPTIMIZATION_OPTIONS="' + ' '.join(c_optimization_options) + '"'
 ]
 
 # ROOT-Sim compiler

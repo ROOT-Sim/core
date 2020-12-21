@@ -1,24 +1,62 @@
+/**
+ * @file core/arg_parse.c
+ *
+ * @brief Command line option parser
+ *
+ * A command line option parser mimicking a subset of GNU argp features.
+ *
+ * @copyright
+ * Copyright (C) 2008-2020 HPDCS Group
+ * https://rootsim.github.io/core
+ *
+ * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
+ *
+ * ROOT-Sim is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; only version 3 of the License applies.
+ *
+ * ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 #include <core/arg_parse.h>
+
+#include <mm/mm.h>
 
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <ROOT-Sim.h>
-#include <mm/mm.h>
-
+/// Expected length of the terminal expressed in monospace characters width
 #define SCREEN_LENGTH 80
+/// Number of spaces to indent the \--help entries
 #define HELP_INDENT 6
+/// Minimum indentation of the documentation strings in the \--help entries
 #define HELP_OPT_LEN_MIN 20
+/// Maximum indentation of the documentation strings in the \--help entries
 #define HELP_OPT_LEN_MAX 26
+/// Minimum spaces between the option and its documentation in the \--help text
 #define HELP_SPACES_MIN 3
+/// Number of spaces to indent the \--usage text
 #define USAGE_INDENT 11
 
 static const char *ap_pname;
 static const struct ap_settings *ap_settings;
 
-enum {AP_HELP = AP_KEY_FINI + 1, AP_USAGE, AP_VERSION};
+/// The keys used in the internal struct ap_option to handle base options
+enum internal_opt_key {
+	/// Identifies the \--help option
+	AP_HELP = AP_KEY_FINI + 1,
+	/// Identifies the \--usage option
+	AP_USAGE,
+	/// Identifies the \--version option
+	AP_VERSION
+};
 
 static struct ap_option ap_internal_opts[] = {
 	{"help", AP_HELP, NULL, "Give this help list"},

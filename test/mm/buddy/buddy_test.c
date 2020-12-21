@@ -1,10 +1,10 @@
 #include <test.h>
 #include <test_rng.h>
+
 #include <mm/model_allocator.h>
 #include <lp/lp.h>
 
 #include <stdlib.h>
-#include <stdint.h>
 
 static __thread uint128_t rng_state;
 

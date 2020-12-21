@@ -1,9 +1,9 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdbool.h>
 
 #define TEST_BAD_FAIL_EXIT_CODE 99
 
