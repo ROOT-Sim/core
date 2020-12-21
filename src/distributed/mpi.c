@@ -43,6 +43,8 @@
 
 #include <mpi.h>
 
+#define MSG_CTRL_RAW (MSG_CTRL_TERMINATION + 1)
+
 #ifdef ROOTSIM_MPI_SERIALIZABLE
 
 static bool mpi_serialize;
@@ -192,7 +194,7 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
  * @brief Sends a platform control message to all the other nodes
  * @param ctrl the control message to send
  */
-void mpi_control_msg_broadcast(enum _msg_ctrl ctrl)
+void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl)
 {
 	MPI_Request req;
 	nid_t i = n_nodes;
@@ -211,7 +213,7 @@ void mpi_control_msg_broadcast(enum _msg_ctrl ctrl)
  * @param ctrl the control message to send
  * @param dest the id of the destination node
  */
-void mpi_control_msg_send_to(enum _msg_ctrl ctrl, nid_t dest)
+void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest)
 {
 	MPI_Request req;
 	mpi_lock();
@@ -222,7 +224,7 @@ void mpi_control_msg_send_to(enum _msg_ctrl ctrl, nid_t dest)
 
 /**
  * @brief Empties the queue of incoming MPI messages, doing the right thing for
- *        each of of them.
+ *        each one of them.
  *
  * This routine checks, using the MPI probing mechanism, for new remote messages
  * and it handles them accordingly.
@@ -311,9 +313,9 @@ static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
  * is computed and the nid-th component of this vector is stored in @a result.
  * It is expected that only a single thread calls this function at a time.
  * Each node has to call this function else the result can't be computed.
- * It is possible to have a single mpi_reduce_sum operation pending at a time.
- * Both arguments must point to valid memory regions until mpi_reduce_sum_done()
- * returns true.
+ * It is possible to have a single mpi_reduce_sum_scatter() operation pending at
+ * a time. Both arguments must point to valid memory regions until
+ * mpi_reduce_sum_scatter_done() returns true.
  */
 void mpi_reduce_sum_scatter(const unsigned node_vals[n_nodes], unsigned *result)
 {
@@ -347,8 +349,8 @@ static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
  * is computed and stored in @a node_min_p itself.
  * It is expected that only a single thread calls this function at a time.
  * Each node has to call this function else the result can't be computed.
- * It is possible to have a single mpi_reduce_sum operation pending at a time.
- * Both arguments must point to valid memory regions until mpi_reduce_sum_done()
+ * It is possible to have a single mpi_reduce_min() operation pending at a time.
+ * Both arguments must point to valid memory regions until mpi_reduce_min_done()
  * returns true.
  */
 void mpi_reduce_min(simtime_t *node_min_p)
@@ -389,6 +391,7 @@ void mpi_node_barrier(void)
  * @param buf a pointer to the buffer to send
  * @param buf_size the buffer size
  * @param dest the id of the destination node
+ *
  * This operation blocks the execution flow until the destination node receives
  * the data with mpi_raw_data_blocking_rcv().
  */
@@ -404,6 +407,7 @@ void mpi_raw_data_blocking_send(const char *buf, int buf_size, nid_t dest)
  * @param buf a pointer to the memory where the received data will be written
  * @param buf_size the maximum size of the data to receive
  * @param src the id of the sender node
+ *
  * This function simply leaves the probed message hanging if the given size is
  * insufficient to contain the received data.
  * This operation blocks the execution flow until the sender node actually sends
