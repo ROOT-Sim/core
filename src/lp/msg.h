@@ -44,20 +44,29 @@ __extension__({								\
 	(msg_id) += (phase);						\
 })
 
+/// A model simulation message
 struct lp_msg {
-	lp_id_t dest; //!< the id of the recipient lp
-	simtime_t dest_t; //!< the intended logical time of this msg
-	uint_fast32_t m_type; //!< the msg type, a user controlled field
-	uint_fast32_t pl_size; //!< the payload size
+	/// The id of the recipient LP
+	lp_id_t dest;
+	/// The intended destination logical time of this message
+	simtime_t dest_t;
+	/// The message type, a user controlled field
+	uint_fast32_t m_type;
+	 /// The message payload size
+	uint_fast32_t pl_size;
 	union {
-		atomic_int flags; //!< flags used when handling the msg locally
-		uintptr_t msg_id; //!< the unique id of the msg if it is cross node
+		/// The flags to handle local anti messages
+		atomic_int flags;
+		/// The message unique id, used for inter-node anti messages
+		uintptr_t msg_id;
 	};
-	unsigned char pl[BASE_PAYLOAD_SIZE]; //!< the initial part of the payload
-	unsigned char extra_pl[]; //!< the continuation of the payload
+	/// The initial part of the payload
+	unsigned char pl[BASE_PAYLOAD_SIZE];
+	/// The continuation of the payload
+	unsigned char extra_pl[];
 };
 
-enum msg_flag_t {
+enum msg_flag {
 	MSG_FLAG_ANTI 		= 1,
 	MSG_FLAG_PROCESSED	= 2
 };

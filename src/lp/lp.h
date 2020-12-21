@@ -32,11 +32,16 @@
 #include <lp/process.h>
 #include <mm/model_allocator.h>
 
+/// A complete LP context
 struct lp_ctx {
-	simtime_t t_d; //!< The termination time of this LP, handled by the termination module
-	struct lib_ctx *lib_ctx_p; //!< The additional libraries context for this LP
-	struct process_data p; //!< The processing context for this LP
-	struct mm_state mm_state; //!< The memory allocator state for this LP
+	/// The termination time of this LP, handled by the termination module
+	simtime_t t_d;
+	/// The additional libraries context of this LP
+	struct lib_ctx *lib_ctx_p;
+	/// The message processing context of this LP
+	struct process_data p;
+	/// The memory allocator state of this LP
+	struct mm_state mm_state;
 };
 
 #define lps_iter_init(start_i, lps_cnt)					\

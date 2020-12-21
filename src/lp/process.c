@@ -59,6 +59,9 @@ void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 	array_push(proc_p->sent_msgs, msg);
 }
 
+/**
+ * @brief Initializes the processing module in the current LP
+ */
 void process_lp_init(void)
 {
 	struct lp_ctx *this_lp = current_lp;
@@ -78,6 +81,9 @@ void process_lp_init(void)
 	array_push(proc_p->past_msgs, msg);
 }
 
+/**
+ * @brief Deinitializes the LP by calling the model's DEINIT handler
+ */
 void process_lp_deinit(void)
 {
 	struct lp_ctx *this_lp = current_lp;
@@ -85,6 +91,9 @@ void process_lp_deinit(void)
 			   this_lp->lib_ctx_p->state_s);
 }
 
+/**
+ * @brief Finalizes the processing module in the current LP
+ */
 void process_lp_fini(void)
 {
 	struct process_data *proc_p = &current_lp->p;
