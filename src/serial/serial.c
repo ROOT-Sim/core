@@ -22,7 +22,6 @@
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <serial/serial.h>
-#include <stdlib.h>
 
 #include <arch/timer.h>
 #include <core/core.h>
@@ -32,6 +31,8 @@
 #include <log/stats.h>
 #include <lp/msg.h>
 #include <mm/msg_allocator.h>
+
+#include <stdlib.h>
 
 /// The LP context for the serial runtime
 struct s_lp_ctx {

@@ -25,11 +25,11 @@
 */
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-
 #include <core/core.h>
 #include <log/log.h>
+
+#include <stdbool.h>
+#include <stdint.h>
 
 typedef struct {
 	simtime_t termination_time; //!< the target termination logical time

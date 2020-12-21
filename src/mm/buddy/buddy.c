@@ -24,8 +24,8 @@
 #include <mm/buddy/buddy.h>
 
 #include <core/core.h>
-#include <lp/lp.h>
 #include <core/intrinsics.h>
+#include <lp/lp.h>
 
 #include <errno.h>
 #include <stdlib.h>

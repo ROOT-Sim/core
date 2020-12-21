@@ -52,7 +52,6 @@ int io_file_process(io_file_t f, void *buffer, size_t buffer_size,
 
 #ifdef __WINDOWS
 
-#include <stdio.h>
 #include <io.h>
 
 bool io_terminal_can_colorize(void)

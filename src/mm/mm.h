@@ -30,8 +30,8 @@
 
 #include <log/log.h>
 
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 inline void *mm_alloc(size_t mem_size)
 {
