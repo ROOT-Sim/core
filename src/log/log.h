@@ -43,19 +43,11 @@ extern bool log_colored;
 
 #define log_is_lvl(level) ((level) >= LOG_LEVEL && (level) >= log_level)
 
-#ifndef ROOTSIM_TEST
-
 #define log_log(lvl, ...)						\
 	do {								\
 		if(log_is_lvl(lvl))					\
 			_log_log(lvl, __FILE__, __LINE__, __VA_ARGS__);	\
 	} while(0)
-
-#else
-
-#define log_log(lvl, ...)
-
-#endif
 
 void _log_log(int level, const char *file, unsigned line, const char *fmt, ...);
 

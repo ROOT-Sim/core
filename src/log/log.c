@@ -37,15 +37,22 @@ static const struct {
 	const char *name;
 	const char *color;
 } levels[] = {
-		[LOG_TRACE] = {.name = "TRACE", .color = "\x1b[94m"},
-		[LOG_DEBUG] = {.name = "DEBUG", .color = "\x1b[36m"},
-		[LOG_INFO] = {.name = "INFO", .color = "\x1b[32m"},
-		[LOG_WARN] = {.name = "WARN", .color = "\x1b[33m"},
-		[LOG_ERROR] = {.name = "ERROR", .color = "\x1b[31m"},
-		[LOG_FATAL] = {.name = "FATAL", .color = "\x1b[35m"}
+	[LOG_TRACE] = {.name = "TRACE", .color = "\x1b[94m"},
+	[LOG_DEBUG] = {.name = "DEBUG", .color = "\x1b[36m"},
+	[LOG_INFO] = {.name = "INFO", .color = "\x1b[32m"},
+	[LOG_WARN] = {.name = "WARN", .color = "\x1b[33m"},
+	[LOG_ERROR] = {.name = "ERROR", .color = "\x1b[31m"},
+	[LOG_FATAL] = {.name = "FATAL", .color = "\x1b[35m"}
 };
 
-
+/**
+ * @brief Logs a message. For internal use: log_log() should be used instead
+ * @param level The importance level of the message to log
+ * @param file The name of the file where this function is being called
+ * @param line The line number where this function is being called
+ * @param fmt A printf-style format string for the message to log
+ * @param ... The list of arguments to fill in the format string @a fmt
+ */
 void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 {
 	va_list args;
@@ -81,7 +88,10 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 	fflush(stderr);
 }
 
-void log_logo_print()
+/**
+ * @brief Prints a fancy ROOT-Sim logo on the terminal
+ */
+void log_logo_print(void)
 {
 	if(log_colored) {
 		fprintf(stderr, "\x1b[94m   __ \x1b[90m __   _______   \x1b[94m  _ \x1b[90m       \n");

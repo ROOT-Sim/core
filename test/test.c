@@ -1,13 +1,13 @@
 #include <test.h>
 
+#include <arch/thread.h>
+
 #include <limits.h>
 #include <memory.h>
 #include <stdarg.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
-#include "../src/arch/thread.h"
 
 #ifndef ROOTSIM_TEST_NAME
 #define ROOTSIM_TEST_NAME "rs_test"
@@ -24,6 +24,17 @@ __attribute__((weak)) nid_t n_nodes = 1;
 __attribute__((weak)) rid_t n_threads;
 __attribute__((weak)) nid_t nid;
 __attribute__((weak)) __thread rid_t rid;
+
+__attribute__((weak)) int log_level;
+
+__attribute__((weak))
+void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
+{
+	(void) level;
+	(void) file;
+	(void) line;
+	(void) fmt;
+}
 
 int main(int argc, char **argv);
 
