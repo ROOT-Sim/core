@@ -1,5 +1,5 @@
 /**
-* @file core/timer.c
+* @file arch/timer.c
 *
 * @brief Timers
 *

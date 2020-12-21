@@ -1,5 +1,5 @@
 /**
-* @file core/timer.h
+* @file arch/timer.h
 *
 * @brief Timers
 *
@@ -35,7 +35,7 @@
 typedef uint_fast64_t timer_uint;
 
 /**
- * @fn timer_new
+ * @fn timer_new(void)
  * @brief Gets a new starting point for an time interval measure
  * @returns a timer_uint value, a not meaningful value by itself
  *
@@ -44,9 +44,9 @@ typedef uint_fast64_t timer_uint;
  */
 
 /**
- * @fn timer_value
+ * @fn timer_value(timer_uint start)
  * @brief Computes a time interval measure using a previous timer_uint value
- * @param timer a timer_uint value obtained from a previous timer_new() call
+ * @param start a timer_uint value obtained from a previous timer_new() call
  * @return a timer_uint value, the count of microseconds of the time interval
  */
 
@@ -82,7 +82,7 @@ inline timer_uint timer_new(void)
 
 inline timer_uint timer_value(timer_uint start)
 {
-	if(unlikely(timer_perf_freq == 0)) {
+	if (unlikely(timer_perf_freq == 0)) {
 		LARGE_INTEGER __perf;
 		QueryPerformanceFrequency(&__perf);
 		timer_perf_freq = __perf.QuadPart;

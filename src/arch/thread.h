@@ -1,5 +1,5 @@
 /**
- * @file arch/arch.h
+ * @file arch/thread.h
  *
  * @brief Generic architecture management facilities
  *
@@ -59,6 +59,7 @@ typedef HANDLE arch_thr_t;
 
 #endif
 
+/// The function type of a new thread entry point
 typedef thr_ret_t THREAD_CALL_CONV (*thr_run_fnc)(void *);
 
 extern int thread_create(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);

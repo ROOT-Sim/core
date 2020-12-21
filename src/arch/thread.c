@@ -1,5 +1,5 @@
 /**
- * @file arch/arch.c
+ * @file arch/thread.c
  *
  * @brief Generic architecture management facilities
  *
@@ -32,7 +32,7 @@
 #include <arch/thread.h>
 
 /**
- * @fn thread_create
+ * @fn thread_create(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
  * @brief Creates a thread
  * @param thr_p A pointer to the location where the created thread identifier
  *              will be copied
@@ -43,7 +43,7 @@
  */
 
 /**
- * @fn thread_affinity_set
+ * @fn thread_affinity_set(thr_id_t thr, unsigned core)
  * @brief Sets a core affinity for a thread
  * @param thr The identifier of the thread targeted for the affinity change
  * @param core The core id where the target thread will be pinned on
@@ -51,7 +51,7 @@
  */
 
 /**
- * @fn thread_wait
+ * @fn thread_wait(thr_id_t thr, thr_ret_t *ret)
  * @brief Wait for specified thread to complete execution
  * @param thr The identifier of the thread to wait for
  * @param ret A pointer to the location where the return value will be copied,
@@ -60,7 +60,7 @@
  */
 
 /**
- * @fn thread_cores_count
+ * @fn thread_cores_count(void)
  * @brief Computes the count of available cores on the machine
  * @return the count of the processing cores available on the machine
  */
