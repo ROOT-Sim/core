@@ -104,6 +104,12 @@ namespace {
 
 		SmallVector<ReturnInst *, 8> Returns;
 		CloneFunctionInto(NewF, &F, VMap, true, Returns, suffix);
+
+		for (const Argument &I : F.args()) {
+			VMap.erase(&I);
+		}
+		// XXX: solves a LLVM bug but removes debug info from clones
+		NewF->setSubprogram(nullptr);
 	}
 
 class RootsimCC: public ModulePass {
