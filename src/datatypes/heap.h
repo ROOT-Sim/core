@@ -33,14 +33,16 @@
 #define heap_count(self) array_count(self)
 
 /**
- * @brief Initializes an heap. It will be initially empty.
+ * @brief Initializes an empty heap
  * @param self the heap to initialize
  */
 #define heap_init(self)	array_init(self)
 
 /**
- * @brief Finalizes an heap. The user is responsible for cleaning up the items.
+ * @brief Finalizes an heap
  * @param self the heap to finalize
+ *
+ * The user is responsible for cleaning up the possibly contained items.
  */
 #define heap_fini(self)	array_fini(self)
 

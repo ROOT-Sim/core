@@ -4,11 +4,12 @@
 * @brief Message queue datatype
 *
 * This is the message queue for the parallel runtime.
-* The design is pretty simple. A queue for n thread is composed by n * n square
-* matrix of simpler queues. If thread t1 wants to send a message to thread t2 it
-* puts a message in the i-th queue where i = t2 * n + t1. Insertions are then
-* cheap, while extractions lazily lock the queues (costing linear time in the
-* number of worked threads, which seems to be acceptable in practice).
+* The design is pretty simple. A queue for n threads is composed by a n * n
+* square matrix of simpler queues. If thread t1 wants to send a message to
+* thread t2 it puts a message in the i-th queue where i = t2 * n + t1.
+* Insertions are then cheap, while extractions lazily lock the queues
+* (costing linear time in the number of worked threads, which seems to be
+* acceptable in practice).
 *
 * @copyright
 * Copyright (C) 2008-2020 HPDCS Group
@@ -36,12 +37,20 @@
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
-static struct msg_queue {
-	_Alignas(CACHE_LINE_SIZE) struct {
-		spinlock_t lck; //<! Synchronizes access to the queue
-		binary_heap(struct lp_msg *) q; //<! The actual queue
-	}; //<! this is needed to elegantly cache align this stuff
-} *queues;
+#include <stdalign.h>
+
+/// A queue synchronized by a spinlock
+struct msg_queue {
+	alignas(CACHE_LINE_SIZE) struct {
+		/// Synchronizes access to the queue
+		spinlock_t lck;
+		/// The actual queue element of the matrix
+		binary_heap(struct lp_msg *) q;
+	};
+};
+
+/// The queues matrix, linearized in a contiguous array
+static struct msg_queue *queues;
 
 /**
  * @brief Utility macro to fetch the correct inner queue
@@ -49,7 +58,7 @@ static struct msg_queue {
 #define mqueue(from, to) (&queues[to * n_threads + from])
 
 /**
- * @brief Initializes the message queue at a node level
+ * @brief Initializes the message queue at the node level
  */
 void msg_queue_global_init(void)
 {
@@ -57,7 +66,7 @@ void msg_queue_global_init(void)
 }
 
 /**
- * @brief Initializes the message queue at a thread level
+ * @brief Initializes the message queue for the current thread
  */
 void msg_queue_init(void)
 {
@@ -69,11 +78,10 @@ void msg_queue_init(void)
 }
 
 /**
- * @brief Finalizes the message queue at a node level
+ * @brief Finalizes the message queue for the current thread
  */
 void msg_queue_fini(void)
 {
-	log_log(LOG_TRACE, "[T %u] msg queue fini", rid);
 	rid_t i = n_threads;
 	while(i--) {
 		struct msg_queue *this_q = mqueue(i, rid);
@@ -89,7 +97,7 @@ void msg_queue_fini(void)
 }
 
 /**
- * @brief Finalizes the message queue at a global level
+ * @brief Finalizes the message queue at the node level
  */
 void msg_queue_global_fini(void)
 {
@@ -98,7 +106,7 @@ void msg_queue_global_fini(void)
 
 /**
  * @brief Extracts the next message from the queue
- * @returns a pointer to the message to be processed
+ * @returns a pointer to the message to be processed or NULL if there isn't one
  *
  * The extracted message is a best effort lowest timestamp for the current
  * thread. Guaranteeing the lowest timestamp may increase the contention on the
@@ -136,7 +144,8 @@ struct lp_msg *msg_queue_extract(void)
 
 /**
  * @brief Peeks the timestamp of the next message from the queue
- * @returns the lowest timestamp of the next message to be processed
+ * @returns the lowest timestamp of the next message to be processed or
+ *          SIMTIME_MAX is there's no message to process
  *
  * This returns the lowest timestamp of the next message to be processed for the
  * current thread. This is calculated in a precise fashion since this value is
@@ -172,7 +181,6 @@ simtime_t msg_queue_time_peek(void)
 /**
  * @brief Inserts a message in the queue
  * @param msg the message to insert in the queue
- *
  */
 void msg_queue_insert(struct lp_msg *msg)
 {
