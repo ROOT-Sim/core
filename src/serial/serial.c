@@ -28,12 +28,25 @@
 #include <core/core.h>
 #include <core/init.h>
 #include <datatypes/heap.h>
+#include <lib/lib.h>
 #include <log/stats.h>
 #include <lp/msg.h>
 #include <mm/msg_allocator.h>
 
-struct s_lp_ctx *s_lps;
-struct s_lp_ctx *s_current_lp;
+/// The LP context for the serial runtime
+struct s_lp_ctx {
+	/// The context for the model development libraries
+	struct lib_ctx lib_ctx;
+#if LOG_DEBUG >= LOG_LEVEL
+	/// The logical time of the last processed event by this LP
+	simtime_t last_evt_time;
+#endif
+	/// The last evaluation of the termination predicate for this LP
+	bool terminating;
+};
+
+static struct s_lp_ctx *s_lps;
+static struct s_lp_ctx *s_current_lp;
 
 static binary_heap(struct lp_msg *) queue;
 
@@ -72,11 +85,11 @@ static void serial_simulation_fini(void)
 	}
 
 	lib_global_fini();
-
 	heap_fini(queue);
 	msg_allocator_fini();
-	stats_fini();
+
 	mm_free(s_lps);
+
 	stats_fini();
 	stats_global_fini();
 }

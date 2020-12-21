@@ -28,18 +28,10 @@
 */
 #pragma once
 
+#include <log/log.h>
+
 #include <stdlib.h>
 #include <stddef.h>
-
-#ifdef ROOTSIM_TEST
-
-#define mm_alloc malloc
-#define mm_realloc realloc
-#define mm_free free
-
-#else
-
-#include <log/log.h>
 
 inline void *mm_alloc(size_t mem_size)
 {
@@ -67,7 +59,3 @@ inline void mm_free(void *ptr)
 {
 	free(ptr);
 }
-
-#pragma GCC poison malloc realloc free
-
-#endif

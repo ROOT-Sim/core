@@ -24,18 +24,6 @@
 #pragma once
 
 #include <core/core.h>
-#include <lib/lib.h>
-
-struct s_lp_ctx {
-	struct lib_ctx lib_ctx;
-#if LOG_DEBUG >= LOG_LEVEL
-	simtime_t last_evt_time;
-#endif
-	bool terminating;
-};
-
-extern struct s_lp_ctx *s_lps;
-extern struct s_lp_ctx *s_current_lp;
 
 extern void serial_simulation(void);
 extern void serial_termination_force(void);
