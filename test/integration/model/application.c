@@ -32,7 +32,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		}
 		memset(state, 0, sizeof(lp_state_t));
 
-		lcg_init(state->rng_state, ((uint128_t)me + 1) * 4390023366657240769ULL);
+		lcg_init(state->rng_state, ((test_rng_t)me + 1) * 4390023366657240769ULL);
 		SetState(state);
 
 		crc_table_init();

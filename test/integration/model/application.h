@@ -26,7 +26,7 @@ typedef struct _lp_state_type {
 	unsigned events;
 	unsigned buffer_count;
 	uint32_t total_checksum;
-	uint128_t rng_state;
+	test_rng_t rng_state;
 	buffer *head;
 } lp_state_t;
 

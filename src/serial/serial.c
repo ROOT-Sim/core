@@ -46,11 +46,16 @@ struct s_lp_ctx {
 	bool terminating;
 };
 
+/// The array of all the simulation LP contexts
 static struct s_lp_ctx *s_lps;
+/// The context of the currently processed LP
 static struct s_lp_ctx *s_current_lp;
-
+/// The messages queue of the serial runtime
 static binary_heap(struct lp_msg *) queue;
 
+/**
+ * @brief Initializes the serial simulation environment
+ */
 static void serial_simulation_init(void)
 {
 	stats_global_init();
@@ -73,6 +78,9 @@ static void serial_simulation_init(void)
 	}
 }
 
+/**
+ * @brief Finalizes the serial simulation environment
+ */
 static void serial_simulation_fini(void)
 {
 	for (uint64_t i = 0; i < n_lps; ++i) {
@@ -95,6 +103,9 @@ static void serial_simulation_fini(void)
 	stats_global_fini();
 }
 
+/**
+ * @brief Runs the serial simulation
+ */
 static void serial_simulation_run(void)
 {
 	timer_uint last_vt = timer_new();
@@ -165,6 +176,9 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	heap_insert(queue, msg_is_before, msg);
 }
 
+/**
+ * @brief Handles a full serial simulation runs
+ */
 void serial_simulation(void)
 {
 	log_log(LOG_INFO, "Initializing serial simulation");

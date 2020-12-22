@@ -68,7 +68,7 @@ static __attribute__((const)) inline map_size_t msg_id_hash(uintptr_t msg_id)
 void remote_msg_map_global_init(void)
 {
 	map_size_t cnt = n_threads * 2 / (1 - MAX_LF);
-	map_size_t cap = 1ULL << (sizeof(cnt) * CHAR_BIT - SAFE_CLZ(cnt));
+	map_size_t cap = 1ULL << (sizeof(cnt) * CHAR_BIT - intrinsics_clz(cnt));
 	// capacity_mo is in the form 2^n - 1, modulo computations are then easy
 	re_map.capacity_mo = cap - 1;
 	atomic_store_explicit(&re_map.count, cap * MAX_LF, memory_order_relaxed);

@@ -34,7 +34,7 @@
 #define right_child(i) (((i) << 1U) + 2U)
 #define parent(i) ((((i) + 1) >> 1U) - 1U)
 #define is_power_of_2(i) (!((i) & ((i) - 1)))
-#define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - SAFE_CLZ(i))
+#define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
 
 void model_allocator_lp_init(void)
 {

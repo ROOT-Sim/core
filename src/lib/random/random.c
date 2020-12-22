@@ -55,7 +55,7 @@ double Random(void)
 		return 0.0;
 
 	double ret = 0.0;
-	unsigned lzs = SAFE_CLZ(u_val) + 1;
+	unsigned lzs = intrinsics_clz(u_val) + 1;
 	u_val <<= lzs;
 	u_val >>= 12;
 

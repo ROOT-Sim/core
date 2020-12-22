@@ -35,9 +35,9 @@
 #include <memory.h>
 #include <stdlib.h>
 
-simulation_configuration global_config;
+struct simulation_configuration global_config;
 
-/// This is the list of mnemonics for command line arguments
+/// This is the list of arg_parse.h mnemonics for command line arguments
 enum option_key {
 	OPT_NPRC,
 	OPT_LOG,
@@ -50,6 +50,7 @@ enum option_key {
 	OPT_LAST
 };
 
+/// The array of ROOT-Sim supported command line options
 static struct ap_option ap_options[] = {
 	{"lp", 		OPT_NPRC, "VALUE", "Total number of Logical Processes being launched at simulation startup"},
 	{"log-level", 	OPT_LOG,  "TYPE",  "Logging level"},
@@ -61,11 +62,20 @@ static struct ap_option ap_options[] = {
 	{0}
 };
 
+/**
+ * @brief Pretty prints ROOT-Sim current configuration
+ */
 static void print_config(void)
 {
 	// TODO
 }
 
+/**
+ * @brief Throws a formatted parsing error
+ *
+ * This macro uses symbols defined in parse_opt() body, therefore it can't be
+ * used anywhere else
+ */
 #define malformed_option_failure() 					\
 __extension__({								\
 	size_t __i;							\
@@ -74,6 +84,16 @@ __extension__({								\
 			ap_options[__i].name);				\
 })
 
+/**
+ * @brief Parses the current argument into a unsigned value with bounds checks
+ * @param low The minimum allowed value of the parsed value
+ * @param high The maximum allowed value of the parsed value
+ * @return the parsed unsigned long long value
+ *
+ * If an error occurs malformed_option_failure() is called accordingly.
+ * This macro uses symbols defined in parse_opt() body, therefore it can't be
+ * used anywhere else
+ */
 #define parse_ullong_limits(low, high)					\
 __extension__({								\
 	unsigned long long int __value;					\
@@ -86,6 +106,16 @@ __extension__({								\
 	__value;							\
 })
 
+/**
+ * @brief Parses the current argument into a double value with bounds checks
+ * @param low The minimum allowed value of the parsed value
+ * @param high The maximum allowed value of the parsed value
+ * @return the parsed double value
+ *
+ * If an error occurs malformed_option_failure() is called accordingly.
+ * This macro uses symbols defined in parse_opt() body, therefore it can't be
+ * used anywhere else
+ */
 #define parse_ldouble_limits(low, high)					\
 __extension__({								\
 	long double __value;						\
@@ -98,7 +128,14 @@ __extension__({								\
 	__value;							\
 })
 
-static void parse_opt (int key, const char *arg)
+/**
+ * @brief Parses a single ROOT-Sim option, also handles parsing events
+ * @param key the key identifying the currently parsed option or event
+ * @param arg the command line argument supplied with the option if present
+ *
+ * This is used in ROOT-Sim struct ap_section
+ */
+static void parse_opt(int key, const char *arg)
 {
 	switch (key) {
 
@@ -177,12 +214,14 @@ static void parse_opt (int key, const char *arg)
 __attribute__((weak)) struct ap_option model_options[] = {0};
 __attribute__((weak)) void model_parse(int key, const char *arg){(void) key; (void) arg;}
 
+/// The struct ap_section containing ROOT-Sim internal parser and the model one
 struct ap_section ap_sects[] = {
 	{NULL, ap_options, parse_opt},
 	{"Model specific options", model_options, model_parse},
 	{0}
 };
 
+/// The struct ap_settings with the ROOT-Sim command line parsing configuration
 struct ap_settings ap_sets = {
 	"ROOT-Sim",	// TODO properly fill these fields
 	"Proper version string",
@@ -190,6 +229,13 @@ struct ap_settings ap_sets = {
 	ap_sects
 };
 
+/**
+ * @brief Parses ROOT-Sim command line arguments
+ * @param argc the argc value from the main() function
+ * @param argv the argv value from the main() function
+ *
+ * The result of the parsing is stored in the global_config variable.
+ */
 void init_args_parse(int argc, char **argv)
 {
 	(void) argc;

@@ -35,6 +35,7 @@
 #include <memory.h>
 #include <stdatomic.h>
 
+/// A thread phase during the gvt algorithm computation
 enum thread_phase_t {
 	tphase_rdy = 0,
 	tphase_A,
@@ -68,6 +69,9 @@ atomic_int remote_msg_received[2];
 
 #endif
 
+/**
+ * @brief Initializes the gvt module in the node
+ */
 void gvt_global_init(void)
 {
 	last_gvt = timer_new();
@@ -152,6 +156,11 @@ simtime_t gvt_phase_run(void)
 
 static atomic_uint c_a = 0;
 
+/**
+ * @brief Handles a MSG_CTRL_GVT_START control message
+ *
+ * Called by the MPI layer in response to a MSG_CTRL_GVT_START control message
+ */
 void gvt_on_start_ctrl_msg(void)
 {
 	current_gvt = SIMTIME_MAX;
@@ -159,6 +168,11 @@ void gvt_on_start_ctrl_msg(void)
 	atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
 }
 
+/**
+ * @brief Handles a MSG_CTRL_GVT_DONE control message
+ *
+ * Called by the MPI layer in response to a MSG_CTRL_GVT_DONE control message
+ */
 void gvt_on_done_ctrl_msg(void)
 {
 	atomic_fetch_sub_explicit(&missing_nodes, 1U, memory_order_relaxed);

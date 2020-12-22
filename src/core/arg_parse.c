@@ -45,7 +45,9 @@
 /// Number of spaces to indent the \--usage text
 #define USAGE_INDENT 11
 
+/// The program name extracted from the command line
 static const char *ap_pname;
+/// The currently parsed struct ap_settings
 static const struct ap_settings *ap_settings;
 
 /// The keys used in the internal struct ap_option to handle base options
@@ -58,6 +60,7 @@ enum internal_opt_key {
 	AP_VERSION
 };
 
+/// The internal struct ap_option used to handle base options
 static struct ap_option ap_internal_opts[] = {
 	{"help", AP_HELP, NULL, "Give this help list"},
 	{"usage", AP_USAGE, NULL, "Give a short usage message"},
