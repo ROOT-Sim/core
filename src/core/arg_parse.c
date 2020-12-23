@@ -126,7 +126,8 @@ static void print_indented_string(const char *str, int curr_i, int indent)
 			if (*p == '\n' || curr_i >= SCREEN_LENGTH) {
 				printf("\n%*c", indent, ' ');
 				curr_i = indent;
-			} else if (*p != '\n') {
+			}
+			if (*p != '\n') {
 				putchar(*p);
 				++curr_i;
 			}

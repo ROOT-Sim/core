@@ -178,9 +178,8 @@ void stats_fini(void)
 #ifdef ROOTSIM_MPI
 static void receive_stats_files(FILE *o)
 {
-	nid_t j = n_nodes;
 	for (nid_t j = 0; j < n_nodes; ++j) {
-		rid_t t;
+		rid_t t = 0;
 		mpi_raw_data_blocking_rcv(&t, sizeof(t), j);
 		for (rid_t i = 0; i < t; ++i) {
 			struct tmp_file_proc_args args = {.o = o, .n = j, .r = i};
@@ -305,31 +304,4 @@ void stats_dump(void)
 {
 	puts("");
 	fflush(stdout);
-}
-
-
-/* TODO: this code is actually a stub left here to remember to implement the
- * the stats aggregation algorithm */
-void stats_threads_reduce(void)
-{
-	struct stats_measure n_stats[STATS_NUM];
-	unsigned thr_cnt = n_threads;
-	struct stats_measure aggregated[STATS_NUM * thr_cnt];
-	for (unsigned i = 0; i < thr_cnt; ++i) {
-		for (unsigned j = 0; j < STATS_NUM; ++j) {
-			n_stats[j].count += aggregated[STATS_NUM * i + j].count;
-			n_stats[j].sum_t += aggregated[STATS_NUM * i + j].sum_t;
-			n_stats[j].var_t += aggregated[STATS_NUM * i + j].var_t;
-		}
-	}
-	for (unsigned i = 0; i < thr_cnt; ++i) {
-		for (unsigned j = 0; j < STATS_NUM; ++j) { // correct but obviously truncates everything FIXME
-			const int64_t sum =
-				aggregated[STATS_NUM * i + j].sum_t * n_stats[j].count -
-				aggregated[STATS_NUM * i + j].count * n_stats[j].sum_t;
-
-			n_stats[j].var_t += (sum * sum) /
-				(aggregated[STATS_NUM * i + j].count * n_stats[j].count * n_stats[j].count);
-		}
-	}
 }

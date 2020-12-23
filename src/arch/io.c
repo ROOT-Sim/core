@@ -105,8 +105,8 @@ int io_file_process(io_file_t f, void *buffer, size_t buffer_size,
 		return -1;
 
 	while (1) {
-		LDWORD res;
-		if (ReadFile(f, buffer, buffer_size, &read, NULL))
+		LDWORD res = 0;
+		if (ReadFile(f, buffer, buffer_size, &res, NULL))
 			return -1;
 
 		if (res != buffer_size) {

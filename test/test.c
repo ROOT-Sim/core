@@ -155,7 +155,7 @@ static int test_printf_internal(const char *restrict fmt, va_list args)
 	}
 
 	if (memcmp(t_out_buf, test_config.expected_output + t_out_wrote, p_size)) {
-		printf("Test failed: output is different from the expected one %lu\n", t_out_wrote);
+		printf("Test failed: output is different from the expected one %zu\n", t_out_wrote);
 		exit(-1);
 	}
 	t_out_wrote += p_size;
