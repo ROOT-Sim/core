@@ -1,28 +1,13 @@
 /**
-* @file core/init.c
-*
-* @brief Initialization routines
-*
-* This module implements the simulator initialization routines
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file core/init.c
+ *
+ * @brief Initialization routines
+ *
+ * This module implements the simulator initialization routines
+ *
+ * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <core/init.h>
 
 #include <arch/io.h>
@@ -187,7 +172,8 @@ static void parse_opt(int key, const char *arg)
 		// field while the parallel one will use the set count of cores
 		// (spitting a warning if it must use less cores than available)
 		if (n_threads == 0) {
-			n_threads = thread_cores_count();
+			n_threads = global_config.is_serial ? 1 :
+					thread_cores_count();
 		} else if (global_config.is_serial) {
 			arg_parse_error("requested a serial simulation with %u threads",
 					n_threads);

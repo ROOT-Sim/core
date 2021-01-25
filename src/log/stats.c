@@ -3,36 +3,21 @@
  *
  * @brief Statistics module
  *
- * All facitilies to collect, gather, and dump statistics are implemented
+ * All facilities to collect, gather, and dump statistics are implemented
  * in this module.
  *
- * @copyright
- * Copyright (C) 2008-2020 HPDCS Group
- * https://hpdcs.github.io
- *
- * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
- *
- * ROOT-Sim is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; only version 3 of the License applies.
- *
- * ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- * 
- * @todo Still missing fine-grained stats information
+ * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <log/stats.h>
 
 #include <arch/io.h>
+#include <arch/mem.h>
 #include <arch/timer.h>
 #include <core/arg_parse.h>
 #include <core/core.h>
 
+#include <assert.h>
 #include <inttypes.h>
 #include <memory.h>
 #include <stdarg.h>
@@ -40,14 +25,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define STATS_FOLDER_NAME_SUFFIX "_stats"
-#define STATS_BUFFER_ENTRIES (512 * 1024 / sizeof(struct stats_info))
-
-#ifdef ROOTSIM_MPI
-#define is_stats_thread() (!rid && !nid)
-#else
-#define is_stats_thread() (!rid)
-#endif
+#define STATS_BUFFER_ENTRIES (1024)
+#define STD_DEV_POWER_2_EXP 5
+#define STATS_MAX_STRLEN 32
 
 /// A set of statistical values of a single metric
 /** The form of these values is designed for easier incremental updates */
@@ -61,12 +41,38 @@ struct stats_measure {
 };
 
 /// A container for statistics in a logical time period
-struct stats_info {
-	/// The end of the logical time period for these statistics
-	simtime_t gvt;
+struct stats_thread {
+	/// Real elapsed time in microseconds from simulation beginning
+	uint64_t rt;
 	/// The array of statistics taken in the period
-	struct stats_measure s[STATS_NUM];
+	struct stats_measure s[STATS_COUNT];
 };
+
+struct stats_node {
+	/// The gvt value
+	simtime_t gvt;
+	/// The size in bytes of the resident set
+	uint64_t rss;
+};
+
+struct stats_glob {
+	/// The number of threads in this node
+	uint64_t threads_count;
+	/// The maximum size in bytes of the resident set
+	uint64_t max_rss;
+	/// When stats global init has been called
+	uint64_t glob_init_rt;
+	/// The latest ts before having to aggregate stats
+	uint64_t glob_fini_rt;
+	/// The timestamps of the relevant simulation life-cycle events
+	uint64_t timestamps[STATS_GLOBAL_COUNT];
+};
+
+static_assert(sizeof(struct stats_measure) == 24 &&
+	      sizeof(struct stats_thread) == 8 + 24 * STATS_COUNT &&
+	      sizeof(struct stats_node) == 16 &&
+	      sizeof(struct stats_glob) == 32 + 8 * (STATS_GLOBAL_COUNT),
+	      "structs aren't naturally packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the header of the final csv
 const char * const s_names[] = {
@@ -76,16 +82,41 @@ const char * const s_names[] = {
 	[STATS_MSG_PROCESSED] = "processed messages"
 };
 
-static io_file_t *stats_tmp_fs;
-static __thread struct stats_info stats_buf[STATS_BUFFER_ENTRIES];
-static __thread struct stats_info *stats_cur;
-static __thread timer_uint last_ts[STATS_NUM];
+static timer_uint sim_start_ts;
+static struct stats_glob stats_glob_cur;
+
+static FILE *stats_node_tmp;
+static FILE **stats_tmps;
+static __thread struct stats_thread stats_cur;
+
+static __thread timer_uint last_ts[STATS_COUNT];
+
+static void file_write_chunk(FILE *f, const void *data, size_t data_size)
+{
+	if (unlikely(fwrite(data, data_size, 1, f) != 1))
+		log_log(LOG_ERROR, "Error during disk write!");
+}
+
+static void *file_memory_load(FILE *f, int64_t *f_size_p)
+{
+	fseek(f, 0, SEEK_END);
+	long f_size = ftell(f); // Fails horribly for files bigger than 2 GB
+	fseek(f, 0, SEEK_SET);
+	void *ret = mm_alloc(f_size);
+	if (fread(ret, f_size, 1, f) != 1) {
+		mm_free(ret);
+		*f_size_p = 0;
+		return NULL;
+	}
+	*f_size_p = f_size;
+	return ret;
+}
 
 /**
- * @brief A version of the standard fopen() which accepts a printf style format
- * @param open_type a string which controls how the file is opened (check fopen())
+ * @brief A version of fopen() which accepts a printf style format string
+ * @param open_type a string which controls how the file is opened (see fopen())
  * @param fmt the file name expressed as a printf style format string
- * @param ... the list of additional arguments used in @a fmt (check printf())
+ * @param ... the list of additional arguments used in @a fmt (see printf())
  */
 static FILE *file_open(const char *open_type, const char *fmt, ...)
 {
@@ -110,15 +141,19 @@ static FILE *file_open(const char *open_type, const char *fmt, ...)
 }
 
 /**
- * @brief Flushes the stats buffer onto the temporary file
+ * @brief Initializes the internal timer used to take accurate measurements
  */
-static void flush_stats_buffer(void)
+void stats_global_time_start(void)
 {
-	int res = io_file_append(stats_tmp_fs[rid], stats_buf, sizeof(stats_buf));
-	if (unlikely(res))
-		log_log(LOG_ERROR, "Error during disk write!");
+	sim_start_ts = timer_new();
+}
 
-	memset(stats_buf, 0, sizeof(stats_buf));
+/**
+ * @brief Initializes the internal timer used to take accurate measurements
+ */
+void stats_global_time_take(enum stats_global_time this_stat)
+{
+	stats_glob_cur.timestamps[this_stat] = timer_value(sim_start_ts);
 }
 
 /**
@@ -126,9 +161,16 @@ static void flush_stats_buffer(void)
  */
 void stats_global_init(void)
 {
-	stats_tmp_fs = mm_alloc(n_threads * sizeof(*stats_tmp_fs));
-	for (rid_t i = 0; i < n_threads; ++i)
-		stats_tmp_fs[i] = io_file_tmp_get();
+	stats_glob_cur.glob_init_rt = timer_value(sim_start_ts);
+	stats_glob_cur.threads_count = n_threads;
+	if (mem_stat_setup() < 0)
+		log_log(LOG_ERROR, "Unable to extract memory statistics!");
+
+	stats_node_tmp = io_file_tmp_get();
+	setvbuf(stats_node_tmp, NULL, _IOFBF,
+		STATS_BUFFER_ENTRIES * sizeof(struct stats_node));
+
+	stats_tmps = mm_alloc(n_threads * sizeof(*stats_tmps));
 }
 
 /**
@@ -136,85 +178,86 @@ void stats_global_init(void)
  */
 void stats_init(void)
 {
-	stats_cur = stats_buf;
-}
-
-struct tmp_file_proc_args {
-	FILE *o;
-	nid_t n;
-	rid_t r;
-};
-
-static void chunk_append_proc(size_t chunk_size, void *args_p)
-{
-	struct tmp_file_proc_args *args_pc = args_p;
-	FILE *o = args_pc->o;
-	nid_t n = args_pc->n;
-	rid_t r = args_pc->r;
-	size_t entries = chunk_size / sizeof(struct stats_info);
-	for (unsigned j = 0; j < entries; ++j) {
-		struct stats_info *s_info = &stats_buf[j];
-		if (unlikely(!s_info->gvt))
-			return;
-
-		fprintf(o, "%d,%u,%lf", n, r, s_info->gvt);
-		for (unsigned i = 0; i < STATS_NUM; ++i) {
-			struct stats_measure *s_mes = &s_info->s[i];
-			fprintf(o, ",%" PRIu64 ",%" PRIu64 ",%" PRIu64,
-				s_mes->count, s_mes->sum_t, s_mes->var_t);
-		}
-		fprintf(o, "\n");
-	}
-}
-
-/**
- * @brief Finalizes the stats subsystem in the current thread
- */
-void stats_fini(void)
-{
-	flush_stats_buffer();
+	stats_tmps[rid] = io_file_tmp_get();
+	setvbuf(stats_tmps[rid], NULL, _IOFBF,
+		STATS_BUFFER_ENTRIES * sizeof(stats_cur));
 }
 
 #ifdef ROOTSIM_MPI
-static void receive_stats_files(FILE *o)
-{
-	for (nid_t j = 0; j < n_nodes; ++j) {
-		rid_t t = 0;
-		mpi_raw_data_blocking_rcv(&t, sizeof(t), j);
-		for (rid_t i = 0; i < t; ++i) {
-			struct tmp_file_proc_args args = {.o = o, .n = j, .r = i};
-			int res;
-			do {
-				res = mpi_raw_data_blocking_rcv(
-						stats_buf, sizeof(stats_buf), j);
-				chunk_append_proc(res, &args);
-			} while (res != sizeof(stats_buf));
 
-			if (res > sizeof(stats_buf))
-				log_log(LOG_ERROR, "Unexpectedly big message during stats propagation!");
+static void stats_files_receive(FILE *o)
+{
+	for (nid_t j = 1; j < n_nodes; ++j) {
+		int buf_size;
+		struct stats_glob *sg_p = mpi_blocking_data_rcv(&buf_size, j);
+		file_write_chunk(o, sg_p, buf_size);
+		uint64_t iters = sg_p->threads_count + 1; // +1 for node stats
+		mm_free(sg_p);
+
+		for (uint64_t i = 0; i < iters; ++i) {
+			void *buf = mpi_blocking_data_rcv(&buf_size, j);
+			int64_t f_size = buf_size;
+			file_write_chunk(o, &f_size, sizeof(f_size));
+			file_write_chunk(o, buf, buf_size);
+			mm_free(buf);
 		}
 	}
 }
 
-static void file_send_proc(size_t chunk_size, void *args_p)
+static void stats_files_send(void)
 {
-	(void) args_p;
-	mpi_raw_data_blocking_send(stats_buf, chunk_size, 0);
-}
+	stats_glob_cur.max_rss = mem_stat_rss_max_get();
+	stats_glob_cur.glob_fini_rt = timer_value(sim_start_ts);
+	mpi_blocking_data_send(&stats_glob_cur, sizeof(stats_glob_cur), 0);
 
+	int64_t f_size;
+	void *f_buf = file_memory_load(stats_node_tmp, &f_size);
+	f_size = min(INT_MAX, f_size);
+	mpi_blocking_data_send(f_buf, f_size, 0);
+	mm_free(f_buf);
 
-static void send_stats_files(void)
-{
-	mpi_raw_data_blocking_send(&n_threads, sizeof(n_threads), 0);
 	for (rid_t i = 0; i < n_threads; ++i) {
-		int res = io_file_process(stats_tmp_fs[rid], stats_buf,
-					  sizeof(stats_buf), file_send_proc, NULL);
-		if (unlikely(res))
-			log_log(LOG_ERROR, "Error during disk read!");
+		f_buf = file_memory_load(stats_tmps[i], &f_size);
+		f_size = min(INT_MAX, f_size);
+		mpi_blocking_data_send(f_buf, f_size, 0);
+		mm_free(f_buf);
 	}
 }
 
 #endif
+
+static void stats_file_final_write(FILE *o)
+{
+	int64_t n = STATS_COUNT;
+	file_write_chunk(o, &n, sizeof(n));
+	for (int i = 0; i < STATS_COUNT; ++i) {
+		size_t l = min(strlen(s_names[i]), STATS_MAX_STRLEN);
+		file_write_chunk(o, s_names[i], l);
+		unsigned char nul = 0;
+		for (; l < STATS_MAX_STRLEN; ++l)
+			file_write_chunk(o, &nul, 1);
+	}
+
+	n = n_nodes;
+	file_write_chunk(o, &n, sizeof(n));
+
+	stats_glob_cur.max_rss = mem_stat_rss_max_get();
+	stats_glob_cur.glob_fini_rt = timer_value(sim_start_ts);
+	file_write_chunk(o, &stats_glob_cur, sizeof(stats_glob_cur));
+
+	int64_t buf_size;
+	void *buf = file_memory_load(stats_node_tmp, &buf_size);
+	file_write_chunk(o, &buf_size, sizeof(buf_size));
+	file_write_chunk(o, buf, buf_size);
+	mm_free(buf);
+
+	for (rid_t i = 0; i < n_threads; ++i) {
+		buf = file_memory_load(stats_tmps[i], &buf_size);
+		file_write_chunk(o, &buf_size, sizeof(buf_size));
+		file_write_chunk(o, buf, buf_size);
+		mm_free(buf);
+	}
+}
 
 /**
  * @brief Finalizes the stats subsystem in the node
@@ -229,53 +272,40 @@ void stats_global_fini(void)
 #ifdef ROOTSIM_MPI
 	mpi_node_barrier();
 	if (nid) {
-		send_stats_files();
+		stats_files_send();
 		return;
 	}
 #endif
-	FILE *o = file_open("w", "%s_stats.csv", arg_parse_program_name());
+	FILE *o = file_open("w", "%s_stats.bin", arg_parse_program_name());
 	if (o == NULL) {
-		log_log(LOG_WARN, "Unavailable stats file: stats will be printed on the terminal");
+		log_log(LOG_WARN, "Unavailable stats file: stats will be dumped on stdout");
 		o = stdout;
 	}
 
-	fprintf(o, "node id,resource id,gvt");
-	for (unsigned i = 0; i < STATS_NUM; ++i) {
-		fprintf(o, ",%s count,%s time sum,%s cumulative time variance",
-			s_names[i], s_names[i], s_names[i]);
-	}
-	fprintf(o, "\n");
-
-	for (rid_t i = 0; i < n_threads; ++i) {
-		struct tmp_file_proc_args args = {.o = o, .n = nid, .r = i};
-
-		int res = io_file_process(stats_tmp_fs[i], stats_buf,
-					  sizeof(stats_buf), chunk_append_proc,
-					  &args);
-		if (unlikely(res))
-			log_log(LOG_ERROR, "Error during disk read!");
-	}
+	stats_file_final_write(o);
 
 #ifdef ROOTSIM_MPI
-	receive_stats_files(o);
+	stats_files_receive(o);
 #endif
+
+	fflush(o);
 	if (o != stdout)
 		fclose(o);
 }
 
-void stats_time_start(enum stats_time_t this_stat)
+void stats_time_start(enum stats_time this_stat)
 {
 	last_ts[this_stat] = timer_new();
 }
 
-void stats_time_take(enum stats_time_t this_stat)
+void stats_time_take(enum stats_time this_stat)
 {
-	struct stats_measure *s_mes = &stats_cur->s[this_stat];
+	struct stats_measure *s_mes = &stats_cur.s[this_stat];
 	const uint64_t t = timer_value(last_ts[this_stat]);
 
 	if (likely(s_mes->count)) {
 		const int64_t num = (t * s_mes->count - s_mes->sum_t);
-		s_mes->var_t += (num * num) /
+		s_mes->var_t += ((num * num) << (2 * STD_DEV_POWER_2_EXP)) /
 			(s_mes->count * (s_mes->count + 1));
 	}
 
@@ -285,16 +315,18 @@ void stats_time_take(enum stats_time_t this_stat)
 
 void stats_on_gvt(simtime_t gvt)
 {
-	stats_cur->gvt = gvt;
-	++stats_cur;
+	stats_cur.rt = timer_value(sim_start_ts);
 
-	if (unlikely(stats_buf + STATS_BUFFER_ENTRIES == stats_cur)) {
-		flush_stats_buffer();
-		stats_cur = stats_buf;
-	}
+	file_write_chunk(stats_tmps[rid], &stats_cur, sizeof(stats_cur));
+	memset(&stats_cur, 0, sizeof(stats_cur));
 
-	if (!is_stats_thread())
+	if (rid != 0)
 		return;
+
+	struct stats_node stats_node_cur =
+			{.gvt = gvt, .rss = mem_stat_rss_current_get()};
+	file_write_chunk(stats_node_tmp, &stats_node_cur, sizeof(stats_node_cur));
+	memset(&stats_node_cur, 0, sizeof(stats_node_cur));
 
 	printf("\rVirtual time: %lf", gvt);
 	fflush(stdout);

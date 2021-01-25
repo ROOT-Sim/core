@@ -1,26 +1,11 @@
 /**
-* @file serial/serial.c
-*
-* @brief Sequential simlation engine
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file serial/serial.c
+ *
+ * @brief Sequential simlation engine
+ *
+ * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <serial/serial.h>
 
 #include <arch/timer.h>
@@ -99,7 +84,6 @@ static void serial_simulation_fini(void)
 
 	mm_free(s_lps);
 
-	stats_fini();
 	stats_global_fini();
 }
 
@@ -117,7 +101,7 @@ static void serial_simulation_run(void)
 		s_current_lp = this_lp;
 
 #if LOG_DEBUG >= LOG_LEVEL
-		if(log_is_lvl(LOG_DEBUG)) {
+		if (log_can_log(LOG_DEBUG)) {
 			if(cur_msg->dest_t == s_current_lp->last_evt_time)
 				log_log(
 					LOG_DEBUG,
@@ -183,15 +167,16 @@ void serial_simulation(void)
 {
 	log_log(LOG_INFO, "Initializing serial simulation");
 	serial_simulation_init();
+	stats_global_time_take(STATS_GLOBAL_INIT_END);
+
+	stats_global_time_take(STATS_GLOBAL_EVENTS_START);
 	log_log(LOG_INFO, "Starting simulation");
 	serial_simulation_run();
+	stats_global_time_take(STATS_GLOBAL_EVENTS_END);
+
+	stats_global_time_take(STATS_GLOBAL_FINI_START);
 	log_log(LOG_INFO, "Finalizing simulation");
 	serial_simulation_fini();
-}
-
-void serial_termination_force(void)
-{
-	heap_count(queue) = 0;
 }
 
 lp_id_t lp_id_get(void)

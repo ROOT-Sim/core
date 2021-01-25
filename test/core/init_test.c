@@ -110,7 +110,7 @@ int main(int argc, char **argv)
 
 	TEST_INIT(args_serial,
 		  n_lps == 128 &&
-		  n_threads == 1024 &&
+		  n_threads == 1 &&
 		  global_config.is_serial &&
 		  global_config.core_binding &&
 		  global_config.gvt_period == 200000 &&

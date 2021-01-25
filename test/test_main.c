@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 	for (unsigned i = 0; i < test_config.threads_count; ++i) {
 		args[i].test_fnc = test_config.test_fnc;
 		args[i].tid = i;
-		if (thread_create(&threads[i], test_run_stub, &args[i]))
+		if (thread_start(&threads[i], test_run_stub, &args[i]))
 			return TEST_BAD_FAIL_EXIT_CODE;
 	}
 

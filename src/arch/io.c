@@ -1,4 +1,35 @@
+/**
+ * @file arch/io.c
+ *
+ * @brief Generic input-output facilities
+ *
+ * This module defines architecture independent input-oputput facilities for the
+ * use in the simulator
+ *
+ * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <arch/io.h>
+
+/**
+ * @fn io_terminal_can_colorize(void)
+ * @brief Determines if stdout supports colored text
+ * @return true if colors escape sequences can be used, false otherwise
+ */
+
+/**
+ * @fn io_local_time_get(char res[IO_TIME_BUFFER_LEN])
+ * @brief Fills in a formatted string of the current time
+ * @param res a pointer to a memory area with at least IO_TIME_BUFFER_LEN chars
+ *
+ * The resulting string is written in @a res.
+ */
+
+/**
+ * @fn io_file_tmp_get(void)
+ * @brief Creates a temporary file
+ * @return a temporary file, an opaque object to be used in this module
+ */
 
 #include <core/core.h>
 
@@ -21,31 +52,9 @@ void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 	strftime(res, IO_TIME_BUFFER_LEN, "%H:%M:%S", loc_t);
 }
 
-io_file_t io_file_tmp_get(void)
+FILE *io_file_tmp_get(void)
 {
 	return tmpfile();
-}
-
-int io_file_append(io_file_t f, const void *data, size_t data_size)
-{
-	return -(fwrite(data, data_size, 1, f) != 1);
-}
-
-int io_file_process(io_file_t f, void *buffer, size_t buffer_size,
-		    void (*proc_fnc)(size_t, void *), void *proc_fnc_arg)
-{
-	if (fseek(f, 0, SEEK_SET))
-		return -1;
-
-	while (1) {
-		size_t res = fread(buffer, 1, buffer_size, f);
-		if (res != buffer_size) {
-			if (res)
-				proc_fnc(res, proc_fnc_arg);
-			return - (!feof(f));
-		}
-		proc_fnc(res, proc_fnc_arg);
-	}
 }
 
 #endif
@@ -59,9 +68,11 @@ bool io_terminal_can_colorize(void)
 	HANDLE term = GetStdHandle(STD_ERROR_HANDLE);
 	if (term == NULL || term == INVALID_HANDLE_VALUE)
 		return false;
+
 	DWORD cmode;
 	if (!GetConsoleMode(term, &cmode))
 		return false;
+
 	return SetConsoleMode(term, cmode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 }
 
@@ -75,7 +86,7 @@ void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 	strftime(res, IO_TIME_BUFFER_LEN, "%H:%M:%S", &loc_t);
 }
 
-io_file_t io_file_tmp_get(void)
+FILE *io_file_tmp_get(void)
 {
 	TCHAR tmp_folder_path[MAX_PATH + 1];
 	if (!GetTempPath(MAX_PATH + 1, tmp_folder_path))
@@ -85,37 +96,20 @@ io_file_t io_file_tmp_get(void)
 	if (!GetTempFileName(tmp_folder_path, TEXT("ROOTSIM"), 0, tmp_path))
 		return NULL;
 
-	HANDLE ret = CreateFile((LPTSTR) tmp_path, GENERIC_READ | GENERIC_WRITE,
-				0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY
-				| FILE_FLAG_DELETE_ON_CLOSE, NULL);
+	SECURITY_ATTRIBUTES tmp_sa = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
+	HANDLE h = CreateFile(
+			tmp_path, GENERIC_READ | GENERIC_WRITE,
+			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+			&tmp_sa, CREATE_ALWAYS,
+			FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+	if (h == INVALID_HANDLE)
+		return NULL;
 
-	return ret == INVALID_HANDLE_VALUE ? NULL : ret;
-}
+	int fd = _open_osfhandle((intptr_t)h, _O_RDWR);
+	if (fd == -1)
+		return NULL;
 
-int io_file_append(io_file_t f, const void *data, size_t data_size)
-{
-	LDWORD written;
-	return -(!WriteFile(f, data, data_size, &written, NULL));
-}
-
-int io_file_process(io_file_t f, void *buffer, size_t buffer_size,
-		    void (*proc_fnc)(size_t, void *), void *proc_fnc_arg)
-{
-	if (SetFilePointer(f, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
-		return -1;
-
-	while (1) {
-		LDWORD res = 0;
-		if (ReadFile(f, buffer, buffer_size, &res, NULL))
-			return -1;
-
-		if (res != buffer_size) {
-			if (res)
-				proc_fnc(res, proc_fnc_arg);
-			return 0;
-		}
-		proc_fnc(res, proc_fnc_arg);
-	}
+	return _fdopen(fd, "rb+");
 }
 
 #endif

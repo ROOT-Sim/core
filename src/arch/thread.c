@@ -32,7 +32,7 @@
 #include <arch/thread.h>
 
 /**
- * @fn thread_create(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
+ * @fn thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
  * @brief Creates a thread
  * @param thr_p A pointer to the location where the created thread identifier
  *              will be copied
@@ -100,7 +100,7 @@ unsigned thread_cores_count(void)
 	return ret < 1 ? 1 : (unsigned)ret;
 }
 
-int thread_create(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
+int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 {
 	return -(pthread_create(thr_p, NULL, t_fnc, t_fnc_arg) != 0);
 }
@@ -126,7 +126,7 @@ unsigned thread_cores_count(void)
 	return sys_info.dwNumberOfProcessors;
 }
 
-int thread_create(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
+int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 {
 	*thr_p = CreateThread(NULL, 0, t_fnc, arg, 0, NULL);
 	return -(*thr_p == NULL);

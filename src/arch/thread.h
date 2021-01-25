@@ -62,7 +62,7 @@ typedef HANDLE arch_thr_t;
 /// The function type of a new thread entry point
 typedef thr_ret_t THREAD_CALL_CONV (*thr_run_fnc)(void *);
 
-extern int thread_create(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);
+extern int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);
 extern int thread_affinity_set(thr_id_t thr, unsigned core);
 extern int thread_wait(thr_id_t thr, thr_ret_t *ret);
 extern unsigned thread_cores_count(void);

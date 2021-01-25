@@ -1,26 +1,11 @@
 /**
-* @file parallel/parallel.c
-*
-* @brief Concurrent simulation engine
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file parallel/parallel.c
+ *
+ * @brief Concurrent simulation engine
+ *
+ * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <parallel/parallel.h>
 
 #include <arch/thread.h>
@@ -41,16 +26,20 @@
 static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
 	rid = (uintptr_t)rid_arg;
-
 	stats_init();
 	msg_allocator_init();
 	msg_queue_init();
 	sync_thread_barrier();
 	lp_init();
-	sync_thread_barrier();
 
-	if (!rid)
+#ifdef ROOTSIM_MPI
+	if (sync_thread_barrier())
+		mpi_node_barrier();
+#endif
+	if (sync_thread_barrier()) {
 		log_log(LOG_INFO, "Starting simulation");
+		stats_global_time_take(STATS_GLOBAL_EVENTS_START);
+	}
 
 	while (likely(termination_cant_end())) {
 #ifdef ROOTSIM_MPI
@@ -69,17 +58,16 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 		}
 	}
 
-	if (!rid) {
+	if (sync_thread_barrier()) {
 		stats_dump();
+		stats_global_time_take(STATS_GLOBAL_EVENTS_END);
 		log_log(LOG_INFO, "Finalizing simulation");
 	}
 
 	lp_fini();
-
 	msg_queue_fini();
 	sync_thread_barrier();
 	msg_allocator_fini();
-	stats_fini();
 
 	return THREAD_RET_SUCCESS;
 }
@@ -111,13 +99,13 @@ static void parallel_global_fini(void)
 void parallel_simulation(void)
 {
 	log_log(LOG_INFO, "Initializing parallel simulation");
-
 	parallel_global_init();
+	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
 	thr_id_t thrs[n_threads];
 	rid_t i = n_threads;
 	while (i--) {
-		if (thread_create(&thrs[i], parallel_thread_run,
+		if (thread_start(&thrs[i], parallel_thread_run,
 				  (void *)(uintptr_t)i)) {
 			log_log(LOG_FATAL, "Unable to create a thread!");
 			abort();
@@ -133,5 +121,6 @@ void parallel_simulation(void)
 	while (i--)
 		thread_wait(thrs[i], NULL);
 
+	stats_global_time_take(STATS_GLOBAL_FINI_START);
 	parallel_global_fini();
 }
