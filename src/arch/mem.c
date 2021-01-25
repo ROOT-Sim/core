@@ -51,7 +51,7 @@ static long linux_page_size;
 
 int mem_stat_setup(void)
 {
-	proc_stat_fd = open("/proc/self/statm", O_RDONLY);
+	proc_stat_fd = open("/proc/self/statm", O_RDONLY | O_NOFOLLOW);
 	if (proc_stat_fd == -1)
 		return -1;
 
@@ -63,11 +63,15 @@ size_t mem_stat_rss_current_get(void)
 {
 	char res[40]; // sufficient for two 64 bit base 10 numbers and a space
 	if (__builtin_expect(lseek(proc_stat_fd, 0, SEEK_SET) == -1 ||
-			     read(proc_stat_fd, res, sizeof(res)) == -1, 0))
+			     read(proc_stat_fd, res, sizeof(res) - 1) == -1, 0))
 		return (size_t)0;
 
+	res[sizeof(res) - 1] = '/0';
+
 	size_t i = 0;
-	while (!isspace(res[i++]));
+	while (res[i] && !isspace(res[i])) {
+		++i;
+	}
 
 	return (size_t)(strtoull(&res[i], NULL, 10) * linux_page_size);
 }
