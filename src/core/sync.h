@@ -1,28 +1,13 @@
 /**
-* @file core/sync.h
-*
-* @brief Easier Synchronization primitives
-*
-* This module defines synchronization primitives for the parallel runtime.
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file core/sync.h
+ *
+ * @brief Easier Synchronization primitives
+ *
+ * This module defines synchronization primitives for the parallel runtime.
+ *
+ * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <stdatomic.h>
@@ -39,9 +24,14 @@ typedef atomic_flag spinlock_t;
 #define spin_init(lck_p) spin_unlock(lck_p)
 
 /**
+ * @def spin_pause()
  * @brief Tells the compiler that we are inside a spin loop
  */
+#if defined(__x86_64__) || defined(__i386__)
 #define spin_pause() __builtin_ia32_pause()
+#else
+#define spin_pause()
+#endif
 
 /**
  * @brief Locks a spinlock

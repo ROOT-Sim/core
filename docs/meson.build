@@ -22,7 +22,8 @@ doxyfile = configure_file(input: 'Doxyfile.in',
 docs_files = [
   'flatdoc.css',
   'inline-params.css',
-  'img/rs.png'
+  'img' / 'rs.png',
+  '..' / 'scripts' / 'doxy_filter.py'
 ]
 foreach f: docs_files
     configure_file(input: f, output: '@0@'.format(fs.name(f)), copy: true)
