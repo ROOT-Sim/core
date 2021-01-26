@@ -27,7 +27,7 @@
 
 #define STATS_BUFFER_ENTRIES (1024)
 #define STD_DEV_POWER_2_EXP 5
-#define STATS_MAX_STRLEN 32
+#define STATS_MAX_STRLEN 32U
 
 /// A set of statistical values of a single metric
 /** The form of these values is designed for easier incremental updates */
@@ -228,6 +228,9 @@ static void stats_files_send(void)
 
 static void stats_file_final_write(FILE *o)
 {
+	uint16_t endian_check = 61455U; // 0xFOOF
+	file_write_chunk(o, &endian_check, sizeof(endian_check));
+
 	int64_t n = STATS_COUNT;
 	file_write_chunk(o, &n, sizeof(n));
 	for (int i = 0; i < STATS_COUNT; ++i) {
