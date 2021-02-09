@@ -24,14 +24,14 @@ covkind = ("enum,enumvalue,friend,typedef,variable,function,signal,slot,class,"
            "struct,union,define,file,namespace,page").split(",")
 covexclude = [f"{root_path}/README.md"]
 
-cov_obj = coverxygen.Coverxygen(xml_dir, out_file, covscope, covkind, "summary", 
+cov_obj = coverxygen.Coverxygen(xml_dir, out_file, covscope, covkind, "summary",
                                 src_dir, None, False, covexclude, [])
 try:
     cov_obj.process()
 except RuntimeError as l_error:
     sys.stderr.write("error: %s\n" % str(l_error))
     sys.exit(1)
-    
+
 with open(out_file, "r") as f:
     summary_content = f.read()
 
@@ -52,8 +52,8 @@ if args.github:
     with open(os.environ['GITHUB_ENV'], "w") as f:
         f.write(message)
 else:
-    acceptable_str = "" if acceptable else " not "
+    acceptable_str = "" if acceptable else "not "
     print(summary_content)
-    print(f"Documentation coverage is{acceptable_str}acceptable "
+    print(f"Documentation coverage is {acceptable_str}acceptable "
           f"(target: {coverage_target}%)")
 
