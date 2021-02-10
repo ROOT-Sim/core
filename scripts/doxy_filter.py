@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+# SPDX-License-Identifier: GPL-3.0-only
 import re
 import sys
 

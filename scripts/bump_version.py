@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+# SPDX-License-Identifier: GPL-3.0-only
 import re
 from subprocess import check_output
 import sys
@@ -36,12 +38,12 @@ if sys.stdin.read(1) != 'y':
 
 root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 meson_build_path = os.path.join(root_path, "meson.build")
-    
-with open(meson_build_path, "r") as f:
-    meson_build = f.read() 
 
-meson_build, sub_cnt = re.subn(r"version\s*:\s*'.*'", 
-                               f"version : '{major}.{minor}.{hotfix}'", 
+with open(meson_build_path, "r") as f:
+    meson_build = f.read()
+
+meson_build, sub_cnt = re.subn(r"version\s*:\s*'.*'",
+                               f"version : '{major}.{minor}.{hotfix}'",
                                meson_build, count=1)
 
 if sub_cnt != 1:
@@ -49,7 +51,6 @@ if sub_cnt != 1:
     sys.exit(1)
 
 with open(meson_build_path, "w") as f:
-    f.write(meson_build) 
+    f.write(meson_build)
 
 print(f"File modified successfully, version bumped to {major}.{minor}.{hotfix}")
-
