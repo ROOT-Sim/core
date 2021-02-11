@@ -3,132 +3,340 @@
  *
  * @brief Statistics module
  *
- * All facitilies to collect, gather, and dump statistics are implemented
+ * All facilities to collect, gather, and dump statistics are implemented
  * in this module.
  *
- * @copyright
- * Copyright (C) 2008-2020 HPDCS Group
- * https://hpdcs.github.io
- *
- * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
- *
- * ROOT-Sim is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; only version 3 of the License applies.
- *
- * ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- * 
- * @todo Still missing fine-grained stats information
+ * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <log/stats.h>
 
+#include <arch/io.h>
+#include <arch/mem.h>
+#include <arch/timer.h>
+#include <core/arg_parse.h>
+#include <core/core.h>
+
+#include <assert.h>
 #include <inttypes.h>
+#include <memory.h>
+#include <stdarg.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#include <core/timer.h>
+#define STATS_BUFFER_ENTRIES (1024)
+#define STD_DEV_POWER_2_EXP 5
+#define STATS_MAX_STRLEN 32U
 
-struct stats_info {
+/// A set of statistical values of a single metric
+/** The form of these values is designed for easier incremental updates */
+struct stats_measure {
+	/// The count of events of this type
 	uint64_t count;
+	/// The mean time to complete an event multiplied by the events count
 	uint64_t sum_t;
+	/// The variance of the time to complete multiplied by the events count
 	uint64_t var_t;
 };
 
-static __thread struct stats_info thread_stats[STATS_NUM];
+/// A container for statistics in a logical time period
+struct stats_thread {
+	/// Real elapsed time in microseconds from simulation beginning
+	uint64_t rt;
+	/// The array of statistics taken in the period
+	struct stats_measure s[STATS_COUNT];
+};
 
-static __thread uint64_t last_ts[STATS_NUM];
+struct stats_node {
+	/// The gvt value
+	simtime_t gvt;
+	/// The size in bytes of the resident set
+	uint64_t rss;
+};
 
-static struct stats_info *to_aggregate;
+struct stats_glob {
+	/// The number of threads in this node
+	uint64_t threads_count;
+	/// The maximum size in bytes of the resident set
+	uint64_t max_rss;
+	/// When stats global init has been called
+	uint64_t glob_init_rt;
+	/// The latest ts before having to aggregate stats
+	uint64_t glob_fini_rt;
+	/// The timestamps of the relevant simulation life-cycle events
+	uint64_t timestamps[STATS_GLOBAL_COUNT];
+};
 
-void stats_global_init(void)
+static_assert(sizeof(struct stats_measure) == 24 &&
+	      sizeof(struct stats_thread) == 8 + 24 * STATS_COUNT &&
+	      sizeof(struct stats_node) == 16 &&
+	      sizeof(struct stats_glob) == 32 + 8 * (STATS_GLOBAL_COUNT),
+	      "structs aren't naturally packed, parsing may be difficult");
+
+/// The statistics names, used to fill in the header of the final csv
+const char * const s_names[] = {
+	[STATS_ROLLBACK] = "rollbacks",
+	[STATS_GVT] = "gvt",
+	[STATS_MSG_SILENT] = "silent messages",
+	[STATS_MSG_PROCESSED] = "processed messages"
+};
+
+static timer_uint sim_start_ts;
+static struct stats_glob stats_glob_cur;
+
+static FILE *stats_node_tmp;
+static FILE **stats_tmps;
+static __thread struct stats_thread stats_cur;
+
+static __thread timer_uint last_ts[STATS_COUNT];
+
+static void file_write_chunk(FILE *f, const void *data, size_t data_size)
 {
-	to_aggregate = mm_alloc(sizeof(thread_stats) * n_threads);
+	if (unlikely(fwrite(data, data_size, 1, f) != 1))
+		log_log(LOG_ERROR, "Error during disk write!");
 }
 
-void stats_time_start(enum stats_time_t this_stat)
+static void *file_memory_load(FILE *f, int64_t *f_size_p)
+{
+	fseek(f, 0, SEEK_END);
+	long f_size = ftell(f); // Fails horribly for files bigger than 2 GB
+	fseek(f, 0, SEEK_SET);
+	void *ret = mm_alloc(f_size);
+	if (fread(ret, f_size, 1, f) != 1) {
+		mm_free(ret);
+		*f_size_p = 0;
+		return NULL;
+	}
+	*f_size_p = f_size;
+	return ret;
+}
+
+/**
+ * @brief A version of fopen() which accepts a printf style format string
+ * @param open_type a string which controls how the file is opened (see fopen())
+ * @param fmt the file name expressed as a printf style format string
+ * @param ... the list of additional arguments used in @a fmt (see printf())
+ */
+static FILE *file_open(const char *open_type, const char *fmt, ...)
+{
+	va_list args, args_cp;
+	va_start(args, fmt);
+	va_copy(args_cp, args);
+
+	size_t l = vsnprintf(NULL, 0, fmt, args_cp) + 1;
+	va_end(args_cp);
+
+	char *f_name = mm_alloc(l);
+	vsnprintf(f_name, l, fmt, args);
+	va_end(args);
+
+	FILE *ret = fopen(f_name, open_type);
+	if (ret == NULL)
+		log_log(LOG_ERROR, "Unable to open \"%s\" in %s mode", f_name,
+			open_type);
+
+	mm_free(f_name);
+	return ret;
+}
+
+/**
+ * @brief Initializes the internal timer used to take accurate measurements
+ */
+void stats_global_time_start(void)
+{
+	sim_start_ts = timer_new();
+}
+
+/**
+ * @brief Initializes the internal timer used to take accurate measurements
+ */
+void stats_global_time_take(enum stats_global_time this_stat)
+{
+	stats_glob_cur.timestamps[this_stat] = timer_value(sim_start_ts);
+}
+
+/**
+ * @brief Initializes the stats subsystem in the node
+ */
+void stats_global_init(void)
+{
+	stats_glob_cur.glob_init_rt = timer_value(sim_start_ts);
+	stats_glob_cur.threads_count = n_threads;
+	if (mem_stat_setup() < 0)
+		log_log(LOG_ERROR, "Unable to extract memory statistics!");
+
+	stats_node_tmp = io_file_tmp_get();
+	setvbuf(stats_node_tmp, NULL, _IOFBF,
+		STATS_BUFFER_ENTRIES * sizeof(struct stats_node));
+
+	stats_tmps = mm_alloc(n_threads * sizeof(*stats_tmps));
+}
+
+/**
+ * @brief Initializes the stats subsystem in the current thread
+ */
+void stats_init(void)
+{
+	stats_tmps[rid] = io_file_tmp_get();
+	setvbuf(stats_tmps[rid], NULL, _IOFBF,
+		STATS_BUFFER_ENTRIES * sizeof(stats_cur));
+}
+
+#ifdef ROOTSIM_MPI
+
+static void stats_files_receive(FILE *o)
+{
+	for (nid_t j = 1; j < n_nodes; ++j) {
+		int buf_size;
+		struct stats_glob *sg_p = mpi_blocking_data_rcv(&buf_size, j);
+		file_write_chunk(o, sg_p, buf_size);
+		uint64_t iters = sg_p->threads_count + 1; // +1 for node stats
+		mm_free(sg_p);
+
+		for (uint64_t i = 0; i < iters; ++i) {
+			void *buf = mpi_blocking_data_rcv(&buf_size, j);
+			int64_t f_size = buf_size;
+			file_write_chunk(o, &f_size, sizeof(f_size));
+			file_write_chunk(o, buf, buf_size);
+			mm_free(buf);
+		}
+	}
+}
+
+static void stats_files_send(void)
+{
+	stats_glob_cur.max_rss = mem_stat_rss_max_get();
+	stats_glob_cur.glob_fini_rt = timer_value(sim_start_ts);
+	mpi_blocking_data_send(&stats_glob_cur, sizeof(stats_glob_cur), 0);
+
+	int64_t f_size;
+	void *f_buf = file_memory_load(stats_node_tmp, &f_size);
+	f_size = min(INT_MAX, f_size);
+	mpi_blocking_data_send(f_buf, f_size, 0);
+	mm_free(f_buf);
+
+	for (rid_t i = 0; i < n_threads; ++i) {
+		f_buf = file_memory_load(stats_tmps[i], &f_size);
+		f_size = min(INT_MAX, f_size);
+		mpi_blocking_data_send(f_buf, f_size, 0);
+		mm_free(f_buf);
+	}
+}
+
+#endif
+
+static void stats_file_final_write(FILE *o)
+{
+	uint16_t endian_check = 61455U; // 0xFOOF
+	file_write_chunk(o, &endian_check, sizeof(endian_check));
+
+	int64_t n = STATS_COUNT;
+	file_write_chunk(o, &n, sizeof(n));
+	for (int i = 0; i < STATS_COUNT; ++i) {
+		size_t l = min(strlen(s_names[i]), STATS_MAX_STRLEN);
+		file_write_chunk(o, s_names[i], l);
+		unsigned char nul = 0;
+		for (; l < STATS_MAX_STRLEN; ++l)
+			file_write_chunk(o, &nul, 1);
+	}
+
+	n = n_nodes;
+	file_write_chunk(o, &n, sizeof(n));
+
+	stats_glob_cur.max_rss = mem_stat_rss_max_get();
+	stats_glob_cur.glob_fini_rt = timer_value(sim_start_ts);
+	file_write_chunk(o, &stats_glob_cur, sizeof(stats_glob_cur));
+
+	int64_t buf_size;
+	void *buf = file_memory_load(stats_node_tmp, &buf_size);
+	file_write_chunk(o, &buf_size, sizeof(buf_size));
+	file_write_chunk(o, buf, buf_size);
+	mm_free(buf);
+
+	for (rid_t i = 0; i < n_threads; ++i) {
+		buf = file_memory_load(stats_tmps[i], &buf_size);
+		file_write_chunk(o, &buf_size, sizeof(buf_size));
+		file_write_chunk(o, buf, buf_size);
+		mm_free(buf);
+	}
+}
+
+/**
+ * @brief Finalizes the stats subsystem in the node
+ *
+ * When finalizing this subsystem the master node formats and dumps his
+ * statistics from his temporary files onto the final csv. Then, in a
+ * distributed setting, he receives the slaves temporary files, formatting and
+ * dumping their statistics as well.
+ */
+void stats_global_fini(void)
+{
+#ifdef ROOTSIM_MPI
+	mpi_node_barrier();
+	if (nid) {
+		stats_files_send();
+		return;
+	}
+#endif
+	FILE *o = file_open("w", "%s_stats.bin", arg_parse_program_name());
+	if (o == NULL) {
+		log_log(LOG_WARN, "Unavailable stats file: stats will be dumped on stdout");
+		o = stdout;
+	}
+
+	stats_file_final_write(o);
+
+#ifdef ROOTSIM_MPI
+	stats_files_receive(o);
+#endif
+
+	fflush(o);
+	if (o != stdout)
+		fclose(o);
+}
+
+void stats_time_start(enum stats_time this_stat)
 {
 	last_ts[this_stat] = timer_new();
 }
 
-void stats_time_take(enum stats_time_t this_stat)
+void stats_time_take(enum stats_time this_stat)
 {
-	struct stats_info *s_info = &thread_stats[this_stat];
+	struct stats_measure *s_mes = &stats_cur.s[this_stat];
 	const uint64_t t = timer_value(last_ts[this_stat]);
 
-	if(s_info->count){
-		const int64_t num = (t * s_info->count - s_info->sum_t);
-		s_info->var_t += (num * num) / (s_info->count *
-			(s_info->count + 1));
+	if (likely(s_mes->count)) {
+		const int64_t num = (t * s_mes->count - s_mes->sum_t);
+		s_mes->var_t += ((num * num) << (2 * STD_DEV_POWER_2_EXP)) /
+			(s_mes->count * (s_mes->count + 1));
 	}
 
-	s_info->sum_t += t;
-	s_info->count++;
+	s_mes->sum_t += t;
+	s_mes->count++;
+}
+
+void stats_on_gvt(simtime_t gvt)
+{
+	stats_cur.rt = timer_value(sim_start_ts);
+
+	file_write_chunk(stats_tmps[rid], &stats_cur, sizeof(stats_cur));
+	memset(&stats_cur, 0, sizeof(stats_cur));
+
+	if (rid != 0)
+		return;
+
+	struct stats_node stats_node_cur =
+			{.gvt = gvt, .rss = mem_stat_rss_current_get()};
+	file_write_chunk(stats_node_tmp, &stats_node_cur, sizeof(stats_node_cur));
+	memset(&stats_node_cur, 0, sizeof(stats_node_cur));
+
+	printf("\rVirtual time: %lf", gvt);
+	fflush(stdout);
 }
 
 void stats_dump(void)
 {
-	if (!rid) {
-		printf("\n");
-		log_log(LOG_INFO, "Simulation completed!");
-	}
+	puts("");
+	fflush(stdout);
 }
-
-void stats_on_gvt(simtime_t current_gvt)
-{
-	if (!rid) {
-		printf("\rVirtual time: %lf", current_gvt);
-		fflush(stdout);
-	}
-}
-
-/*
-static void stats_threads_reduce(void)
-{
-	struct stats_info node_stats[STATS_NUM];
-	unsigned thr_cnt = n_threads;
-	for(unsigned i = 0; i < thr_cnt; ++i){
-		for(unsigned j = 0; j < STATS_NUM; ++j){
-			node_stats[j].count +=
-					to_aggregate[STATS_NUM * i + j].count;
-			node_stats[j].sum_t +=
-					to_aggregate[STATS_NUM * i + j].sum_t;
-			node_stats[j].var_t +=
-					to_aggregate[STATS_NUM * i + j].var_t;
-		}
-	}
-	for(unsigned i = 0; i < thr_cnt; ++i){
-		for(unsigned j = 0; j < STATS_NUM; ++j){ // correct but obviously truncates everything FIXME
-			const int64_t sum =
-				to_aggregate[STATS_NUM * i + j].sum_t * node_stats[j].count -
-				to_aggregate[STATS_NUM * i + j].count * node_stats[j].sum_t;
-
-			node_stats[j].var_t += (sum * sum) /
-				(to_aggregate[STATS_NUM * i + j].count * node_stats[j].count * node_stats[j].count);
-		}
-	}
-}
-
-void stats_reduce(void)
-{
-	struct stats_info *s_info = thread_stats;
-	static atomic_uint t_count = 0;
-
-	memcpy(&to_aggregate[STATS_NUM * rid], thread_stats, sizeof(thread_stats));
-
-	if (atomic_fetch_add_explicit(
-		&t_count, 1U, memory_order_relaxed) == n_threads){
-		stats_threads_reduce();
-		atomic_store_explicit(&t_count, 0U, memory_order_relaxed);
-	}
-
-	memset(thread_stats, 0, sizeof(thread_stats));
-}
-
-*/

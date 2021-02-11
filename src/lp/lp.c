@@ -26,12 +26,11 @@
 #include <lp/lp.h>
 
 #include <core/sync.h>
-#include <core/timer.h>
 #include <gvt/fossil.h>
 
 __thread struct lp_ctx *current_lp;
 struct lp_ctx *lps;
-unsigned *lid_to_rid;
+rid_t *lid_to_rid;
 lp_id_t n_lps_node;
 
 void lp_global_init(void)

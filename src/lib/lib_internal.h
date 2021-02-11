@@ -27,5 +27,5 @@
 
 #include <lib/lib.h>
 
-#include <serial/serial.h>
 #include <lp/lp.h>
+#include <serial/serial.h>

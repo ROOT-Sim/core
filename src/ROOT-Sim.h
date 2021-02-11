@@ -41,23 +41,20 @@
 typedef double simtime_t;
 typedef uint64_t lp_id_t;
 
-/* A description of a particular option. */
 struct ap_option {
-	const char *name; /*!< The long option name. */
-	int key; /*!< What key is returned for this option. */
-	const char *arg; /*!< If non-NULL, this is the name of the argument
-	associated with this option, which is required if set. */
-	const char *doc; /*!< The doc string for this option. */
+	const char *name;
+	int key;
+	const char *arg;
+	const char *doc;
+};
+
+enum ap_event_key {
+	AP_KEY_INIT = 1 << 14,
+	AP_KEY_FINI
 };
 
 __attribute((weak)) extern struct ap_option model_options[];
 __attribute((weak)) extern void model_parse(int key, const char *arg);
-
-enum
-{
-	AP_KEY_INIT = 1 << 14,
-	AP_KEY_FINI
-};
 
 extern lp_id_t n_lps;
 
@@ -95,14 +92,12 @@ enum _direction_t {
 	DIRECTION_INVALID = INT_MAX	//!< A generic invalid direction
 };
 
-extern struct _topology_settings_t {
-	enum _topology_geometry_t default_geometry;	//!< The default geometry to use when nothing else is specified
-	lp_id_t out_of_topology;			//!< The minimum number of LPs needed out of the topology
+extern struct topology_settings_t {
+	enum _topology_geometry_t default_geometry;
+	lp_id_t out_of_topology;
 } topology_settings;
 
 extern __attribute__ ((pure)) lp_id_t RegionsCount(void);
 extern __attribute__ ((pure)) lp_id_t DirectionsCount(void);
 extern __attribute__ ((pure)) lp_id_t GetReceiver(lp_id_t from, enum _direction_t direction);
 extern lp_id_t FindReceiver(void);
-
-

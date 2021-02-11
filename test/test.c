@@ -1,4 +1,31 @@
+/**
+ * @file test/test.c
+ *
+ * @brief Test framework source
+ *
+ * The source of the minimal test framework used in the code base tests
+ *
+ * @copyright
+ * Copyright (C) 2008-2020 HPDCS Group
+ * https://hpdcs.github.io
+ *
+ * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
+ *
+ * ROOT-Sim is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; only version 3 of the License applies.
+ *
+ * ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 #include <test.h>
+
+#include <arch/thread.h>
 
 #include <limits.h>
 #include <memory.h>
@@ -6,8 +33,6 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
-#include <arch/arch.h>
 
 #ifndef ROOTSIM_TEST_NAME
 #define ROOTSIM_TEST_NAME "rs_test"
@@ -24,6 +49,17 @@ __attribute__((weak)) nid_t n_nodes = 1;
 __attribute__((weak)) rid_t n_threads;
 __attribute__((weak)) nid_t nid;
 __attribute__((weak)) __thread rid_t rid;
+
+__attribute__((weak)) int log_level;
+
+__attribute__((weak))
+void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
+{
+	(void) level;
+	(void) file;
+	(void) line;
+	(void) fmt;
+}
 
 int main(int argc, char **argv);
 
@@ -119,7 +155,7 @@ static int test_printf_internal(const char *restrict fmt, va_list args)
 	}
 
 	if (memcmp(t_out_buf, test_config.expected_output + t_out_wrote, p_size)) {
-		printf("Test failed: output is different from the expected one %lu\n", t_out_wrote);
+		printf("Test failed: output is different from the expected one %zu\n", t_out_wrote);
 		exit(-1);
 	}
 	t_out_wrote += p_size;

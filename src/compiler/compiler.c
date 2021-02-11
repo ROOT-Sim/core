@@ -8,64 +8,62 @@
  * a parallel or distributed simulation. This is targeting low
  * level C models.
  *
- * @copyright
- * Copyright (C) 2008-2020 HPDCS Group
- * https://hpdcs.github.io
- *
- * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
- *
- * ROOT-Sim is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; only version 3 of the License applies.
- *
- * ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#ifndef ROOTSIM_OPT_OPT
-#define ROOTSIM_OPT_OPT "-O3 -flto"
+#ifndef ROOTSIM_OPTIMIZATION_OPTIONS
+/// The optimization options to be used when compiling models
+/** This macro is filled in at build time */
+#define ROOTSIM_OPTIMIZATION_OPTIONS ""
 #endif
 
-// FIXME: we don't include absolute paths in code!
 #ifndef ROOTSIM_CC
-#define ROOTSIM_CC "/usr/bin/clang"
+/// The path of the C compiler to use when compiling models
+/** This macro is filled in at build time */
+#define ROOTSIM_CC ""
 #endif
 
-// FIXME: we don't include absolute paths in code!
 #ifndef ROOTSIM_LIB_DIR
-#define ROOTSIM_LIB_DIR "/usr/lib/"
+/// The path of the installed ROOT-Sim libraries
+/** This macro is filled in at build time */
+#define ROOTSIM_LIB_DIR ""
 #endif
 
-// FIXME: we don't include absolute paths in code!
 #ifndef ROOTSIM_INC_DIR
-#define ROOTSIM_INC_DIR "/usr/include/"
+/// The path of the installed ROOT-Sim headers
+/** This macro is filled in at build time */
+#define ROOTSIM_INC_DIR ""
 #endif
 
 static const char cmd_line_prefix[] =
 	ROOTSIM_CC " "
-	ROOTSIM_OPT_OPT " "
+	ROOTSIM_OPTIMIZATION_OPTIONS " "
 	"-I" ROOTSIM_INC_DIR " "
-	"-lpthread "
-	"-lm "
 	"-Xclang -load "
-	"-Xclang " ROOTSIM_LIB_DIR "librootsim-llvm.so "
+	"-Xclang " ROOTSIM_LIB_DIR "librootsim-llvm.so"
+;
+static const char cmd_line_suffix[] =
+	" -Wl,--as-needed "
 	ROOTSIM_LIB_DIR "librootsim.a "
-	ROOTSIM_LIB_DIR "librootsim-mods.a"
+	ROOTSIM_LIB_DIR "librootsim-mods.a "
+	"-lm "
+	"-lpthread"
 ;
 
+/**
+ * @brief The main entry point of the custom compiler
+ * @param argc The count of command line arguments, as per ISO C standard
+ * @param argv The list of command line arguments, as per ISO C standard
+ */
 int main(int argc, char **argv)
 {
 	(void) argc;
 	++argv;
-	size_t tot_size = sizeof(cmd_line_prefix) - 1;
+	size_t tot_size = sizeof(cmd_line_prefix) + sizeof(cmd_line_suffix)- 1;
 	char **argv_tmp = argv;
 	while (*argv_tmp) {
 		tot_size += strlen(*argv_tmp) + 1;
@@ -93,6 +91,8 @@ int main(int argc, char **argv)
 
 		++argv;
 	}
+
+	memcpy(ptr, cmd_line_suffix, sizeof(cmd_line_suffix));
 
 	if (system(cmd_line)) {
 		free(cmd_line);

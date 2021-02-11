@@ -25,9 +25,6 @@
 */
 #include <mm/msg_allocator.h>
 
-#include <stddef.h>
-#include <stdlib.h>
-
 #include <core/core.h>
 #include <datatypes/array.h>
 #include <gvt/gvt.h>

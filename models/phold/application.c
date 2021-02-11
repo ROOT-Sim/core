@@ -1,5 +1,7 @@
 #include <ROOT-Sim.h>
 
+#include <math.h>
+
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, unsigned *state)
 {
@@ -21,7 +23,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	}
 
 	lp_id_t dest = Random() * n_lps;
-	ScheduleNewEvent(dest, now + Normal() * 5.0 + 20.0, 1, NULL, 0);
+	ScheduleNewEvent(dest, now + fabs(Normal() * 5.0) + 20.0, 1, NULL, 0);
 }
 
 bool CanEnd(lp_id_t me, const unsigned *state)

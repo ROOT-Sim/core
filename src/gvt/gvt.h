@@ -36,7 +36,7 @@ extern void gvt_on_msg_process(simtime_t msg_t);
 #ifdef ROOTSIM_MPI
 
 extern __thread bool gvt_phase_green;
-extern __thread unsigned remote_msg_sent[1 << MAX_NODES_BITS];
+extern __thread unsigned remote_msg_sent[MAX_NODES];
 extern atomic_int remote_msg_received[2];
 
 extern void gvt_on_start_ctrl_msg(void);

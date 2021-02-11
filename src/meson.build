@@ -13,11 +13,13 @@ endif
 
 # ROOT-Sim library sources
 rootsim_srcs = [
+  'arch' / 'io.c',
+  'arch' / 'mem.c',
+  'arch' / 'timer.c',
   'core' / 'arg_parse.c',
   'core' / 'core.c',
   'core' / 'init.c',
   'core' / 'sync.c',
-  'core' / 'timer.c',
   'datatypes' / 'msg_queue.c',
   'datatypes' / 'remote_msg_map.c',
   'distributed' / 'mpi.c',
@@ -43,9 +45,14 @@ rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
 compiler_c_args = [
   '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
   '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"',
-  '-DROOTSIM_CC="' + clang_compiler.full_path() + '"',
-  '-DROOTSIM_OPT_OPT="' + ' '.join(c_optimization_options) + '"'
+  '-DROOTSIM_OPTIMIZATION_OPTIONS="' + ' '.join(c_optimization_options) + '"'
 ]
+
+if mpi_dep.found()
+  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_compiler.full_path() + ' mpicc"'
+else
+  compiler_c_args += '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
+endif
 
 # ROOT-Sim compiler
 rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c', 

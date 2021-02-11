@@ -23,45 +23,42 @@
 * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
-#include <stdalign.h>
 #include <datatypes/remote_msg_map.h>
 
-#include <datatypes/msg_queue.h>
 #include <core/intrinsics.h>
 #include <core/sync.h>
+#include <datatypes/msg_queue.h>
 #include <gvt/gvt.h>
 #include <lp/msg.h>
 #include <mm/mm.h>
 
 #include <memory.h>
+#include <stdalign.h>
 
-#define HM_INITIAL_CAPACITY 8
-#define SWAP_VALUES(a, b) do {__typeof(a) _tmp = (a); (a) = (b); (b) = _tmp;} while(0)
 #define MAX_LF 0.95
 #define HB_LCK ((uintptr_t)1U)
 
 typedef uint_fast32_t map_size_t;
 
 struct msg_map_node_t {
-	_Atomic(uintptr_t) msg_id;
+	atomic_uintptr_t msg_id;
 	nid_t msg_nid;
 	simtime_t until;
 	struct lp_msg *msg;
 };
 
-#define inner_map {							\
-	struct msg_map_node_t *nodes;					\
-	map_size_t capacity_mo;						\
-	atomic_int count;						\
-}
-
-static struct msg_map_t {
-	struct inner_map;
+struct msg_map {
+	alignas(CACHE_LINE_SIZE) struct {
+		struct msg_map_node_t *nodes;
+		map_size_t capacity_mo;
+		atomic_int count;
+	};
 	struct {
-		_Alignas(CACHE_LINE_SIZE) spinlock_t l;
-	} locks[1 << MAX_THREADS_BITS];
-} re_map;
+		alignas(CACHE_LINE_SIZE) spinlock_t l;
+	} locks[MAX_THREADS];
+};
+
+static struct msg_map re_map;
 
 static __attribute__((const)) inline map_size_t msg_id_hash(uintptr_t msg_id)
 {
@@ -71,7 +68,7 @@ static __attribute__((const)) inline map_size_t msg_id_hash(uintptr_t msg_id)
 void remote_msg_map_global_init(void)
 {
 	map_size_t cnt = n_threads * 2 / (1 - MAX_LF);
-	map_size_t cap = 1ULL << (sizeof(cnt) * CHAR_BIT - SAFE_CLZ(cnt));
+	map_size_t cap = 1ULL << (sizeof(cnt) * CHAR_BIT - intrinsics_clz(cnt));
 	// capacity_mo is in the form 2^n - 1, modulo computations are then easy
 	re_map.capacity_mo = cap - 1;
 	atomic_store_explicit(&re_map.count, cap * MAX_LF, memory_order_relaxed);

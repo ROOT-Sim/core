@@ -26,14 +26,16 @@
 */
 #include <gvt/gvt.h>
 
+#include <arch/timer.h>
 #include <core/init.h>
-#include <core/timer.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
+#include <log/stats.h>
 
-#include <stdatomic.h>
 #include <memory.h>
+#include <stdatomic.h>
 
+/// A thread phase during the gvt algorithm computation
 enum thread_phase_t {
 	tphase_rdy = 0,
 	tphase_A,
@@ -52,27 +54,27 @@ enum thread_phase_t {
 static __thread enum thread_phase_t thread_phase = tphase_rdy;
 
 static timer_uint last_gvt;
-static simtime_t reducing_p[1 << MAX_THREADS_BITS];
+static simtime_t reducing_p[MAX_THREADS];
 static __thread simtime_t current_gvt;
 
 #ifdef ROOTSIM_MPI
 
-static atomic_uint sent_tot[1 << MAX_NODES_BITS];
+static atomic_uint sent_tot[MAX_NODES];
 static unsigned remote_msg_to_receive;
 static _Atomic(nid_t) missing_nodes;
 
 __thread bool gvt_phase_green;
-__thread unsigned remote_msg_sent[1 << MAX_NODES_BITS] = {0};
+__thread unsigned remote_msg_sent[MAX_NODES] = {0};
 atomic_int remote_msg_received[2];
 
 #endif
 
+/**
+ * @brief Initializes the gvt module in the node
+ */
 void gvt_global_init(void)
 {
 	last_gvt = timer_new();
-#ifdef ROOTSIM_MPI
-	missing_nodes = 0;
-#endif
 }
 
 static inline simtime_t gvt_node_reduce(void)
@@ -103,6 +105,7 @@ simtime_t gvt_phase_run(void)
 				&c_b, memory_order_relaxed)))
 				return false;
 		}
+		stats_time_start(STATS_GVT);
 		current_gvt = SIMTIME_MAX;
 		thread_phase = tphase_A;
 		atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
@@ -133,6 +136,7 @@ simtime_t gvt_phase_run(void)
 			if(!rid){
 				last_gvt = timer_new();
 			}
+			stats_time_take(STATS_GVT);
 			return gvt_node_reduce();
 		}
 		break;
@@ -152,6 +156,11 @@ simtime_t gvt_phase_run(void)
 
 static atomic_uint c_a = 0;
 
+/**
+ * @brief Handles a MSG_CTRL_GVT_START control message
+ *
+ * Called by the MPI layer in response to a MSG_CTRL_GVT_START control message
+ */
 void gvt_on_start_ctrl_msg(void)
 {
 	current_gvt = SIMTIME_MAX;
@@ -159,6 +168,11 @@ void gvt_on_start_ctrl_msg(void)
 	atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
 }
 
+/**
+ * @brief Handles a MSG_CTRL_GVT_DONE control message
+ *
+ * Called by the MPI layer in response to a MSG_CTRL_GVT_DONE control message
+ */
 void gvt_on_done_ctrl_msg(void)
 {
 	atomic_fetch_sub_explicit(&missing_nodes, 1U, memory_order_relaxed);
@@ -184,6 +198,7 @@ simtime_t gvt_phase_run(void)
 				memory_order_relaxed);
 			mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 		}
+		stats_time_start(STATS_GVT);
 		current_gvt = SIMTIME_MAX;
 		thread_phase = tphase_A;
 		atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
@@ -302,11 +317,11 @@ simtime_t gvt_phase_run(void)
 				if(!rid)
 					mpi_control_msg_send_to(
 						MSG_CTRL_GVT_DONE, 0);
+				stats_time_take(STATS_GVT);
 			}
 		}
 		break;
 	}
-
 	return 0;
 }
 
@@ -314,7 +329,6 @@ simtime_t gvt_phase_run(void)
 
 void gvt_on_msg_process(simtime_t msg_t)
 {
-	if(unlikely(thread_phase && current_gvt > msg_t)){
+	if (unlikely(thread_phase && current_gvt > msg_t))
 		current_gvt = msg_t;
-	}
 }

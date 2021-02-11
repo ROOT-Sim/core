@@ -43,6 +43,8 @@
 
 #include <mpi.h>
 
+#define MSG_CTRL_RAW (MSG_CTRL_TERMINATION + 1)
+
 #ifdef ROOTSIM_MPI_SERIALIZABLE
 
 static bool mpi_serialize;
@@ -56,7 +58,7 @@ static spinlock_t mpi_spinlock;
 
 #define mpi_lock()
 #define mpi_unlock()
-#define mpi_trylock()	true
+#define mpi_trylock()	(true)
 
 #endif
 
@@ -140,6 +142,13 @@ void mpi_global_fini(void)
  * @brief Sends a model message to a LP residing on another node
  * @param msg the message to send
  * @param dest_nid the id of the node where the targeted LP resides
+ *
+ * This function also calls the relevant handlers in order to keep, for example,
+ * the non blocking gvt algorithm running.
+ * Note that when this funtion returns, the message may have not been actually
+ * sent. We don't need to actively check for sending completion: the platform,
+ * during the fossil collection, leverages the gvt to make sure the message has
+ * been indeed sent and processed before freeing it.
  */
 void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
@@ -160,6 +169,13 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
  * @brief Sends a model anti-message to a LP residing on another node
  * @param msg the message to rollback
  * @param dest_nid the id of the node where the targeted LP resides
+ *
+ * This function also calls the relevant handlers in order to keep, for example,
+ * the non blocking gvt algorithm running.
+ * Note that when this function returns, the anti-message may have not been sent
+ * yet. We don't need to actively check for sending completion: the platform,
+ * during the fossil collection, leverages the gvt to make sure the message has
+ * been indeed sent and processed before freeing it.
  */
 void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
@@ -178,7 +194,7 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
  * @brief Sends a platform control message to all the other nodes
  * @param ctrl the control message to send
  */
-void mpi_control_msg_broadcast(enum _msg_ctrl ctrl)
+void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl)
 {
 	MPI_Request req;
 	nid_t i = n_nodes;
@@ -197,7 +213,7 @@ void mpi_control_msg_broadcast(enum _msg_ctrl ctrl)
  * @param ctrl the control message to send
  * @param dest the id of the destination node
  */
-void mpi_control_msg_send_to(enum _msg_ctrl ctrl, nid_t dest)
+void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest)
 {
 	MPI_Request req;
 	mpi_lock();
@@ -208,7 +224,7 @@ void mpi_control_msg_send_to(enum _msg_ctrl ctrl, nid_t dest)
 
 /**
  * @brief Empties the queue of incoming MPI messages, doing the right thing for
- *        each of of them.
+ *        each one of them.
  *
  * This routine checks, using the MPI probing mechanism, for new remote messages
  * and it handles them accordingly.
@@ -295,10 +311,11 @@ static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
  *
  * Each node supplies a n_nodes components vector. The sum of all these vector
  * is computed and the nid-th component of this vector is stored in @a result.
+ * It is expected that only a single thread calls this function at a time.
  * Each node has to call this function else the result can't be computed.
- * It is possible to have a single mpi_reduce_sum operation pending at a time.
- * Both arguments must point to valid memory regions until mpi_reduce_sum_done()
- * returns true.
+ * It is possible to have a single mpi_reduce_sum_scatter() operation pending at
+ * a time. Both arguments must point to valid memory regions until
+ * mpi_reduce_sum_scatter_done() returns true.
  */
 void mpi_reduce_sum_scatter(const unsigned node_vals[n_nodes], unsigned *result)
 {
@@ -328,11 +345,12 @@ static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
  * @param node_min_p a pointer to the value from the calling node which will
  *                   also be used to store the computed minimum.
  *
- * Each node supplies a aingle simtime_t value. The minimum of all these values
+ * Each node supplies a single simtime_t value. The minimum of all these values
  * is computed and stored in @a node_min_p itself.
+ * It is expected that only a single thread calls this function at a time.
  * Each node has to call this function else the result can't be computed.
- * It is possible to have a single mpi_reduce_sum operation pending at a time.
- * Both arguments must point to valid memory regions until mpi_reduce_sum_done()
+ * It is possible to have a single mpi_reduce_min() operation pending at a time.
+ * Both arguments must point to valid memory regions until mpi_reduce_min_done()
  * returns true.
  */
 void mpi_reduce_min(simtime_t *node_min_p)
@@ -358,4 +376,57 @@ bool mpi_reduce_min_done(void)
 	return flag;
 }
 
+/**
+ * @brief A node barrier
+ */
+void mpi_node_barrier(void)
+{
+	mpi_lock();
+	MPI_Barrier(MPI_COMM_WORLD);
+	mpi_unlock();
+}
+
+/**
+ * @brief Sends a byte buffer to another node
+ * @param buf a pointer to the buffer to send
+ * @param buf_size the buffer size
+ * @param dest the id of the destination node
+ *
+ * This operation blocks the execution flow until the destination node receives
+ * the data with mpi_raw_data_blocking_rcv().
+ */
+void mpi_raw_data_blocking_send(const char *buf, int buf_size, nid_t dest)
+{
+	mpi_lock();
+	MPI_Send(buf, buf_size, MPI_BYTE, dest, MSG_CTRL_RAW, MPI_COMM_WORLD);
+	mpi_unlock();
+}
+
+/**
+ * @brief Receives a byte buffer from another node
+ * @param buf a pointer to the memory where the received data will be written
+ * @param buf_size the maximum size of the data to receive
+ * @param src the id of the sender node
+ *
+ * This function simply leaves the probed message hanging if the given size is
+ * insufficient to contain the received data.
+ * This operation blocks the execution flow until the sender node actually sends
+ * the data with mpi_raw_data_blocking_send().
+ */
+int mpi_raw_data_blocking_rcv(char *buf, int buf_size, nid_t src)
+{
+	MPI_Status status;
+	MPI_Message mpi_msg;
+	mpi_lock();
+	MPI_Mprobe(src, MSG_CTRL_RAW, MPI_COMM_WORLD, &mpi_msg, &status);
+	int size;
+	MPI_Get_count(&status, MPI_BYTE, &size);
+	if (likely(buf_size >= size)) {
+		MPI_Mrecv(buf, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+	} else {
+		log_log(LOG_WARN, "Probed a bigger MPI message than expected!");
+	}
+	mpi_unlock();
+	return size;
+}
 #endif

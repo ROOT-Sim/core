@@ -3,8 +3,8 @@
  *
  * @brief LLVM plugin to instrument memory writes
  * 
- * This is the LLVM plugin which instruments memory writes so as to
- * enable incremental state saving.
+ * This is the LLVM plugin which instruments memory allocations so as to enable
+ * transparent rollbacks of application code state.
  *
  * @copyright
  * Copyright (C) 2008-2020 HPDCS Group
@@ -24,6 +24,13 @@
  * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <instr/instr_llvm.hpp>
+
+extern "C"
+{
+	#include <log/log.h>
+}
+
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Config/llvm-config.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -35,13 +42,6 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/Cloning.h"
-
-#include <instr/instr_cfg.hpp>
-
-extern "C"
-{
-	#include <log/log.h>
-}
 
 using namespace llvm;
 
@@ -104,6 +104,12 @@ namespace {
 
 		SmallVector<ReturnInst *, 8> Returns;
 		CloneFunctionInto(NewF, &F, VMap, true, Returns, suffix);
+
+		for (const Argument &I : F.args()) {
+			VMap.erase(&I);
+		}
+		// XXX: solves a LLVM bug but removes debug info from clones
+		NewF->setSubprogram(nullptr);
 	}
 
 class RootsimCC: public ModulePass {

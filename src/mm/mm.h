@@ -28,19 +28,19 @@
 */
 #pragma once
 
-#include <stdlib.h>
-#include <stddef.h>
-
-#ifdef ROOTSIM_TEST
-
-#define mm_alloc malloc
-#define mm_realloc realloc
-#define mm_free free
-
-#else
-
 #include <log/log.h>
 
+#include <stddef.h>
+#include <stdlib.h>
+
+/**
+ * @brief A version of the stdlib malloc() used internally
+ * @param mem_size the size of the requested memory allocation
+ * @return a pointer to the newly allocated memory area
+ *
+ * In case of memory allocation failure, a log message is taken and the
+ * simulation is promptly aborted
+ */
 inline void *mm_alloc(size_t mem_size)
 {
 	void *ret = malloc(mem_size);
@@ -52,6 +52,15 @@ inline void *mm_alloc(size_t mem_size)
 	return ret;
 }
 
+/**
+ * @brief A version of the stdlib realloc() used internally
+ * @param ptr a pointer to the memory area to reallocate
+ * @param mem_size the new size of the memory allocation
+ * @return a pointer to the newly allocated memory area
+ *
+ * In case of memory allocation failure, a log message is taken and the
+ * simulation is promptly aborted
+ */
 inline void *mm_realloc(void *ptr, size_t mem_size)
 {
 	void *ret = realloc(ptr, mem_size);
@@ -63,11 +72,11 @@ inline void *mm_realloc(void *ptr, size_t mem_size)
 	return ret;
 }
 
+/**
+ * @brief A version of the stdlib free() used internally
+ * @param ptr a pointer to the memory area to free
+ */
 inline void mm_free(void *ptr)
 {
 	free(ptr);
 }
-
-#pragma GCC poison malloc realloc free
-
-#endif

@@ -5,8 +5,6 @@
 static const char *test_arguments[] = {
 	"--lp",
 	ROOTSIM_TEST_LPS_COUNT,
-	"--wt",
-	"2",
 	NULL
 };
 

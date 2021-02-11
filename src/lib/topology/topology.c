@@ -25,13 +25,13 @@
 */
 #include <lib/topology/topology.h>
 
-#include <lib/lib_internal.h>
 #include <core/intrinsics.h>
+#include <lib/lib_internal.h>
 
 #include <math.h>
 #include <memory.h>
 
-__attribute((weak)) struct _topology_settings_t topology_settings;
+__attribute((weak)) struct topology_settings_t topology_settings;
 
 /// this is used to store the common characteristics of the topology
 struct {
@@ -226,7 +226,7 @@ __attribute__ ((pure)) lp_id_t GetReceiver(lp_id_t from,
 lp_id_t FindReceiver(void)
 {
 	const lp_id_t dir_cnt = DirectionsCount();
-	const unsigned bits = 64 - SAFE_CLZ(dir_cnt);
+	const unsigned bits = 64 - intrinsics_clz(dir_cnt);
 	uint64_t rnd = RandomU64();
 	unsigned i = 64;
 	do {

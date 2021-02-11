@@ -23,81 +23,42 @@
 * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#define ROOTSIM_LOG_INTERNAL // TODO: what for?
-
 #include <log/log.h>
 
+#include <arch/io.h>
+
 #include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-#define __STDC_WANT_LIB_EXT1__ 1
-#include <time.h>
 #include <stdio.h>
 
-#include <arch/platform.h>
-
-static _Thread_local char time_buffer[26];
-
-#ifdef __POSIX
-static inline char *get_local_time(void)
-{
-	time_t t = time(NULL);
-	struct tm *loc_t = localtime(&t);
-
-	#ifndef __STDC_LIB_EXT1__
-	strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", loc_t);
-	time_buffer[sizeof(time_buffer) - 1] = '\0';
-	#else
-	err = asctime_s(time_buffer, sizeof(time_buffer), &loc_t);
-	if(err) {
-		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
-	}
-	#endif
-	return time_buffer;
-}
-#endif
-#ifdef __WINDOWS
-static inline char *get_local_time(void)
-{
-	struct tm newtime;
-	__time64_t long_time;
-	errno_t err;
-	_time64(&long_time);
-
-	err = _localtime64_s(&newtime, &long_time);
-	if (unlikely(err)) {
-		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
-	}
-	err = asctime_s(time_buffer, sizeof(time_buffer), &newtime);
-	if (unlikely(err)) {
-		snprintf(time_buffer, sizeof(time_buffer), "??:??:??");
-	}
-
-	return time_buffer;
-}
-#endif
-
 int log_level = LOG_LEVEL;
-_Bool log_colored;
+bool log_colored;
 
 static const struct {
 	const char *name;
 	const char *color;
 } levels[] = {
-		[LOG_TRACE] = {.name = "TRACE", .color = "\x1b[94m"},
-		[LOG_DEBUG] = {.name = "DEBUG", .color = "\x1b[36m"},
-		[LOG_INFO] = {.name = "INFO", .color = "\x1b[32m"},
-		[LOG_WARN] = {.name = "WARN", .color = "\x1b[33m"},
-		[LOG_ERROR] = {.name = "ERROR", .color = "\x1b[31m"},
-		[LOG_FATAL] = {.name = "FATAL", .color = "\x1b[35m"}
+	[LOG_TRACE] = {.name = "TRACE", .color = "\x1b[94m"},
+	[LOG_DEBUG] = {.name = "DEBUG", .color = "\x1b[36m"},
+	[LOG_INFO] = {.name = "INFO", .color = "\x1b[32m"},
+	[LOG_WARN] = {.name = "WARN", .color = "\x1b[33m"},
+	[LOG_ERROR] = {.name = "ERROR", .color = "\x1b[31m"},
+	[LOG_FATAL] = {.name = "FATAL", .color = "\x1b[35m"}
 };
 
-
+/**
+ * @brief Logs a message. For internal use: log_log() should be used instead
+ * @param level The importance level of the message to log
+ * @param file The name of the file where this function is being called
+ * @param line The line number where this function is being called
+ * @param fmt A printf-style format string for the message to log
+ * @param ... The list of arguments to fill in the format string @a fmt
+ */
 void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 {
 	va_list args;
 
-	char *time_string = get_local_time();
+	char time_string[IO_TIME_BUFFER_LEN];
+	io_local_time_get(time_string);
 
 	if(log_colored) {
 		fprintf(
@@ -127,7 +88,10 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 	fflush(stderr);
 }
 
-void log_logo_print()
+/**
+ * @brief Prints a fancy ROOT-Sim logo on the terminal
+ */
+void log_logo_print(void)
 {
 	if(log_colored) {
 		fprintf(stderr, "\x1b[94m   __ \x1b[90m __   _______   \x1b[94m  _ \x1b[90m       \n");

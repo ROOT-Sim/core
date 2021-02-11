@@ -1,29 +1,14 @@
 /**
-* @file parallel/parallel.c
-*
-* @brief Concurrent simulation engine
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file parallel/parallel.c
+ *
+ * @brief Concurrent simulation engine
+ *
+ * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <parallel/parallel.h>
 
-#include <arch/arch.h>
+#include <arch/thread.h>
 #include <core/core.h>
 #include <core/init.h>
 #include <core/sync.h>
@@ -38,19 +23,23 @@
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
-static arch_thr_ret_t ARCH_CALL_CONV parallel_thread_run(void *unused)
+static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
-	(void)unused;
-
-	core_init();
+	rid = (uintptr_t)rid_arg;
+	stats_init();
 	msg_allocator_init();
 	msg_queue_init();
 	sync_thread_barrier();
 	lp_init();
-	sync_thread_barrier();
 
-	if (!rid)
+#ifdef ROOTSIM_MPI
+	if (sync_thread_barrier())
+		mpi_node_barrier();
+#endif
+	if (sync_thread_barrier()) {
 		log_log(LOG_INFO, "Starting simulation");
+		stats_global_time_take(STATS_GLOBAL_EVENTS_START);
+	}
 
 	while (likely(termination_cant_end())) {
 #ifdef ROOTSIM_MPI
@@ -69,22 +58,23 @@ static arch_thr_ret_t ARCH_CALL_CONV parallel_thread_run(void *unused)
 		}
 	}
 
-	stats_dump();
-
-	if (!rid)
+	if (sync_thread_barrier()) {
+		stats_dump();
+		stats_global_time_take(STATS_GLOBAL_EVENTS_END);
 		log_log(LOG_INFO, "Finalizing simulation");
+	}
 
 	lp_fini();
-
 	msg_queue_fini();
 	sync_thread_barrier();
 	msg_allocator_fini();
 
-	return ARCH_THR_RET_SUCCESS;
+	return THREAD_RET_SUCCESS;
 }
 
 static void parallel_global_init(void)
 {
+	stats_global_init();
 	lp_global_init();
 	msg_queue_global_init();
 	termination_global_init();
@@ -103,23 +93,25 @@ static void parallel_global_fini(void)
 	lib_global_fini();
 	msg_queue_global_fini();
 	lp_global_fini();
+	stats_global_fini();
 }
 
 void parallel_simulation(void)
 {
 	log_log(LOG_INFO, "Initializing parallel simulation");
-
 	parallel_global_init();
+	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
-	arch_thr_t thrs[n_threads];
+	thr_id_t thrs[n_threads];
 	rid_t i = n_threads;
 	while (i--) {
-		if (arch_thread_create(&thrs[i], parallel_thread_run, NULL)) {
+		if (thread_start(&thrs[i], parallel_thread_run,
+				  (void *)(uintptr_t)i)) {
 			log_log(LOG_FATAL, "Unable to create a thread!");
 			abort();
 		}
 		if (global_config.core_binding &&
-				arch_thread_affinity_set(thrs[i], i)) {
+				thread_affinity_set(thrs[i], i)) {
 			log_log(LOG_FATAL, "Unable to set a thread affinity!");
 			abort();
 		}
@@ -127,7 +119,8 @@ void parallel_simulation(void)
 
 	i = n_threads;
 	while (i--)
-		arch_thread_wait(thrs[i], NULL);
+		thread_wait(thrs[i], NULL);
 
+	stats_global_time_take(STATS_GLOBAL_FINI_START);
 	parallel_global_fini();
 }

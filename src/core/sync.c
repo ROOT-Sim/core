@@ -24,8 +24,13 @@
 * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <core/sync.h>
+
 #include <core/core.h>
 
+/**
+ * @brief Synchronizes threads on a barrier
+ * @return true if this thread has been elected as leader, false otherwise
+ */
 bool sync_thread_barrier(void)
 {
 	static _Thread_local unsigned phase;

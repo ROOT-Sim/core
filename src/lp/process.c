@@ -27,6 +27,8 @@
 
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
+#include <gvt/gvt.h>
+#include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
@@ -57,6 +59,9 @@ void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 	array_push(proc_p->sent_msgs, msg);
 }
 
+/**
+ * @brief Initializes the processing module in the current LP
+ */
 void process_lp_init(void)
 {
 	struct lp_ctx *this_lp = current_lp;
@@ -76,6 +81,9 @@ void process_lp_init(void)
 	array_push(proc_p->past_msgs, msg);
 }
 
+/**
+ * @brief Deinitializes the LP by calling the model's DEINIT handler
+ */
 void process_lp_deinit(void)
 {
 	struct lp_ctx *this_lp = current_lp;
@@ -83,6 +91,9 @@ void process_lp_deinit(void)
 			   this_lp->lib_ctx_p->state_s);
 }
 
+/**
+ * @brief Finalizes the processing module in the current LP
+ */
 void process_lp_fini(void)
 {
 	struct process_data *proc_p = &current_lp->p;
@@ -103,7 +114,7 @@ static inline void silent_execution(struct process_data *proc_p,
 	void *state_p = current_lp->lib_ctx_p->state_s;
 	for (array_count_t k = last_i + 1; k <= past_i; ++k) {
 		const struct lp_msg *msg = array_get_at(proc_p->past_msgs, k);
-
+		stats_time_start(STATS_MSG_SILENT);
 		ProcessEvent_pr(
 			msg->dest,
 			msg->dest_t,
@@ -112,6 +123,7 @@ static inline void silent_execution(struct process_data *proc_p,
 			msg->pl_size,
 			state_p
 		);
+		stats_time_take(STATS_MSG_SILENT);
 	}
 
 	silent_processing = false;
@@ -144,9 +156,8 @@ static inline void send_anti_messages(struct process_data *proc_p,
 #endif
 			int msg_status = atomic_fetch_add_explicit(&msg->flags,
 				MSG_FLAG_ANTI, memory_order_relaxed);
-			if(msg_status & MSG_FLAG_PROCESSED) {
+			if (msg_status & MSG_FLAG_PROCESSED)
 				msg_queue_insert(msg);
-			}
 		}
 	}
 	array_count(proc_p->sent_msgs) = sent_i + 1;
@@ -160,7 +171,7 @@ static inline void reinsert_invalid_past_messages(struct process_data *proc_p,
 		struct lp_msg *msg = array_get_at(proc_p->past_msgs, i);
 		int msg_status = atomic_fetch_add_explicit(&msg->flags,
 			-MSG_FLAG_PROCESSED, memory_order_relaxed);
-		if(!(msg_status & MSG_FLAG_ANTI))
+		if (!(msg_status & MSG_FLAG_ANTI))
 			msg_queue_insert(msg);
 	}
 
@@ -169,10 +180,14 @@ static inline void reinsert_invalid_past_messages(struct process_data *proc_p,
 
 static void handle_rollback(struct process_data *proc_p, array_count_t past_i)
 {
+	stats_time_start(STATS_ROLLBACK);
+
 	array_count_t last_i = model_allocator_checkpoint_restore(past_i);
 	silent_execution(proc_p, last_i, past_i);
 	send_anti_messages(proc_p, past_i);
 	reinsert_invalid_past_messages(proc_p, past_i);
+
+	stats_time_take(STATS_ROLLBACK);
 }
 
 static inline array_count_t match_anti_msg(
@@ -226,6 +241,8 @@ void process_msg(void)
 	}
 
 	array_push(proc_p->sent_msgs, NULL);
+
+	stats_time_start(STATS_MSG_PROCESSED);
 	ProcessEvent_pr(
 		msg->dest,
 		msg->dest_t,
@@ -234,6 +251,7 @@ void process_msg(void)
 		msg->pl_size,
 		this_lp->lib_ctx_p->state_s
 	);
+	stats_time_take(STATS_MSG_PROCESSED);
 
 	model_allocator_checkpoint_take(array_count(proc_p->past_msgs));
 	array_push(proc_p->past_msgs, msg);

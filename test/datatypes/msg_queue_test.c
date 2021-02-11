@@ -12,7 +12,7 @@
 #define THREAD_CNT 6
 #define THREAD_REPS 100000
 
-static __thread uint128_t rng_state;
+static __thread test_rng_t rng_state;
 static unsigned lid_to_rid_m[] = {0, 1, 2, 3, 0, 1, 2, 3, 5, 4, 4, 5};
 static struct lp_ctx lps_m[THREAD_CNT];
 static atomic_uint msg_missing = THREAD_REPS * THREAD_CNT;

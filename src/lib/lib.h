@@ -25,8 +25,6 @@
 */
 #pragma once
 
-#include <ROOT-Sim.h>
-
 #include <lib/random/random.h>
 #include <lib/state/state.h>
 #include <lib/topology/topology.h>
