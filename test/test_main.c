@@ -6,7 +6,7 @@
  * The main function stub for tests which do not declare a main() entry point
  *
  * @copyright
- * Copyright (C) 2008-2020 HPDCS Group
+ * Copyright (C) 2008-2021 HPDCS Group
  * https://hpdcs.github.io
  *
  * This file is part of ROOT-Sim (ROme OpTimistic Simulator).

@@ -6,7 +6,7 @@
 * Piece-Wise Deterministic Random Number Generators.
 *
 * @copyright
-* Copyright (C) 2008-2020 HPDCS Group
+* Copyright (C) 2008-2021 HPDCS Group
 * https://hpdcs.github.io
 *
 * This file is part of ROOT-Sim (ROme OpTimistic Simulator).

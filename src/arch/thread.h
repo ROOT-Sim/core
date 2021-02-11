@@ -12,7 +12,7 @@
  * true to only one of them.
  *
  * @copyright
- * Copyright (C) 2008-2020 HPDCS Group
+ * Copyright (C) 2008-2021 HPDCS Group
  * https://rootsim.github.io/core
  *
  * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
