@@ -1,0 +1,5 @@
+*		@Piccions @alessandropellegrini
+src/compiler.c	@readbeard
+src/instr/*	@readbeard
+docs/*		@alessandropellegrini
+.github/*	@alessandropellegrini

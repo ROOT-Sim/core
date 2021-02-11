@@ -1,85 +1,72 @@
 # The ROme OpTimistic Simulator (ROOT-Sim) 3.0.0
 
-[![Build Status](https://travis-ci.org/HPDCS/ROOT-Sim.svg?branch=master)](https://travis-ci.org/HPDCS/ROOT-Sim)
-[![codecov.io](https://codecov.io/gh/HPDCS/ROOT-Sim/branch/master/graphs/badge.svg)](http://codecov.io/github/HPDCS/ROOT-Sim)
-[![coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fhpdcs.github.io%2FROOT-Sim%2Fdocs%2Fcoverage%2Fmaster.json)](https://hpdcs.github.io/ROOT-Sim//documentation.html)
-[![GitHub issues](https://img.shields.io/github/issues/HPDCS/ROOT-Sim)](https://github.com/HPDCS/ROOT-Sim/issues)
-[![GitHub](https://img.shields.io/github/license/HPDCS/ROOT-Sim)](https://github.com/HPDCS/ROOT-Sim/blob/master/COPYING)
-
+[![Build Status](https://github.com/ROOT-Sim/core/workflows/ROOT-Sim%20core%20CI/badge.svg)](https://github.com/ROOT-Sim/core/actions)
+[![codecov.io](https://codecov.io/gh/ROOT-Sim/branch/master/graphs/badge.svg)](https://codecov.io/gh/ROOT-Sim/core)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/7519f016f3d942b9b12c6ed03ae4ecf8)](https://www.codacy.com/gh/ROOT-Sim/core/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ROOT-Sim/core&amp;utm_campaign=Badge_Grade)
+[![doc coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Froot-sim.github.io%2Fcore%2Fdocs%2Fcoverage%2Fmaster.json)](https://root-sim.github.io/core/docs/)
+[![GitHub issues](https://img.shields.io/github/issues/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/issues)
+[![GitHub](https://img.shields.io/github/license/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/blob/master/COPYING)
 
 *Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/) Research Group*
 
 ----------------------------------------------------------------------------------------
 
-The ROme OpTimistic Simulator is an x86-64 Open Source, distributed multithreaded parallel
-simulation library developed using C/POSIX technology. It transparently supports all the
-mechanisms associated with parallelization and distribution of workload across the nodes
-(e.g., mapping of simulation objects on different kernel instances) and
-optimistic synchronization (e.g., state recoverability).    
-Distributed simulations rely on MPI3. In particular, global synchronization across
-the different nodes relies on asynchronous MPI primitives, for increased efficiency.
+The ROme OpTimistic Simulator is an x86-64 Open Source, distributed multithreaded parallel simulation library developed using C/POSIX technology. It transparently supports all the mechanisms associated with parallelization and distribution of workload across the nodes (e.g., mapping of simulation objects on different kernel instances) and optimistic synchronization (e.g., state recoverability).    
+Distributed simulations rely on MPI3. In particular, global synchronization across the different nodes relies on asynchronous MPI primitives, for increased efficiency.
 
-The programming model supported by ROOT-Sim allows the simulation model developer 
-to use a simple application-callback function named `ProcessEvent()` as the event handler,
-whose parameters determine which simulation object is currently taking control for
-processing its next event, and where the state of this object is located in memory. 
-An object is a data structure, whose state can be scattered on dynamically allocated
-memory chunks, hence the memory address passed to the callback locates a top level
-data structure implementing the object state-layout.
+The programming model supported by ROOT-Sim allows the simulation model developer  to use a simple application-callback function named `ProcessEvent()` as the event handler, whose parameters determine which simulation object is currently taking control for processing its next event, and where the state of this object is located in memory.  An object is a data structure, whose state can be scattered on dynamically allocated memory chunks, hence the memory address passed to the callback locates a top level data structure implementing the object state-layout.
 
-ROOT-Sim's development started as a research project late back in 1987, and is currently
-maintained by the High Performance and Dependable Computing Systems group, a joint
-research group between Sapienza, University of Rome and University of Rome "Tor Vergata".
+ROOT-Sim's development started as a research project late back in 1987, and is currently maintained by the High Performance and Dependable Computing Systems group, a joint research group between Sapienza, University of Rome and University of Rome "Tor Vergata".
 
-## Installation Notes
+## Dependencies
 
-ROOT-Sim uses autotools to provide an installation workflow which is
-common for all supported platforms. This repository does not provide
-already-generated installation scripts (while released tarballs do),
-rather we provide the convenience `autogen.sh` script which should
-build everything on the target machine. Using autotools, `autoconf`,
-`automake` and `libtoolize` are required to let `autogen.sh` generate
-the correct `configure` script.
+To build the project you need a C11 compiler such as GCC 8 or a later version, and the Meson build system.
 
-Briefly, the shell commands `./configure; make; make install` should
-configure, build, and install this package.
-Also, you can also type `make uninstall` to remove the installed files.
+## Building and installing
 
-By default, `make install` installs the package's commands under
-`/usr/local/bin`, include files under `/usr/local/include`, etc.  You
-can specify an installation prefix other than `/usr/local` by giving
-`configure` the option `--prefix=PREFIX`, where `PREFIX` must be an
-absolute path name.
+Run:
 
-ROOT-Sim uses many `gcc` extensions, so the currently supported
-compiler is only `gcc`.
+```bash
+meson build -Dprefix={installdir}
+cd build
+ninja test
+ninja install
+```
 
-For full configuration notes, and a discussion on the subsystems
-which this simulation library offers, please refer to the 
-[wiki](https://github.com/HPDCS/ROOT-Sim/wiki).
+where `{installdir}` is your preferred installation directory expressed as an absolute path.\
+Alternatively you can skip the `-Dprefix` altogether: ROOT-Sim will be installed in your system directories.
 
+## Compile and run a model
 
-## Usage Notes
+ROOT-Sim ships with two sample models in the `models` folder of the project: `pcs` and `phold`. For example, to compile the `pcs` model simply run:
 
-When running `make install`, the `rootsim-cc` compiler is added to the path.
+```bash
+cd models/pcs
+{installdir}/bin/rootsim-cc *.c
+```
 
-To compile a simulaton model, simply `cd` into the project's directory
-and type `rootsim-cc *.c -o model`. This will create the `model`
-executable, which is the model code already linked with the ROOT-sim library.
-`rootsim-cc` ultimately relies on `gcc`, so any flag supported by
-`gcc` can be passed to `rootsim-cc`.
+If you installed ROOT-Sim system-wide the second command becomes simply:
 
-To test the correctness of the model, it can be run sequentially, typing    
-`./model --sequential --lp <number of required LPs>`
-This allows to spot errors in the implementation more easily.
+```bash
+rootsim-cc *.c -o model
+```
 
-Then, to run it in parallel, type    
-`./model --wt <number of desired threads> --lp <number of required LPs>`
+To test the correctness of the model, it can be run sequentially, typing:
 
-To run in a distributed environment, you can use standard MPI commands,
-such as:    
-`mpiexec -n 2 --hostfile hosts --map-by node ./model --wt 2 --lp 16`
+```bash
+./model --serial --lp <number of required LPs> This allows to spot errors in the implementation more easily.
+```
 
-This command runs the simulation model on two nodes (`-n 2`) specified in the
-`hosts` file. Each node uses two concurrent threads (`--wt 2`). The simulation
-involves 16 total Logical Processes (`--lp 16`).
+Then, to run it in parallel, type:
+```bash
+./model --wt <number of desired threads> --lp <number of required LPs>
+```
+
+To run in a distributed environment, you can use standard MPI commands, such as:
+
+```bash
+mpiexec -n 2 --hostfile hosts --map-by node ./model --wt 2 --lp 16
+```
+
+This command runs the simulation model on two nodes (`-n 2`) specified in the hosts file. Each node uses two concurrent threads (`--wt 2`). The simulation involves 16 total Logical Processes (`--lp 16`).
+

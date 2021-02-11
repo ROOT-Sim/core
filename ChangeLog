@@ -10,6 +10,45 @@ For each release, we report what new features  have been added, what changes aff
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+
+## [3.0.0-alpha]
+
+### Added
+
+* An LLVM plugin to instrument models
+* ISS has been reintroduced and reintegrated
+* Rollback capabilities in the buddy system
+
+### Changed
+
+The whole runtime environment has been rewritten from scratch. Mainly:
+
+* A new management infrastructure for message exchange has been introduced
+* The LP structure has been made slimmer
+
+### Deprecated
+
+### Removed
+
+* Dymelor and buffer allocators have been removed to simplify the memory allocator
+* ECS has been removed
+* Kernel modules have been removed
+
+### Fixed
+
+
+## [2.0.1]
+
+### Added
+
 * _Event-Cross State Synchronization_:
 * _Linux Kernel Modules_: 
 
@@ -187,5 +226,5 @@ This is the first official release of ROOT-Sim. The following subsystems have be
 
 
 
-    Copyright (C) 2008-2019 HPDCS Group
+    Copyright (C) 2008-2020 HPDCS Group
     Copying and distribution of this file, with or without modification, are permitted provided the copyright notice and this notice are preserved.
