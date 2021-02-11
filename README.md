@@ -36,7 +36,7 @@ ninja install
 where `{installdir}` is your preferred installation directory expressed as an absolute path.\
 Alternatively you can skip the `-Dprefix` altogether: ROOT-Sim will be installed in your system directories.
 
-## Compile a model
+## Compile and run a model
 
 ROOT-Sim ships with two sample models in the `models` folder of the project: `pcs` and `phold`. For example, to compile the `pcs` model simply run:
 
@@ -48,7 +48,25 @@ cd models/pcs
 If you installed ROOT-Sim system-wide the second command becomes simply:
 
 ```bash
-rootsim-cc *.c
+rootsim-cc *.c -o model
 ```
 
-This will create two files named `model_serial` and `model_parallel` which are respectively the single core and multithreaded version of the model.
+To test the correctness of the model, it can be run sequentially, typing:
+
+```bash
+./model --serial --lp <number of required LPs> This allows to spot errors in the implementation more easily.
+```
+
+Then, to run it in parallel, type:
+```bash
+./model --wt <number of desired threads> --lp <number of required LPs>
+```
+
+To run in a distributed environment, you can use standard MPI commands, such as:
+
+```bash
+mpiexec -n 2 --hostfile hosts --map-by node ./model --wt 2 --lp 16
+```
+
+This command runs the simulation model on two nodes (`-n 2`) specified in the hosts file. Each node uses two concurrent threads (`--wt 2`). The simulation involves 16 total Logical Processes (`--lp 16`).
+
