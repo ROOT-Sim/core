@@ -1,28 +1,13 @@
 /**
-* @file datatypes/remote_msg_map.c
-*
-* @brief Message map datatype
-*
-* Message map datatype
-*
-* @copyright
-* Copyright (C) 2008-2021 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file datatypes/remote_msg_map.c
+ *
+ * @brief Message map datatype
+ *
+ * Message map datatype
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <datatypes/remote_msg_map.h>
 
 #include <core/intrinsics.h>
@@ -35,25 +20,37 @@
 #include <memory.h>
 #include <stdalign.h>
 
-#define MAX_LF 0.95
+#define MAX_LOAD_FACTOR 0.95
 #define HB_LCK ((uintptr_t)1U)
 
 typedef uint_fast32_t map_size_t;
 
-struct msg_map_node_t {
+/// A bucket of the remote messages hash map
+struct msg_map_node {
+	/// The id of the registered message
 	atomic_uintptr_t msg_id;
+	/// The node id of the sender of the registered message
 	nid_t msg_nid;
+	/// The logical time after which it is safe to delete this entry
 	simtime_t until;
+	/// The registered message, NULL if it is an anti-message entry
 	struct lp_msg *msg;
 };
 
+/// The message hash map used to register external messages
 struct msg_map {
 	alignas(CACHE_LINE_SIZE) struct {
-		struct msg_map_node_t *nodes;
+		/// The array of hash map nodes
+		struct msg_map_node *nodes;
+		/// The current capacity of this hashmap minus one
+		/** A capacity in the form 2^n - 1 eases modulo calculations */
 		map_size_t capacity_mo;
+		/// The count of entries which can still be inserted
+		/** Takes into account load factor, when 0 we have to resize */
 		atomic_int count;
 	};
 	struct {
+		/// Synchronizes access from the worker threads
 		alignas(CACHE_LINE_SIZE) spinlock_t l;
 	} locks[MAX_THREADS];
 };
@@ -67,11 +64,12 @@ static __attribute__((const)) inline map_size_t msg_id_hash(uintptr_t msg_id)
 
 void remote_msg_map_global_init(void)
 {
-	map_size_t cnt = n_threads * 2 / (1 - MAX_LF);
+	map_size_t cnt = n_threads * 2 / (1 - MAX_LOAD_FACTOR);
 	map_size_t cap = 1ULL << (sizeof(cnt) * CHAR_BIT - intrinsics_clz(cnt));
 	// capacity_mo is in the form 2^n - 1, modulo computations are then easy
 	re_map.capacity_mo = cap - 1;
-	atomic_store_explicit(&re_map.count, cap * MAX_LF, memory_order_relaxed);
+	atomic_store_explicit(&re_map.count, cap * MAX_LOAD_FACTOR,
+			      memory_order_relaxed);
 	re_map.nodes = mm_alloc(sizeof(*re_map.nodes) * cap);
 	memset(re_map.nodes, 0, sizeof(*re_map.nodes) * cap);
 }
@@ -110,7 +108,7 @@ inline static void remote_msg_map_unlock_all(void)
 
 void remote_msg_map_fossil_collect(simtime_t current_gvt)
 {
-	static struct msg_map_node_t *old_nodes = NULL;
+	static struct msg_map_node *old_nodes = NULL;
 	static atomic_int re_map_bar = 0;
 	static map_size_t cap;
 
@@ -122,9 +120,9 @@ void remote_msg_map_fossil_collect(simtime_t current_gvt)
 		atomic_fetch_sub_explicit(&re_map_bar, n_threads,
 			memory_order_release);
 
-		re_map.nodes = mm_alloc(sizeof(struct msg_map_node_t) * cap);
-		memset(re_map.nodes, 0, sizeof(struct msg_map_node_t) * cap);
-		atomic_store_explicit(&re_map.count, cap * MAX_LF,
+		re_map.nodes = mm_alloc(sizeof(struct msg_map_node) * cap);
+		memset(re_map.nodes, 0, sizeof(struct msg_map_node) * cap);
+		atomic_store_explicit(&re_map.count, cap * MAX_LOAD_FACTOR,
 			memory_order_relaxed);
 		remote_msg_map_unlock_all();
 	} else {
@@ -145,7 +143,7 @@ void remote_msg_map_fossil_collect(simtime_t current_gvt)
 	}
 
 	while (cnt--) {
-		struct msg_map_node_t *node = &old_nodes[off + cnt];
+		struct msg_map_node *node = &old_nodes[off + cnt];
 		if (node->msg_id && current_gvt <= node->until)
 			remote_msg_map_match(node->msg_id, node->msg_nid,
 				node->msg);
@@ -156,21 +154,21 @@ static void msg_map_size_increase(void)
 {
 	const map_size_t old_cmo = re_map.capacity_mo;
 	const map_size_t cmo = old_cmo * 2 + 1;
-	struct msg_map_node_t *old_nodes = re_map.nodes;
-	struct msg_map_node_t *nodes = mm_alloc(sizeof(*nodes) * (cmo + 1));
+	struct msg_map_node *old_nodes = re_map.nodes;
+	struct msg_map_node *nodes = mm_alloc(sizeof(*nodes) * (cmo + 1));
 
 	memset(nodes, 0, sizeof(*nodes) * (cmo + 1));
 
 	remote_msg_map_lock_all();
 
-	atomic_fetch_add_explicit(&re_map.count, old_cmo * MAX_LF,
+	atomic_fetch_add_explicit(&re_map.count, old_cmo * MAX_LOAD_FACTOR,
 		memory_order_release);
 
 	for (map_size_t j = 0; j <= old_cmo; ++j) {
 		if(!old_nodes[j].msg_id)
 			continue;
 
-		struct msg_map_node_t *cnode = &old_nodes[j];
+		struct msg_map_node *cnode = &old_nodes[j];
 		map_size_t cdib = 0;
 		map_size_t i = msg_id_hash(atomic_load_explicit(&cnode->msg_id,
 			memory_order_relaxed)) & cmo;
@@ -182,7 +180,7 @@ static void msg_map_size_increase(void)
 
 			if (cdib > tdib) {
 				cdib = tdib;
-				struct msg_map_node_t tmp_node;
+				struct msg_map_node tmp_node;
 				memcpy(&tmp_node, cnode, sizeof(*cnode));
 				memcpy(cnode, &nodes[i], sizeof(*cnode));
 				memcpy(&nodes[i], &tmp_node, sizeof(*cnode));
@@ -213,7 +211,7 @@ void remote_msg_map_match(uintptr_t msg_id, nid_t nid, struct lp_msg *msg)
 	spinlock_t *lck = &re_map.locks[rid].l;
 	spin_lock(lck);
 
-	struct msg_map_node_t *n = re_map.nodes;
+	struct msg_map_node *n = re_map.nodes;
 	const map_size_t cmo = re_map.capacity_mo;
 	i &= cmo;
 	// linear probing with robin hood hashing
