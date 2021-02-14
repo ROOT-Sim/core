@@ -15,7 +15,7 @@
 #include <stdint.h>
 
 /// The type of this pseudo random number generator state
-typedef __uint128_t test_rng_t;
+typedef __uint128_t test_rng_state;
 
 /// The multiplier of this linear congruential PRNG generator
 #define LCG_MULTIPLIER \
@@ -23,14 +23,14 @@ typedef __uint128_t test_rng_t;
 
 /**
  * @brief Initializes the random number generator
- * @param rng_state a test_rng_t object which will be initialized
+ * @param rng_state a test_rng_state object which will be initialized
  * @param initseq the seed to use to initialize @a rng_state
  */
 #define lcg_init(rng_state, initseq) (rng_state) = ((initseq) << 1u) | 1u
 
 /**
  * @brief Computes a pseudo random 64 bit number
- * @param rng_state a test_rng_t object
+ * @param rng_state a test_rng_state object
  * @return a uniformly distributed 64 bit pseudo random number
  */
 #define lcg_random_u(rng_state)						\
@@ -42,7 +42,7 @@ __extension__({								\
 
 /**
  * @brief Computes a pseudo random number in the [0, 1] range
- * @param rng_state a test_rng_t object
+ * @param rng_state a test_rng_state object
  * @return a uniformly distributed pseudo random double value in [0, 1]
  */
 #define lcg_random(rng_state)						\

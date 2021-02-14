@@ -1,3 +1,11 @@
+/**
+ * @file test/lp_test.c
+ *
+ * @brief Test: logical process lifetime handler module
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
 #include <lp/lp.h>
