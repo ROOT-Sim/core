@@ -1,10 +1,14 @@
-project('ROOT-Sim', ['c', 'cpp'], version: '3.0.0', 
-  default_options: ['c_std=c11', 'cpp_std=c++14', 'buildtype=release', 
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
+project('ROOT-Sim', ['c', 'cpp'], version : '3.0.0',
+  default_options : ['c_std=c11', 'cpp_std=c++14', 'buildtype=release',
   'warning_level=3', 'unity=on', 'unity_size=10000', 'b_lto=true'])
 
 # This is needed since our compiler uses a LLVM plugin
 assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
-  'LTO builds are only supported by using the clang compiler')
+  'LTO builds are only supported with the clang compiler;\neither pass ' +
+  '\'-Db_lto=false\' to the meson command or prepend it with \'env CC=clang ' +
+  'CXX=clang++\'')
 
 # This stuff would otherwise break our fragile linking process
 add_global_link_arguments(['-no-pie'], language : 'c')
@@ -34,8 +38,8 @@ mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 clang_compiler = find_program('clang')
 
 # Custom threads library dependency
-rs_thr_dep = declare_dependency(link_with: 
-  static_library('rootsim-threads', 'src' / 'arch' / 'thread.c', 
+rs_thr_dep = declare_dependency(link_with :
+  static_library('rootsim-threads', 'src' / 'arch' / 'thread.c',
     dependencies: dependency('threads'), include_directories : src_inc_dir))
 
 # Used in some defines, the llvm plugin and the tests    
