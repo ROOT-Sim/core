@@ -6,7 +6,7 @@
  * This module defines the timers which the simulator uses to monitor its
  * internal behaviour
  *
- * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <arch/timer.h>
