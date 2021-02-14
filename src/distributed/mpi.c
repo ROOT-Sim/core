@@ -1,33 +1,18 @@
 /**
-* @file distributed/mpi.c
-*
-* @brief MPI Support Module
-*
-* This module implements all basic MPI facilities to let the distributed
-* execution of a simulation model take place consistently.
-*
-* Several facilities are thread-safe, others are not. Check carefully which
-* of these can be used by worker threads without coordination when relying
-* on this module.
-*
-* @copyright
-* Copyright (C) 2008-2021 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file distributed/mpi.c
+ *
+ * @brief MPI Support Module
+ *
+ * This module implements all basic MPI facilities to let the distributed
+ * execution of a simulation model take place consistently.
+ *
+ * Several facilities are thread-safe, others are not. Check carefully which
+ * of these can be used by worker threads without coordination when relying
+ * on this module.
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <distributed/mpi.h>
 
 #ifdef ROOTSIM_MPI
@@ -145,16 +130,14 @@ void mpi_global_fini(void)
  *
  * This function also calls the relevant handlers in order to keep, for example,
  * the non blocking gvt algorithm running.
- * Note that when this funtion returns, the message may have not been actually
+ * Note that when this function returns, the message may have not been actually
  * sent. We don't need to actively check for sending completion: the platform,
  * during the fossil collection, leverages the gvt to make sure the message has
  * been indeed sent and processed before freeing it.
  */
 void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
-	bool phase = gvt_phase_get();
-	msg->msg_id = msg_id_get(msg, phase);
-	msg_id_phase_set(msg->msg_id, phase);
+	msg->msg_id = msg_id_get(msg, gvt_phase_get());
 	gvt_on_remote_msg_send(dest_nid);
 
 	mpi_lock();
@@ -179,12 +162,12 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
  */
 void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
-	msg_id_phase_set(msg->msg_id, gvt_phase_get());
+	msg_id_anti_phase_set(msg->msg_id, gvt_phase_get());
 	gvt_on_remote_msg_send(dest_nid);
 
 	mpi_lock();
 	MPI_Request req;
-	MPI_Issend(&msg->msg_id, sizeof(msg->msg_id), MPI_BYTE, dest_nid, 0,
+	MPI_Isend(&msg->msg_id, sizeof(msg->msg_id), MPI_BYTE, dest_nid, 0,
 		MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 	mpi_unlock();
@@ -268,7 +251,7 @@ void mpi_remote_msg_handle(void)
 			int size;
 			MPI_Get_count(&status, MPI_BYTE, &size);
 
-			if (unlikely(size == sizeof((struct lp_msg *)0)->msg_id)) {
+			if (unlikely(size == sizeof(uintptr_t))) {
 				uintptr_t anti_id;
 				MPI_Mrecv(&anti_id, size, MPI_BYTE, &mpi_msg,
 					MPI_STATUS_IGNORE);
@@ -277,7 +260,7 @@ void mpi_remote_msg_handle(void)
 				remote_msg_map_match(anti_id,
 					status.MPI_SOURCE, NULL);
 				gvt_on_remote_msg_receive(
-					msg_id_phase_get(anti_id));
+					msg_id_anti_phase_get(anti_id));
 			} else {
 				mpi_unlock();
 
@@ -388,45 +371,43 @@ void mpi_node_barrier(void)
 
 /**
  * @brief Sends a byte buffer to another node
- * @param buf a pointer to the buffer to send
- * @param buf_size the buffer size
+ * @param data a pointer to the buffer to send
+ * @param data_size the buffer size
  * @param dest the id of the destination node
  *
  * This operation blocks the execution flow until the destination node receives
  * the data with mpi_raw_data_blocking_rcv().
  */
-void mpi_raw_data_blocking_send(const char *buf, int buf_size, nid_t dest)
+void mpi_blocking_data_send(const void *data, int data_size, nid_t dest)
 {
 	mpi_lock();
-	MPI_Send(buf, buf_size, MPI_BYTE, dest, MSG_CTRL_RAW, MPI_COMM_WORLD);
+	MPI_Send(data, data_size, MPI_BYTE, dest, MSG_CTRL_RAW, MPI_COMM_WORLD);
 	mpi_unlock();
 }
 
 /**
  * @brief Receives a byte buffer from another node
- * @param buf a pointer to the memory where the received data will be written
- * @param buf_size the maximum size of the data to receive
+ * @param data_size_p where to write the size of the received data
  * @param src the id of the sender node
+ * @return the buffer allocated with mm_alloc() containing the received data
  *
- * This function simply leaves the probed message hanging if the given size is
- * insufficient to contain the received data.
  * This operation blocks the execution flow until the sender node actually sends
  * the data with mpi_raw_data_blocking_send().
  */
-int mpi_raw_data_blocking_rcv(char *buf, int buf_size, nid_t src)
+void *mpi_blocking_data_rcv(int *data_size_p, nid_t src)
 {
 	MPI_Status status;
 	MPI_Message mpi_msg;
 	mpi_lock();
 	MPI_Mprobe(src, MSG_CTRL_RAW, MPI_COMM_WORLD, &mpi_msg, &status);
-	int size;
-	MPI_Get_count(&status, MPI_BYTE, &size);
-	if (likely(buf_size >= size)) {
-		MPI_Mrecv(buf, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-	} else {
-		log_log(LOG_WARN, "Probed a bigger MPI message than expected!");
-	}
+	int data_size;
+	MPI_Get_count(&status, MPI_BYTE, &data_size);
+	char *ret = mm_alloc(data_size);
+	MPI_Mrecv(ret, data_size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+	if (data_size_p != NULL)
+		*data_size_p = data_size;
 	mpi_unlock();
-	return size;
+	return ret;
 }
+
 #endif
