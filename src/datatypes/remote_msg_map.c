@@ -198,13 +198,13 @@ static void msg_map_size_increase(void)
 	mm_free(old_nodes);
 }
 
-void remote_msg_map_match(uintptr_t msg_id, nid_t nid, struct lp_msg *msg)
+void remote_msg_map_match(uintptr_t msg_id, nid_t m_nid, struct lp_msg *msg)
 {
 	msg_id &= ~HB_LCK;
 	map_size_t cdib = 0;
 	struct lp_msg *cmsg = msg;
 	simtime_t cuntil = msg ? msg->dest_t : SIMTIME_MAX;
-	nid_t cnid = nid;
+	nid_t cnid = m_nid;
 	uintptr_t cd = msg_id | HB_LCK;
 	map_size_t i = msg_id_hash(msg_id);
 
