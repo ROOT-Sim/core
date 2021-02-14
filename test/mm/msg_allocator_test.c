@@ -4,7 +4,7 @@
  * @brief Test: message allocator
  *
  * A test of the message allocator
- * @todo This is still just a stub! Implement the actual test
+ * @todo This is still just a stub, implement the actual test!
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only

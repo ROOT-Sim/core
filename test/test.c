@@ -128,19 +128,9 @@ void main_wrapper(void)
 	exit(0);
 }
 
-/// Alias declaration needed because the LLVM plugin expects a suffixed symbol
-__attribute__((alias("test_printf")))
-int test_printf_pr(const char *restrict fmt, ...);
-
-/**
- * @brief Registers a formatted string to compare against the expected output
- * @return the number of successfully registered characters
- */
-int test_printf(const char *restrict fmt, ...)
+static int test_printf_internal(const char *restrict fmt, va_list args)
 {
-	va_list args, args_cpy;
-	va_start(args, fmt);
-
+	va_list args_cpy;
 	va_copy(args_cpy, args);
 	size_t p_size = vsnprintf(t_out_buf, t_out_buf_size, fmt, args_cpy);
 	va_end(args_cpy);
@@ -169,8 +159,35 @@ int test_printf(const char *restrict fmt, ...)
 	}
 	t_out_wrote += p_size;
 
-	va_end(args);
 	return p_size;
+}
+
+/**
+ * @brief Registers a formatted string to compare against the expected output
+ * @return the number of successfully registered characters
+ */
+int test_printf(const char *restrict fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	int ret = test_printf_internal(fmt, args);
+	va_end(args);
+	return ret;
+}
+
+/**
+ * @brief Registers a formatted string to compare against the expected output
+ * @return the number of successfully registered characters
+ *
+ * Cloned definition needed because the LLVM plugin expects a suffixed symbol
+ */
+int test_printf_pr(const char *restrict fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	int ret = test_printf_internal(fmt, args);
+	va_end(args);
+	return ret;
 }
 
 /**
