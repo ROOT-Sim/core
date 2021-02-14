@@ -1,3 +1,11 @@
+/**
+ * @file test/buddy/buddy_test.c
+ *
+ * @brief The base configuration to test models
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
 #define ROOTSIM_TEST_LPS_COUNT "256"

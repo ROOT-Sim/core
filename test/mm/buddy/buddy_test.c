@@ -1,3 +1,13 @@
+/**
+ * @file test/buddy/buddy_test.c
+ *
+ * @brief Test: rollbackable buddy system allocator
+ *
+ * A test of the buddy system allocator used to handle model's memory
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 #include <test_rng.h>
 
