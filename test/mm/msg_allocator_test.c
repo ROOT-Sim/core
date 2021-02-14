@@ -9,7 +9,7 @@ static int msg_allocator_test(void)
 	return 0;
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.threads_count = 4,
 	.test_fnc = msg_allocator_test
 };

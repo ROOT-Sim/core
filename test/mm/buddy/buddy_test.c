@@ -108,7 +108,7 @@ static int model_allocator_test(void)
 	return -(!!errs);
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.threads_count = 4,
 	.test_fnc = model_allocator_test
 };

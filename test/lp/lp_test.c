@@ -75,7 +75,7 @@ static int lp_test(void)
 }
 
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.threads_count = N_THREADS,
 	.test_init_fnc = lp_test_init,
 	.test_fini_fnc = lp_test_fini,

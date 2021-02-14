@@ -8,6 +8,6 @@ static const char *test_arguments[] = {
 	NULL
 };
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.test_arguments = test_arguments,
 };

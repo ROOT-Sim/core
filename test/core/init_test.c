@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.expected_output = "test done",
 	.expected_output_size = sizeof("test done") - 1
 };

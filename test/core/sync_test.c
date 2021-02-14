@@ -23,7 +23,7 @@ static int sync_test(void)
 	return ret;
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.threads_count = THREAD_CNT,
 	.test_fnc = sync_test,
 };

@@ -85,7 +85,7 @@ static int msg_queue_test(void)
 	return ret;
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.threads_count = THREAD_CNT,
 	.test_init_fnc = msg_queue_test_init,
 	.test_fini_fnc = msg_queue_test_fini,
