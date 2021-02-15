@@ -1,35 +1,20 @@
 /**
-* @file lib/random/random.c
-*
-* @brief Random Number Generators
-*
-* Piece-Wise Deterministic Random Number Generators.
-*
-* @copyright
-* Copyright (C) 2008-2021 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-* 
-* @todo Still missing to reimplement some functions:
-*  - RandomRange()
-*  - RandomRangeNonUniform()
-*  - Gamma()
-*  - Poisson()
-*  - Zipf()
-*/
+ * @file lib/random/random.c
+ *
+ * @brief Random Number Generators
+ *
+ * Piece-Wise Deterministic Random Number Generators.
+ *
+ * @todo Still missing to reimplement some functions:
+ *  - RandomRange()
+ *  - RandomRangeNonUniform()
+ *  - Gamma()
+ *  - Poisson()
+ *  - Zipf()
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <lib/random/random.h>
 
 #include <core/intrinsics.h>
@@ -73,12 +58,12 @@ uint64_t RandomU64(void)
 }
 
 /**
-* This function returns a random number according to an Exponential distribution.
-* The mean value of the distribution must be passed as the mean value.
-*
-* @param mean Mean value of the distribution
-* @return A random number
-*/
+ * This function returns a random number according to an Exponential distribution.
+ * The mean value of the distribution must be passed as the mean value.
+ *
+ * @param mean Mean value of the distribution
+ * @return A random number
+ */
 double Expent(double mean)
 {
 	if (unlikely(mean < 0)) {
@@ -88,10 +73,10 @@ double Expent(double mean)
 }
 
 /**
-* This function returns a number according to a Standard Normal Distribution
-*
-* @return A random number
-*/
+ * This function returns a number according to a Standard Normal Distribution
+ *
+ * @return A random number
+ */
 double Normal(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
