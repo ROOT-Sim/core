@@ -1,34 +1,19 @@
 /**
-* @file datatypes/msg_queue.c
-*
-* @brief Message queue datatype
-*
-* This is the message queue for the parallel runtime.
-* The design is pretty simple. A queue for n threads is composed by a n * n
-* square matrix of simpler queues. If thread t1 wants to send a message to
-* thread t2 it puts a message in the i-th queue where i = t2 * n + t1.
-* Insertions are then cheap, while extractions lazily lock the queues
-* (costing linear time in the number of worked threads, which seems to be
-* acceptable in practice).
-*
-* @copyright
-* Copyright (C) 2008-2021 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file datatypes/msg_queue.c
+ *
+ * @brief Message queue datatype
+ *
+ * This is the message queue for the parallel runtime.
+ * The design is pretty simple. A queue for n threads is composed by a n * n
+ * square matrix of simpler queues. If thread t1 wants to send a message to
+ * thread t2 it puts a message in the i-th queue where i = t2 * n + t1.
+ * Insertions are then cheap, while extractions lazily lock the queues
+ * (costing linear time in the number of worked threads, which seems to be
+ * acceptable in practice).
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <datatypes/msg_queue.h>
 
 #include <core/core.h>
