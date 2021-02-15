@@ -5,7 +5,7 @@
  *
  * This module implements the simulator initialization routines
  *
- * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <core/init.h>
@@ -211,7 +211,7 @@ struct ap_section ap_sects[] = {
 struct ap_settings ap_sets = {
 	"ROOT-Sim",	// TODO properly fill these fields
 	"Proper version string",
-	"piccione@diag.uniroma1.it",
+	"rootsim@googlegroups.com",
 	ap_sects
 };
 
