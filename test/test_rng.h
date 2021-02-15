@@ -12,6 +12,7 @@
 
 #include <core/intrinsics.h>
 
+#include <memory.h>
 #include <stdint.h>
 
 /// The type of this pseudo random number generator state

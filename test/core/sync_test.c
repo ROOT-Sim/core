@@ -1,3 +1,12 @@
+/**
+ * @file test/core/sync_test.c
+ *
+ * @brief Test: synchronization primitives test
+ * @todo test the spinlock as well
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
 #include <core/core.h>

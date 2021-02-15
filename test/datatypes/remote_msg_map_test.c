@@ -1,3 +1,11 @@
+/**
+ * @file test/datatypes/remote_msg_map_test.c
+ *
+ * @brief Test: concurrent hash map for register incoming remote messages
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 #include <test_rng.h>
 
@@ -8,7 +16,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define THREAD_CNT 4
+#define THREAD_CNT 2
 #define MSG_COUNT 1000000
 
 static atomic_uint insert_calls;
@@ -29,7 +37,7 @@ static int remote_msg_map_test(void)
 	struct lp_msg *msgs = malloc(sizeof(*msgs) * MSG_COUNT);
 	memset(msgs, 0, sizeof(*msgs) * MSG_COUNT);
 
-	for(uint64_t i = 0; i < MSG_COUNT; ++i){
+	for (uint64_t i = 0; i < MSG_COUNT; ++i) {
 		if(i % 3)
 			continue;
 		atomic_store_explicit(&msgs[i].flags, MSG_FLAG_PROCESSED,
@@ -38,12 +46,12 @@ static int remote_msg_map_test(void)
 
 	test_thread_barrier();
 
-	for(uint64_t i = 0; i < MSG_COUNT; ++i){
+	for (uint64_t i = 0; i < MSG_COUNT; ++i) {
 		remote_msg_map_match(msg_id_get(&msgs[i], i & 1U), rid,
 			(i & 1U) ? &msgs[i] : NULL);
 	}
 
-	for(uint64_t i = 0; i < MSG_COUNT; ++i){
+	for (uint64_t i = 0; i < MSG_COUNT; ++i) {
 		remote_msg_map_match(msg_id_get(&msgs[i], i & 1U) + 1, rid,
 			(i & 1U) ? NULL : &msgs[i]);
 	}

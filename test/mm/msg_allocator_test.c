@@ -1,5 +1,5 @@
 /**
- * @file test/buddy/buddy_test.c
+ * @file test/mm/msg_allocator_test.c
  *
  * @brief Test: message allocator
  *

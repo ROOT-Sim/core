@@ -1,5 +1,5 @@
 /**
- * @file test/model/application.c
+ * @file test/integration/model/application.c
  *
  * @brief Main module of the model used to verify the runtime correctness
  *
@@ -10,9 +10,9 @@
 
 #include <test.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 struct ap_option model_options[] = {{0}};
 

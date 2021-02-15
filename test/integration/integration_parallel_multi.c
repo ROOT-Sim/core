@@ -1,5 +1,5 @@
 /**
- * @file test/integration_parallel_multi.c
+ * @file test/integration/integration_parallel_multi.c
  *
  * @brief Test: integration test of the parallel runtime with actual concurrency
  *

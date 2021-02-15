@@ -1,5 +1,5 @@
 /**
- * @file test/integration_parallel_single.c
+ * @file test/integration/integration_parallel_single.c
  *
  * @brief Test: integration test of the parallel runtime with one single thread
  *

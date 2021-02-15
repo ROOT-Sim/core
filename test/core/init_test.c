@@ -1,3 +1,11 @@
+/**
+ * @file test/core/init_test.c
+ *
+ * @brief Test: general initialization and argument handling
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
 #include <core/arg_parse.h>

@@ -1,5 +1,5 @@
 /**
- * @file test/buddy/buddy_test.c
+ * @file test/models/model_test.c
  *
  * @brief The base configuration to test models
  *

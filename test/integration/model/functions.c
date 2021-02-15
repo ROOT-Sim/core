@@ -1,5 +1,5 @@
 /**
- * @file test/model/functions.c
+ * @file test/integration/model/functions.c
  *
  * @brief Helper functions of the model used to verify the runtime correctness
  *
@@ -8,8 +8,8 @@
  */
 #include <integration/model/application.h>
 
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 uint32_t crc_update(const uint64_t *buf, size_t n, uint32_t crc);
 

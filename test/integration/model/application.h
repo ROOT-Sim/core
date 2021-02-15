@@ -1,5 +1,5 @@
 /**
- * @file test/model/application.h
+ * @file test/integration/model/application.h
  *
  * @brief Header of the model used to verify the runtime correctness
  *
@@ -9,8 +9,8 @@
 #pragma once
 
 #include <ROOT-Sim.h>
+
 #include <test_rng.h>
-#include <memory.h>
 
 #define MAX_BUFFERS 256
 #define MAX_BUFFER_SIZE 512

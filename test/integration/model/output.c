@@ -1,5 +1,5 @@
 /**
- * @file test/model/output.c
+ * @file test/integration/model/output.c
  *
  * @brief Expected output of the model used to verify the runtime correctness
  *

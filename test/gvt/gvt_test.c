@@ -1,3 +1,11 @@
+/**
+ * @file test/gvt/gvt_test.c
+ *
+ * @brief Test: parallel gvt algorithm
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
 #include <core/init.h>

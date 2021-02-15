@@ -1,3 +1,11 @@
+/**
+ * @file test/datatypes/msg_queue_test.c
+ *
+ * @brief Test: parallel message queue
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 #include <test_rng.h>
 

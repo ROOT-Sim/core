@@ -1,5 +1,5 @@
 /**
- * @file test/integration_serial.c
+ * @file test/integration/integration_serial.c
  *
  * @brief Test: integration test of the serial runtime
  *

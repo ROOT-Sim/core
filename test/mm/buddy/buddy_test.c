@@ -1,5 +1,5 @@
 /**
- * @file test/buddy/buddy_test.c
+ * @file test/mm/buddy/buddy_test.c
  *
  * @brief Test: rollbackable buddy system allocator
  *
@@ -11,8 +11,8 @@
 #include <test.h>
 #include <test_rng.h>
 
-#include <mm/model_allocator.h>
 #include <lp/lp.h>
+#include <mm/model_allocator.h>
 
 #include <stdlib.h>
 

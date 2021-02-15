@@ -1,5 +1,5 @@
 /**
- * @file test/lp_test.c
+ * @file test/lp/lp_test.c
  *
  * @brief Test: logical process lifetime handler module
  *
