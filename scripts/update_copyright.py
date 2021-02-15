@@ -25,4 +25,3 @@ for root, _, files in os.walk(root_path):
 
         with open(file_path, 'w') as f:
             f.write(file_text)
-

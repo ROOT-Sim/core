@@ -1,0 +1,33 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ROOT-Sim
+Upstream-Contact: Andrea Piccione <piccione@diag.uniroma1.it>
+Source: https://github.com/ROOT-Sim/core
+
+Files: docs/*
+Copyright: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+License: CC0-1.0
+
+Files: docs/img/*
+Copyright: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+License: CC-BY-SA-4.0
+
+Files: .github/*
+Copyright: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+License: CC0-1.0
+
+Files: AUTHORS
+Copyright: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+License: CC0-1.0
+
+Files: ChangeLog
+Copyright: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+License: CC0-1.0
+
+Files: CODEOWNERS
+Copyright: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+License: CC0-1.0
+
+Files: README.md
+Copyright: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+License: GPL-3.0-only
+
