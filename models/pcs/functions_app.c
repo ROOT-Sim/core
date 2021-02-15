@@ -1,3 +1,7 @@
+/**
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include "application.h"
 
 #include <stdlib.h>
@@ -6,10 +10,10 @@
 #include <string.h>
 
 #define HOUR			3600
-#define DAY				(24 * HOUR)
+#define DAY			(24 * HOUR)
 #define WEEK			(7 * DAY)
 
-#define EARLY_MORNING	8.5 * HOUR
+#define EARLY_MORNING		8.5 * HOUR
 #define MORNING			13 * HOUR
 #define LUNCH			15 * HOUR
 #define AFTERNOON		19 * HOUR
@@ -179,7 +183,7 @@ int allocation(lp_state_type *pointer) {
 
 	} else {
 		printf("Unable to allocate channel, but the counter says I have %u available channels\n", pointer->channel_counter);
-        fflush(stdout);
+		fflush(stdout);
 		abort();
 	}
 
