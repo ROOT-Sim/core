@@ -1,28 +1,13 @@
 /**
-* @file log/log.c
-*
-* @brief Logging library
-*
-* This library can be used to produce logs during simulation runs.
-*
-* @copyright
-* Copyright (C) 2008-2021 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file log/log.c
+ *
+ * @brief Logging library
+ *
+ * This library can be used to produce logs during simulation runs.
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <log/log.h>
 
 #include <arch/io.h>
@@ -30,9 +15,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+/// The minimum log level of the messages to display
 int log_level = LOG_LEVEL;
+/// If set, uses color codes to color the log outputs
 bool log_colored;
 
+/// The textual representations and the color codes of the logging levels
 static const struct {
 	const char *name;
 	const char *color;
@@ -47,11 +35,11 @@ static const struct {
 
 /**
  * @brief Logs a message. For internal use: log_log() should be used instead
- * @param level The importance level of the message to log
- * @param file The name of the file where this function is being called
- * @param line The line number where this function is being called
- * @param fmt A printf-style format string for the message to log
- * @param ... The list of arguments to fill in the format string @a fmt
+ * @param level the importance level of the message to log
+ * @param file the file name where this function is being called
+ * @param line the line number where this function is being called
+ * @param fmt a printf-style format string for the message to log
+ * @param ... the list of arguments to fill in the format string @a fmt
  */
 void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 {
@@ -62,22 +50,22 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 
 	if(log_colored) {
 		fprintf(
-				stderr,
-				"%s %s%-5s\x1b[0m \x1b[90m%s:%u:\x1b[0m ",
-				time_string,
-				levels[level].color,
-				levels[level].name,
-				file,
-				line
+			stderr,
+			"%s %s%-5s\x1b[0m \x1b[90m%s:%u:\x1b[0m ",
+			time_string,
+			levels[level].color,
+			levels[level].name,
+			file,
+			line
 		);
 	} else {
 		fprintf(
-				stderr,
-				"%s %-5s %s:%u: ",
-				time_string,
-				levels[level].name,
-				file,
-				line
+			stderr,
+			"%s %-5s %s:%u: ",
+			time_string,
+			levels[level].name,
+			file,
+			line
 		);
 	}
 
