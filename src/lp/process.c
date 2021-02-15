@@ -5,23 +5,8 @@
  *
  * LP state management functions
  *
- * @copyright
- * Copyright (C) 2008-2021 HPDCS Group
- * https://hpdcs.github.io
- *
- * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
- *
- * ROOT-Sim is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; only version 3 of the License applies.
- *
- * ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <lp/process.h>
 
@@ -32,7 +17,7 @@
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
-static __thread bool silent_processing = false;
+static _Thread_local bool silent_processing = false;
 
 void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size)
@@ -43,6 +28,11 @@ void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 	struct process_data *proc_p = &current_lp->p;
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type,
 		payload, payload_size);
+
+#if LOG_LEVEL <= LOG_DEBUG
+	msg->send = current_lp - lps;
+	msg->send_t = array_peek(proc_p->past_msgs)->dest_t;
+#endif
 
 #ifdef ROOTSIM_MPI
 	nid_t dest_nid = lid_to_nid(receiver);
@@ -73,12 +63,12 @@ void process_lp_init(void)
 	struct lp_msg *msg = msg_allocator_pack(this_lp - lps, 0, INIT,
 		NULL, 0U);
 
+	array_push(proc_p->past_msgs, msg);
 	array_push(proc_p->sent_msgs, NULL);
 	ProcessEvent_pr(this_lp - lps, 0, INIT, NULL, 0, NULL);
 
 	model_allocator_checkpoint_next_force_full();
 	model_allocator_checkpoint_take(0);
-	array_push(proc_p->past_msgs, msg);
 }
 
 /**
@@ -241,6 +231,7 @@ void process_msg(void)
 	}
 
 	array_push(proc_p->sent_msgs, NULL);
+	array_push(proc_p->past_msgs, msg);
 
 	stats_time_start(STATS_MSG_PROCESSED);
 	ProcessEvent_pr(
@@ -253,8 +244,7 @@ void process_msg(void)
 	);
 	stats_time_take(STATS_MSG_PROCESSED);
 
-	model_allocator_checkpoint_take(array_count(proc_p->past_msgs));
-	array_push(proc_p->past_msgs, msg);
+	model_allocator_checkpoint_take(array_count(proc_p->past_msgs) - 1);
 	termination_on_msg_process(msg->dest_t);
 	gvt_on_msg_process(msg->dest_t);
 }
