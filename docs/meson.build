@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
 doxygen = find_program('doxygen', required : false, disabler: true)
 
 cdata = configuration_data()

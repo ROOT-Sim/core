@@ -1,4 +1,5 @@
-llvm_cfg_gen = find_program('llvm_cfg_gen.py')
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
 
 instr_cfg = custom_target(
   'instr_cfg',
