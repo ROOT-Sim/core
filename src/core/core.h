@@ -5,23 +5,8 @@
  *
  * Core ROOT-Sim functionalities
  *
- * @copyright
- * Copyright (C) 2008-2021 HPDCS Group
- * https://rootsim.github.io/core
- *
- * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
- *
- * ROOT-Sim is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; only version 3 of the License applies.
- *
- * ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
@@ -54,6 +39,8 @@ __extension__({				\
 })
 
 #ifndef CACHE_LINE_SIZE // TODO: calculate and inject at build time
+/// The size of a cpu cache line
+/** Used to align some data structures in order to avoid false sharing */
 #define CACHE_LINE_SIZE 64
 #endif
 
@@ -63,7 +50,7 @@ __extension__({				\
 /// Optimize the branch as likely taken
 #define likely(exp) __builtin_expect(!!(exp), 1)
 /// Optimize the branch as likely not taken
-#define unlikely(exp) __builtin_expect(!!(exp), 0)
+#define unlikely(exp) __builtin_expect((exp), 0)
 
 /// The type used to represent logical time in the simulation
 typedef double simtime_t;
@@ -90,13 +77,20 @@ extern lp_id_t n_lps;
 /// The total number of LPs hosted in the node
 extern lp_id_t n_lps_node;
 /// The total number of MPI nodes in the simulation
+extern rid_t n_threads;
+/// The identifier of the thread
+extern __thread rid_t rid;
+
+#ifdef ROOTSIM_MPI
+
 extern nid_t n_nodes;
 /// The node identifier of the node
 extern nid_t nid;
 /// The total number of threads running in the node
-extern rid_t n_threads;
-/// The identifier of the thread
-extern __thread rid_t rid;
+
+#else
+enum {nid = 0, n_nodes = 1};
+#endif
 
 extern void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, void *state);

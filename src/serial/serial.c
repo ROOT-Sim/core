@@ -3,7 +3,7 @@
  *
  * @brief Sequential simlation engine
  *
- * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <serial/serial.h>
@@ -37,6 +37,10 @@ static struct s_lp_ctx *s_lps;
 static struct s_lp_ctx *s_current_lp;
 /// The messages queue of the serial runtime
 static binary_heap(struct lp_msg *) queue;
+#if LOG_DEBUG >= LOG_LEVEL
+/// Used for debugging possibly inconsistent models
+static simtime_t current_evt_time;
+#endif
 
 /**
  * @brief Initializes the serial simulation environment
@@ -95,7 +99,7 @@ static void serial_simulation_run(void)
 	timer_uint last_vt = timer_new();
 	uint64_t to_terminate = n_lps;
 
-	while(likely(!heap_is_empty(queue))) {
+	while (likely(!heap_is_empty(queue))) {
 		const struct lp_msg *cur_msg = heap_min(queue);
 		struct s_lp_ctx *this_lp = &s_lps[cur_msg->dest];
 		s_current_lp = this_lp;
@@ -111,6 +115,7 @@ static void serial_simulation_run(void)
 				);
 			s_current_lp->last_evt_time = cur_msg->dest_t;
 		}
+		current_evt_time = cur_msg->dest_t;
 #endif
 
 		stats_time_start(STATS_MSG_PROCESSED);
@@ -155,6 +160,11 @@ static void serial_simulation_run(void)
 void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size)
 {
+#if LOG_DEBUG >= LOG_LEVEL
+	if (log_can_log(LOG_DEBUG) && current_evt_time > timestamp)
+		log_log(LOG_DEBUG, "Sending a message in the PAST!");
+#endif
+
 	struct lp_msg *msg = msg_allocator_pack(
 		receiver, timestamp, event_type, payload, payload_size);
 	heap_insert(queue, msg_is_before, msg);

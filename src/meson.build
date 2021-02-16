@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
+
 # Build the LLVM instrumentation plugin
 # TODO re-enable incremental state saving
 subdir('instr')
@@ -5,7 +8,8 @@ subdir('instr')
 # TODO integrate the plugin system
 subdir('lib')
 
-rootsim_c_args = [log_level_def]
+rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
+rootsim_c_args = [rootsim_version_def, log_level_def]
 
 if mpi_dep.found()
   rootsim_c_args += '-DROOTSIM_MPI=1'

@@ -1,6 +1,14 @@
-#include <integration/model/output.h>
+/**
+ * @file test/integration/model/output.c
+ *
+ * @brief Expected output of the model used to verify the runtime correctness
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+#include <integration/model/application.h>
 
-const char expected_output[679] =
+const char model_expected_output_64[679] =
 "3726647760\n"
 "3174713409\n"
 "3027703912\n"

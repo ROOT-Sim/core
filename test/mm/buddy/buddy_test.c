@@ -1,12 +1,22 @@
+/**
+ * @file test/mm/buddy/buddy_test.c
+ *
+ * @brief Test: rollbackable buddy system allocator
+ *
+ * A test of the buddy system allocator used to handle model's memory
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 #include <test_rng.h>
 
-#include <mm/model_allocator.h>
 #include <lp/lp.h>
+#include <mm/model_allocator.h>
 
 #include <stdlib.h>
 
-static __thread test_rng_t rng_state;
+static __thread test_rng_state rng_state;
 
 __thread struct lp_ctx *current_lp; // needed by the model allocator
 __thread simtime_t current_gvt; // needed by the model allocator
@@ -16,7 +26,7 @@ static int block_size_test(unsigned b_exp)
 	unsigned errs = 0;
 	unsigned block_size = 1 << b_exp;
 	unsigned allocations_cnt = 1 << (B_TOTAL_EXP - b_exp);
-	test_rng_t rng_snap_a = rng_state;
+	test_rng_state rng_snap_a = rng_state;
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
@@ -35,7 +45,7 @@ static int block_size_test(unsigned b_exp)
 	errs += malloc_mt(block_size) != NULL;
 
 	model_allocator_checkpoint_take(0);
-	test_rng_t rng_snap_b = rng_state;
+	test_rng_state rng_snap_b = rng_state;
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
@@ -108,7 +118,7 @@ static int model_allocator_test(void)
 	return -(!!errs);
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.threads_count = 4,
 	.test_fnc = model_allocator_test
 };

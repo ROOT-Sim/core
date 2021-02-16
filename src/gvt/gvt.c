@@ -1,29 +1,11 @@
 /**
-* @file gvt/gvt.c
-*
-* @brief Global Virtual Time
-*
-* This module implements the GVT reduction. The current implementation
-* is non blocking for observable simulation plaftorms.
-*
-* @copyright
-* Copyright (C) 2008-2021 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file gvt/gvt.c
+ *
+ * @brief Global Virtual Time
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <gvt/gvt.h>
 
 #include <arch/timer.h>
@@ -60,10 +42,9 @@ static __thread simtime_t current_gvt;
 #ifdef ROOTSIM_MPI
 
 static atomic_uint sent_tot[MAX_NODES];
-static unsigned remote_msg_to_receive;
 static _Atomic(nid_t) missing_nodes;
 
-__thread bool gvt_phase_green;
+__thread bool gvt_phase_green = false;
 __thread unsigned remote_msg_sent[MAX_NODES] = {0};
 atomic_int remote_msg_received[2];
 
@@ -98,12 +79,12 @@ simtime_t gvt_phase_run(void)
 		if (rid) {
 			if (likely(!atomic_load_explicit(&c_a,
 				memory_order_relaxed)))
-				return false;
+				return 0;
 		} else {
 			if (likely(global_config.gvt_period >
 				timer_value(last_gvt) || atomic_load_explicit(
 				&c_b, memory_order_relaxed)))
-				return false;
+				return 0;
 		}
 		stats_time_start(STATS_GVT);
 		current_gvt = SIMTIME_MAX;
@@ -163,6 +144,7 @@ static atomic_uint c_a = 0;
  */
 void gvt_on_start_ctrl_msg(void)
 {
+	stats_time_start(STATS_GVT);
 	current_gvt = SIMTIME_MAX;
 	thread_phase = tphase_A;
 	atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
@@ -181,18 +163,19 @@ void gvt_on_done_ctrl_msg(void)
 simtime_t gvt_phase_run(void)
 {
 	static atomic_uint c_b = 0;
+	static unsigned remote_msg_to_receive;
 	static __thread bool red_round = false;
 
 	if(likely(thread_phase == tphase_rdy)) {
 		if (nid || rid) {
 			if (likely(!atomic_load_explicit(&c_a,
 				memory_order_relaxed)))
-				return false;
+				return 0;
 		} else {
 			if (likely(global_config.gvt_period >
 				timer_value(last_gvt) || atomic_load_explicit(
 				&missing_nodes, memory_order_relaxed)))
-				return false;
+				return 0;
 
 			atomic_store_explicit(&missing_nodes, n_nodes,
 				memory_order_relaxed);
@@ -218,7 +201,7 @@ simtime_t gvt_phase_run(void)
 			thread_phase = tphase_B + (2 * red_round) + !rid;
 
 			red_round = !red_round;
-			if(red_round){
+			if (red_round) {
 				for(nid_t i = 0; i < n_nodes; ++i)
 					atomic_fetch_add_explicit(&sent_tot[i],
 						remote_msg_sent[i],
@@ -297,8 +280,8 @@ simtime_t gvt_phase_run(void)
 		break;
 	case tphase_B_wait_msgs:
 		// don't need to sync: we already synced on c_f in tphase_D
-		if(!atomic_load_explicit(remote_msg_received + !gvt_phase_green,
-			memory_order_relaxed)) {
+		if (!atomic_load_explicit(remote_msg_received +
+				!gvt_phase_green, memory_order_relaxed)) {
 			thread_phase = tphase_wait;
 			atomic_fetch_sub_explicit(&c_b, 1U,
 				memory_order_relaxed);
@@ -310,7 +293,7 @@ simtime_t gvt_phase_run(void)
 		// local gvt reduction or, if we already did that, it simply
 		// ends the gvt reduction
 			thread_phase = red_round;
-			if(red_round) {
+			if (red_round) {
 				atomic_fetch_add_explicit(&c_a, 1U,
 					memory_order_relaxed);
 			} else {

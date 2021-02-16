@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 import re
 import sys
@@ -10,7 +10,7 @@ with open(sys.argv[1], 'r') as f:
     file_text = f.read()
 
 file_text = re.sub(r"SPDX-FileCopyrightText: 2008-([0-9]{4}) HPDCS Group .*>",
-                   f"@copyright Copyright (C) 2008-\1 HPDCS Group {website}",
+                   r"@copyright Copyright (C) 2008-\1 HPDCS Group " + website,
                            file_text)
 
 # TODO: improve the spdx license substitution

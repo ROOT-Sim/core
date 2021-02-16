@@ -1,3 +1,11 @@
+/**
+ * @file test/models/model_test.c
+ *
+ * @brief The base configuration to test models
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
 #define ROOTSIM_TEST_LPS_COUNT "256"
@@ -8,6 +16,6 @@ static const char *test_arguments[] = {
 	NULL
 };
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.test_arguments = test_arguments,
 };

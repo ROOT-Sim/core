@@ -1,3 +1,11 @@
+/**
+ * @file test/datatypes/msg_queue_test.c
+ *
+ * @brief Test: parallel message queue
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 #include <test_rng.h>
 
@@ -12,7 +20,7 @@
 #define THREAD_CNT 6
 #define THREAD_REPS 100000
 
-static __thread test_rng_t rng_state;
+static __thread test_rng_state rng_state;
 static unsigned lid_to_rid_m[] = {0, 1, 2, 3, 0, 1, 2, 3, 5, 4, 4, 5};
 static struct lp_ctx lps_m[THREAD_CNT];
 static atomic_uint msg_missing = THREAD_REPS * THREAD_CNT;
@@ -85,7 +93,7 @@ static int msg_queue_test(void)
 	return ret;
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.threads_count = THREAD_CNT,
 	.test_init_fnc = msg_queue_test_init,
 	.test_fini_fnc = msg_queue_test_fini,

@@ -1,26 +1,11 @@
 /**
-* @file mm/buddy/buddy.c
-*
-* @brief A Buddy System implementation
-*
-* @copyright
-* Copyright (C) 2008-2021 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file mm/buddy/buddy.c
+ *
+ * @brief A Buddy System implementation
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <mm/buddy/buddy.h>
 
 #include <core/core.h>
@@ -58,7 +43,7 @@ void model_allocator_lp_init(void)
 void model_allocator_lp_fini(void)
 {
 	array_count_t i = array_count(current_lp->mm_state.logs);
-	while(i--){
+	while (i--) {
 		mm_free(array_get_at(current_lp->mm_state.logs, i).c);
 	}
 	array_fini(current_lp->mm_state.logs);
@@ -75,13 +60,14 @@ void *malloc_mt(size_t req_size)
 
 	if (unlikely(self->longest[0] < req_blks)) {
 		errno = ENOMEM;
+		log_log(LOG_WARN, "LP %p is out of memory!", current_lp);
 		return NULL;
 	}
 
 	/* search recursively for the child */
 	uint_fast8_t node_size = B_TOTAL_EXP;
 	uint_fast32_t i = 0;
-	while(node_size > req_blks) {
+	while (node_size > req_blks) {
 		/* choose the child with smaller longest value which
 		 * is still large at least *size* */
 		i = left_child(i);
@@ -124,7 +110,7 @@ void *calloc_mt(size_t nmemb, size_t size)
 
 void free_mt(void *ptr)
 {
-	if(unlikely(!ptr))
+	if (unlikely(!ptr))
 		return;
 
 	struct mm_state *self = &current_lp->mm_state;
@@ -179,9 +165,9 @@ __extension__({								\
 	bool __vis = false;						\
 	uint_fast8_t __l = B_TOTAL_EXP;					\
 	uint_fast32_t __i = 0;						\
-	while(1) {							\
+	while (1) {							\
 		uint_fast8_t __lon = longest[__i];			\
-		if(!__lon) {						\
+		if (!__lon) {						\
 			uint_fast32_t __len = 1U << __l;		\
 			uint_fast32_t __o = 				\
 				((__i + 1) << __l) - (1 << B_TOTAL_EXP);\
@@ -209,7 +195,7 @@ void __write_mem(void *ptr, size_t siz)
 {
 	struct mm_state *self = &current_lp->mm_state;
 	uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->base_mem;
-	if(diff >= (1 << B_TOTAL_EXP))
+	if (diff >= (1 << B_TOTAL_EXP))
 		return;
 
 	uint_fast32_t i = (diff >> B_BLOCK_EXP) +
@@ -367,7 +353,7 @@ __extension__({								\
 
 void model_allocator_checkpoint_take(array_count_t ref_i)
 {
-	if(ref_i % B_LOG_FREQUENCY)
+	if (ref_i % B_LOG_FREQUENCY)
 		return;
 
 	struct mm_state *self = &current_lp->mm_state;
@@ -421,7 +407,7 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 	self->dirty_mem = 0;
 #endif
 
-	for(array_count_t j = array_count(self->logs) - 1; j > i; --j) {
+	for (array_count_t j = array_count(self->logs) - 1; j > i; --j) {
 		mm_free(array_get_at(self->logs, j).c);
 	}
 	array_count(self->logs) = i + 1;

@@ -1,3 +1,11 @@
+/**
+ * @file test/gvt/gvt_test.c
+ *
+ * @brief Test: parallel gvt algorithm
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
 #include <core/init.h>
@@ -17,7 +25,7 @@ simtime_t msg_queue_time_peek(void)
 	return bound_values[rid][b_i++];
 }
 
-simulation_configuration global_config = {
+struct simulation_configuration global_config = {
 	.gvt_period = 1000
 };
 
@@ -44,7 +52,7 @@ static int gvt_test(void)
 	return ret;
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.threads_count = N_THREADS,
 	.test_init_fnc = gvt_test_init,
 	.test_fnc = gvt_test

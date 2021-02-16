@@ -1,3 +1,11 @@
+/**
+ * @file test/core/init_test.c
+ *
+ * @brief Test: general initialization and argument handling
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
 #include <core/arg_parse.h>
@@ -144,7 +152,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.expected_output = "test done",
 	.expected_output_size = sizeof("test done") - 1
 };

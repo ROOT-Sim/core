@@ -5,23 +5,8 @@
  *
  * The source of the minimal test framework used in the code base tests
  *
- * @copyright
- * Copyright (C) 2008-2021 HPDCS Group
- * https://hpdcs.github.io
- *
- * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
- *
- * ROOT-Sim is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; only version 3 of the License applies.
- *
- * ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>
 
@@ -45,9 +30,11 @@ static size_t t_out_wrote;
 static char **test_argv;
 
 __attribute__((weak)) lp_id_t n_lps;
-__attribute__((weak)) nid_t n_nodes = 1;
-__attribute__((weak)) rid_t n_threads;
+#ifdef ROOTSIM_MPI
 __attribute__((weak)) nid_t nid;
+__attribute__((weak)) nid_t n_nodes = 1;
+#endif
+__attribute__((weak)) rid_t n_threads;
 __attribute__((weak)) __thread rid_t rid;
 
 __attribute__((weak)) int log_level;
@@ -63,6 +50,12 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 
 int main(int argc, char **argv);
 
+/**
+ * @brief Initializes ISO C compliant argc and argv from the test configuration
+ * @param argc_p a pointer to a variable which will hold the computed argc value
+ * @param argv_p a pointer to a variable which will hold the computer argv value
+ * @return 0 in case of success, -1 in case of failure
+ */
 static int init_arguments(int *argc_p, char ***argv_p)
 {
 	int argc = 0;
@@ -91,12 +84,18 @@ static int init_arguments(int *argc_p, char ***argv_p)
 	return 0;
 }
 
+/**
+ * @brief The exit handler, to exit cleanly even in case of errors
+ */
 static void test_atexit(void)
 {
 	free(test_argv);
 	free(t_out_buf);
 }
 
+/**
+ * @brief The test wrapper which allows to intervene before the actual main()
+ */
 __attribute__((constructor))
 void main_wrapper(void)
 {
@@ -149,7 +148,7 @@ static int test_printf_internal(const char *restrict fmt, va_list args)
 		free(t_out_buf);
 		t_out_buf = malloc(t_out_buf_size);
 		if (t_out_buf == NULL)
-			return TEST_BAD_FAIL_EXIT_CODE;
+			exit(TEST_BAD_FAIL_EXIT_CODE);
 
 		vsnprintf(t_out_buf, t_out_buf_size, fmt, args);
 	}
@@ -159,29 +158,45 @@ static int test_printf_internal(const char *restrict fmt, va_list args)
 		exit(-1);
 	}
 	t_out_wrote += p_size;
+
 	return p_size;
 }
 
-int test_printf_pr(const char *restrict fmt, ...)
-{
-	va_list args;
-	va_start(args, fmt);
-	int ret = test_printf_internal(fmt, args);
-	va_end(args);
-
-	return ret;
-}
-
+/**
+ * @brief Registers a formatted string to compare against the expected output
+ * @return the number of successfully registered characters
+ */
 int test_printf(const char *restrict fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
 	int ret = test_printf_internal(fmt, args);
 	va_end(args);
-
 	return ret;
 }
 
+/**
+ * @brief Registers a formatted string to compare against the expected output
+ * @return the number of successfully registered characters
+ *
+ * Cloned definition needed because the LLVM plugin expects a suffixed symbol
+ */
+int test_printf_pr(const char *restrict fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	int ret = test_printf_internal(fmt, args);
+	va_end(args);
+	return ret;
+}
+
+/**
+ * @brief Synchronizes threads on a barrier
+ * @return true if this thread has been elected as leader, false otherwise
+ *
+ * This is a more battle tested although less performing version of the thread
+ * barrier. We can't rely on the pthread barrier because it's not portable.
+ */
 bool test_thread_barrier(void)
 {
 	static atomic_uint b_in, b_out, b_cr;
@@ -201,7 +216,7 @@ bool test_thread_barrier(void)
 		atomic_store_explicit(&b_cr, cr + count, memory_order_release);
 	} else {
 		while (i > cr) {
-			cr = atomic_load_explicit (&b_cr, memory_order_relaxed);
+			cr = atomic_load_explicit(&b_cr, memory_order_relaxed);
 		}
 	}
 	atomic_thread_fence(memory_order_acquire);

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
 doxygen = find_program('doxygen', required : false, disabler: true)
 
 cdata = configuration_data()
@@ -23,10 +25,10 @@ docs_files = [
   'flatdoc.css',
   'inline-params.css',
   'img' / 'rs.png',
-  '..' / 'scripts' / 'doxy_filter.py'
+  '..' / 'scripts' / 'doxygen-spdx-filter.py'
 ]
 foreach f: docs_files
-    configure_file(input: f, output: '@0@'.format(fs.name(f)), copy: true)
+  configure_file(input: f, output: '@0@'.format(fs.name(f)), copy: true)
 endforeach
 
 html_target = custom_target('htmldocs',

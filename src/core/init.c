@@ -5,7 +5,7 @@
  *
  * This module implements the simulator initialization routines
  *
- * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <core/init.h>
@@ -19,6 +19,10 @@
 #include <limits.h>
 #include <memory.h>
 #include <stdlib.h>
+
+#ifndef ROOTSIM_VERSION
+#define ROOTSIM_VERSION "debugging_version"
+#endif
 
 struct simulation_configuration global_config;
 
@@ -210,8 +214,8 @@ struct ap_section ap_sects[] = {
 /// The struct ap_settings with the ROOT-Sim command line parsing configuration
 struct ap_settings ap_sets = {
 	"ROOT-Sim",	// TODO properly fill these fields
-	"Proper version string",
-	"piccione@diag.uniroma1.it",
+	ROOTSIM_VERSION,
+	"rootsim@googlegroups.com",
 	ap_sects
 };
 

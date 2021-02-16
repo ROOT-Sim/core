@@ -1,8 +1,15 @@
+/**
+ * @file test/integration/model/functions.c
+ *
+ * @brief Helper functions of the model used to verify the runtime correctness
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <integration/model/application.h>
 
-#include <stdatomic.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 uint32_t crc_update(const uint64_t *buf, size_t n, uint32_t crc);
 
@@ -20,7 +27,7 @@ uint32_t read_buffer(buffer *head, unsigned i, uint32_t old_crc)
 	return crc_update(head->data, head->count, old_crc);
 }
 
-buffer* allocate_buffer(lp_state_t *state, const unsigned *data, unsigned count)
+buffer* allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
 {
 	buffer *new = malloc(sizeof(buffer) + count * sizeof(uint64_t));
 	new->next = state->head;
@@ -62,11 +69,6 @@ static uint32_t crc_table[256];
 
 void crc_table_init(void)
 {
-	static atomic_flag done = ATOMIC_FLAG_INIT;
-
-	if(atomic_flag_test_and_set_explicit(&done, memory_order_relaxed))
-		return;
-
 	uint32_t n = 256;
 	while(n--) {
 		uint32_t c = n;
