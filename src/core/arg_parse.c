@@ -170,7 +170,7 @@ static void print_help(void)
 
 		do {
 			print_help_option(o->name, o->arg, o->doc);
-		} while ((o++)->name);
+		} while ((++o)->name);
 
 		puts("");
 	} while ((s++)->opts != ap_internal_opts);

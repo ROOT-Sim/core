@@ -1,10 +1,10 @@
 /**
  * @file test/test/fail_body.c
  *
- * @brief Test: expected failure, \ref test_config.test_fnc failure
+ * @brief Test: expected failure, @ref test_config.test_fnc failure
  *
  * @test Tests that a failure in one of the concurrently executed
- * \ref test_config.test_fnc calls causes a test failure.
+ * @ref test_config.test_fnc calls causes a test failure.
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only

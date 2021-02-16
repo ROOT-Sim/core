@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 
 	if (system(cmd_line)) {
 		free(cmd_line);
-		fprintf(stderr, "Unable to run " ROOTSIM_CC);
+		fprintf(stderr, "Unable to run " ROOTSIM_CC "\n");
 		return -1;
 	}
 	free(cmd_line);

@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: ROOT-Sim
-Upstream-Contact: Andrea Piccione <piccione@diag.uniroma1.it>
+Upstream-Contact: HPDCS Group <rootsim@googlegroups.com>
 Source: https://github.com/ROOT-Sim/core
 
 Files: docs/*

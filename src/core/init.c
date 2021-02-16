@@ -20,6 +20,10 @@
 #include <memory.h>
 #include <stdlib.h>
 
+#ifndef ROOTSIM_VERSION
+#define ROOTSIM_VERSION "debugging_version"
+#endif
+
 struct simulation_configuration global_config;
 
 /// This is the list of arg_parse.h mnemonics for command line arguments
@@ -210,7 +214,7 @@ struct ap_section ap_sects[] = {
 /// The struct ap_settings with the ROOT-Sim command line parsing configuration
 struct ap_settings ap_sets = {
 	"ROOT-Sim",	// TODO properly fill these fields
-	"Proper version string",
+	ROOTSIM_VERSION,
 	"rootsim@googlegroups.com",
 	ap_sects
 };

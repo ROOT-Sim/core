@@ -1,10 +1,10 @@
 /**
  * @file test/test/fail_fini.c
  *
- * @brief Test: expected failure, \ref test_config.test_fini_fnc failure
+ * @brief Test: expected failure, @ref test_config.test_fini_fnc failure
  *
  * @test Tests that a failure in the test finalization function
- * \ref test_config.test_fini_fnc call causes a test failure.
+ * @ref test_config.test_fini_fnc call causes a test failure.
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
