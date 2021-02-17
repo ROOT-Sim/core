@@ -1,0 +1,80 @@
+name: ROOT-Sim core CI
+
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+      - develop
+  schedule:
+    - cron: "0 2 * * 1"
+
+jobs:
+  linux:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Fetch ROOT-Sim repository
+      uses: actions/checkout@v2
+    - name: Set up Python 3
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install Meson and Ninja
+      run: pip install meson ninja
+    - name: Set up build folder
+      run: meson setup builddir/ -Db_coverage=true -Db_lto=false
+      env:
+        CC: gcc
+        CXX: g++
+    - name: Run tests
+      run: meson test -C builddir/ -v
+    - name: Generate and upload coverage report
+      uses: codecov/codecov-action@v1.0.14
+      with:
+        fail_ci_if_error: true
+
+  windows:
+    runs-on: windows-latest
+    steps:
+    - name: Fetch ROOT-Sim repository
+      uses: actions/checkout@v2
+    - name: Set up Python 3
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Download and install LLVM
+      shell: cmd
+      run: |
+        curl -fsSL -o "LLVM-11.0.0-win64.exe" "https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/LLVM-11.0.0-win64.exe"
+        LLVM-11.0.0-win64.exe /S
+    - name: Install Meson and Ninja
+      run: pip install meson ninja
+    - name: Set up build folder
+      run: meson setup builddir/
+      env:
+        CC: clang
+        CXX: clang++
+    - name: Run tests
+      run: meson test -C builddir/ -v
+
+  macos:
+    runs-on: macos-latest
+    steps:
+    - name: Fetch ROOT-Sim repository
+      uses: actions/checkout@v2
+    - name: Set up Python 3
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Download and install LLVM
+      run: brew install llvm
+    - name: Install Meson and Ninja
+      run: pip install meson ninja
+    - name: Set up build folder
+      run: meson setup builddir/ --native-file macos-native.ini
+      env:
+        CC: clang
+        CXX: clang++
+    - name: Run tests
+      run: meson test -C builddir/ -v
+

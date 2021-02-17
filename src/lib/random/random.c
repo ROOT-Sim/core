@@ -1,3 +1,20 @@
+/**
+ * @file lib/random/random.c
+ *
+ * @brief Random Number Generators
+ *
+ * Piece-Wise Deterministic Random Number Generators.
+ *
+ * @todo Still missing to reimplement some functions:
+ *  - RandomRange()
+ *  - RandomRangeNonUniform()
+ *  - Gamma()
+ *  - Poisson()
+ *  - Zipf()
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <lib/random/random.h>
 
 #include <core/intrinsics.h>
@@ -7,25 +24,23 @@
 #include <math.h>
 #include <memory.h>
 
-
 void random_lib_lp_init(void)
 {
-	uint64_t lid = current_lid;
-	struct lib_state_managed *lsm = l_s_m_p;
-	random_init(lsm->rng_s, lid);
-	lsm->unif = NAN;
+	lp_id_t lid = lp_id_get();
+	struct lib_ctx *ctx = lib_ctx_get();
+	random_init(ctx->rng_s, lid);
+	ctx->unif = NAN;
 }
 
 double Random(void)
 {
-	struct lib_state_managed *lsm = l_s_m_p;
-	uint64_t u_val = random_u64(lsm->rng_s);
-	if (unlikely(!u_val)) {
+	struct lib_ctx *ctx = lib_ctx_get();
+	uint64_t u_val = random_u64(ctx->rng_s);
+	if (unlikely(!u_val))
 		return 0.0;
-	}
 
 	double ret = 0.0;
-	unsigned lzs = SAFE_CLZ(u_val) + 1;
+	unsigned lzs = intrinsics_clz(u_val) + 1;
 	u_val <<= lzs;
 	u_val >>= 12;
 
@@ -38,11 +53,17 @@ double Random(void)
 
 uint64_t RandomU64(void)
 {
-	struct lib_state_managed *lsm = l_s_m_p;
-	mark_written(&lsm->rng_s, sizeof(lsm->rng_s));
-	return random_u64(lsm->rng_s);
+	struct lib_ctx *ctx = lib_ctx_get();
+	return random_u64(ctx->rng_s);
 }
 
+/**
+ * This function returns a random number according to an Exponential distribution.
+ * The mean value of the distribution must be passed as the mean value.
+ *
+ * @param mean Mean value of the distribution
+ * @return A random number
+ */
 double Expent(double mean)
 {
 	if (unlikely(mean < 0)) {
@@ -51,10 +72,15 @@ double Expent(double mean)
 	return -mean * log(1 - Random());
 }
 
+/**
+ * This function returns a number according to a Standard Normal Distribution
+ *
+ * @return A random number
+ */
 double Normal(void)
 {
-	struct lib_state_managed *lsm = l_s_m_p;
-	if (isnan(lsm->unif)) {
+	struct lib_ctx *ctx = lib_ctx_get();
+	if (isnan(ctx->unif)) {
 		double v1, v2, rsq;
 		do {
 			v1 = 2.0 * Random() - 1.0;
@@ -64,14 +90,14 @@ double Normal(void)
 
 		double fac = sqrt(-2.0 * log(rsq) / rsq);
 
-		// Perform Box-Muller transformation to get two normal deviates. Return one
-		// and save the other for next time.
-		lsm->unif = v1 * fac;
+		// Perform Box-Muller transformation to get two normal deviates.
+		// Return one and save the other for next time.
+		ctx->unif = v1 * fac;
 		return v2 * fac;
 	} else {
 		// A deviate is already available
-		double ret = lsm->unif;
-		lsm->unif = NAN;
+		double ret = ctx->unif;
+		ctx->unif = NAN;
 		return ret;
 	}
 }

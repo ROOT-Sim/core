@@ -1,3 +1,13 @@
+/**
+ * @file lp/lp.h
+ *
+ * @brief LP construction functions
+ *
+ * LP construction functions
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <core/core.h>
@@ -7,14 +17,17 @@
 #include <lp/process.h>
 #include <mm/model_allocator.h>
 
-struct _lp_struct {
+/// A complete LP context
+struct lp_ctx {
+	/// The termination time of this LP, handled by the termination module
 	simtime_t t_d;
-	struct lib_state_managed *lsm_p;
+	/// The additional libraries context of this LP
+	struct lib_ctx *lib_ctx_p;
+	/// The message processing context of this LP
 	struct process_data p;
-	struct mm_state mm_state;		//!< The memory allocator state for this LP
+	/// The memory allocator state of this LP
+	struct mm_state mm_state;
 };
-
-typedef struct _lp_struct lp_struct;
 
 #define lps_iter_init(start_i, lps_cnt)					\
 {									\
@@ -31,9 +44,9 @@ typedef struct _lp_struct lp_struct;
 }
 
 extern uint64_t n_lps_node;
-extern __thread lp_struct *current_lp;
-extern lp_struct *lps;
-extern unsigned *lid_to_rid;
+extern __thread struct lp_ctx *current_lp;
+extern struct lp_ctx *lps;
+extern rid_t *lid_to_rid;
 
 extern void lp_global_init(void);
 extern void lp_global_fini(void);
@@ -42,3 +55,6 @@ extern void lp_init(void);
 extern void lp_fini(void);
 
 extern void lp_cleanup(void);
+
+__attribute__ ((pure)) extern lp_id_t lp_id_get_mt(void);
+__attribute__ ((pure)) extern struct lib_ctx *lib_ctx_get_mt(void);

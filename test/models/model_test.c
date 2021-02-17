@@ -1,22 +1,21 @@
+/**
+ * @file test/models/model_test.c
+ *
+ * @brief The base configuration to test models
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
-#ifndef NEUROME_TEST_LPS_COUNT
-#define NEUROME_TEST_LPS_COUNT 64
-#endif
-
-#ifndef NEUROME_TEST_MODEL_NAME
-#define NEUROME_TEST_MODEL_NAME "model"
-#endif
+#define ROOTSIM_TEST_LPS_COUNT "256"
 
 static const char *test_arguments[] = {
 	"--lp",
-	NEUROME_TEST_LPS_COUNT,
-	"--wt",
-	"2",
+	ROOTSIM_TEST_LPS_COUNT,
 	NULL
 };
 
-const struct _test_config_t test_config = {
-	.test_name = "model " NEUROME_TEST_MODEL_NAME,
+const struct test_config test_config = {
 	.test_arguments = test_arguments,
 };

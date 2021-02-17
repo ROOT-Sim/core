@@ -1,13 +1,22 @@
-generator_script = find_program('neurome_gen_exposed.py')
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
 
-neurome_exposed_cpp = custom_target(
-  'neurome_exposed_cpp',
-  output : 'neurome_exposed.cpp',
-  input : neurome_header,
-  command : [generator_script, '@INPUT@', '@OUTPUT@']
+instr_cfg = custom_target(
+  'instr_cfg',
+  output : 'instr_cfg.cpp',
+  input : [],
+  command : [llvm_cfg_gen, '@OUTPUT@']
 )
 
-# NeuRome LLVM plugin for model instrumentation
-neurome_llvm_lib = shared_library('neurome-llvm', 
-  ['instr_llvm.cpp', neurome_exposed_cpp], cpp_args : llvm_plugin_cpp_args, 
-  include_directories : src_inc_dir, dependencies : llvm_dep, install : true)
+# ROOT-Sim LLVM plugin for model instrumentation
+rootsim_llvm_lib = shared_library('rootsim-llvm', ['instr_llvm.cpp', instr_cfg],
+  dependencies : llvm_dep, name_prefix : 'lib', name_suffix : 'so',
+  cpp_args : log_level_def, include_directories : src_inc_dir, install : true)
+
+clang_arguments = c_optimization_options
+clang_arguments += ['@EXTRA_ARGS@', '-I', meson.source_root() / 'src', 
+  '-I', '@CURRENT_SOURCE_DIR@', '@INPUT@', '-c', '-o', '@OUTPUT@', 
+  '-Xclang', '-load', '-Xclang', rootsim_llvm_lib.full_path()]
+
+clang_with_plugin = generator(clang_compiler, output : '@BASENAME@.o', 
+  arguments : clang_arguments, depends : rootsim_llvm_lib)

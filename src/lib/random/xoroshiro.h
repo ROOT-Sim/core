@@ -1,3 +1,13 @@
+/**
+ * @file lib/random/xoroshiro.h
+ *
+ * @brief Xoroshiro RNG support functions
+ *
+ * Xoroshiro RNG support functions.
+ *
+ * SPDX-FileCopyrightText: 2008-2021 D. Blackman and S. Vigna <vigna@acm.org>
+ * SPDX-License-Identifier: CC0-1.0
+ */
 #pragma once
 
 #include <stdint.h>
@@ -19,7 +29,7 @@ __extension__ ({							\
 	__res;								\
 })
 
-// fixme this is a very poor way to seed the generator
+// FIXME: this is a very poor way to seed the generator
 #define random_init(rng_s, llid)					\
 __extension__ ({							\
 	(rng_s)[0] = (llid + 1) * UINT64_C(16232384076195101791);	\

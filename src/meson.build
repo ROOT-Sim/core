@@ -1,78 +1,26 @@
-# Meson build options and common macros
-if get_option('buildtype') == 'release'
-  log_level_def = '-DLOG_LEVEL=LOG_INFO'
-else 
-  log_level_def = '-DLOG_LEVEL=LOG_DEBUG'
-endif
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
 
-serial_c_args = [log_level_def, '-DNEUROME_SERIAL']
-parallel_c_args = [log_level_def]
+# Build the LLVM instrumentation plugin
+# TODO re-enable incremental state saving
+subdir('instr')
+# Build the model libraries
+# TODO integrate the plugin system
+subdir('lib')
 
-if get_option('b_coverage')
-  parallel_c_args += '-DNEUROME_COVERAGE=1'
-endif
+rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
+rootsim_c_args = [rootsim_version_def, log_level_def]
 
-compiler_c_args = [
-  '-DNEUROME_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"', 
-  '-DNEUROME_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"'
-]
-
-llvm_plugin_cpp_args = [log_level_def]
-
-# Include directory used in tests and llvm plugin compilation
-src_inc_dir = include_directories('.')
-
-# LLVM library dependency
-llvm_dep = dependency('llvm', version : '>= 9.0', 
-  required : get_option('incremental_state_saving'))
-if llvm_dep.found()
-  parallel_c_args += '-DNEUROME_INCREMENTAL=1'
-  compiler_c_args += '-DNEUROME_INCREMENTAL=1'
-  neurome_header = files('NeuRome.h')
-  subdir('instr')
-endif
-
-# MPI library dependency
-mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 if mpi_dep.found()
-  parallel_c_args += '-DNEUROME_MPI=1'
-  compiler_c_args += '-DNEUROME_MPI=1'
+  rootsim_c_args += '-DROOTSIM_MPI=1'
 endif
 
-# Math library dependency
-cc = meson.get_compiler('c')
-m_dep = cc.find_library('m', required : false)
-
-# Threads library dependency
-threads_dep = dependency('threads')
-
-# Model helper library sources
-lib_srcs = [
-  'lib' / 'random' / 'random.c',
-  'lib' / 'state' / 'state.c',
-  'lib' / 'topology' / 'topology.c',
-  'lib' / 'lib.c'
-]
-
-# NeuRome serial library sources
-serial_srcs = [
-  'core' / 'core.c',
-  'core' / 'init.c',
-  'log' / 'log.c',
-  'log' / 'stats.c',
-  'mm' / 'mm.c',
-  'mm' / 'msg_allocator.c',
-  'serial' / 'serial.c'
-]
-
-serial_srcs += lib_srcs
-
-neurome_serial_lib = static_library('neurome-serial', serial_srcs, 
-  c_args : serial_c_args, dependencies: m_dep, install : true)
-
-# NeuRome parallel library sources
-parallel_srcs = [
-  'arch' / 'arch.c',
+# ROOT-Sim library sources
+rootsim_srcs = [
+  'arch' / 'io.c',
+  'arch' / 'mem.c',
+  'arch' / 'timer.c',
+  'core' / 'arg_parse.c',
   'core' / 'core.c',
   'core' / 'init.c',
   'core' / 'sync.c',
@@ -86,26 +34,33 @@ parallel_srcs = [
   'log' / 'stats.c',
   'lp' / 'lp.c',
   'lp' / 'process.c',
+  'mm' / 'buddy' / 'buddy.c',
   'mm' / 'mm.c',
   'mm' / 'msg_allocator.c',
-  'parallel' / 'parallel.c'
+  'parallel' / 'parallel.c',
+  'serial' / 'serial.c',
+  'main.c'
 ]
 
-# Choose from the available memory allocators
-if get_option('memory_allocator') == 'buddy'
-  parallel_c_args += '-DNEUROME_BUDDY_ALLOCATOR=1'
-  parallel_srcs += 'mm' / 'buddy' / 'buddy.c'
+rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
+  dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
+
+# ROOT-Sim compiler defines
+compiler_c_args = [
+  '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
+  '-DROOTSIM_INC_DIR="' + get_option('prefix') / get_option('includedir') / '"',
+  '-DROOTSIM_OPTIMIZATION_OPTIONS="' + ' '.join(c_optimization_options) + '"'
+]
+
+if mpi_dep.found()
+  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_compiler.full_path() + ' mpicc"'
 else
-  parallel_srcs += 'mm' / 'minm' / 'minm.c'
+  compiler_c_args += '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
 endif
 
-parallel_srcs += lib_srcs
-
-neurome_parallel_lib = static_library('neurome-parallel', parallel_srcs, 
-  c_args : parallel_c_args, dependencies : [mpi_dep, m_dep], install : true)
-
-# NeuRome compiler
-executable('neurome-cc', sources : 'compiler.c', c_args : compiler_c_args, install : true)
+# ROOT-Sim compiler
+rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c', 
+  c_args : compiler_c_args, install : true)
 
 # Install headers
-install_headers('NeuRome.h', 'ROOT-Sim.h')
+install_headers('ROOT-Sim.h')

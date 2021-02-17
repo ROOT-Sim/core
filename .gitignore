@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: CC0-1.0
+
 # Prerequisites
 *.d
 
@@ -50,3 +53,6 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Common name for Meson build folder
+build/

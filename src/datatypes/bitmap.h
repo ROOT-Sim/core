@@ -1,3 +1,16 @@
+/**
+ * @file datatypes/bitmap.h
+ *
+ * @brief Bitmap data type
+ *
+ * This a simple bitmap implemented with some simple macros. Keep in mind that
+ * some trust is given to the developer since the implementation, for
+ * performances and simplicity reasons, doesn't remember its effective size;
+ * consequently it doesn't check boundaries on the array that stores the bits.
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <core/intrinsics.h>
@@ -5,7 +18,7 @@
 #include <limits.h>		// for CHAR_BIT
 #include <memory.h>		// for memset()
 
-/// This defines a generic bitmap.
+/// The type of a generic bitmap.
 typedef unsigned char block_bitmap;
 
 /* macros for internal use */
@@ -31,15 +44,14 @@ typedef unsigned char block_bitmap;
 #define B_CHECK_BIT(A, I) 						\
 	B_CHECK_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
 
-/*!
- * @brief Computes the required size of a bitmap with @a requested_bits entries.
+/**
+ * @brief Computes the required size of a bitmap
  * @param requested_bits the requested number of bits.
  * @returns the size in bytes of the requested bitmap.
  *
  * For example this statically declares a 100 entries bitmap and initializes it:
  * 		block_bitmap my_bitmap[bitmap_required_size(100)] = {0};
- *
- * 	Avoid side effects in the arguments, they may be evaluated more than once.
+ * Avoid side effects in the arguments, they may be evaluated more than once.
  */
 #define bitmap_required_size(requested_bits)				\
 	((								\
@@ -47,8 +59,8 @@ typedef unsigned char block_bitmap;
 		(B_MOD_OF_BPB(requested_bits) != 0)			\
 	) * B_BLOCK_SIZE)
 
-/*!
- * @brief Initializes the bitmap at @a memory_pointer containing @a requested_bits entries.
+/**
+ * @brief Initializes a bitmap
  * @param memory_pointer the pointer to the bitmap to initialize.
  * @param requested_bits the number of bits contained in the bitmap.
  * @returns the very same @a memory_pointer
@@ -57,14 +69,13 @@ typedef unsigned char block_bitmap;
  * For example this dynamically declares a 100 entries bitmap and initializes it:
  * 		block_bitmap *my_bitmap = malloc(bitmap_required_size(100));
  * 		bitmap_initialize(my_bitmap, 100);
- *
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
 #define bitmap_initialize(memory_pointer, requested_bits)		\
 	memset(memory_pointer, 0, bitmap_required_size(requested_bits))
 
-/*!
- * @brief This sets the bit with index @a bit_index of the bitmap @a bitmap
+/**
+ * @brief Sets a bit in a bitmap
  * @param bitmap a pointer to the bitmap to write.
  * @param bit_index the index of the bit to set.
  *
@@ -73,8 +84,8 @@ typedef unsigned char block_bitmap;
 #define bitmap_set(bitmap, bit_index)					\
 	(B_SET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
 
-/*!
- * @brief This resets the bit with index @a bit_index of the bitmap @a bitmap
+/**
+ * @brief Resets a bit in a bitmap
  * @param bitmap a pointer to the bitmap to write.
  * @param bit_index the index of the bit to reset.
  *
@@ -83,8 +94,8 @@ typedef unsigned char block_bitmap;
 #define bitmap_reset(bitmap, bit_index)					\
 	(B_RESET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
 
-/*!
- * @brief This checks if the bit with index @a bit_index of the bitmap @a bitmap is set or unset.
+/**
+ * @brief Checks a bit in a bitmap
  * @param bitmap a pointer to the bitmap.
  * @param bit_index the index of the bit to read
  * @return 0 if the bit is not set, 1 otherwise
@@ -94,10 +105,10 @@ typedef unsigned char block_bitmap;
 #define bitmap_check(bitmap, bit_index)					\
 	(B_CHECK_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))) != 0)
 
-/*!
- * @brief This counts the occurrences of set bits in the bitmap @a bitmap.
+/**
+ * @brief Counts the occurrences of set bits in a bitmap
  * @param bitmap a pointer to the bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @return the number of cleared bits in the bitmap
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
@@ -114,10 +125,10 @@ __extension__({ 							\
 	__ret; 								\
 })
 
-/*!
- * @brief This counts the occurrences of cleared bits in the bitmap @a bitmap.
+/**
+ * @brief Counts the occurrences of cleared bits in a bitmap
  * @param bitmap a pointer to the bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @return the number of cleared bits in the bitmap
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
@@ -128,10 +139,10 @@ __extension__({								\
 	bitmap_size * CHAR_BIT - bitmap_count_set(bitmap, bitmap_size); \
 })
 
-/*!
- * @brief This returns the index of the first cleared bit in @a bitmap.
+/**
+ * @brief Computes the index of the first cleared bit in a bitmap.
  * @param bitmap a pointer to the bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @return the index of the first cleared bit in the bitmap, UINT_MAX if none is found.
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
@@ -152,10 +163,10 @@ __extension__({								\
 	__ret; 								\
 })
 
-/*!
- * @brief This executes a user supplied function for each set bit in @a bitmap.
+/**
+ * @brief Executes a user supplied function for each set bit in a bitmap.
  * @param bitmap a pointer to the bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @param func a function which takes a single unsigned argument, the index of the current set bit.
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
@@ -176,11 +187,11 @@ __extension__({ 							\
 	}								\
 })
 
-/*!
- * @brief This merges the bitmap @a source into the @a dest bitmap by OR-ing all the bits.
+/**
+ * @brief Merges a bitmap into another one by OR-ing all the bits.
  * @param dest a pointer to the destination bitmap.
  * @param source a pointer to the source bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @return the index of the first cleared bit in the bitmap, UINT_MAX if none is found.
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.

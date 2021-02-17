@@ -1,12 +1,21 @@
+/**
+ * @file lp/lp.c
+ *
+ * @brief LP construction functions
+ *
+ * LP construction functions
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <lp/lp.h>
 
 #include <core/sync.h>
-#include <core/timer.h>
 #include <gvt/fossil.h>
 
-__thread lp_struct *current_lp;
-lp_struct *lps;
-unsigned *lid_to_rid;
+__thread struct lp_ctx *current_lp;
+struct lp_ctx *lps;
+rid_t *lid_to_rid;
 lp_id_t n_lps_node;
 
 void lp_global_init(void)
@@ -16,7 +25,7 @@ void lp_global_init(void)
 	if(n_lps_node < n_threads){
 		log_log(
 			LOG_WARN,
-			"The simulation will run with %u threads instead of %u",
+			"The simulation will run with %u threads instead of the available %u",
 			n_lps_node,
 			n_threads
 		);
@@ -61,8 +70,8 @@ void lp_init(void)
 
 		model_allocator_lp_init();
 
-		current_lp->lsm_p = __wrap_malloc(sizeof(*current_lp->lsm_p));
-		lib_lp_init();
+		current_lp->lib_ctx_p = malloc_mt(sizeof(*current_lp->lib_ctx_p));
+		lib_lp_init_pr();
 		process_lp_init();
 		termination_lp_init();
 
@@ -94,11 +103,21 @@ void lp_fini(void)
 		current_lp = &lps[i];
 
 		process_lp_fini();
-		lib_lp_fini();
+		lib_lp_fini_pr();
 		model_allocator_lp_fini();
 
 		i++;
 	}
 
 	current_lp = NULL;
+}
+
+lp_id_t lp_id_get_mt(void)
+{
+	return current_lp - lps;
+}
+
+struct lib_ctx *lib_ctx_get_mt(void)
+{
+	return current_lp->lib_ctx_p;
 }

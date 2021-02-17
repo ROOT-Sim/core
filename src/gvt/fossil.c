@@ -1,5 +1,15 @@
+/**
+ * @file gvt/fossil.c
+ *
+ * @brief Housekeeping operations
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 #include <gvt/fossil.h>
 
+#include <datatypes/remote_msg_map.h>
 #include <gvt/gvt.h>
 #include <lp/lp.h>
 #include <lp/process.h>
@@ -42,7 +52,7 @@ static inline void fossil_lp_collect(simtime_t current_gvt)
 
 void fossil_collect(simtime_t current_gvt)
 {
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	remote_msg_map_fossil_collect(current_gvt);
 	msg_allocator_fossil_collect(current_gvt);
 #endif

@@ -1,15 +1,26 @@
-#define NEUROME_LOG_INTERNAL
+/**
+ * @file log/log.c
+ *
+ * @brief Logging library
+ *
+ * This library can be used to produce logs during simulation runs.
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <log/log.h>
+
+#include <arch/io.h>
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
+/// The minimum log level of the messages to display
 int log_level = LOG_LEVEL;
-_Bool log_colored;
+/// If set, uses color codes to color the log outputs
+bool log_colored;
 
+/// The textual representations and the color codes of the logging levels
 static const struct {
 	const char *name;
 	const char *color;
@@ -22,35 +33,41 @@ static const struct {
 	[LOG_FATAL] = {.name = "FATAL", .color = "\x1b[35m"}
 };
 
-
+/**
+ * @brief Logs a message. For internal use: log_log() should be used instead
+ * @param level the importance level of the message to log
+ * @param file the file name where this function is being called
+ * @param line the line number where this function is being called
+ * @param fmt a printf-style format string for the message to log
+ * @param ... the list of arguments to fill in the format string @a fmt
+ */
 void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 {
 	va_list args;
-	char time_buffer[32];
-	time_t t = time(NULL);
-	struct tm *loc_t = localtime(&t);
 
-	strftime(time_buffer, sizeof(time_buffer), "%H:%M:%S", loc_t);
-	time_buffer[sizeof(time_buffer) - 1] = '\0';
-	if(log_colored)
+	char time_string[IO_TIME_BUFFER_LEN];
+	io_local_time_get(time_string);
+
+	if(log_colored) {
 		fprintf(
 			stderr,
 			"%s %s%-5s\x1b[0m \x1b[90m%s:%u:\x1b[0m ",
-			time_buffer,
+			time_string,
 			levels[level].color,
 			levels[level].name,
 			file,
 			line
 		);
-	else
+	} else {
 		fprintf(
 			stderr,
 			"%s %-5s %s:%u: ",
-			time_buffer,
+			time_string,
 			levels[level].name,
 			file,
 			line
 		);
+	}
 
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
@@ -59,17 +76,20 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 	fflush(stderr);
 }
 
-void log_logo_print()
+/**
+ * @brief Prints a fancy ROOT-Sim logo on the terminal
+ */
+void log_logo_print(void)
 {
-	if(log_colored){
-		fprintf(stderr, "\x1b[94m    \x1b[90m         \x1b[94m _ \x1b[90m               \n");
-		fprintf(stderr, "\x1b[94m|\\ |\x1b[90m  _      \x1b[94m|_)\x1b[90m  _  ._ _   _  \n");
-		fprintf(stderr, "\x1b[94m| \\|\x1b[90m (/_ |_| \x1b[94m| \\\x1b[90m (_) | | | (/_ \n");
+	if(log_colored) {
+		fprintf(stderr, "\x1b[94m   __ \x1b[90m __   _______   \x1b[94m  _ \x1b[90m       \n");
+		fprintf(stderr, "\x1b[94m  /__)\x1b[90m/  ) /  ) /  __ \x1b[94m ( `\x1b[90m . ___ \n");
+		fprintf(stderr, "\x1b[94m / \\ \x1b[90m(__/ (__/ (      \x1b[94m._)\x1b[90m / / / )\n");
 		fprintf(stderr, "\x1b[0m\n");
 	} else {
-		fprintf(stderr, "              _                 \n");
-		fprintf(stderr, "|\\ |  _      |_)  _  ._ _   _  \n");
-		fprintf(stderr, "| \\| (/_ |_| | \\ (_) | | | (/_ \n");
+		fprintf(stderr, "  __   __   _______    _        \n");
+		fprintf(stderr, " /__) /  ) /  ) /  __ ( ` . ___ \n");
+		fprintf(stderr, "/ \\  (__/ (__/ (     ._) / / / )\n");
 		fprintf(stderr, "\n");
 	}
 }

@@ -1,0 +1,66 @@
+name: Update website
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+
+jobs:
+  update-website:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - uses: BSFishy/pip-action@v1
+        with:
+          packages: |
+            meson
+            ninja
+            coverxygen 
+
+      - name: Generate Documentation
+        run: |
+          sudo apt-get install doxygen lcov graphviz
+          meson build -Db_lto=false
+          cd build
+          ninja docs
+          echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+          mv docs/html ../../
+
+      - name: Generate Documentation Coverage
+        run: |
+          covpercent=$(python3 -m coverxygen --xml-dir build/docs/xml/ --src-dir . --kind enum,enumvalue,typedef,variable,function,struct,union,define,file --exclude README.md --format summary --output - | grep Total | sed 's/.*://' | sed 's/%.*//' | xargs)
+          python3 -m coverxygen --xml-dir build/docs/xml/ --src-dir . --kind enum,enumvalue,typedef,variable,function,struct,union,define,file --exclude README.md --output doc-coverage.info
+          mkdir -p ../coverage/${{ env.BRANCH_NAME }}
+          genhtml --no-function-coverage --no-branch-coverage -t "ROOT-Sim ${{ env.BRANCH_NAME }} Documentation Coverage" doc-coverage.info -o ../coverage/${{ env.BRANCH_NAME }}
+          color="red"
+          acceptable=$(echo $covpercent'>'60 | bc -l)
+          if [ $acceptable -eq 1 ]; then color="green"; fi
+          echo "{\"schemaVersion\": 1, \"label\": \"doc coverage\", \"message\": \"$covpercent%\", \"color\": \"$color\"}" > ../coverage/${{ env.BRANCH_NAME }}.json
+
+      - name: Get current website
+        uses: actions/checkout@v2
+        with:
+          ref: gh-pages
+          persist-credentials: false
+
+      - name: Update website
+        run: |
+          [ ! -e docs/coverage/${{ env.BRANCH_NAME }} ] || rm -rf docs/coverage/${{ env.BRANCH_NAME }}
+          [ ! -e docs/${{ env.BRANCH_NAME }} ] || rm -rf docs/${{ env.BRANCH_NAME }}
+          mv ../coverage/${{ env.BRANCH_NAME }}* docs/coverage/
+          mv ../html docs/${{ env.BRANCH_NAME }}
+
+      - name: Deploy website
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_CONFIG_NAME: "ROOT-Sim Bot"
+          GIT_CONFIG_EMAIL: "bot@rootsim.local"
+          BASE_BRANCH: gh-pages
+          BRANCH: gh-pages
+          FOLDER: .
+          CLEAN: false
+          SINGLE_COMMIT: true

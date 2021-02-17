@@ -1,132 +1,100 @@
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
+
 src_dir = meson.source_root() / 'src'
 models_dir = meson.source_root() / 'models'
 # Test dependencies
-serial_dep = declare_dependency(link_whole: neurome_serial_lib)
-parallel_dep = declare_dependency(link_whole: neurome_parallel_lib, 
-  link_args: '-Wl,--wrap=malloc,--wrap=realloc,--wrap=free,--wrap=calloc')
+rootsim_dep = declare_dependency(link_with : [rootsim_lib, rootsim_mods_lib])
 
-neurome_test_dep = declare_dependency(link_whole: 
-  static_library('neurome-test', 'test.c', dependencies : [m_dep, threads_dep]))
-
-fail_tests = [
-  'init',
-  'body',
-  'fini',
-  'main',
-  'cmp_len',
-  'cmp_str'
-]
-
-# Fail tests builds
-i = 1
-foreach test_name : fail_tests
-  e = executable(
-    'test_f' + i.to_string() + '_' + test_name, 
-    sources : 'test' / 'fail_' + test_name + '.c', 
-    dependencies : neurome_test_dep, 
-    c_args : ['-DNEUROME_TEST'],
-    link_args : '-Wl,--wrap=main', 
-  )
-  test('test_f' + i.to_string() + '_' + test_name, e, should_fail: true)
-  i = i + 1
-endforeach
-
-# Unit tests names and tested sources
-unit_tests = {
-  'init' : 'core' / 'init',
-  'sync' : 'core' / 'sync',
-  'msg_queue' : 'datatypes' / 'msg_queue',
-  'remote_msg_map' : 'datatypes' / 'remote_msg_map',
-#  'gvt' : 'gvt' / 'gvt',
-  'msg_allocator' : 'mm' / 'msg_allocator',
-  'lp' : 'lp' / 'lp',
-  'buddy_allocator' : 'mm' / 'buddy' / 'buddy',
-  'compiler' : 'compiler'
-}
-
-# Unit tests builds
-i = 1
-foreach test_name, test_path : unit_tests
-  e = executable(
-    'test_u' + i.to_string() + '_' + test_name, 
-    sources : [test_path + '_test.c', src_dir / test_path + '.c'], 
-    dependencies : neurome_test_dep, 
-    c_args : ['-DNEUROME_TEST'],
-    link_args : '-Wl,--wrap=main', 
-    include_directories : src_inc_dir
-  )
-  test('test_u' + i.to_string() + '_' + test_name, e)
-  i = i + 1
-endforeach
-
-# Common integration tests srcs
-integration_srcs = [
-  'integration' / 'model' / 'application.c', 
+test_model_srcs = [
+  'integration' / 'model' / 'application.c',
   'integration' / 'model' / 'functions.c',
   'integration' / 'model' / 'output.c'
 ]
 
-# Integration tests specs
-integration_tests = {
-  'serial': {
-    'src' : 'integration' / 'integration_serial.c',
-    'dep' : serial_dep
-  },
-  'parallel_single':  {
-    'src' : 'integration' / 'integration_parallel_single.c',
-    'dep' : parallel_dep
-  },
-  'parallel_multi': {
-    'src' : 'integration' / 'integration_parallel_multi.c',
-    'dep' : parallel_dep
-  }
-}
-
-# Integration tests builds
-i = 1
-foreach test_name, test_spec : integration_tests
-  e = executable(
-    'test_i' + i.to_string() + '_' + test_name, 
-    sources : integration_srcs + [test_spec.get('src')], 
-    dependencies : [test_spec.get('dep'), neurome_test_dep], 
-    c_args : ['-DNEUROME_TEST'],
-    link_args : '-Wl,--wrap=main', 
-    include_directories : src_inc_dir
-  )
-  test('test_i' + i.to_string() + '_' + test_name, e, is_parallel: false)
-  i = i + 1
-endforeach
-
-models_tests = {
-  'pcs' : {
-    'srcs' : ['application.c', 'functions_app.c'],
-    'lps' : 256
-  },
-  'phold' : {
-    'srcs' : ['application.c'],
-    'lps' : 256
-  }
-}
-
-i = 1
-foreach model_name, test_spec : models_tests
-  model_srcs = []
-  foreach src_name : test_spec.get('srcs')
-    model_srcs += [models_dir / model_name / src_name]
-  endforeach
+test_specs = {
+  'fail_init': {'src' : ['test' / 'fail_init.c'], 'fail' : true},
+  'fail_body': {'src' : ['test' / 'fail_body.c'], 'fail' : true},
+  'fail_fini': {'src' : ['test' / 'fail_fini.c'], 'fail' : true},
+  'fail_main': {'src' : ['test' / 'fail_main.c'], 'fail' : true, 'has_main' : true},
+  'fail_cmp_short': {'src' : ['test' / 'fail_cmp_short.c'], 'fail' : true, 'has_main' : true},
+  'fail_cmp_long': {'src' : ['test' / 'fail_cmp_long.c'], 'fail' : true, 'has_main' : true},
+  'fail_cmp_str': {'src' : ['test' / 'fail_cmp_str.c'], 'fail' : true, 'has_main' : true},
   
-  e = executable(
-    'test_m' + i.to_string() + '_' + model_name, 
-    sources : ['models' / 'model_test.c'] + model_srcs,
-    dependencies : [parallel_dep, neurome_test_dep], 
-    c_args : [
-      '-DNEUROME_TEST', 
-      '-DNEUROME_TEST_LPS_COUNT="' + test_spec.get('lps').to_string() + '"',
-      '-DNEUROME_TEST_MODEL_NAME="' + model_name + '"'
+  'unit_init' : {'src' : ['core' / 'init_test.c', src_dir / 'core' / 'init.c', src_dir / 'core' / 'arg_parse.c'], 'has_main' : true},
+  'unit_sync' : {'src' : ['core' / 'sync_test.c', src_dir / 'core' / 'sync.c']},
+  'unit_msg_queue' : {'src' : ['datatypes' / 'msg_queue_test.c', src_dir / 'datatypes' / 'msg_queue.c']},
+  'unit_remote_msg_map' : {'src' : ['datatypes' / 'remote_msg_map_test.c', src_dir / 'datatypes' / 'remote_msg_map.c']},
+# 'unit_gvt' : {'src' : ['gvt' / 'gvt_test.c', src_dir / 'gvt' / 'gvt.c']},
+  'unit_msg_allocator' : {'src' : ['mm' / 'msg_allocator_test.c', src_dir / 'mm' / 'msg_allocator.c']},
+  'unit_lp' : {'src' : ['lp' / 'lp_test.c', src_dir / 'lp' / 'lp.c']},
+  'unit_buddy_allocator' : {'src' : ['mm' / 'buddy' / 'buddy_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c']},
+  'unit_compiler' : {'src' : ['compiler' / 'compiler_test.c', src_dir / 'compiler' / 'compiler.c'], 'has_main' : true, 'c_args' : compiler_c_args},
+
+  'integration_serial': {
+    'src' : ['integration' / 'integration_serial.c'] + test_model_srcs,
+    'run_plugin' : true,
+    'rslib' : true
+  },
+  'integration_single':  {
+    'src' : ['integration' / 'integration_parallel_single.c'] + test_model_srcs,
+    'run_plugin' : true,
+    'rslib' : true
+  },
+  'integration_multi': {
+    'src' : ['integration' / 'integration_parallel_multi.c'] + test_model_srcs,
+    'run_plugin' : true,
+    'rslib' : true
+  },
+
+  'model_pcs': {
+    'src' : [
+      'models' / 'model_test.c', 
+      models_dir / 'pcs' / 'application.c', 
+      models_dir / 'pcs' / 'functions_app.c'
     ],
-    link_args : '-Wl,--wrap=main', 
-    include_directories : src_inc_dir
-  )
-  test('test_m' + i.to_string() + '_' + model_name, e, is_parallel: false)
+    'run_plugin' : true,
+    'rslib' : true
+  },
+  'model_phold': {
+    'src' : [
+      'models' / 'model_test.c', 
+      models_dir / 'phold' / 'application.c', 
+    ],
+    'run_plugin' : true,
+    'rslib' : true
+  }
+}
+
+# Tests builds
+i = 1
+foreach t_name, t_spec : test_specs
+  t_srcs = t_spec.get('src')
+  if t_spec.get('run_plugin', false)
+    t_srcs = [clang_with_plugin.process(t_srcs)]
+  endif
+
+  t_deps = []
+  t_srcs += 'test.c'
+  
+  if t_spec.get('rslib', false)
+    t_deps += rootsim_dep
+  else
+    t_srcs += src_dir / 'mm' / 'mm.c'
+    if not t_spec.get('has_main', false)
+      t_srcs += 'test_main.c'
+      t_deps += rs_thr_dep
+    endif
+  endif
+  
+  t_full_name = 'test_' + i.to_string() + '_' + t_name
+  
+  test_executable = executable(t_full_name, t_srcs, dependencies : t_deps,
+    include_directories : src_inc_dir, c_args : t_spec.get('c_args', []) + 
+    ['-DROOTSIM_TEST_NAME="' + t_name + '"'], link_args : '-no-pie')
+  
+  test(t_full_name, test_executable, is_parallel : false,
+    should_fail : t_spec.get('fail', false))
+  
   i = i + 1
 endforeach

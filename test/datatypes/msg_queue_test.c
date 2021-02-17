@@ -1,3 +1,11 @@
+/**
+ * @file test/datatypes/msg_queue_test.c
+ *
+ * @brief Test: parallel message queue
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 #include <test_rng.h>
 
@@ -12,16 +20,16 @@
 #define THREAD_CNT 6
 #define THREAD_REPS 100000
 
-static __thread uint128_t rng_state;
+static __thread test_rng_state rng_state;
 static unsigned lid_to_rid_m[] = {0, 1, 2, 3, 0, 1, 2, 3, 5, 4, 4, 5};
-static lp_struct lps_m[THREAD_CNT];
+static struct lp_ctx lps_m[THREAD_CNT];
 static atomic_uint msg_missing = THREAD_REPS * THREAD_CNT;
 static atomic_uint msg_to_free = THREAD_CNT;
 
 unsigned *lid_to_rid = lid_to_rid_m;
-lp_struct *lps = lps_m;
+struct lp_ctx *lps = lps_m;
 
-void msg_allocator_free(lp_msg *msg)
+void msg_allocator_free(struct lp_msg *msg)
 {
 	atomic_fetch_sub_explicit(&msg_to_free, 1U, memory_order_relaxed);
 	free(msg);
@@ -49,7 +57,7 @@ static int msg_queue_test(void)
 
 	unsigned i = THREAD_REPS;
 	while(i--){
-		lp_msg *msg = malloc(sizeof(*msg));
+		struct lp_msg *msg = malloc(sizeof(*msg));
 		memset(msg, 0, sizeof(*msg));
 		msg->dest_t = lcg_random(rng_state) * THREAD_REPS;
 		msg->dest =
@@ -61,7 +69,7 @@ static int msg_queue_test(void)
 
 	test_thread_barrier();
 
-	lp_msg *msg;
+	struct lp_msg *msg;
 	simtime_t last_time = 0.0;
 
 	while((msg = msg_queue_extract())){
@@ -73,6 +81,7 @@ static int msg_queue_test(void)
 	}
 
 	test_thread_barrier();
+
 	// to test msg cleanup
 	msg = malloc(sizeof(*msg));
 	memset(msg, 0, sizeof(*msg));
@@ -84,8 +93,7 @@ static int msg_queue_test(void)
 	return ret;
 }
 
-const struct _test_config_t test_config = {
-	.test_name = "msg queue",
+const struct test_config test_config = {
 	.threads_count = THREAD_CNT,
 	.test_init_fnc = msg_queue_test_init,
 	.test_fini_fnc = msg_queue_test_fini,

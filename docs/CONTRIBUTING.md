@@ -136,7 +136,7 @@ The `--no-ff` flag causes the merge to always create a new commit object, even
 In the latter case, it is impossible to see from Git history which of the commit objects together have implemented a feature (you would have to manually read all the log messages). Reverting a whole feature (i.e. a group of commits), is a true headache in the latter situation, whereas it is easily done if the `--no-ff` flag was used.
 Yes, it will create a few more (empty) commit objects, but the gain is much bigger that that cost.
 
-Merging into `develop` is sometimes referred to as "merge window". Once a new release branch is created (see below), new features are automatically directed towards the next release.
+erging into `develop` is sometimes referred to as "merge window". Once a new release branch is created (see below), new features are automatically directed towards the next release.
 
 Once a feature branch is closed, the contributor is required to create a short notice on the project website, Please, see section *Short Notes on the Project Website* below.
 
@@ -164,7 +164,7 @@ Release branches are created from the `develop` branch. For example, say versi
 $ git checkout -b release-1.2.0 develop
 Switched to a new branch "release-1.2.0"
 
-$ ./bump-version.sh
+$ ./scripts/bump-version.py
 Files modified successfully, version bumped to 1.2.0
 
 $ git commit -s -a -m "Bumped version number to 1.2.0"
@@ -172,10 +172,10 @@ $ git commit -s -a -m "Bumped version number to 1.2.0"
 1 files changed, 1 insertions(+), 1 deletions(-)
 ```
 
-After creating a new branch and switching to it, we bump the version number. Here, `bump-version.sh` is a commodity shell script, included in the repository, that changes the relevant information in the source tree to reflect the new version. This shell script reads the name of the current branch and automatically increases the version number depending on the kind of branch (hence, the importance of branch names). The only exception is when we want to update the major number, which is a decision which cannot be taken automatically (see versioning below). To bump the major version number, you can run the following command:
+After creating a new branch and switching to it, we bump the version number. Here, `scripts/bump-version.py` is a commodity shell script, included in the repository, that changes the relevant information in the source tree to reflect the new version. This shell script reads the name of the current branch and automatically increases the version number depending on the kind of branch (hence, the importance of branch names). The only exception is when we want to update the major number, which is a decision which cannot be taken automatically (see versioning below). To bump the major version number, you can run the following command:
 
 ```
-$ ./bump-version.sh major
+$ ./scripts/bump-version.py major
 ```
 
 This newly-created branch may exist there for a while, until the release may be rolled out definitely. During that time, bug fixes may be applied in this branch (rather than on the `develop` branch). Adding large new features here is **strictly prohibited**. They must be merged into `develop`, and therefore, wait for the next big release.
@@ -236,7 +236,7 @@ $ git checkout develop
 Switched to branch 'develop'
 
 $ git merge --no-ff release-1.2.0
-Merge made by recursive.
+erge made by recursive.
 (Summary of changes)
 ```
 
@@ -273,7 +273,7 @@ Hotfix branches are created from the `master` branch. For example, say version
 $ git checkout -b hotfix-1.2.1 master
 Switched to a new branch "hotfix-1.2.1"
 
-$ ./bump-version.sh
+$ ./scripts/bump-version.py
 Files modified successfully, version bumped to 1.2.1.
 
 $ git commit -s -a -m "Bumped version number to 1.2.1"
@@ -281,7 +281,7 @@ $ git commit -s -a -m "Bumped version number to 1.2.1"
 1 files changed, 1 insertions(+), 1 deletions(-)
 ```
 
-Don't forget to bump the version number after branching off! Again, the `bump-version.sh` script will automatically determine the new version number starting from the branch name.
+Don't forget to bump the version number after branching off! Again, the `scripts/bump-version.py` script will automatically determine the new version number starting from the branch name.
 
 Then, fix the bug and commit the fix in one or more separate commits.
 
@@ -315,7 +315,7 @@ A commit should be a self-contained update to the code tree. Despite bug fixes t
 
 On the other hand, a commit should not contain multiple changes to the code base. If, during development, I have to change something in two different modules, and the changes are unrelated, then the changes should be placed in two different commits. That is: make separate commits for logically separate changes.
 
-Making good commits is a form of art. A good way to decide whether a commit is self-contained, developers should answer themselves the question: "will I be able to cherry pick this commit in the future, shall I need it?". If the answer is yes, then most likely it is a good commit.
+aking good commits is a form of art. A good way to decide whether a commit is self-contained, developers should answer themselves the question: "will I be able to cherry pick this commit in the future, shall I need it?". If the answer is yes, then most likely it is a good commit.
 
 Commit messages should be meaningful. A one-line commit message like "I’m developing foo" will not allow other developers to understand what that commit is for. A minimal commit message would be of the format:
 
@@ -401,7 +401,7 @@ Versioning
 ROOT-Sim follows a small variation of ([semantic versioning](http://semver.org/). Basically, each version number is structured in this way:
 
 ```
-MAJOR.MINOR.HOTFIX
+AJOR.MINOR.HOTFIX
 ```
 
 The `HOTFIX` part is incremented whenever a hotfix branch is merged into `master`. In this way, users know that the difference between 1.2.0 and 1.2.1 is not related to new features being introduced in the software.
@@ -687,3 +687,4 @@ Also, never ever do this:
 Often, fixes made to one piece of code will be missed in the other, and the two pieces of code may drift apart, introduced or unfixed bugs unnoticed for years.
 
 If you do have to use `#ifdef` for something, absolutely try to minimize the amount of code within it. Make the remaining code as generic and portable as possible.
+

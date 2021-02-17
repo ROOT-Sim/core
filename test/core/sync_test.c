@@ -1,3 +1,12 @@
+/**
+ * @file test/core/sync_test.c
+ *
+ * @brief Test: synchronization primitives test
+ * @todo test the spinlock as well
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 
 #include <core/core.h>
@@ -12,7 +21,7 @@ static atomic_uint counter;
 static int sync_test(void)
 {
 	int ret = 0;
-	unsigned i = THREAD_CNT * 10000;
+	unsigned i = THREAD_CNT * 100000;
 	while(i--){
 		atomic_fetch_add_explicit(&counter, 1U, memory_order_relaxed);
 		sync_thread_barrier();
@@ -23,8 +32,7 @@ static int sync_test(void)
 	return ret;
 }
 
-const struct _test_config_t test_config = {
-	.test_name = "sync",
+const struct test_config test_config = {
 	.threads_count = THREAD_CNT,
 	.test_fnc = sync_test,
 };

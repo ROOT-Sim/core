@@ -1,16 +1,28 @@
+/**
+ * @file gvt/gvt.c
+ *
+ * @brief Global Virtual Time
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <gvt/gvt.h>
 
+#include <arch/timer.h>
 #include <core/init.h>
-#include <core/timer.h>
 #include <datatypes/msg_queue.h>
+#include <distributed/mpi.h>
+#include <log/stats.h>
 
+#include <memory.h>
 #include <stdatomic.h>
 
+/// A thread phase during the gvt algorithm computation
 enum thread_phase_t {
 	tphase_rdy = 0,
 	tphase_A,
 	tphase_B,
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 	tphase_B_reduce,
 	tphase_C,
 	tphase_C_reduce,
@@ -23,28 +35,27 @@ enum thread_phase_t {
 
 static __thread enum thread_phase_t thread_phase = tphase_rdy;
 
-static timer last_gvt;
-static simtime_t reducing_p[1 << MAX_THREADS_BITS];
+static timer_uint last_gvt;
+static simtime_t reducing_p[MAX_THREADS];
 static __thread simtime_t current_gvt;
 
-#ifdef NEUROME_MPI
+#ifdef ROOTSIM_MPI
 
-static atomic_uint sent_tot[1 << MAX_NODES_BITS];
-static unsigned remote_msg_to_receive;
+static atomic_uint sent_tot[MAX_NODES];
 static _Atomic(nid_t) missing_nodes;
 
-__thread bool gvt_phase_green;
-__thread unsigned remote_msg_sent[1 << MAX_NODES_BITS] = {0};
+__thread bool gvt_phase_green = false;
+__thread unsigned remote_msg_sent[MAX_NODES] = {0};
 atomic_int remote_msg_received[2];
 
 #endif
 
+/**
+ * @brief Initializes the gvt module in the node
+ */
 void gvt_global_init(void)
 {
 	last_gvt = timer_new();
-#ifdef NEUROME_MPI
-	missing_nodes = 0;
-#endif
 }
 
 static inline simtime_t gvt_node_reduce(void)
@@ -57,9 +68,9 @@ static inline simtime_t gvt_node_reduce(void)
 	return candidate;
 }
 
-#ifndef NEUROME_MPI
+#ifndef ROOTSIM_MPI
 
-simtime_t gvt_msg_processed(void)
+simtime_t gvt_phase_run(void)
 {
 	static atomic_uint c_a = 0;
 	static atomic_uint c_b = 0;
@@ -68,13 +79,14 @@ simtime_t gvt_msg_processed(void)
 		if (rid) {
 			if (likely(!atomic_load_explicit(&c_a,
 				memory_order_relaxed)))
-				return false;
+				return 0;
 		} else {
 			if (likely(global_config.gvt_period >
 				timer_value(last_gvt) || atomic_load_explicit(
 				&c_b, memory_order_relaxed)))
-				return false;
+				return 0;
 		}
+		stats_time_start(STATS_GVT);
 		current_gvt = SIMTIME_MAX;
 		thread_phase = tphase_A;
 		atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
@@ -105,6 +117,7 @@ simtime_t gvt_msg_processed(void)
 			if(!rid){
 				last_gvt = timer_new();
 			}
+			stats_time_take(STATS_GVT);
 			return gvt_node_reduce();
 		}
 		break;
@@ -124,38 +137,51 @@ simtime_t gvt_msg_processed(void)
 
 static atomic_uint c_a = 0;
 
-void gvt_on_start_msg(void)
+/**
+ * @brief Handles a MSG_CTRL_GVT_START control message
+ *
+ * Called by the MPI layer in response to a MSG_CTRL_GVT_START control message
+ */
+void gvt_on_start_ctrl_msg(void)
 {
+	stats_time_start(STATS_GVT);
 	current_gvt = SIMTIME_MAX;
 	thread_phase = tphase_A;
 	atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
 }
 
-void gvt_on_done_msg(void)
+/**
+ * @brief Handles a MSG_CTRL_GVT_DONE control message
+ *
+ * Called by the MPI layer in response to a MSG_CTRL_GVT_DONE control message
+ */
+void gvt_on_done_ctrl_msg(void)
 {
 	atomic_fetch_sub_explicit(&missing_nodes, 1U, memory_order_relaxed);
 }
 
-simtime_t gvt_msg_processed(void)
+simtime_t gvt_phase_run(void)
 {
 	static atomic_uint c_b = 0;
+	static unsigned remote_msg_to_receive;
 	static __thread bool red_round = false;
 
 	if(likely(thread_phase == tphase_rdy)) {
 		if (nid || rid) {
 			if (likely(!atomic_load_explicit(&c_a,
 				memory_order_relaxed)))
-				return false;
+				return 0;
 		} else {
 			if (likely(global_config.gvt_period >
 				timer_value(last_gvt) || atomic_load_explicit(
 				&missing_nodes, memory_order_relaxed)))
-				return false;
+				return 0;
 
 			atomic_store_explicit(&missing_nodes, n_nodes,
 				memory_order_relaxed);
 			mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 		}
+		stats_time_start(STATS_GVT);
 		current_gvt = SIMTIME_MAX;
 		thread_phase = tphase_A;
 		atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
@@ -175,7 +201,7 @@ simtime_t gvt_msg_processed(void)
 			thread_phase = tphase_B + (2 * red_round) + !rid;
 
 			red_round = !red_round;
-			if(red_round){
+			if (red_round) {
 				for(nid_t i = 0; i < n_nodes; ++i)
 					atomic_fetch_add_explicit(&sent_tot[i],
 						remote_msg_sent[i],
@@ -206,13 +232,13 @@ simtime_t gvt_msg_processed(void)
 		// acquire is needed to sync with all threads aggregated values
 		if (atomic_load_explicit(&c_b, memory_order_acquire) ==
 			n_threads) {
-			mpi_reduce_remote_sent((unsigned *)sent_tot,
+			mpi_reduce_sum_scatter((unsigned *)sent_tot,
 				&remote_msg_to_receive);
 			thread_phase = tphase_B_rdone;
 		}
 		break;
 	case tphase_B_rdone:
-		if (mpi_reduce_remote_sent_done()) {
+		if (mpi_reduce_sum_scatter_done()) {
 			atomic_fetch_sub_explicit(remote_msg_received +
 				!gvt_phase_green, remote_msg_to_receive,
 				memory_order_relaxed);
@@ -237,12 +263,12 @@ simtime_t gvt_msg_processed(void)
 		if (atomic_load_explicit(&c_b, memory_order_acquire) ==
 			n_threads) {
 			*reducing_p = gvt_node_reduce();
-			mpi_reduce_local_min(reducing_p);
+			mpi_reduce_min(reducing_p);
 			thread_phase = tphase_C_rdone;
 		}
 		break;
 	case tphase_C_rdone:
-		if (mpi_reduce_local_min_done()) {
+		if (mpi_reduce_min_done()) {
 			atomic_fetch_sub_explicit(&c_b, 1U,
 				memory_order_relaxed);
 			// no sync needed
@@ -254,8 +280,8 @@ simtime_t gvt_msg_processed(void)
 		break;
 	case tphase_B_wait_msgs:
 		// don't need to sync: we already synced on c_f in tphase_D
-		if(!atomic_load_explicit(remote_msg_received + !gvt_phase_green,
-			memory_order_relaxed)) {
+		if (!atomic_load_explicit(remote_msg_received +
+				!gvt_phase_green, memory_order_relaxed)) {
 			thread_phase = tphase_wait;
 			atomic_fetch_sub_explicit(&c_b, 1U,
 				memory_order_relaxed);
@@ -267,18 +293,18 @@ simtime_t gvt_msg_processed(void)
 		// local gvt reduction or, if we already did that, it simply
 		// ends the gvt reduction
 			thread_phase = red_round;
-			if(red_round) {
+			if (red_round) {
 				atomic_fetch_add_explicit(&c_a, 1U,
 					memory_order_relaxed);
 			} else {
 				if(!rid)
 					mpi_control_msg_send_to(
 						MSG_CTRL_GVT_DONE, 0);
+				stats_time_take(STATS_GVT);
 			}
 		}
 		break;
 	}
-
 	return 0;
 }
 
@@ -286,7 +312,6 @@ simtime_t gvt_msg_processed(void)
 
 void gvt_on_msg_process(simtime_t msg_t)
 {
-	if(unlikely(thread_phase && current_gvt > msg_t)){
+	if (unlikely(thread_phase && current_gvt > msg_t))
 		current_gvt = msg_t;
-	}
 }

@@ -1,3 +1,11 @@
+/**
+ * @file test/datatypes/remote_msg_map_test.c
+ *
+ * @brief Test: concurrent hash map for register incoming remote messages
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 #include <test_rng.h>
 
@@ -8,26 +16,28 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define THREAD_CNT 4
+#define THREAD_CNT 2
 #define MSG_COUNT 1000000
 
 static atomic_uint insert_calls;
 
-void msg_queue_insert(lp_msg *msg)
+void msg_queue_insert(struct lp_msg *msg)
 {
 	(void)msg;
+	if (!msg)
+		abort();
 	if(atomic_load_explicit(&msg->flags, memory_order_acquire) ==
 		(MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)){
-		insert_calls++;
+		atomic_fetch_add_explicit(&insert_calls, 1U, memory_order_relaxed);
 	}
 }
 
 static int remote_msg_map_test(void)
 {
-	lp_msg *msgs = malloc(sizeof(*msgs) * MSG_COUNT);
+	struct lp_msg *msgs = malloc(sizeof(*msgs) * MSG_COUNT);
 	memset(msgs, 0, sizeof(*msgs) * MSG_COUNT);
 
-	for(uint64_t i = 0; i < MSG_COUNT; ++i){
+	for (uint64_t i = 0; i < MSG_COUNT; ++i) {
 		if(i % 3)
 			continue;
 		atomic_store_explicit(&msgs[i].flags, MSG_FLAG_PROCESSED,
@@ -36,13 +46,13 @@ static int remote_msg_map_test(void)
 
 	test_thread_barrier();
 
-	for(uint64_t i = 0; i < MSG_COUNT; ++i){
-		remote_msg_map_match(i * 4 + 2, rid,
+	for (uint64_t i = 0; i < MSG_COUNT; ++i) {
+		remote_msg_map_match(msg_id_get(&msgs[i], i & 1U), rid,
 			(i & 1U) ? &msgs[i] : NULL);
 	}
 
-	for(uint64_t i = 0; i < MSG_COUNT; ++i){
-		remote_msg_map_match(i * 4 + 2, rid,
+	for (uint64_t i = 0; i < MSG_COUNT; ++i) {
+		remote_msg_map_match(msg_id_get(&msgs[i], i & 1U) + 1, rid,
 			(i & 1U) ? NULL : &msgs[i]);
 	}
 
@@ -52,8 +62,6 @@ static int remote_msg_map_test(void)
 	for(uint64_t i = 0; i < MSG_COUNT; ++i){
 		ret -= !(atomic_load_explicit(&msgs[i].flags,
 			memory_order_acquire) & MSG_FLAG_ANTI);
-		if(ret)
-			abort();
 	}
 	ret -= insert_calls != ((MSG_COUNT - 1) / 3 + 1) * THREAD_CNT;
 
@@ -73,8 +81,7 @@ static int remote_msg_map_test_fini(void)
 	return 0;
 }
 
-const struct _test_config_t test_config = {
-	.test_name = "remote msg map",
+const struct test_config test_config = {
 	.threads_count = THREAD_CNT,
 	.test_init_fnc = remote_msg_map_test_init,
 	.test_fini_fnc = remote_msg_map_test_fini,

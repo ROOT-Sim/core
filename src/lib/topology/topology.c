@@ -1,10 +1,22 @@
+/**
+ * @file lib/topology/topology.c
+ *
+ * @brief Topology library
+ *
+ * This library is allows models to setup and query different topologies.
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <lib/topology/topology.h>
 
-#include <lib/lib_internal.h>
 #include <core/intrinsics.h>
+#include <lib/lib_internal.h>
 
 #include <math.h>
 #include <memory.h>
+
+__attribute((weak)) struct topology_settings_t topology_settings;
 
 /// this is used to store the common characteristics of the topology
 struct {
@@ -19,8 +31,9 @@ struct {
  */
 void topology_global_init(void)
 {
-	if(!&topology_settings)
-		// the weak symbol isn't defined: we aren't needed
+	if (!topology_settings.default_geometry &&
+		!topology_settings.out_of_topology)
+		// the strong symbol isn't defined: we aren't needed
 		return;
 
 	// set default values
@@ -36,7 +49,7 @@ void topology_global_init(void)
 		case TOPOLOGY_TORUS:
 			edge = sqrt(regions_cnt);
 			// we make sure there are no "lonely" LPs
-			if(edge * edge != regions_cnt){
+			if (edge * edge != regions_cnt) {
 				log_log(LOG_FATAL, "Invalid number of regions for this topology geometry (must be a square number)\n");
 				exit(-1);
 			}
@@ -50,12 +63,12 @@ void topology_global_init(void)
 	topology_global.edge = edge;
 }
 
-__attribute__ ((pure)) uint64_t RegionsCount(void)
+__attribute__ ((pure)) lp_id_t RegionsCount(void)
 {
 	return topology_global.regions_cnt;
 }
 
-__attribute__ ((pure)) uint64_t DirectionsCount(void)
+__attribute__ ((pure)) lp_id_t DirectionsCount(void)
 {
 	switch (topology_global.geometry) {
 	case TOPOLOGY_MESH:
@@ -75,14 +88,15 @@ __attribute__ ((pure)) uint64_t DirectionsCount(void)
 	return UINT_MAX;
 }
 
-__attribute__ ((pure)) uint64_t GetReceiver(uint64_t from, enum _direction_t direction)
+__attribute__ ((pure)) lp_id_t GetReceiver(lp_id_t from,
+					    enum _direction_t direction)
 {
 	const lp_id_t sender = from;
 	const uint32_t edge = topology_global.edge;
 	const lp_id_t regions_cnt = topology_global.regions_cnt;
 	unsigned x, y;
 
-	if(unlikely(regions_cnt <= from))
+	if (unlikely(regions_cnt <= from))
 		return DIRECTION_INVALID;
 
 	switch (topology_global.geometry) {
@@ -168,7 +182,7 @@ __attribute__ ((pure)) uint64_t GetReceiver(uint64_t from, enum _direction_t dir
 		return y * edge + x;
 
 	case TOPOLOGY_MESH:
-		return likely(direction < regions_cnt) ? direction : DIRECTION_INVALID;
+		return likely((lp_id_t)direction < regions_cnt) ? direction : DIRECTION_INVALID;
 
 	case TOPOLOGY_BIDRING:
 		switch (direction) {
@@ -187,29 +201,29 @@ __attribute__ ((pure)) uint64_t GetReceiver(uint64_t from, enum _direction_t dir
 			if(!direction)
 				return 0;
 		} else {
-			if(direction + 1 < regions_cnt)
+			if((uint64_t)direction + 1 < regions_cnt)
 				return direction + 1;
 		}
 	}
 	return DIRECTION_INVALID;
 }
 
-uint64_t FindReceiver(void)
+lp_id_t FindReceiver(void)
 {
-	const uint64_t dir_cnt = DirectionsCount();
-	const unsigned bits = 64 - SAFE_CLZ(dir_cnt);
+	const lp_id_t dir_cnt = DirectionsCount();
+	const unsigned bits = 64 - intrinsics_clz(dir_cnt);
 	uint64_t rnd = RandomU64();
 	unsigned i = 64;
 	do {
-		unsigned dir = rnd & ((UINT64_C(1) << bits) - 1);
-		if(dir < dir_cnt){
+		lp_id_t dir = rnd & ((UINT64_C(1) << bits) - 1);
+		if (dir < dir_cnt) {
 			dir += 2 * (topology_global.geometry == TOPOLOGY_HEXAGON);
-			const uint64_t ret = GetReceiver(current_lid, dir);
+			const lp_id_t ret = GetReceiver(lp_id_get(), dir);
 			if (ret != DIRECTION_INVALID)
 				return ret;
 		}
 
-		if (likely((i -= bits) >= bits)){
+		if (likely((i -= bits) >= bits)) {
 			rnd >>= bits;
 		} else {
 			rnd = RandomU64();

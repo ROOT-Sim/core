@@ -1,23 +1,25 @@
+/**
+ * @file mm/buddy/buddy.c
+ *
+ * @brief A Buddy System implementation
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <mm/buddy/buddy.h>
 
 #include <core/core.h>
-#include <lp/lp.h>
 #include <core/intrinsics.h>
+#include <lp/lp.h>
 
-#include <stdlib.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define left_child(i) (((i) << 1U) + 1U)
 #define right_child(i) (((i) << 1U) + 2U)
 #define parent(i) ((((i) + 1) >> 1U) - 1U)
 #define is_power_of_2(i) (!((i) & ((i) - 1)))
-#define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - SAFE_CLZ(i))
-
-#ifdef NEUROME_COVERAGE
-extern void *__real_malloc(size_t mem_size);
-extern void *__real_realloc(void *ptr, size_t mem_size);
-extern void __real_free(void *ptr);
-#endif
+#define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
 
 void model_allocator_lp_init(void)
 {
@@ -32,7 +34,7 @@ void model_allocator_lp_init(void)
 
 	self->used_mem = 0;
 	array_init(self->logs);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	memset(self->dirty, 0, sizeof(self->dirty));
 	self->dirty_mem = 0;
 #endif
@@ -41,21 +43,16 @@ void model_allocator_lp_init(void)
 void model_allocator_lp_fini(void)
 {
 	array_count_t i = array_count(current_lp->mm_state.logs);
-	while(i--){
+	while (i--) {
 		mm_free(array_get_at(current_lp->mm_state.logs, i).c);
 	}
 	array_fini(current_lp->mm_state.logs);
 }
 
-void *__wrap_malloc(size_t req_size)
+void *malloc_mt(size_t req_size)
 {
 	if(unlikely(!req_size))
 		return NULL;
-
-#ifdef NEUROME_COVERAGE
-	if (unlikely(!current_lp))
-		return __real_malloc(req_size);
-#endif
 
 	struct mm_state *self = &current_lp->mm_state;
 
@@ -63,13 +60,14 @@ void *__wrap_malloc(size_t req_size)
 
 	if (unlikely(self->longest[0] < req_blks)) {
 		errno = ENOMEM;
+		log_log(LOG_WARN, "LP %p is out of memory!", current_lp);
 		return NULL;
 	}
 
 	/* search recursively for the child */
 	uint_fast8_t node_size = B_TOTAL_EXP;
 	uint_fast32_t i = 0;
-	while(node_size > req_blks) {
+	while (node_size > req_blks) {
 		/* choose the child with smaller longest value which
 		 * is still large at least *size* */
 		i = left_child(i);
@@ -80,7 +78,7 @@ void *__wrap_malloc(size_t req_size)
 	/* update the *longest* value back */
 	self->longest[i] = 0;
 	self->used_mem += 1 << node_size;
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 #endif
 	uint_fast32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
@@ -91,7 +89,7 @@ void *__wrap_malloc(size_t req_size)
 			self->longest[left_child(i)],
 			self->longest[right_child(i)]
 		);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 #endif
 	}
@@ -99,28 +97,21 @@ void *__wrap_malloc(size_t req_size)
 	return ((char *)self->base_mem) + offset;
 }
 
-void *__wrap_calloc(size_t nmemb, size_t size)
+void *calloc_mt(size_t nmemb, size_t size)
 {
 	size_t tot = nmemb * size;
-	void *ret = __wrap_malloc(tot);
+	void *ret = malloc_mt(tot);
 
-	if(ret)
+	if (likely(ret))
 		memset(ret, 0, tot);
 
 	return ret;
 }
 
-void __wrap_free(void *ptr)
+void free_mt(void *ptr)
 {
-	if(unlikely(!ptr))
+	if (unlikely(!ptr))
 		return;
-
-#ifdef NEUROME_COVERAGE
-	if (unlikely(!current_lp)) {
-		__real_free(ptr);
-		return;
-	}
-#endif
 
 	struct mm_state *self = &current_lp->mm_state;
 	uint_fast8_t node_size = B_BLOCK_EXP;
@@ -134,7 +125,7 @@ void __wrap_free(void *ptr)
 
 	self->longest[i] = node_size;
 	self->used_mem -= 1 << node_size;
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 #endif
 	while (i) {
@@ -148,21 +139,21 @@ void __wrap_free(void *ptr)
 		} else {
 			self->longest[i] = max(left_longest, right_longest);
 		}
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 #endif
 		++node_size;
 	}
 }
 
-void *__wrap_realloc(void *ptr, size_t req_size)
+void *realloc_mt(void *ptr, size_t req_size)
 {
 	if (!req_size) {
-		__wrap_free(ptr);
+		free_mt(ptr);
 		return NULL;
 	}
 	if (!ptr) {
-		return __wrap_malloc(req_size);
+		return malloc_mt(req_size);
 	}
 
 	abort();
@@ -174,9 +165,9 @@ __extension__({								\
 	bool __vis = false;						\
 	uint_fast8_t __l = B_TOTAL_EXP;					\
 	uint_fast32_t __i = 0;						\
-	while(1) {							\
+	while (1) {							\
 		uint_fast8_t __lon = longest[__i];			\
-		if(!__lon) {						\
+		if (!__lon) {						\
 			uint_fast32_t __len = 1U << __l;		\
 			uint_fast32_t __o = 				\
 				((__i + 1) << __l) - (1 << B_TOTAL_EXP);\
@@ -198,13 +189,13 @@ __extension__({								\
 	}								\
 })
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 
 void __write_mem(void *ptr, size_t siz)
 {
 	struct mm_state *self = &current_lp->mm_state;
 	uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->base_mem;
-	if(diff >= (1 << B_TOTAL_EXP))
+	if (diff >= (1 << B_TOTAL_EXP))
 		return;
 
 	uint_fast32_t i = (diff >> B_BLOCK_EXP) +
@@ -219,12 +210,12 @@ void __write_mem(void *ptr, size_t siz)
 	} while(siz--);
 }
 
-static struct _mm_checkpoint *checkpoint_incremental_take(struct mm_state *self)
+static struct mm_checkpoint *checkpoint_incremental_take(struct mm_state *self)
 {
 	uint_fast32_t bset = bitmap_count_set(self->dirty, sizeof(self->dirty));
 
-	struct _mm_checkpoint *ret = mm_alloc(
-		offsetof(struct _mm_checkpoint, longest) +
+	struct mm_checkpoint *ret = mm_alloc(
+		offsetof(struct mm_checkpoint, longest) +
 		bset * (1 << B_BLOCK_EXP));
 
 	unsigned char *ptr = ret->longest;
@@ -246,12 +237,12 @@ __extension__({								\
 }
 
 static void checkpoint_incremental_restore(struct mm_state *self,
-	const struct _mm_checkpoint *ckp)
+	const struct mm_checkpoint *ckp)
 {
 	self->used_mem = ckp->used_mem;
 
 	array_count_t i = array_count(self->logs) - 1;
-	const struct _mm_checkpoint *cur_ckp = array_get_at(self->logs, i).c;
+	const struct mm_checkpoint *cur_ckp = array_get_at(self->logs, i).c;
 
 	while (cur_ckp != ckp) {
 		bitmap_merge_or(self->dirty, cur_ckp->dirty,
@@ -316,12 +307,12 @@ __extension__({								\
 
 #endif
 
-static struct _mm_checkpoint *checkpoint_full_take(const struct mm_state *self)
+static struct mm_checkpoint *checkpoint_full_take(const struct mm_state *self)
 {
-	struct _mm_checkpoint *ret = mm_alloc(
-		offsetof(struct _mm_checkpoint, base_mem) + self->used_mem);
+	struct mm_checkpoint *ret = mm_alloc(
+		offsetof(struct mm_checkpoint, base_mem) + self->used_mem);
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	ret->is_incremental = false;
 	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
 #endif
@@ -343,7 +334,7 @@ __extension__({								\
 }
 
 static void checkpoint_full_restore(struct mm_state *self,
-	const struct _mm_checkpoint *ckp)
+	const struct mm_checkpoint *ckp)
 {
 	self->used_mem = ckp->used_mem;
 	memcpy(self->longest, ckp->longest, sizeof(self->longest));
@@ -362,25 +353,24 @@ __extension__({								\
 
 void model_allocator_checkpoint_take(array_count_t ref_i)
 {
-	if(ref_i % B_LOG_FREQUENCY)
+	if (ref_i % B_LOG_FREQUENCY)
 		return;
 
 	struct mm_state *self = &current_lp->mm_state;
-	struct _mm_checkpoint *ckp;
+	struct mm_checkpoint *ckp;
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	if (self->dirty_mem < self->used_mem * B_LOG_INCREMENTAL_THRESHOLD) {
 		ckp = checkpoint_incremental_take(self);
 	} else {
 #endif
 		ckp = checkpoint_full_take(self);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	}
-	self->dirty_mem = 0;
 	memset(self->dirty, 0, sizeof(self->dirty));
 #endif
 
-	struct _mm_log mm_log = {
+	struct mm_log mm_log = {
 		.ref_i = ref_i,
 		.c = ckp
 	};
@@ -389,7 +379,7 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 
 void model_allocator_checkpoint_next_force_full(void)
 {
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	struct mm_state *self = &current_lp->mm_state;
 	self->dirty_mem = self->used_mem * B_LOG_INCREMENTAL_THRESHOLD;
 #endif
@@ -404,20 +394,20 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 		i--;
 	}
 
-	const struct _mm_checkpoint *ckp = array_get_at(self->logs, i).c;
-#ifdef NEUROME_INCREMENTAL
+	const struct mm_checkpoint *ckp = array_get_at(self->logs, i).c;
+#ifdef ROOTSIM_INCREMENTAL
 	if (ckp->is_incremental) {
 		checkpoint_incremental_restore(self, ckp);
 	} else {
 #endif
 		checkpoint_full_restore(self, ckp);
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	}
 	memset(self->dirty, 0, sizeof(self->dirty));
 	self->dirty_mem = 0;
 #endif
 
-	for(array_count_t j = array_count(self->logs) - 1; j > i; --j) {
+	for (array_count_t j = array_count(self->logs) - 1; j > i; --j) {
 		mm_free(array_get_at(self->logs, j).c);
 	}
 	array_count(self->logs) = i + 1;
@@ -435,7 +425,7 @@ array_count_t model_allocator_fossil_lp_collect(array_count_t tgt_ref_i)
 		ref_i = array_get_at(self->logs, log_i).ref_i;
 	}
 
-#ifdef NEUROME_INCREMENTAL
+#ifdef ROOTSIM_INCREMENTAL
 	while (array_get_at(self->logs, log_i).c->is_incremental) {
 		--log_i;
 		ref_i = array_get_at(self->logs, log_i).ref_i;

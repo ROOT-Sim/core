@@ -1,15 +1,24 @@
+/**
+ * @file test/mm/buddy/buddy_test.c
+ *
+ * @brief Test: rollbackable buddy system allocator
+ *
+ * A test of the buddy system allocator used to handle model's memory
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 #include <test_rng.h>
-#define NEUROME_BUDDY_ALLOCATOR 1
-#include <mm/model_allocator.h>
+
 #include <lp/lp.h>
+#include <mm/model_allocator.h>
 
 #include <stdlib.h>
-#include <stdint.h>
 
-static __thread uint128_t rng_state;
+static __thread test_rng_state rng_state;
 
-__thread lp_struct *current_lp; // needed by the model allocator
+__thread struct lp_ctx *current_lp; // needed by the model allocator
 __thread simtime_t current_gvt; // needed by the model allocator
 
 static int block_size_test(unsigned b_exp)
@@ -17,45 +26,45 @@ static int block_size_test(unsigned b_exp)
 	unsigned errs = 0;
 	unsigned block_size = 1 << b_exp;
 	unsigned allocations_cnt = 1 << (B_TOTAL_EXP - b_exp);
-	uint128_t rng_snap_a = rng_state;
+	test_rng_state rng_snap_a = rng_state;
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		allocations[i] = __wrap_malloc(block_size);
+		allocations[i] = malloc_mt(block_size);
 
 		if (allocations[i] == NULL) {
 			++errs;
 			continue;
 		}
 
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			allocations[i][j] = lcg_random_u(rng_state);
 		}
 	}
 
-	errs += __wrap_malloc(block_size) != NULL;
+	errs += malloc_mt(block_size) != NULL;
 
 	model_allocator_checkpoint_take(0);
-	uint128_t rng_snap_b = rng_state;
+	test_rng_state rng_snap_b = rng_state;
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			allocations[i][j] = lcg_random_u(rng_state);
 		}
 	}
 
-	errs += __wrap_malloc(block_size) != NULL;
+	errs += malloc_mt(block_size) != NULL;
 
 	model_allocator_checkpoint_take(B_LOG_FREQUENCY);
 
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			allocations[i][j] = lcg_random_u(rng_state);
 		}
 	}
 
-	errs += __wrap_malloc(block_size) != NULL;
+	errs += malloc_mt(block_size) != NULL;
 
 	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2 - 1);
 	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2);
@@ -63,21 +72,21 @@ static int block_size_test(unsigned b_exp)
 	model_allocator_checkpoint_restore(B_LOG_FREQUENCY);
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			errs += allocations[i][j] != lcg_random_u(rng_snap_b);
 		}
 
-		__wrap_free(allocations[i]);
+		free_mt(allocations[i]);
 	}
 
 	model_allocator_checkpoint_restore(0);
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		for (unsigned j = 0; j < block_size/sizeof(uint64_t); ++j) {
+		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			errs += allocations[i][j] != lcg_random_u(rng_snap_a);
 		}
 
-		__wrap_free(allocations[i]);
+		free_mt(allocations[i]);
 	}
 
 	free(allocations);
@@ -95,22 +104,21 @@ static int model_allocator_test(void)
 		errs += block_size_test(j) < 0;
 	}
 
-	errs += __wrap_malloc(0) != NULL;
-	errs += __wrap_calloc(0, sizeof(uint64_t)) != NULL;
+	errs += malloc_mt(0) != NULL;
+	errs += calloc_mt(0, sizeof(uint64_t)) != NULL;
 
-	__wrap_free(NULL);
+	free_mt(NULL);
 
-	uint64_t *mem = __wrap_calloc(1, sizeof(uint64_t));
+	uint64_t *mem = calloc_mt(1, sizeof(uint64_t));
 	errs += *mem;
-	__wrap_free(mem);
+	free_mt(mem);
 
 	model_allocator_lp_fini();
 	free(current_lp);
 	return -(!!errs);
 }
 
-const struct _test_config_t test_config = {
-	.test_name = "model allocator",
+const struct test_config test_config = {
 	.threads_count = 4,
 	.test_fnc = model_allocator_test
 };
