@@ -75,11 +75,12 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 static void parallel_global_init(void)
 {
 	stats_global_init();
+	lib_global_init();
+	process_global_init();
 	lp_global_init();
 	msg_queue_global_init();
 	termination_global_init();
 	gvt_global_init();
-	lib_global_init();
 #ifdef ROOTSIM_MPI
 	remote_msg_map_global_init();
 #endif
@@ -90,9 +91,10 @@ static void parallel_global_fini(void)
 #ifdef ROOTSIM_MPI
 	remote_msg_map_global_fini();
 #endif
-	lib_global_fini();
 	msg_queue_global_fini();
 	lp_global_fini();
+	process_global_fini();
+	lib_global_fini();
 	stats_global_fini();
 }
 

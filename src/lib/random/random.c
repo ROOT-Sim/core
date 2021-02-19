@@ -26,9 +26,10 @@
 
 void random_lib_lp_init(void)
 {
+	uint64_t seed = global_config.prng_seed;
 	lp_id_t lid = lp_id_get();
 	struct lib_ctx *ctx = lib_ctx_get();
-	random_init(ctx->rng_s, lid);
+	random_init(ctx->rng_s, lid, seed);
 	ctx->unif = NAN;
 }
 

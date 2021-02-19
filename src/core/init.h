@@ -24,6 +24,8 @@ struct simulation_configuration {
 	unsigned gvt_period;
 	/// The log verbosity level
 	int verbosity;
+	/// The seed used to initialize the pseudo random numbers
+	uint64_t prng_seed;
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
 	/// If set, the simulation will run on the serial runtime

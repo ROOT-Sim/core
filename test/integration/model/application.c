@@ -16,19 +16,13 @@
 
 struct ap_option model_options[] = {{0}};
 
-void model_parse(int key, const char *arg)
-{
-	if (key == AP_KEY_FINI)
-		crc_table_init();
-}
-
 #define do_random() (lcg_random(state->rng_state))
 
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st)
 {
 	lp_state *state = st;
 	if (state && state->events >= COMPLETE_EVENTS) {
-		if (event_type == DEINIT) {
+		if (event_type == LP_FINI) {
 			test_printf("%" PRIu32 "\n", state->total_checksum);
 			while(state->head)
 				state->head = deallocate_buffer(state->head, 0);
@@ -37,11 +31,17 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		return;
 	}
 
-	if (!state && event_type != INIT) {
+	if (!state && event_type != LP_INIT && event_type != MODEL_INIT &&
+			event_type != MODEL_FINI) {
+		printf("[ERR] Requested to process an weird event\n");
 		abort();
 	}
 	switch (event_type) {
-	case INIT:
+	case MODEL_INIT:
+		crc_table_init();
+		break;
+
+	case LP_INIT:
 		state = malloc(sizeof(lp_state));
 		if (state == NULL) {
 			exit(-1);
@@ -101,6 +101,9 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 			break;
 		state->head = allocate_buffer(state, event_content, event_size / sizeof(uint64_t));
 		state->buffer_count++;
+		break;
+
+	case MODEL_FINI:
 		break;
 
 	default:

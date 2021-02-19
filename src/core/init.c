@@ -36,6 +36,7 @@ enum option_key {
 	OPT_NP,
 	OPT_BIND,
 	OPT_SERIAL,
+	OPT_SEED,
 	OPT_LAST
 };
 
@@ -48,6 +49,7 @@ static struct ap_option ap_options[] = {
 	{"serial", 	OPT_SERIAL, NULL,  "Runs a simulation with the serial runtime"},
 	{"wt",		OPT_NP,   "VALUE", "Number of total cores being used by the simulation"},
 	{"no-bind",	OPT_BIND, NULL,    "Disables thread to core binding"},
+	{"seed",	OPT_SEED, "VALUE", "The seed value for the PRNG"},
 	{0}
 };
 
@@ -155,6 +157,10 @@ static void parse_opt(int key, const char *arg)
 
 	case OPT_SERIAL:
 		global_config.is_serial = true;
+		break;
+
+	case OPT_SEED:
+		global_config.prng_seed = parse_ullong_limits(0, UINT64_MAX);
 		break;
 
 	case AP_KEY_INIT:

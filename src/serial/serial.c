@@ -42,6 +42,17 @@ static binary_heap(struct lp_msg *) queue;
 static simtime_t current_evt_time;
 #endif
 
+void serial_model_init(void)
+{
+	struct s_lp_ctx tmp_lp = {0};
+	s_current_lp = &tmp_lp;
+	s_lps = s_current_lp - n_lps;
+
+	lib_lp_init();
+	ProcessEvent(0, 0, MODEL_INIT, NULL, 0, NULL);
+	lib_lp_fini();
+}
+
 /**
  * @brief Initializes the serial simulation environment
  */
@@ -49,13 +60,13 @@ static void serial_simulation_init(void)
 {
 	stats_global_init();
 	stats_init();
-
-	s_lps = mm_alloc(sizeof(*s_lps) * n_lps);
-	memset(s_lps, 0, sizeof(*s_lps) * n_lps);
-
 	msg_allocator_init();
 	heap_init(queue);
 	lib_global_init();
+	serial_model_init();
+
+	s_lps = mm_alloc(sizeof(*s_lps) * n_lps);
+	memset(s_lps, 0, sizeof(*s_lps) * n_lps);
 
 	for (uint64_t i = 0; i < n_lps; ++i) {
 		s_current_lp = &s_lps[i];
@@ -63,7 +74,7 @@ static void serial_simulation_init(void)
 #if LOG_DEBUG >= LOG_LEVEL
 		s_lps[i].last_evt_time = -1;
 #endif
-		ProcessEvent(i, 0, INIT, NULL, 0, s_lps[i].lib_ctx.state_s);
+		ProcessEvent(i, 0, LP_INIT, NULL, 0, s_lps[i].lib_ctx.state_s);
 	}
 }
 
@@ -74,20 +85,21 @@ static void serial_simulation_fini(void)
 {
 	for (uint64_t i = 0; i < n_lps; ++i) {
 		s_current_lp = &s_lps[i];
-		ProcessEvent(i, 0, UINT_MAX, NULL, 0, s_lps[i].lib_ctx.state_s);
+		ProcessEvent(i, 0, LP_FINI, NULL, 0, s_lps[i].lib_ctx.state_s);
 		lib_lp_fini();
 	}
+
+	ProcessEvent(0, 0, MODEL_FINI, NULL, 0, NULL);
 
 	for (array_count_t i = 0; i < array_count(queue); ++i) {
 		msg_allocator_free(array_get_at(queue, i));
 	}
 
+	mm_free(s_lps);
+
 	lib_global_fini();
 	heap_fini(queue);
 	msg_allocator_fini();
-
-	mm_free(s_lps);
-
 	stats_global_fini();
 }
 

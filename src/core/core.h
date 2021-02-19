@@ -44,8 +44,12 @@ __extension__({				\
 #define CACHE_LINE_SIZE 64
 #endif
 
-#define INIT 0
-#define DEINIT UINT_MAX
+enum rootsim_event {
+	MODEL_INIT,
+	LP_INIT,
+	LP_FINI,
+	MODEL_FINI
+};
 
 /// Optimize the branch as likely taken
 #define likely(exp) __builtin_expect(!!(exp), 1)

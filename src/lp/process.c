@@ -16,6 +16,7 @@
 #include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
+#include <serial/serial.h>
 
 static _Thread_local bool silent_processing = false;
 
@@ -49,6 +50,16 @@ void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 	array_push(proc_p->sent_msgs, msg);
 }
 
+void process_global_init(void)
+{
+	serial_model_init();
+}
+
+void process_global_fini(void)
+{
+	ProcessEvent(0, 0, MODEL_FINI, NULL, 0, NULL);
+}
+
 /**
  * @brief Initializes the processing module in the current LP
  */
@@ -60,12 +71,12 @@ void process_lp_init(void)
 	array_init(proc_p->past_msgs);
 	array_init(proc_p->sent_msgs);
 
-	struct lp_msg *msg = msg_allocator_pack(this_lp - lps, 0, INIT,
+	struct lp_msg *msg = msg_allocator_pack(this_lp - lps, 0, LP_INIT,
 		NULL, 0U);
 
 	array_push(proc_p->past_msgs, msg);
 	array_push(proc_p->sent_msgs, NULL);
-	ProcessEvent_pr(this_lp - lps, 0, INIT, NULL, 0, NULL);
+	ProcessEvent_pr(this_lp - lps, 0, LP_INIT, NULL, 0, NULL);
 
 	model_allocator_checkpoint_next_force_full();
 	model_allocator_checkpoint_take(0);
@@ -77,7 +88,7 @@ void process_lp_init(void)
 void process_lp_deinit(void)
 {
 	struct lp_ctx *this_lp = current_lp;
-	ProcessEvent_pr(this_lp - lps, 0, DEINIT, NULL, 0,
+	ProcessEvent_pr(this_lp - lps, 0, LP_FINI, NULL, 0,
 			   this_lp->lib_ctx_p->state_s);
 }
 

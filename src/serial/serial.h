@@ -10,6 +10,8 @@
 
 #include <core/core.h>
 
+extern void serial_model_init(void);
+
 extern void serial_simulation(void);
 
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
