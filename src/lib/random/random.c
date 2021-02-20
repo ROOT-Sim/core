@@ -5,13 +5,6 @@
  *
  * Piece-Wise Deterministic Random Number Generators.
  *
- * @todo Still missing to reimplement some functions:
- *  - RandomRange()
- *  - RandomRangeNonUniform()
- *  - Gamma()
- *  - Poisson()
- *  - Zipf()
- *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
