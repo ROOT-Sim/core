@@ -8,7 +8,6 @@ subdir('instr')
 # TODO integrate the plugin system
 subdir('lib')
 
-rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
 rootsim_c_args = [rootsim_version_def, log_level_def]
 
 if mpi_dep.found()

@@ -13,8 +13,9 @@ assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
 
 # This stuff would otherwise break our fragile linking process
 add_global_link_arguments(['-no-pie'], language : 'c')
-if meson.get_compiler('c').get_id() == 'gcc'
-  add_global_arguments(['-no-pie', '-fno-pic'], language : 'c')
+add_global_arguments(['-fno-pic'], language : 'c')
+if meson.get_compiler('c').get_id() != 'clang'
+  add_global_arguments(['-no-pie'], language : 'c')
 endif
 
 # Workaround to have reproducible unity builds
@@ -36,7 +37,8 @@ llvm_dep = dependency('llvm', version : '>= 9.0', required : true)
 mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 
 # Clang compiler
-clang_compiler = find_program('clang')
+clang_compiler = find_program(llvm_dep.get_variable(configtool : 'bindir') / 
+  'clang')
 
 # Custom threads library dependency
 rs_thr_dep = declare_dependency(link_with :
@@ -59,8 +61,10 @@ else
   log_level_def = '-DLOG_LEVEL=LOG_INFO'
 endif
 
+rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
+
 # Used to build the LLVM plugin
-llvm_cfg_gen = find_program('scripts/llvm_cfg_gen.py')
+llvm_cfg_gen = find_program('scripts' / 'llvm_cfg_gen.py')
 
 subdir('src')
 subdir('test')
