@@ -30,8 +30,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	}
 
 	lp_id_t dest = Random() * n_lps;
-	ScheduleNewEvent(dest, now + fabs(Normal() * 5.) + 20., MODEL_FINI + 1,
-			NULL, 0);
+	ScheduleNewEvent(dest, now + fabs(Normal() * 5.) + 20., 0, NULL, 0);
 }
 
 bool CanEnd(lp_id_t me, const unsigned *state)

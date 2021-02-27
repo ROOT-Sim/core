@@ -41,11 +41,13 @@ __extension__({				\
 #ifndef CACHE_LINE_SIZE // TODO: calculate and inject at build time
 /// The size of a cpu cache line
 /** Used to align some data structures in order to avoid false sharing */
-#define CACHE_LINE_SIZE 64
+#define CACHE_LINE_SIZE 128
 #endif
 
+// this definition is shared with ROOT-Sim.h
+// TODO: generate ROOT-Sim.h at build time
 enum rootsim_event {
-	MODEL_INIT,
+	MODEL_INIT = 65532,
 	LP_INIT,
 	LP_FINI,
 	MODEL_FINI

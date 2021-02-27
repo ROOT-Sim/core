@@ -52,7 +52,7 @@ uint64_t RandomU64(void)
 }
 
 /**
- * Returns a random number according to an Exponential distribution.
+ * Return a random number according to an Exponential distribution.
  * The mean value of the distribution must be passed as the mean value.
  *
  * @param mean Mean value of the distribution
@@ -67,7 +67,7 @@ double Expent(double mean)
 }
 
 /**
- * Returns a random number according to a Standard Normal Distribution
+ * Return a random number according to a Standard Normal Distribution
  *
  * @return A random number
  */
@@ -108,7 +108,7 @@ int RandomRangeNonUniform(int x, int min, int max)
 }
 
 /**
- * Returns a number in according to a Gamma Distribution of Integer Order ia,
+ * Return a number in according to a Gamma Distribution of Integer Order ia,
  * a waiting time to the ia-th event in a Poisson process of unit mean.
  *
  * @author D. E. Knuth
@@ -129,7 +129,7 @@ double Gamma(unsigned ia)
 		// Use direct method, adding waiting times
 		x = 1.0;
 		while (ia--)
-			x *= Random();
+			x *= 1 - Random();
 		x = -log(x);
 	} else {
 		double am = ia - 1;
@@ -155,17 +155,17 @@ double Gamma(unsigned ia)
 }
 
 /**
- * Returns the waiting time to the next event in a Poisson process of unit mean.
+ * Return the waiting time to the next event in a Poisson process of unit mean.
  *
  * @return A random number
  */
 double Poisson(void)
 {
-	return -log(Random());
+	return -log(1 - Random());
 }
 
 /**
- * This function returns a random sample from a Zipf distribution.
+ * Return a random sample from a Zipf distribution.
  * Based on the rejection method by Luc Devroye for sampling:
  * "Non-Uniform Random Variate Generation, page 550, Springer-Verlag, 1986
  *

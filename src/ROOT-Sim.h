@@ -21,7 +21,7 @@
 #include <stdlib.h>
 
 enum rootsim_event {
-	MODEL_INIT,
+	MODEL_INIT = 65532,
 	LP_INIT,
 	LP_FINI,
 	MODEL_FINI
