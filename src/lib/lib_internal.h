@@ -12,5 +12,6 @@
 
 #include <lib/lib.h>
 
+#include <core/init.h>
 #include <lp/lp.h>
 #include <serial/serial.h>

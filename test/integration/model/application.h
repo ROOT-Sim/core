@@ -21,7 +21,7 @@
 #define COMPLETE_EVENTS 10000
 
 enum {
-	LOOP = INIT + 1,
+	LOOP = MODEL_FINI + 1,
 	RECEIVE
 };
 

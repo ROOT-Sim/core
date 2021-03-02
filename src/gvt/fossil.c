@@ -57,12 +57,8 @@ void fossil_collect(simtime_t current_gvt)
 	msg_allocator_fossil_collect(current_gvt);
 #endif
 
-	uint64_t i, lps_cnt;
-	lps_iter_init(i, lps_cnt);
-
-	while(lps_cnt--){
+	for (uint64_t i = lp_id_first; i < lp_id_end; ++i) {
 		current_lp = &lps[i];
 		fossil_lp_collect(current_gvt);
-		i++;
 	}
 }

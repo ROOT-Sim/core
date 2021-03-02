@@ -36,6 +36,7 @@ enum option_key {
 	OPT_NP,
 	OPT_BIND,
 	OPT_SERIAL,
+	OPT_SEED,
 	OPT_LAST
 };
 
@@ -48,6 +49,7 @@ static struct ap_option ap_options[] = {
 	{"serial", 	OPT_SERIAL, NULL,  "Runs a simulation with the serial runtime"},
 	{"wt",		OPT_NP,   "VALUE", "Number of total cores being used by the simulation"},
 	{"no-bind",	OPT_BIND, NULL,    "Disables thread to core binding"},
+	{"seed",	OPT_SEED, "VALUE", "The seed value for the PRNG"},
 	{0}
 };
 
@@ -60,62 +62,38 @@ static void print_config(void)
 }
 
 /**
- * @brief Throws a formatted parsing error
- *
- * This macro uses symbols defined in parse_opt() body, therefore it can't be
- * used anywhere else
- */
-#define malformed_option_failure() 					\
-__extension__({								\
-	size_t __i;							\
-	for (__i = 0; ap_options[__i].key != key; ++__i);		\
-	arg_parse_error("invalid value \"%s\" in the %s option.", arg, 	\
-			ap_options[__i].name);				\
-})
-
-/**
- * @brief Parses the current argument into a unsigned value with bounds checks
+ * @brief Parses a string into a unsigned long long value with bounds checks
+ * @param str The string to parse
  * @param low The minimum allowed value of the parsed value
  * @param high The maximum allowed value of the parsed value
- * @return the parsed unsigned long long value
- *
- * If an error occurs malformed_option_failure() is called accordingly.
- * This macro uses symbols defined in parse_opt() body, therefore it can't be
- * used anywhere else
+ * @param err_chk A valid pointer to a boolean, which gets set in case of errors
+ * @return The parsed unsigned long long value or undefined in case of errors
  */
-#define parse_ullong_limits(low, high)					\
-__extension__({								\
-	unsigned long long int __value;					\
-	char *__endptr;							\
-	__value = strtoull(arg, &__endptr, 10);				\
-	if (*arg == '\0' || *__endptr != '\0' ||			\
-		__value < low || __value > high) {			\
-		malformed_option_failure();				\
-	}								\
-	__value;							\
-})
+static unsigned long long parse_ullong_limits(const char *str,
+		unsigned long long low, unsigned long long high, bool *err_chk)
+{
+	char *end_p;
+	unsigned long long ret = strtoull(str, &end_p, 10);
+	*err_chk = *str == '\0' || *end_p != '\0' || ret < low || ret > high;
+	return ret;
+}
 
 /**
- * @brief Parses the current argument into a double value with bounds checks
+ * @brief Parses a string into a long double value with bounds checks
+ * @param str The string to parse
  * @param low The minimum allowed value of the parsed value
  * @param high The maximum allowed value of the parsed value
- * @return the parsed double value
- *
- * If an error occurs malformed_option_failure() is called accordingly.
- * This macro uses symbols defined in parse_opt() body, therefore it can't be
- * used anywhere else
+ * @param err_chk A valid pointer to a boolean, which gets set in case of errors
+ * @return The parsed long double value or undefined in case of errors
  */
-#define parse_ldouble_limits(low, high)					\
-__extension__({								\
-	long double __value;						\
-	char *__endptr;							\
-	__value = strtold(arg, &__endptr);				\
-	if (*arg == '\0' || *__endptr != '\0' ||			\
-		__value < low || __value > high) {			\
-		malformed_option_failure();				\
-	}								\
-	__value;							\
-})
+static long double parse_ldouble_limits(const char *str, long double low,
+		long double high, bool *err_chk)
+{
+	char *end_p;
+	long double ret = strtold(str, &end_p);
+	*err_chk = *str == '\0' || *end_p != '\0' || ret < low || ret > high;
+	return ret;
+}
 
 /**
  * @brief Parses a single ROOT-Sim option, also handles parsing events
@@ -126,10 +104,11 @@ __extension__({								\
  */
 static void parse_opt(int key, const char *arg)
 {
+	bool parse_err = false;
 	switch (key) {
 
 	case OPT_NPRC:
-		n_lps = parse_ullong_limits(1, UINT_MAX);
+		n_lps = parse_ullong_limits(arg, 1, UINT_MAX, &parse_err);
 		break;
 
 	case OPT_LOG:
@@ -137,16 +116,17 @@ static void parse_opt(int key, const char *arg)
 		break;
 
 	case OPT_SIMT:
-		global_config.termination_time = parse_ldouble_limits(0,
-			SIMTIME_MAX);
+		global_config.termination_time = parse_ldouble_limits(arg, 0,
+			SIMTIME_MAX, &parse_err);
 		break;
 
 	case OPT_GVT:
-		global_config.gvt_period = parse_ullong_limits(1, 10000) * 1000;
+		global_config.gvt_period = parse_ullong_limits(arg, 1, 10000,
+				&parse_err) * 1000;
 		break;
 
 	case OPT_NP:
-		n_threads = parse_ullong_limits(1, UINT_MAX);
+		n_threads = parse_ullong_limits(arg, 1, UINT_MAX, &parse_err);
 		break;
 
 	case OPT_BIND:
@@ -155,6 +135,11 @@ static void parse_opt(int key, const char *arg)
 
 	case OPT_SERIAL:
 		global_config.is_serial = true;
+		break;
+
+	case OPT_SEED:
+		global_config.prng_seed = parse_ullong_limits(arg, 0,
+				UINT64_MAX, &parse_err);
 		break;
 
 	case AP_KEY_INIT:
@@ -195,11 +180,14 @@ static void parse_opt(int key, const char *arg)
 		log_logo_print();
 		print_config();
 	}
-}
 
-#undef parse_ullong_limits
-#undef handle_string_option
-#undef malformed_option_failure
+	if (unlikely(parse_err)) {
+		size_t i;
+		for (i = 0; ap_options[i].key != key; ++i);
+		arg_parse_error("invalid value \"%s\" in the %s option.", arg,
+				ap_options[i].name);
+	}
+}
 
 __attribute__((weak)) struct ap_option model_options[] = {0};
 __attribute__((weak)) void model_parse(int key, const char *arg){(void) key; (void) arg;}

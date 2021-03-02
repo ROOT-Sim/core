@@ -26,12 +26,10 @@
 
 /// A queue synchronized by a spinlock
 struct msg_queue {
-	alignas(CACHE_LINE_SIZE) struct {
-		/// Synchronizes access to the queue
-		spinlock_t lck;
-		/// The actual queue element of the matrix
-		binary_heap(struct lp_msg *) q;
-	};
+	/// Synchronizes access to the queue
+	alignas(CACHE_LINE_SIZE) spinlock_t lck;
+	/// The actual queue element of the matrix
+	binary_heap(struct lp_msg *) q;
 };
 
 /// The queues matrix, linearized in a contiguous array
@@ -73,8 +71,8 @@ void msg_queue_fini(void)
 		array_count_t j = heap_count(this_q->q);
 		while(j--) {
 			struct lp_msg *msg = heap_items(this_q->q)[j];
-			if(!(atomic_load_explicit(
-				&msg->flags, memory_order_relaxed) & MSG_FLAG_PROCESSED))
+			if(!(atomic_load_explicit(&msg->flags,
+				memory_order_relaxed) & MSG_FLAG_PROCESSED))
 				msg_allocator_free(msg);
 		}
 		heap_fini(this_q->q);
@@ -169,7 +167,7 @@ simtime_t msg_queue_time_peek(void)
  */
 void msg_queue_insert(struct lp_msg *msg)
 {
-	rid_t dest_rid = lid_to_rid[msg->dest];
+	rid_t dest_rid = lid_to_rid(msg->dest);
 	struct msg_queue *this_q = mqueue(rid, dest_rid);
 	spin_lock(&this_q->lck);
 	heap_insert(this_q->q, msg_is_before, msg);

@@ -76,6 +76,15 @@ char *args_termination[] = {
 	NULL
 };
 
+char *args_seed[] = {
+	"init_test",
+	"--lp",
+	"16",
+	"--seed",
+	"23491",
+	NULL
+};
+
 #define TEST_INIT(args_arr, cond) 					\
 __extension__({								\
 	init_args_parse(sizeof(args_arr) / sizeof(*(args_arr)) - 1,	\
@@ -96,6 +105,7 @@ int main(int argc, char **argv)
 		  !global_config.is_serial &&
 		  global_config.core_binding &&
 		  global_config.gvt_period == 200000 &&
+		  global_config.prng_seed == 0 &&
 		  global_config.termination_time == SIMTIME_MAX);
 
 	mocked_threads = 1024;
@@ -106,6 +116,7 @@ int main(int argc, char **argv)
 		  !global_config.is_serial &&
 		  global_config.core_binding &&
 		  global_config.gvt_period == 200000 &&
+		  global_config.prng_seed == 0 &&
 		  global_config.termination_time == SIMTIME_MAX);
 
 	TEST_INIT(args_wt,
@@ -114,6 +125,7 @@ int main(int argc, char **argv)
 		  !global_config.is_serial &&
 		  global_config.core_binding &&
 		  global_config.gvt_period == 200000 &&
+		  global_config.prng_seed == 0 &&
 		  global_config.termination_time == SIMTIME_MAX);
 
 	TEST_INIT(args_serial,
@@ -122,6 +134,7 @@ int main(int argc, char **argv)
 		  global_config.is_serial &&
 		  global_config.core_binding &&
 		  global_config.gvt_period == 200000 &&
+		  global_config.prng_seed == 0 &&
 		  global_config.termination_time == SIMTIME_MAX);
 
 	TEST_INIT(args_no_bind,
@@ -130,6 +143,7 @@ int main(int argc, char **argv)
 		  !global_config.is_serial &&
 		  !global_config.core_binding &&
 		  global_config.gvt_period == 200000 &&
+		  global_config.prng_seed == 0 &&
 		  global_config.termination_time == SIMTIME_MAX);
 
 	TEST_INIT(args_gvt,
@@ -138,6 +152,7 @@ int main(int argc, char **argv)
 		  !global_config.is_serial &&
 		  global_config.core_binding &&
 		  global_config.gvt_period == 500000 &&
+		  global_config.prng_seed == 0 &&
 		  global_config.termination_time == SIMTIME_MAX);
 
 	TEST_INIT(args_termination,
@@ -146,7 +161,17 @@ int main(int argc, char **argv)
 		  !global_config.is_serial &&
 		  global_config.core_binding &&
 		  global_config.gvt_period == 200000 &&
+		  global_config.prng_seed == 0 &&
 		  global_config.termination_time == 1437.23);
+
+	TEST_INIT(args_seed,
+		  n_lps == 16 &&
+		  n_threads == 1024 &&
+		  !global_config.is_serial &&
+		  global_config.core_binding &&
+		  global_config.gvt_period == 200000 &&
+		  global_config.prng_seed == 23491 &&
+		  global_config.termination_time == SIMTIME_MAX);
 
 	test_printf("test done");
 	return 0;

@@ -20,8 +20,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define INIT	0
-#define DEINIT	UINT_MAX
+enum rootsim_event {
+	MODEL_INIT = 65532,
+	LP_INIT,
+	LP_FINI,
+	MODEL_FINI
+};
 
 typedef double simtime_t;
 typedef uint64_t lp_id_t;
