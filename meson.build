@@ -51,6 +51,9 @@ endif
 if get_option('b_lto')
   c_optimization_options += '-flto'
 endif
+if get_option('b_sanitize') == 'address'
+  c_optimization_options += '-fsanitize=address'
+endif
 
 # Logging level define
 if get_option('debug')

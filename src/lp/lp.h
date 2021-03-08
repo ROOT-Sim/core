@@ -29,10 +29,12 @@ struct lp_ctx {
 	struct mm_state mm_state;
 };
 
-#define lid_to_rid(lp_id) ((lp_id) * n_threads / n_lps_node)
+#define lid_to_nid(lp_id) ((nid_t)((lp_id) * n_nodes / n_lps))
+#define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * n_threads / n_lps_node))
 
-extern __thread uint64_t lp_id_first;
-extern __thread uint64_t lp_id_end;
+extern uint64_t lid_node_first;
+extern __thread uint64_t lid_thread_first;
+extern __thread uint64_t lid_thread_end;
 
 extern uint64_t n_lps_node;
 extern __thread struct lp_ctx *current_lp;

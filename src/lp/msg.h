@@ -14,21 +14,27 @@
 
 #include <stdatomic.h>
 #include <stddef.h>
+#include <limits.h>
 
 #define BASE_PAYLOAD_SIZE 48
 
 #define msg_is_before(msg_a, msg_b) ((msg_a)->dest_t < (msg_b)->dest_t)
 #define msg_bare_size(msg) (offsetof(struct lp_msg, pl) + (msg)->pl_size)
+#define MSG_ID_PHASES_EXP 2U
+#define MSG_ID_PHASES (1U << MSG_ID_PHASES_EXP)
+#define msg_phase_previous(phase) 				\
+	((phase + MSG_ID_PHASES - 1) & (MSG_ID_PHASES - 1))
+#define msg_phase_next(phase) 					\
+	((phase + 1) & (MSG_ID_PHASES - 1))
 
-#define msg_id_get(msg, cur_phase) 					\
-	(((uintptr_t)msg) | ((unsigned)(cur_phase) << 1))
-#define msg_id_phase_get(msg_id) (((msg_id) >> 1) & 1U)
-#define msg_id_anti_phase_get(msg_id) ((msg_id) & 1U)
-#define msg_id_anti_phase_set(msg_id, phase) 				\
-__extension__({								\
-	(msg_id) &= ~((uintptr_t) 1U);					\
-	(msg_id) |= (phase);						\
-})
+struct msg_id {
+	unsigned seq : sizeof(unsigned) * CHAR_BIT - 2 * MSG_ID_PHASES_EXP;
+	unsigned anti_phase : MSG_ID_PHASES_EXP;
+	unsigned phase : MSG_ID_PHASES_EXP;
+};
+
+_Static_assert(sizeof(struct msg_id) == sizeof(unsigned),
+		"Bad assumption on struct msg_id size");
 
 /// A model simulation message
 struct lp_msg {
@@ -48,7 +54,7 @@ struct lp_msg {
 		/// The flags to handle local anti messages
 		atomic_int flags;
 		/// The message unique id, used for inter-node anti messages
-		uintptr_t msg_id;
+		struct msg_id id;
 	};
 	/// The initial part of the payload
 	unsigned char pl[BASE_PAYLOAD_SIZE];

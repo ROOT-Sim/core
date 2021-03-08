@@ -13,61 +13,58 @@
 #include <core/sync.h>
 #include <gvt/fossil.h>
 
-__thread uint64_t lp_id_first;
-__thread uint64_t lp_id_end;
+uint64_t lid_node_first;
+__thread uint64_t lid_thread_first;
+__thread uint64_t lid_thread_end;
 
 __thread struct lp_ctx *current_lp;
 struct lp_ctx *lps;
 lp_id_t n_lps_node;
 
-#define lp_start_id_compute(trd)					\
+#define lp_partition_start(part_id, part_fnc, lp_tot, part_cnt, offset)	\
 __extension__({								\
-	lp_id_t _g = (trd) * n_lps_node / n_threads;			\
-	while (_g && lid_to_rid(_g) >= (trd))				\
+	lp_id_t _g = (part_id) * (lp_tot) / (part_cnt) + offset;	\
+	while (_g > offset && part_fnc(_g) >= (part_id))		\
 		--_g;							\
-	while (lid_to_rid(_g) < (trd))					\
+	while (part_fnc(_g) < (part_id))				\
 		++_g;							\
 	_g;								\
 })
 
-static void lp_iterator_init(void)
-{
-	lp_id_first = lp_start_id_compute(rid);
-	lp_id_end = lp_start_id_compute(rid + 1);
-}
-
 void lp_global_init(void)
 {
-	uint64_t lps_offset = nid * n_lps / n_nodes;
-	n_lps_node = ((nid + 1) * n_lps) / n_nodes - lps_offset;
+	lid_node_first = lp_partition_start(nid, lid_to_nid, n_lps, n_nodes, 0);
+	n_lps_node = lp_partition_start(nid + 1, lid_to_nid, n_lps, n_nodes, 0)
+			- lid_node_first;
+
+	log_log(LOG_DEBUG, "n %lu %lu \n", lid_node_first, n_lps_node);
 
 	lps = mm_alloc(sizeof(*lps) * n_lps_node);
-	lps -= lps_offset;
+	lps -= lid_node_first;
 
 	if (n_lps_node < n_threads) {
-		log_log(
-			LOG_WARN,
-			"The simulation will run with %u threads instead of the available %u",
-			n_lps_node,
-			n_threads
-		);
+		log_log(LOG_WARN, "The simulation will run with %u threads instead of the available %u",
+				n_lps_node, n_threads);
 		n_threads = n_lps_node;
 	}
 }
 
 void lp_global_fini(void)
 {
-	uint64_t lps_offset = nid * n_lps / n_nodes;
-	lps += lps_offset;
-
+	lps += lid_node_first;
 	mm_free(lps);
 }
 
 void lp_init(void)
 {
-	lp_iterator_init();
+	lid_thread_first = lp_partition_start(rid, lid_to_rid, n_lps_node,
+			n_threads, lid_node_first);
+	lid_thread_end = lp_partition_start(rid + 1, lid_to_rid, n_lps_node,
+			n_threads, lid_node_first);
 
-	for (uint64_t i = lp_id_first; i < lp_id_end; ++i) {
+	log_log(LOG_DEBUG, "t %lu %lu %lu %u\n", lid_thread_first, lid_thread_end, n_lps_node, n_threads);
+
+	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		current_lp = &lps[i];
 
 		model_allocator_lp_init();
@@ -81,16 +78,15 @@ void lp_init(void)
 void lp_fini(void)
 {
 	if (sync_thread_barrier()) {
-		uint64_t lps_offset = nid * n_lps / n_nodes;
 		for (uint64_t i = 0; i < n_lps_node ; ++i) {
-			current_lp = &lps[i + lps_offset];
+			current_lp = &lps[i + lid_node_first];
 			process_lp_deinit();
 		}
 	}
 
 	sync_thread_barrier();
 
-	for (uint64_t i = lp_id_first; i < lp_id_end; ++i) {
+	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		current_lp = &lps[i];
 
 		process_lp_fini();

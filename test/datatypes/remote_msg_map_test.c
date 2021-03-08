@@ -26,14 +26,18 @@ void msg_queue_insert(struct lp_msg *msg)
 	(void)msg;
 	if (!msg)
 		abort();
-	if(atomic_load_explicit(&msg->flags, memory_order_acquire) ==
-		(MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)){
+	if (atomic_load_explicit(&msg->flags, memory_order_acquire) ==
+		(MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 		atomic_fetch_add_explicit(&insert_calls, 1U, memory_order_relaxed);
 	}
 }
-
+__thread unsigned gvt_phase;
 static int remote_msg_map_test(void)
 {
+	remote_msg_map_init();
+
+	test_thread_barrier();
+
 	struct lp_msg *msgs = malloc(sizeof(*msgs) * MSG_COUNT);
 	memset(msgs, 0, sizeof(*msgs) * MSG_COUNT);
 
@@ -47,13 +51,13 @@ static int remote_msg_map_test(void)
 	test_thread_barrier();
 
 	for (uint64_t i = 0; i < MSG_COUNT; ++i) {
-		remote_msg_map_match(msg_id_get(&msgs[i], i & 1U), rid,
-			(i & 1U) ? &msgs[i] : NULL);
+		struct msg_id id = {.seq = i * THREAD_CNT + rid, .phase = i & 1U};
+		remote_msg_map_match(id, 0, (i & 1U) ? &msgs[i] : NULL);
 	}
 
 	for (uint64_t i = 0; i < MSG_COUNT; ++i) {
-		remote_msg_map_match(msg_id_get(&msgs[i], i & 1U) + 1, rid,
-			(i & 1U) ? NULL : &msgs[i]);
+		struct msg_id id = {.seq = i * THREAD_CNT + rid, .phase = i & 1U};
+		remote_msg_map_match(id, 0, (i & 1U) ? NULL : &msgs[i]);
 	}
 
 	test_thread_barrier();

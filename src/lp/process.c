@@ -35,15 +35,11 @@ void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 	msg->send_t = array_peek(proc_p->past_msgs)->dest_t;
 #endif
 
-#ifdef ROOTSIM_MPI
 	nid_t dest_nid = lid_to_nid(receiver);
 	if (dest_nid != nid) {
 		mpi_remote_msg_send(msg, dest_nid);
 		msg_allocator_free_at_gvt(msg);
 	} else {
-#else
-	{
-#endif
 		atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
 		msg_queue_insert(msg);
 	}
@@ -102,7 +98,14 @@ void process_lp_fini(void)
 	array_fini(proc_p->sent_msgs);
 
 	for (array_count_t i = 0; i < array_count(proc_p->past_msgs); ++i) {
-		msg_allocator_free(array_get_at(proc_p->past_msgs, i));
+		struct lp_msg *msg = array_get_at(proc_p->past_msgs, i);
+		// fixme: this isn't 100% Valgrind clean, but one day it will be
+		int flags = atomic_load_explicit(&msg->flags,
+				memory_order_relaxed);
+		if (!(flags & MSG_FLAG_ANTI))
+			msg_allocator_free(msg);
+		else
+			log_log(LOG_DEBUG, "IGNORING stuff");
 	}
 	array_fini(proc_p->past_msgs);
 }
@@ -142,19 +145,15 @@ static inline void send_anti_messages(struct process_data *proc_p,
 	} while(b);
 
 	for (array_count_t i = sent_i + 1; i < array_count(proc_p->sent_msgs);
-		++i) {
+			++i) {
 		struct lp_msg *msg = array_get_at(proc_p->sent_msgs, i);
 		if (!msg)
 			continue;
 
-#ifdef ROOTSIM_MPI
 		nid_t dest_nid = lid_to_nid(msg->dest);
 		if (dest_nid != nid) {
 			mpi_remote_anti_msg_send(msg, dest_nid);
 		} else {
-#else
-		{
-#endif
 			int msg_status = atomic_fetch_add_explicit(&msg->flags,
 				MSG_FLAG_ANTI, memory_order_relaxed);
 			if (msg_status & MSG_FLAG_PROCESSED)
@@ -168,7 +167,7 @@ static inline void reinsert_invalid_past_messages(struct process_data *proc_p,
 						  array_count_t past_i)
 {
 	for (array_count_t i = past_i + 1; i < array_count(proc_p->past_msgs);
-		++i) {
+			++i) {
 		struct lp_msg *msg = array_get_at(proc_p->past_msgs, i);
 		int msg_status = atomic_fetch_add_explicit(&msg->flags,
 			-MSG_FLAG_PROCESSED, memory_order_relaxed);
@@ -191,8 +190,8 @@ static void handle_rollback(struct process_data *proc_p, array_count_t past_i)
 	stats_time_take(STATS_ROLLBACK);
 }
 
-static inline array_count_t match_anti_msg(
-	const struct process_data *proc_p, const struct lp_msg *a_msg)
+static inline array_count_t match_anti_msg(const struct process_data *proc_p,
+		const struct lp_msg *a_msg)
 {
 	array_count_t past_i = array_count(proc_p->past_msgs) - 1;
 	while (array_get_at(proc_p->past_msgs, past_i) != a_msg) {
@@ -218,6 +217,8 @@ void process_msg(void)
 		current_lp = NULL;
 		return;
 	}
+
+	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *this_lp = &lps[msg->dest];
 	struct process_data *proc_p = &this_lp->p;
@@ -257,5 +258,4 @@ void process_msg(void)
 
 	model_allocator_checkpoint_take(array_count(proc_p->past_msgs) - 1);
 	termination_on_msg_process(msg->dest_t);
-	gvt_on_msg_process(msg->dest_t);
 }

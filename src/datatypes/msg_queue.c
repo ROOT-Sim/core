@@ -45,7 +45,8 @@ static struct msg_queue *queues;
  */
 void msg_queue_global_init(void)
 {
-	queues = mm_alloc(n_threads * n_threads * sizeof(*queues));
+	queues = mm_aligned_alloc(CACHE_LINE_SIZE, n_threads * n_threads *
+			sizeof(*queues));
 }
 
 /**
@@ -54,7 +55,7 @@ void msg_queue_global_init(void)
 void msg_queue_init(void)
 {
 	rid_t i = n_threads;
-	while(i--) {
+	while (i--) {
 		heap_init(mqueue(i, rid)->q);
 		spin_init(&(mqueue(i, rid)->lck));
 	}
@@ -66,14 +67,12 @@ void msg_queue_init(void)
 void msg_queue_fini(void)
 {
 	rid_t i = n_threads;
-	while(i--) {
+	while (i--) {
 		struct msg_queue *this_q = mqueue(i, rid);
 		array_count_t j = heap_count(this_q->q);
-		while(j--) {
+		while (j--) {
 			struct lp_msg *msg = heap_items(this_q->q)[j];
-			if(!(atomic_load_explicit(&msg->flags,
-				memory_order_relaxed) & MSG_FLAG_PROCESSED))
-				msg_allocator_free(msg);
+			msg_allocator_free(msg);
 		}
 		heap_fini(this_q->q);
 	}
@@ -101,7 +100,7 @@ struct lp_msg *msg_queue_extract(void)
 	struct msg_queue *bid_q = mqueue(rid, rid);
 	struct lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
 
-	while(i--) {
+	while (i--) {
 		struct msg_queue *this_q = mqueue(i, rid);
 		if(!spin_trylock(&this_q->lck))
 			continue;
@@ -141,12 +140,12 @@ simtime_t msg_queue_time_peek(void)
 	bool done[t_cnt];
 	memset(done, 0, sizeof(done));
 
-	for(rid_t i = 0, r = t_cnt; r; i = (i + 1) % t_cnt){
-		if(done[i])
+	for (rid_t i = 0, r = t_cnt; r; i = (i + 1) % t_cnt) {
+		if (done[i])
 			continue;
 
 		struct msg_queue *this_q = mqueue(i, rid);
-		if(!spin_trylock(&this_q->lck))
+		if (!spin_trylock(&this_q->lck))
 			continue;
 
 		done[i] = true;

@@ -11,25 +11,35 @@
 #include <core/core.h>
 #include <lp/msg.h>
 
+#include <stdalign.h>
+
 extern void gvt_global_init(void);
 extern simtime_t gvt_phase_run(void);
-extern void gvt_on_msg_process(simtime_t msg_t);
+extern void gvt_on_msg_extraction(simtime_t msg_t);
 
-#ifdef ROOTSIM_MPI
+union aligned_counter {
+	alignas(CACHE_LINE_SIZE) atomic_uint c;
+	alignas(CACHE_LINE_SIZE) unsigned raw;
+};
 
-extern __thread bool gvt_phase_green;
-extern __thread unsigned remote_msg_sent[MAX_NODES];
-extern atomic_int remote_msg_received[2];
+_Static_assert(sizeof(union aligned_counter) == CACHE_LINE_SIZE,
+		"unexpected aligned_counter size");
+_Static_assert(offsetof(union aligned_counter, c) == 0,
+		"unexpected aligned_counter alignment");
+_Static_assert(offsetof(union aligned_counter, raw) == 0,
+		"unexpected aligned_counter alignment");
 
-extern void gvt_on_start_ctrl_msg(void);
+extern __thread unsigned gvt_phase;
+extern union aligned_counter remote_msg_sent[MSG_ID_PHASES][MAX_NODES];
+extern atomic_int remote_msg_received[MSG_ID_PHASES];
+
+extern void gvt_start_processing(void);
 extern void gvt_on_done_ctrl_msg(void);
 
 #define gvt_on_remote_msg_send(dest_nid)				\
-__extension__({ remote_msg_sent[dest_nid]++; })
+__extension__({ atomic_fetch_add_explicit(&(remote_msg_sent[		\
+	gvt_phase][dest_nid].c), 1U, memory_order_relaxed); })
 
 #define gvt_on_remote_msg_receive(msg_phase)				\
 __extension__({ atomic_fetch_add_explicit(remote_msg_received + 	\
 	msg_phase, 1U, memory_order_relaxed); })
-
-#define gvt_phase_get() __extension__({ gvt_phase_green;})
-#endif

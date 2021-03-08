@@ -11,10 +11,6 @@ subdir('lib')
 rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
 rootsim_c_args = [rootsim_version_def, log_level_def]
 
-if mpi_dep.found()
-  rootsim_c_args += '-DROOTSIM_MPI=1'
-endif
-
 # ROOT-Sim library sources
 rootsim_srcs = [
   'arch' / 'io.c',
@@ -26,7 +22,6 @@ rootsim_srcs = [
   'core' / 'sync.c',
   'datatypes' / 'msg_queue.c',
   'datatypes' / 'remote_msg_map.c',
-  'distributed' / 'mpi.c',
   'gvt' / 'fossil.c',
   'gvt' / 'gvt.c',
   'gvt' / 'termination.c',
@@ -41,6 +36,13 @@ rootsim_srcs = [
   'serial' / 'serial.c',
   'main.c'
 ]
+
+if mpi_dep.found()
+  rootsim_c_args += '-DROOTSIM_MPI=1'
+  rootsim_srcs += 'distributed' / 'mpi.c'
+else
+  rootsim_srcs += 'distributed' / 'no_mpi.c'
+endif
 
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
   dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)

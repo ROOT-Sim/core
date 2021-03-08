@@ -69,7 +69,6 @@ typedef double simtime_t;
 /// The maximum number of supported threads
 /** FIXME: this is used very limitedly. Consider its removal */
 #define MAX_THREADS (1 << 10)
-#define lid_to_nid(lid) (nid_t)(lid / n_lps_node)
 
 /// Used to uniquely identify LPs in the simulation
 typedef uint64_t lp_id_t;
@@ -82,17 +81,17 @@ typedef int nid_t;
 extern lp_id_t n_lps;
 /// The total number of LPs hosted in the node
 extern lp_id_t n_lps_node;
-/// The total number of MPI nodes in the simulation
+/// The total number of threads running in the node
 extern rid_t n_threads;
 /// The identifier of the thread
 extern __thread rid_t rid;
 
 #ifdef ROOTSIM_MPI
 
+/// The total number of MPI nodes in the simulation
 extern nid_t n_nodes;
 /// The node identifier of the node
 extern nid_t nid;
-/// The total number of threads running in the node
 
 #else
 enum {nid = 0, n_nodes = 1};

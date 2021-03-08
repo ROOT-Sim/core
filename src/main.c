@@ -19,10 +19,7 @@
 int main(int argc, char **argv)
 {
 	stats_global_time_start();
-
-#ifdef ROOTSIM_MPI
 	mpi_global_init(&argc, &argv);
-#endif
 	init_args_parse(argc, argv);
 
 	if (global_config.is_serial) {
@@ -31,7 +28,5 @@ int main(int argc, char **argv)
 		parallel_simulation();
 	}
 
-#ifdef ROOTSIM_MPI
 	mpi_global_fini();
-#endif
 }

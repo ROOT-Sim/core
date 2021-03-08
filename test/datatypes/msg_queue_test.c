@@ -25,6 +25,7 @@ static __thread test_rng_state rng_state;
 static struct lp_ctx lps_m[THREAD_CNT];
 static atomic_uint msg_missing = THREAD_REPS * THREAD_CNT;
 static atomic_uint msg_to_free = THREAD_CNT;
+uint64_t lid_node_first;
 
 struct lp_ctx *lps = lps_m;
 

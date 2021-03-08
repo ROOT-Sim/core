@@ -16,6 +16,7 @@
 #include <arch/timer.h>
 #include <core/arg_parse.h>
 #include <core/core.h>
+#include <distributed/mpi.h>
 
 #include <assert.h>
 #include <inttypes.h>
@@ -183,8 +184,6 @@ void stats_init(void)
 		STATS_BUFFER_ENTRIES * sizeof(stats_cur));
 }
 
-#ifdef ROOTSIM_MPI
-
 static void stats_files_receive(FILE *o)
 {
 	for (nid_t j = 1; j < n_nodes; ++j) {
@@ -223,8 +222,6 @@ static void stats_files_send(void)
 		mm_free(f_buf);
 	}
 }
-
-#endif
 
 static void stats_file_final_write(FILE *o)
 {
@@ -272,13 +269,12 @@ static void stats_file_final_write(FILE *o)
  */
 void stats_global_fini(void)
 {
-#ifdef ROOTSIM_MPI
 	mpi_node_barrier();
 	if (nid) {
 		stats_files_send();
 		return;
 	}
-#endif
+
 	FILE *o = file_open("w", "%s_stats.bin", arg_parse_program_name());
 	if (o == NULL) {
 		log_log(LOG_WARN, "Unavailable stats file: stats will be dumped on stdout");
@@ -286,14 +282,17 @@ void stats_global_fini(void)
 	}
 
 	stats_file_final_write(o);
-
-#ifdef ROOTSIM_MPI
 	stats_files_receive(o);
-#endif
 
 	fflush(o);
 	if (o != stdout)
 		fclose(o);
+
+	for (rid_t i = 0; i < n_threads; ++i)
+		fclose(stats_tmps[i]);
+
+	mm_free(stats_tmps);
+	fclose(stats_node_tmp);
 }
 
 void stats_time_start(enum stats_time this_stat)
