@@ -37,8 +37,6 @@ void lp_global_init(void)
 	n_lps_node = lp_partition_start(nid + 1, lid_to_nid, n_lps, n_nodes, 0)
 			- lid_node_first;
 
-	log_log(LOG_DEBUG, "n %lu %lu \n", lid_node_first, n_lps_node);
-
 	lps = mm_alloc(sizeof(*lps) * n_lps_node);
 	lps -= lid_node_first;
 
@@ -61,8 +59,6 @@ void lp_init(void)
 			n_threads, lid_node_first);
 	lid_thread_end = lp_partition_start(rid + 1, lid_to_rid, n_lps_node,
 			n_threads, lid_node_first);
-
-	log_log(LOG_DEBUG, "t %lu %lu %lu %u\n", lid_thread_first, lid_thread_end, n_lps_node, n_threads);
 
 	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		current_lp = &lps[i];

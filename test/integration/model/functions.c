@@ -15,9 +15,9 @@ uint32_t crc_update(const uint64_t *buf, size_t n, uint32_t crc);
 
 buffer* get_buffer(buffer *head, unsigned i)
 {
-	while(i--) {
+	while (i--)
 		head = head->next;
-	}
+
 	return head;
 }
 
@@ -33,13 +33,11 @@ buffer* allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
 	new->next = state->head;
 	new->count = count;
 
-	if (data != NULL) {
+	if (data != NULL)
 		memcpy(new->data, data, count * sizeof(uint64_t));
-	} else {
-		for(unsigned i = 0; i < count; i++) {
+	else
+		for(unsigned i = 0; i < count; i++)
 			new->data[i] = lcg_random_u(state->rng_state);
-		}
-	}
 
 	return new;
 }
@@ -70,7 +68,7 @@ static uint32_t crc_table[256];
 void crc_table_init(void)
 {
 	uint32_t n = 256;
-	while(n--) {
+	while (n--) {
 		uint32_t c = n;
 		int k = 8;
 		while(k--) {

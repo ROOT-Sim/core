@@ -59,11 +59,11 @@
 
 // Message exchanged among LPs
 typedef struct _event_content_type {
+	simtime_t sent_at; // Simulation time at which the call was handed off
+	simtime_t call_term_time; // Termination time of the call (used mainly in HANDOFF_RECV)
 	int cell; // The destination cell of an event
 	unsigned int from; // The sender of the event (in case of HANDOFF_RECV)
-	simtime_t sent_at; // Simulation time at which the call was handed off
 	int channel; // Channel to be freed in case of END_CALL
-	simtime_t   call_term_time; // Termination time of the call (used mainly in HANDOFF_RECV)
 } event_content_type;
 
 #define CROSS_PATH_GAIN		0.00000000000005

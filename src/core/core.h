@@ -68,7 +68,8 @@ typedef double simtime_t;
 #define MAX_NODES (1 << 16)
 /// The maximum number of supported threads
 /** FIXME: this is used very limitedly. Consider its removal */
-#define MAX_THREADS (1 << 10)
+#define MAX_THREADS_EXP 12
+#define MAX_THREADS (1 << MAX_THREADS_EXP)
 
 /// Used to uniquely identify LPs in the simulation
 typedef uint64_t lp_id_t;

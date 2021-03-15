@@ -23,7 +23,10 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 	lp_state *state = st;
 	if (state && state->events >= COMPLETE_EVENTS) {
 		if (event_type == LP_FINI) {
-			test_printf("%" PRIu32 "\n", state->total_checksum);
+			if (model_expected_output[me] != state->total_checksum) {
+				puts("[ERROR] Incorrect output!");
+				abort();
+			}
 			while(state->head)
 				state->head = deallocate_buffer(state->head, 0);
 			free(state);
@@ -33,7 +36,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 
 	if (!state && event_type != LP_INIT && event_type != MODEL_INIT &&
 			event_type != MODEL_FINI) {
-		printf("[ERR] Requested to process an weird event\n");
+		puts("[ERROR] Requested to process an weird event!");
 		abort();
 	}
 	switch (event_type) {
@@ -43,9 +46,9 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 
 	case LP_INIT:
 		state = malloc(sizeof(lp_state));
-		if (state == NULL) {
+		if (state == NULL)
 			exit(-1);
-		}
+
 		memset(state, 0, sizeof(lp_state));
 
 		lcg_init(state->rng_state, ((test_rng_state)me + 1) *
@@ -69,9 +72,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		if(do_random() < DOUBLING_PROBABILITY && dest != me)
 			ScheduleNewEvent(dest, now + do_random() * 10, LOOP, NULL, 0);
 
-		if (state->buffer_count) {
+		if (state->buffer_count)
 			state->total_checksum = read_buffer(state->head, do_random() * state->buffer_count, state->total_checksum);
-		}
 
 		if (state->buffer_count < MAX_BUFFERS && do_random() < ALLOC_PROBABILITY) {
 			unsigned c = do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t);
@@ -107,7 +109,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		break;
 
 	default:
-		printf("[ERR] Requested to process an unknown event\n");
+		puts("[ERROR] Requested to process an unknown event!");
 		abort();
 		break;
 	}

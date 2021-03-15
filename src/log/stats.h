@@ -29,6 +29,17 @@ enum stats_time {
 	STATS_COUNT
 };
 
+/// A set of statistical values of a single metric
+/** The form of these values is designed for easier incremental updates */
+struct stats_measure {
+	/// The count of events of this type
+	uint64_t count;
+	/// The mean time to complete an event multiplied by the events count
+	uint64_t sum_t;
+	/// The variance of the time to complete multiplied by the events count
+	uint64_t var_t;
+};
+
 extern void stats_global_time_start(void);
 extern void stats_global_time_take(enum stats_global_time this_stat);
 
@@ -37,6 +48,7 @@ extern void stats_global_fini(void);
 extern void stats_init(void);
 
 extern void stats_time_start(enum stats_time this_stat);
+extern const struct stats_measure *stats_time_query(enum stats_time this_stat);
 extern void stats_time_take(enum stats_time this_stat);
 extern void stats_on_gvt(simtime_t current_gvt);
 extern void stats_dump(void);

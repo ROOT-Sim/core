@@ -150,10 +150,10 @@ simtime_t msg_queue_time_peek(void)
 
 		done[i] = true;
 		--r;
-		if (heap_count(this_q->q) && t_min >
-					     heap_min(this_q->q)->dest_t) {
+		if (heap_count(this_q->q) &&
+				t_min > heap_min(this_q->q)->dest_t)
 			t_min = heap_min(this_q->q)->dest_t;
-		}
+
 		spin_unlock(&this_q->lck);
 	}
 

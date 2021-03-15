@@ -38,20 +38,20 @@ enum node_phase {
 	node_done
 };
 
-static __thread enum thread_phase thread_phase = thread_phase_idle;
-static __thread enum node_phase node_phase = node_phase_redux_first;
+static _Thread_local enum thread_phase thread_phase = thread_phase_idle;
+static _Thread_local enum node_phase node_phase = node_phase_redux_first;
 
 static timer_uint gvt_timer;
 static simtime_t reducing_p[MAX_THREADS];
-static __thread simtime_t current_gvt;
+static _Thread_local simtime_t current_gvt;
 static _Atomic(rid_t) c_a = 0;
 static _Atomic(rid_t) c_b = 0;
 
 static _Atomic(nid_t) gvt_nodes;
 
-__thread unsigned gvt_phase = 0;
-union aligned_counter remote_msg_sent[MSG_ID_PHASES][MAX_NODES];
-atomic_int remote_msg_received[MSG_ID_PHASES];
+_Thread_local _Bool gvt_phase;
+_Thread_local uint32_t remote_msg_seq[2][MAX_NODES];
+_Thread_local uint32_t remote_msg_received[2];
 
 /**
  * @brief Initializes the gvt module in the node
@@ -94,9 +94,9 @@ static inline simtime_t gvt_node_reduce(void)
 {
 	unsigned i = n_threads - 1;
 	simtime_t candidate = reducing_p[i];
-	while (i--) {
+	while (i--)
 		candidate = min(reducing_p[i], candidate);
-	}
+
 	return candidate;
 }
 
@@ -141,8 +141,10 @@ static bool gvt_thread_phase_run(void)
 
 static bool gvt_node_phase_run(void)
 {
-	static unsigned packed_sent[MAX_NODES];
-	static unsigned remote_msg_to_receive;
+	static _Thread_local uint32_t last_seq[2][MAX_NODES];
+	static _Atomic(uint32_t) total_sent[MAX_NODES];
+	static _Atomic(int32_t) total_msg_received;
+	static uint32_t remote_msg_to_receive;
 	static _Atomic(rid_t) c_c;
 	static _Atomic(rid_t) c_d;
 
@@ -151,51 +153,55 @@ static bool gvt_node_phase_run(void)
 	case node_phase_redux_second:
 		if (!gvt_thread_phase_run())
 			break;
-		if (node_phase == node_phase_redux_first)
-			gvt_phase = msg_phase_next(gvt_phase);
+
+		gvt_phase = gvt_phase ^ !node_phase;
 		thread_phase = thread_phase_A;
 		++node_phase;
 		break;
 	case node_sent_reduce:
 		if (atomic_load_explicit(&c_a, memory_order_relaxed))
 			break;
-		nid_t quota = (n_nodes / n_threads + 1);
-		union aligned_counter *sent =
-				remote_msg_sent[msg_phase_previous(gvt_phase)];
-		// synchronizes the remote_msg_sent values
-		atomic_thread_fence(memory_order_acq_rel);
-		for (rid_t i = rid * quota; i < (rid + 1) * quota; ++i) {
-			packed_sent[i] = sent[i].raw;
-			sent[i].raw = 0;
-		}
-		atomic_fetch_add_explicit(remote_msg_received +
-				msg_phase_previous(gvt_phase), 1U,
+
+		for (nid_t i = n_nodes - 1; i >= 0; --i)
+			atomic_fetch_add_explicit(&total_sent[i],
+					remote_msg_seq[!gvt_phase][i] -
+					last_seq[!gvt_phase][i],
+					memory_order_relaxed);
+		memcpy(last_seq[!gvt_phase], remote_msg_seq[!gvt_phase],
+				sizeof(uint32_t) * n_nodes);
+
+		atomic_fetch_add_explicit(&total_msg_received, 1U,
 				memory_order_relaxed);
-		// synchronizes packed_sent and sent values zeroing
+		// synchronizes total_sent and sent values zeroing
 		if (atomic_fetch_add_explicit(&c_c, 1U, memory_order_acq_rel) !=
 				n_threads - 1) {
 			node_phase = node_sent_wait;
 			break;
 		}
-		mpi_reduce_sum_scatter(packed_sent, &remote_msg_to_receive);
+		mpi_reduce_sum_scatter((uint32_t *)total_sent,
+				&remote_msg_to_receive);
 		node_phase = node_sent_reduce_wait;
 		break;
 	case node_sent_reduce_wait:
 		if (!mpi_reduce_sum_scatter_done())
 			break;
-		atomic_fetch_sub_explicit(remote_msg_received +
-				msg_phase_previous(gvt_phase),
+		atomic_fetch_sub_explicit(&total_msg_received,
 				remote_msg_to_receive + n_threads,
 				memory_order_relaxed);
 		node_phase = node_sent_wait;
 		break;
-	case node_sent_wait:
-		if (atomic_load_explicit(remote_msg_received +
-				msg_phase_previous(gvt_phase),
-				memory_order_relaxed))
+	case node_sent_wait: {
+		int32_t r = atomic_fetch_add_explicit(&total_msg_received,
+				remote_msg_received[!gvt_phase],
+				memory_order_relaxed);
+		remote_msg_received[!gvt_phase] = 0;
+		if (r)
 			break;
+		uint32_t q = n_nodes / n_threads + 1;
+		memset(total_sent + rid * q, 0, q * sizeof(*total_sent));
 		node_phase = node_phase_redux_second;
 		break;
+	}
 	case node_min_reduce:
 		if (atomic_fetch_add_explicit(&c_d, 1U, memory_order_relaxed)) {
 			node_phase = node_min_wait;
@@ -277,3 +283,8 @@ simtime_t gvt_phase_run(void)
 }
 
 #endif
+
+extern void gvt_remote_msg_send(struct lp_msg *msg, nid_t dest_nid);
+extern void gvt_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
+extern void gvt_remote_msg_receive(struct lp_msg *msg);
+extern void gvt_remote_anti_msg_receive(struct lp_msg *msg);

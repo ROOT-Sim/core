@@ -30,17 +30,6 @@
 #define STD_DEV_POWER_2_EXP 5
 #define STATS_MAX_STRLEN 32U
 
-/// A set of statistical values of a single metric
-/** The form of these values is designed for easier incremental updates */
-struct stats_measure {
-	/// The count of events of this type
-	uint64_t count;
-	/// The mean time to complete an event multiplied by the events count
-	uint64_t sum_t;
-	/// The variance of the time to complete multiplied by the events count
-	uint64_t var_t;
-};
-
 /// A container for statistics in a logical time period
 struct stats_thread {
 	/// Real elapsed time in microseconds from simulation beginning
@@ -338,4 +327,9 @@ void stats_dump(void)
 {
 	puts("");
 	fflush(stdout);
+}
+
+const struct stats_measure *stats_time_query(enum stats_time this_stat)
+{
+	return &stats_cur.s[this_stat];
 }

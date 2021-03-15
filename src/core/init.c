@@ -43,7 +43,7 @@ enum option_key {
 /// The array of ROOT-Sim supported command line options
 static struct ap_option ap_options[] = {
 	{"lp", 		OPT_NPRC, "VALUE", "Total number of Logical Processes being launched at simulation startup"},
-	{"log-level", 	OPT_LOG,  "TYPE",  "Logging level"},
+	{"log-level", 	OPT_LOG,  "VALUE", "Logging level"},
 	{"time", 	OPT_SIMT, "VALUE", "Logical time at which the simulation will be considered completed"},
 	{"gvt-period", 	OPT_GVT,  "VALUE", "Time between two GVT reductions (in milliseconds)"},
 	{"serial", 	OPT_SERIAL, NULL,  "Runs a simulation with the serial runtime"},
@@ -112,7 +112,7 @@ static void parse_opt(int key, const char *arg)
 		break;
 
 	case OPT_LOG:
-		// TODO
+		log_level = parse_ullong_limits(arg, 0, 6, &parse_err);
 		break;
 
 	case OPT_SIMT:
@@ -151,8 +151,6 @@ static void parse_opt(int key, const char *arg)
 		global_config.is_serial = false;
 		global_config.core_binding = true;
 		log_colored = io_terminal_can_colorize();
-		// Store the predefined values, before reading any overriding one
-		// TODO
 		break;
 
 	case AP_KEY_FINI:
@@ -190,7 +188,11 @@ static void parse_opt(int key, const char *arg)
 }
 
 __attribute__((weak)) struct ap_option model_options[] = {0};
-__attribute__((weak)) void model_parse(int key, const char *arg){(void) key; (void) arg;}
+__attribute__((weak)) void model_parse(int key, const char *arg)
+{
+	(void) key;
+	(void) arg;
+}
 
 /// The struct ap_section containing ROOT-Sim internal parser and the model one
 struct ap_section ap_sects[] = {

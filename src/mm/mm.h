@@ -16,7 +16,8 @@
 #include <stdlib.h>
 
 /**
- * @brief A version of the stdlib malloc() used internally
+ * @brief A version of the stdlib aligned_alloc() used internally
+ * @param alignment the requested alignment value in bytes
  * @param mem_size the size of the requested memory allocation
  * @return a pointer to the newly allocated memory area
  *

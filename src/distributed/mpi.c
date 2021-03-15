@@ -19,7 +19,6 @@
 #include <core/sync.h>
 #include <datatypes/array.h>
 #include <datatypes/msg_queue.h>
-#include <datatypes/remote_msg_map.h>
 #include <gvt/gvt.h>
 #include <gvt/termination.h>
 #include <mm/msg_allocator.h>
@@ -52,7 +51,7 @@ static spinlock_t mpi_spinlock;
  * @param ... an implementation specific list of additional arguments in which
  *            we are not interested
  *
- * This handler is registered in mpi_global_init() to print meaningful MPI errors
+ * This is registered in mpi_global_init() to print meaningful MPI errors
  */
 static void comm_error_handler(MPI_Comm *comm, int *err_code_p, ...)
 {
@@ -136,8 +135,7 @@ void mpi_global_fini(void)
  */
 void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
-	msg->id.seq = gvt_on_remote_msg_send(dest_nid);
-	msg->id.phase = gvt_phase;
+	gvt_remote_msg_send(msg, dest_nid);
 
 	mpi_lock();
 	MPI_Request req;
@@ -161,13 +159,12 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
  */
 void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
-	gvt_on_remote_msg_send(dest_nid);
-	msg->id.anti_phase = gvt_phase;
+	gvt_remote_anti_msg_send(msg, dest_nid);
 
 	mpi_lock();
 	MPI_Request req;
-	MPI_Isend(&msg->id, sizeof(msg->id), MPI_BYTE, dest_nid, 0,
-		MPI_COMM_WORLD, &req);
+	MPI_Isend(msg, msg_anti_size(), MPI_BYTE, dest_nid, 0, MPI_COMM_WORLD,
+			&req);
 	MPI_Request_free(&req);
 	mpi_unlock();
 }
@@ -252,30 +249,24 @@ void mpi_remote_msg_handle(void)
 
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
-		if (unlikely(size == sizeof(struct msg_id))) {
-			struct msg_id anti_id;
-			MPI_Mrecv(&anti_id, size, MPI_BYTE, &mpi_msg,
-				MPI_STATUS_IGNORE);
+		struct lp_msg *msg;
+		if (unlikely(size == msg_anti_size())) {
+			msg = msg_allocator_alloc(0);
+			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,
+					MPI_STATUS_IGNORE);
 			mpi_unlock();
 
-			remote_msg_map_match(anti_id, status.MPI_SOURCE, NULL);
-			gvt_on_remote_msg_receive(anti_id.anti_phase);
-			continue;
+			gvt_remote_anti_msg_receive(msg);
+		} else {
+			msg = msg_allocator_alloc(size -
+					offsetof(struct lp_msg, pl));
+			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,
+					MPI_STATUS_IGNORE);
+			mpi_unlock();
+
+			gvt_remote_msg_receive(msg);
 		}
-
-		mpi_unlock();
-		struct lp_msg *msg = msg_allocator_alloc(size -
-				offsetof(struct lp_msg, pl));
-
-		mpi_lock();
-		MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-		mpi_unlock();
-
-		struct msg_id msg_id = msg->id;
-		atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
-		remote_msg_map_match(msg_id, status.MPI_SOURCE, msg);
 		msg_queue_insert(msg);
-		gvt_on_remote_msg_receive(msg_id.phase);
 	}
 }
 
@@ -294,10 +285,10 @@ static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
  * a time. Both arguments must point to valid memory regions until
  * mpi_reduce_sum_scatter_done() returns true.
  */
-void mpi_reduce_sum_scatter(const unsigned values[n_nodes], unsigned *result)
+void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], unsigned *result)
 {
 	mpi_lock();
-	MPI_Ireduce_scatter_block(values, result, 1, MPI_UNSIGNED, MPI_SUM,
+	MPI_Ireduce_scatter_block(values, result, 1, MPI_UINT32_T, MPI_SUM,
 			MPI_COMM_WORLD, &reduce_sum_scatter_req);
 	mpi_unlock();
 }

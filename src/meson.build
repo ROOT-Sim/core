@@ -21,7 +21,6 @@ rootsim_srcs = [
   'core' / 'init.c',
   'core' / 'sync.c',
   'datatypes' / 'msg_queue.c',
-  'datatypes' / 'remote_msg_map.c',
   'gvt' / 'fossil.c',
   'gvt' / 'gvt.c',
   'gvt' / 'termination.c',
@@ -55,7 +54,7 @@ compiler_c_args = [
 ]
 
 if mpi_dep.found()
-  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_compiler.full_path() + ' mpicc"'
+  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_compiler.full_path() + ' MPICH_CC=' + clang_compiler.full_path() + ' mpicc"'
 else
   compiler_c_args += '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
 endif
