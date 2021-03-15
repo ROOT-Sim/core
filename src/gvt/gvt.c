@@ -39,7 +39,6 @@ enum node_phase {
 };
 
 static _Thread_local enum thread_phase thread_phase = thread_phase_idle;
-static _Thread_local enum node_phase node_phase = node_phase_redux_first;
 
 static timer_uint gvt_timer;
 static simtime_t reducing_p[MAX_THREADS];
@@ -141,6 +140,7 @@ static bool gvt_thread_phase_run(void)
 
 static bool gvt_node_phase_run(void)
 {
+	static _Thread_local enum node_phase node_phase = node_phase_redux_first;
 	static _Thread_local uint32_t last_seq[2][MAX_NODES];
 	static _Atomic(uint32_t) total_sent[MAX_NODES];
 	static _Atomic(int32_t) total_msg_received;
