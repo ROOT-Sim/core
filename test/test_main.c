@@ -12,6 +12,8 @@
 
 #include <arch/thread.h>
 
+extern __thread rid_t rid;
+
 /// The arguments passed to test threads
 struct stub_arguments {
 	/// The actual entry point defined by the test configuration

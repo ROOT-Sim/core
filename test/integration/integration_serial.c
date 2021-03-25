@@ -12,13 +12,11 @@
 
 static const char *test_arguments[] = {
 	"--lp",
-	"64",
+	"256",
 	"--serial",
 	NULL
 };
 
 const struct test_config test_config = {
-	.test_arguments = test_arguments,
-	.expected_output = model_expected_output_64,
-	.expected_output_size = sizeof(model_expected_output_64)
+	.test_arguments = test_arguments
 };

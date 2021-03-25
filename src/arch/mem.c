@@ -44,6 +44,7 @@ size_t mem_stat_rss_current_get(void)
 
 #include <ctype.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 static int proc_stat_fd;

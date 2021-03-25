@@ -25,16 +25,16 @@ bool sync_thread_barrier(void)
 	bool l;
 	unsigned r;
 	if (phase & 2U) {
-		l = atomic_fetch_add_explicit(c, -1, memory_order_release) == 1;
+		l = atomic_fetch_add_explicit(c, -1, memory_order_acq_rel) == 1;
 		do {
 			r = atomic_load_explicit(c, memory_order_relaxed);
-		} while(r);
+		} while (r);
 	} else {
-		l = !atomic_fetch_add_explicit(c, 1, memory_order_release);
+		l = !atomic_fetch_add_explicit(c, 1, memory_order_acq_rel);
 		rid_t thr_cnt = n_threads;
 		do {
 			r = atomic_load_explicit(c, memory_order_relaxed);
-		} while(r != thr_cnt);
+		} while (r != thr_cnt);
 	}
 
 	phase = (phase + 1) & 3U;

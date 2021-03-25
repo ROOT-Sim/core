@@ -21,6 +21,8 @@ jobs:
         python-version: '3.x'
     - name: Install Meson and Ninja
       run: pip install meson ninja
+    - name: Install OpenMPI
+      run: sudo apt-get install openmpi-bin libopenmpi-dev
     - name: Set up build folder
       run: meson setup builddir/ -Db_coverage=true -Db_lto=false
       env:

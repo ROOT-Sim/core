@@ -173,11 +173,7 @@ int main(int argc, char **argv)
 		  global_config.prng_seed == 23491 &&
 		  global_config.termination_time == SIMTIME_MAX);
 
-	test_printf("test done");
 	return 0;
 }
 
-const struct test_config test_config = {
-	.expected_output = "test done",
-	.expected_output_size = sizeof("test done") - 1
-};
+const struct test_config test_config = {0};

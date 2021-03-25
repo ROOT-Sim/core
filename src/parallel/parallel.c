@@ -13,7 +13,6 @@
 #include <core/init.h>
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
-#include <datatypes/remote_msg_map.h>
 #include <distributed/mpi.h>
 #include <gvt/fossil.h>
 #include <gvt/gvt.h>
@@ -31,6 +30,7 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 	msg_queue_init();
 	sync_thread_barrier();
 	lp_init();
+	process_init();
 
 #ifdef ROOTSIM_MPI
 	if (sync_thread_barrier())
@@ -42,9 +42,8 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 	}
 
 	while (likely(termination_cant_end())) {
-#ifdef ROOTSIM_MPI
 		mpi_remote_msg_handle();
-#endif
+
 		unsigned i = 8;
 		while (i--) {
 			process_msg();
@@ -64,6 +63,7 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 		log_log(LOG_INFO, "Finalizing simulation");
 	}
 
+	process_fini();
 	lp_fini();
 	msg_queue_fini();
 	sync_thread_barrier();
@@ -81,16 +81,10 @@ static void parallel_global_init(void)
 	msg_queue_global_init();
 	termination_global_init();
 	gvt_global_init();
-#ifdef ROOTSIM_MPI
-	remote_msg_map_global_init();
-#endif
 }
 
 static void parallel_global_fini(void)
 {
-#ifdef ROOTSIM_MPI
-	remote_msg_map_global_fini();
-#endif
 	msg_queue_global_fini();
 	lp_global_fini();
 	process_global_fini();
