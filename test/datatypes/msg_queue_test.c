@@ -1,3 +1,11 @@
+/**
+ * @file test/datatypes/msg_queue_test.c
+ *
+ * @brief Test: parallel message queue
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <test.h>
 #include <test_rng.h>
 
@@ -12,13 +20,13 @@
 #define THREAD_CNT 6
 #define THREAD_REPS 100000
 
-static __thread test_rng_t rng_state;
-static unsigned lid_to_rid_m[] = {0, 1, 2, 3, 0, 1, 2, 3, 5, 4, 4, 5};
+uint64_t n_lps_node = 64;
+static __thread test_rng_state rng_state;
 static struct lp_ctx lps_m[THREAD_CNT];
 static atomic_uint msg_missing = THREAD_REPS * THREAD_CNT;
 static atomic_uint msg_to_free = THREAD_CNT;
+uint64_t lid_node_first;
 
-unsigned *lid_to_rid = lid_to_rid_m;
 struct lp_ctx *lps = lps_m;
 
 void msg_allocator_free(struct lp_msg *msg)
@@ -52,10 +60,7 @@ static int msg_queue_test(void)
 		struct lp_msg *msg = malloc(sizeof(*msg));
 		memset(msg, 0, sizeof(*msg));
 		msg->dest_t = lcg_random(rng_state) * THREAD_REPS;
-		msg->dest =
-			lcg_random(rng_state) *
-			sizeof(lid_to_rid_m) /
-			sizeof(*lid_to_rid_m);
+		msg->dest = lcg_random(rng_state) * n_lps_node;
 		msg_queue_insert(msg);
 	}
 
@@ -85,7 +90,7 @@ static int msg_queue_test(void)
 	return ret;
 }
 
-const struct _test_config_t test_config = {
+const struct test_config test_config = {
 	.threads_count = THREAD_CNT,
 	.test_init_fnc = msg_queue_test_init,
 	.test_fini_fnc = msg_queue_test_fini,

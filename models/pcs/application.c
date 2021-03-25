@@ -1,3 +1,7 @@
+/**
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include "application.h"
 
 #include <stdlib.h>
@@ -102,7 +106,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, int event_type, event_content_type 
 
 	switch(event_type) {
 
-		case INIT:
+		case LP_INIT:
 
 			// Initialize the LP's state
 			state = (lp_state_type *)malloc(sizeof(lp_state_type));
@@ -291,7 +295,9 @@ void ProcessEvent(lp_id_t me, simtime_t now, int event_type, event_content_type 
 
 			break;
 
-		case DEINIT:
+		case LP_FINI:
+		case MODEL_INIT:
+		case MODEL_FINI:
 			break;
 		default:
 			fprintf(stdout, "PCS: Unknown event type! (me = %lu - event type = %d)\n", me, event_type);

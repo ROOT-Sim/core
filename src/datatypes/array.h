@@ -1,28 +1,13 @@
 /**
-* @file datatypes/array.h
-*
-* @brief Dynamic array datatype
-*
-* Dynamic array datatype
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file datatypes/array.h
+ *
+ * @brief Dynamic array datatype
+ *
+ * Dynamic array datatype
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <mm/mm.h>
@@ -113,16 +98,6 @@ __extension__({								\
 		sizeof(*array_items(self)) * (array_count(self)-(i)));	\
 	array_items(self)[(i)] = (elem);				\
 	array_count(self)++;						\
-})
-
-#define array_remove_at_lazy(self, i)					\
-__extension__({								\
-	__typeof__(*array_items(self)) __rmval;				\
-	array_count(self)--;						\
-	__rmval = array_items(self)[(i)];				\
-	array_items(self)[(i)] = array_items(self)[array_count(self)];	\
-	array_shrink(self);						\
-	__rmval;							\
 })
 
 #define array_remove_at(self, i)					\

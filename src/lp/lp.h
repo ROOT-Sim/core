@@ -5,23 +5,8 @@
  *
  * LP construction functions
  *
- * @copyright
- * Copyright (C) 2008-2020 HPDCS Group
- * https://hpdcs.github.io
- *
- * This file is part of ROOT-Sim (ROme OpTimistic Simulator).
- *
- * ROOT-Sim is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; only version 3 of the License applies.
- *
- * ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
@@ -44,24 +29,16 @@ struct lp_ctx {
 	struct mm_state mm_state;
 };
 
-#define lps_iter_init(start_i, lps_cnt)					\
-{									\
-	const unsigned __i = rid;					\
-	const unsigned __ucnt = n_threads;				\
-	const uint64_t __lpscnt = (nid + 1 == n_nodes) ? 		\
-		n_lps - n_lps_node * (n_nodes - 1) : n_lps_node;	\
-	const bool __big = __i >= (__ucnt - (__lpscnt % __ucnt));	\
-	start_i = n_lps_node * nid;					\
-	start_i += __big ?						\
-		__lpscnt - ((__lpscnt / __ucnt + 1) * (__ucnt - __i)) : \
-		((__lpscnt / __ucnt) * __i);				\
-	lps_cnt	= (__lpscnt / __ucnt) + __big;				\
-}
+#define lid_to_nid(lp_id) ((nid_t)((lp_id) * n_nodes / n_lps))
+#define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * n_threads / n_lps_node))
+
+extern uint64_t lid_node_first;
+extern __thread uint64_t lid_thread_first;
+extern __thread uint64_t lid_thread_end;
 
 extern uint64_t n_lps_node;
 extern __thread struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
-extern rid_t *lid_to_rid;
 
 extern void lp_global_init(void);
 extern void lp_global_fini(void);

@@ -1,32 +1,16 @@
 /**
-* @file datatypes/bitmap.h
-*
-* @brief Bitmap data type
-*
-* This a simple bitmap implemented with some simple macros.
-* Keep in mind that some trust is given to the developer since
-* the implementation, for performances and simplicity
-* reasons, doesn't remember its effective size; consequently
-* it doesn't check boundaries on the array that stores the bits.
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file datatypes/bitmap.h
+ *
+ * @brief Bitmap data type
+ *
+ * This a simple bitmap implemented with some simple macros. Keep in mind that
+ * some trust is given to the developer since the implementation, for
+ * performances and simplicity reasons, doesn't remember its effective size;
+ * consequently it doesn't check boundaries on the array that stores the bits.
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <core/intrinsics.h>
@@ -124,7 +108,7 @@ typedef unsigned char block_bitmap;
 /**
  * @brief Counts the occurrences of set bits in a bitmap
  * @param bitmap a pointer to the bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @return the number of cleared bits in the bitmap
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
@@ -144,7 +128,7 @@ __extension__({ 							\
 /**
  * @brief Counts the occurrences of cleared bits in a bitmap
  * @param bitmap a pointer to the bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @return the number of cleared bits in the bitmap
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
@@ -158,7 +142,7 @@ __extension__({								\
 /**
  * @brief Computes the index of the first cleared bit in a bitmap.
  * @param bitmap a pointer to the bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @return the index of the first cleared bit in the bitmap, UINT_MAX if none is found.
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
@@ -182,7 +166,7 @@ __extension__({								\
 /**
  * @brief Executes a user supplied function for each set bit in a bitmap.
  * @param bitmap a pointer to the bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @param func a function which takes a single unsigned argument, the index of the current set bit.
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
@@ -207,7 +191,7 @@ __extension__({ 							\
  * @brief Merges a bitmap into another one by OR-ing all the bits.
  * @param dest a pointer to the destination bitmap.
  * @param source a pointer to the source bitmap.
- * @param bitmap_size the size of the bitmap in bytes (obtainable through bitmap_required_size())
+ * @param bitmap_size the size of the bitmap in bytes
  * @return the index of the first cleared bit in the bitmap, UINT_MAX if none is found.
  *
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.

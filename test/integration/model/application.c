@@ -1,19 +1,32 @@
+/**
+ * @file test/integration/model/application.c
+ *
+ * @brief Main module of the model used to verify the runtime correctness
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <integration/model/application.h>
 
 #include <test.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+struct ap_option model_options[] = {{0}};
 
 #define do_random() (lcg_random(state->rng_state))
 
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st)
 {
-	lp_state_t *state = st;
-	if (state && state->events >= COMPLETE_EVENTS){
-		if(event_type == DEINIT){
-			test_printf("%" PRIu32 "\n", state->total_checksum);
+	lp_state *state = st;
+	if (state && state->events >= COMPLETE_EVENTS) {
+		if (event_type == LP_FINI) {
+			if (model_expected_output[me] != state->total_checksum) {
+				puts("[ERROR] Incorrect output!");
+				abort();
+			}
 			while(state->head)
 				state->head = deallocate_buffer(state->head, 0);
 			free(state);
@@ -21,25 +34,31 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		return;
 	}
 
-	if (!state && event_type != INIT){
+	if (!state && event_type != LP_INIT && event_type != MODEL_INIT &&
+			event_type != MODEL_FINI) {
+		puts("[ERROR] Requested to process an weird event!");
 		abort();
 	}
 	switch (event_type) {
-	case INIT:
-		state = malloc(sizeof(lp_state_t));
-		if (state == NULL) {
-			exit(-1);
-		}
-		memset(state, 0, sizeof(lp_state_t));
-
-		lcg_init(state->rng_state, ((test_rng_t)me + 1) * 4390023366657240769ULL);
-		SetState(state);
-
+	case MODEL_INIT:
 		crc_table_init();
+		break;
+
+	case LP_INIT:
+		state = malloc(sizeof(lp_state));
+		if (state == NULL)
+			exit(-1);
+
+		memset(state, 0, sizeof(lp_state));
+
+		lcg_init(state->rng_state, ((test_rng_state)me + 1) *
+			 4390023366657240769ULL);
+		SetState(state);
 
 		unsigned buffers_to_allocate = do_random() * MAX_BUFFERS;
 		for (unsigned i = 0; i < buffers_to_allocate; ++i) {
-			state->head = allocate_buffer(state, NULL, do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t));
+			unsigned c = do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t);
+			state->head = allocate_buffer(state, NULL, c);
 			state->buffer_count++;
 		}
 
@@ -50,24 +69,24 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		state->events++;
 		ScheduleNewEvent(me, now + do_random() * 10, LOOP, NULL, 0);
 		lp_id_t dest = do_random() * n_lps;
-		if(do_random() < 0.5 && dest != me)
+		if(do_random() < DOUBLING_PROBABILITY && dest != me)
 			ScheduleNewEvent(dest, now + do_random() * 10, LOOP, NULL, 0);
 
-		if(state->buffer_count){
+		if (state->buffer_count)
 			state->total_checksum = read_buffer(state->head, do_random() * state->buffer_count, state->total_checksum);
-		}
 
-		if(state->buffer_count < MAX_BUFFERS && do_random() < ALLOC_PROBABILITY) {
-			state->head = allocate_buffer(state, NULL, do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t));
+		if (state->buffer_count < MAX_BUFFERS && do_random() < ALLOC_PROBABILITY) {
+			unsigned c = do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t);
+			state->head = allocate_buffer(state, NULL, c);
 			state->buffer_count++;
 		}
 
-		if(state->buffer_count && do_random() < DEALLOC_PROBABILITY) {
+		if (state->buffer_count && do_random() < DEALLOC_PROBABILITY) {
 			state->head = deallocate_buffer(state->head, do_random() * state->buffer_count);
 			state->buffer_count--;
 		}
 
-		if(state->buffer_count && do_random() < SEND_PROBABILITY) {
+		if (state->buffer_count && do_random() < SEND_PROBABILITY) {
 			unsigned i = do_random() * state->buffer_count;
 			buffer *to_send = get_buffer(state->head, i);
 
@@ -86,8 +105,11 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		state->buffer_count++;
 		break;
 
+	case MODEL_FINI:
+		break;
+
 	default:
-		printf("[ERR] Requested to process an unknown event\n");
+		puts("[ERROR] Requested to process an unknown event!");
 		abort();
 		break;
 	}
@@ -96,6 +118,6 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 bool CanEnd(lp_id_t me, const void *snapshot)
 {
 	(void)me;
-	const lp_state_t *state = snapshot;
+	const lp_state *state = snapshot;
 	return state->events >= COMPLETE_EVENTS;
 }

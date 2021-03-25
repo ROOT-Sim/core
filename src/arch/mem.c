@@ -6,7 +6,7 @@
  * This module implements some memory related utilities such as memory
  * statistics retrieval in a platform independent way
  *
- * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <arch/mem.h>
@@ -44,6 +44,7 @@ size_t mem_stat_rss_current_get(void)
 
 #include <ctype.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 static int proc_stat_fd;

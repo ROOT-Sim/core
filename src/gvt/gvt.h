@@ -1,53 +1,52 @@
 /**
-* @file gvt/gvt.h
-*
-* @brief Global Virtual Time
-*
-* This module implements the GVT reduction. The current implementation
-* is non blocking for observable simulation plaftorms.
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file gvt/gvt.h
+ *
+ * @brief Global Virtual Time
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <core/core.h>
 #include <lp/msg.h>
 
+#include <stdalign.h>
+
 extern void gvt_global_init(void);
 extern simtime_t gvt_phase_run(void);
-extern void gvt_on_msg_process(simtime_t msg_t);
+extern void gvt_on_msg_extraction(simtime_t msg_t);
 
-#ifdef ROOTSIM_MPI
+extern __thread _Bool gvt_phase;
+extern _Thread_local uint32_t remote_msg_seq[2][MAX_NODES];
+extern _Thread_local uint32_t remote_msg_received[2];
 
-extern __thread bool gvt_phase_green;
-extern __thread unsigned remote_msg_sent[MAX_NODES];
-extern atomic_int remote_msg_received[2];
-
-extern void gvt_on_start_ctrl_msg(void);
+extern void gvt_start_processing(void);
 extern void gvt_on_done_ctrl_msg(void);
 
-#define gvt_on_remote_msg_send(dest_nid)				\
-__extension__({ remote_msg_sent[dest_nid]++; })
+inline void gvt_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
+{
+	msg->m_seq = (remote_msg_seq[gvt_phase][dest_nid]++ << 1) | gvt_phase;
+	msg->raw_flags = (nid << (MAX_THREADS_EXP + 2)) | ((rid + 1) << 2) |
+			gvt_phase;
+}
 
-#define gvt_on_remote_msg_receive(msg_phase)				\
-__extension__({ atomic_fetch_add_explicit(remote_msg_received + 	\
-	msg_phase, 1U, memory_order_relaxed); })
+inline void gvt_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
+{
+	++remote_msg_seq[gvt_phase][dest_nid];
+	msg->raw_flags |= gvt_phase << 1U;
+}
 
-#define gvt_phase_get() __extension__({ gvt_phase_green;})
-#endif
+inline void gvt_remote_msg_receive(struct lp_msg *msg)
+{
+	++remote_msg_received[msg->raw_flags & 1U];
+	msg->raw_flags &= ~((uint32_t)3U);
+}
+
+inline void gvt_remote_anti_msg_receive(struct lp_msg *msg)
+{
+	++remote_msg_received[(msg->raw_flags >> 1U) & 1U];
+	msg->raw_flags &= ~((uint32_t)3U);
+	msg->raw_flags |= MSG_FLAG_ANTI;
+}
+

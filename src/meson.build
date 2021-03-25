@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
+
 # Build the LLVM instrumentation plugin
 # TODO re-enable incremental state saving
 subdir('instr')
@@ -5,11 +8,8 @@ subdir('instr')
 # TODO integrate the plugin system
 subdir('lib')
 
-rootsim_c_args = [log_level_def]
-
-if mpi_dep.found()
-  rootsim_c_args += '-DROOTSIM_MPI=1'
-endif
+rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
+rootsim_c_args = [rootsim_version_def, log_level_def]
 
 # ROOT-Sim library sources
 rootsim_srcs = [
@@ -21,8 +21,6 @@ rootsim_srcs = [
   'core' / 'init.c',
   'core' / 'sync.c',
   'datatypes' / 'msg_queue.c',
-  'datatypes' / 'remote_msg_map.c',
-  'distributed' / 'mpi.c',
   'gvt' / 'fossil.c',
   'gvt' / 'gvt.c',
   'gvt' / 'termination.c',
@@ -38,6 +36,13 @@ rootsim_srcs = [
   'main.c'
 ]
 
+if mpi_dep.found()
+  rootsim_c_args += '-DROOTSIM_MPI=1'
+  rootsim_srcs += 'distributed' / 'mpi.c'
+else
+  rootsim_srcs += 'distributed' / 'no_mpi.c'
+endif
+
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
   dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
 
@@ -49,7 +54,7 @@ compiler_c_args = [
 ]
 
 if mpi_dep.found()
-  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_compiler.full_path() + ' mpicc"'
+  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_compiler.full_path() + ' MPICH_CC=' + clang_compiler.full_path() + ' mpicc"'
 else
   compiler_c_args += '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
 endif

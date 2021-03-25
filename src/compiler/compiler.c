@@ -8,7 +8,7 @@
  * a parallel or distributed simulation. This is targeting low
  * level C models.
  *
- * SPDX-FileCopyrightText: 2008-2020 HPDCS Group <piccione@diag.uniroma1.it>
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <stdlib.h>
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 {
 	(void) argc;
 	++argv;
-	size_t tot_size = sizeof(cmd_line_prefix) + sizeof(cmd_line_suffix)- 1;
+	size_t tot_size = sizeof(cmd_line_prefix) + sizeof(cmd_line_suffix) - 1;
 	char **argv_tmp = argv;
 	while (*argv_tmp) {
 		tot_size += strlen(*argv_tmp) + 1;
@@ -81,7 +81,6 @@ int main(int argc, char **argv)
 	ptr += sizeof(cmd_line_prefix) - 1;
 
 	while (*argv) {
-
 		*ptr = ' ';
 		++ptr;
 
@@ -96,7 +95,7 @@ int main(int argc, char **argv)
 
 	if (system(cmd_line)) {
 		free(cmd_line);
-		fprintf(stderr, "Unable to run " ROOTSIM_CC);
+		fprintf(stderr, "Unable to run " ROOTSIM_CC "\n");
 		return -1;
 	}
 	free(cmd_line);

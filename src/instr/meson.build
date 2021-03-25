@@ -1,4 +1,5 @@
-llvm_cfg_gen = find_program('llvm_cfg_gen.py')
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
 
 instr_cfg = custom_target(
   'instr_cfg',
@@ -7,9 +8,15 @@ instr_cfg = custom_target(
   command : [llvm_cfg_gen, '@OUTPUT@']
 )
 
+rootsim_llvm_lib_dep = [llvm_dep]
+if get_option('b_sanitize') == 'address'
+  rootsim_llvm_lib_dep += meson.get_compiler('c').find_library('asan', 
+    static : true)
+endif
+
 # ROOT-Sim LLVM plugin for model instrumentation
 rootsim_llvm_lib = shared_library('rootsim-llvm', ['instr_llvm.cpp', instr_cfg],
-  dependencies : llvm_dep, name_prefix : 'lib', name_suffix : 'so',
+  dependencies : rootsim_llvm_lib_dep, name_prefix : 'lib', name_suffix : 'so',
   cpp_args : log_level_def, include_directories : src_inc_dir, install : true)
 
 clang_arguments = c_optimization_options

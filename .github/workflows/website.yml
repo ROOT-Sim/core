@@ -23,7 +23,7 @@ jobs:
       - name: Generate Documentation
         run: |
           sudo apt-get install doxygen lcov graphviz
-          meson build
+          meson build -Db_lto=false
           cd build
           ninja docs
           echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV

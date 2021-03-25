@@ -1,51 +1,56 @@
 /**
-* @file log/log.h
-*
-* @brief Logging library
-*
-* This library can be used to produce logs during simulation runs.
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file log/log.h
+ *
+ * @brief Logging library
+ *
+ * This library can be used to produce logs during simulation runs.
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <stdbool.h>
 
 #ifndef LOG_LEVEL
+/// The minimum logging level supported at compile time
+/** Compiler optimizations remove log calls with lower level than this one */
 #define LOG_LEVEL LOG_TRACE
 #endif
+
+#define LOG_CAN_LOG_AT_BUILD(l) (l >= LOG_LEVEL)
 
 extern int log_level;
 extern bool log_colored;
 
+/// The logging level reserved to very low priority messages
 #define LOG_TRACE 	0
+/// The logging level reserved to useful debug messages
 #define LOG_DEBUG 	1
+/// The logging level reserved to useful runtime messages
 #define LOG_INFO 	2
+/// The logging level reserved to unexpected, non deal breaking conditions
 #define LOG_WARN 	3
+/// The logging level reserved to unexpected, problematic conditions
 #define LOG_ERROR 	4
+/// The logging level reserved to unexpected, fatal conditions
 #define LOG_FATAL 	5
 
-#define log_is_lvl(level) ((level) >= LOG_LEVEL && (level) >= log_level)
+/**
+ * @brief Checks if a logging level is being processed
+ * @param lvl the logging level to check
+ * @return true if @a level is being process, false otherwise
+ */
+#define log_can_log(lvl) ((lvl) >= LOG_LEVEL && (lvl) >= log_level)
 
+/**
+ * @brief Produces a log
+ * @param lvl the logging level associated to the message
+ * @param ... a printf-style format string followed by its arguments if needed
+ */
 #define log_log(lvl, ...)						\
 	do {								\
-		if(log_is_lvl(lvl))					\
+		if(log_can_log(lvl))					\
 			_log_log(lvl, __FILE__, __LINE__, __VA_ARGS__);	\
 	} while(0)
 

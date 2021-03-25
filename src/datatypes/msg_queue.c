@@ -1,34 +1,19 @@
 /**
-* @file datatypes/msg_queue.c
-*
-* @brief Message queue datatype
-*
-* This is the message queue for the parallel runtime.
-* The design is pretty simple. A queue for n threads is composed by a n * n
-* square matrix of simpler queues. If thread t1 wants to send a message to
-* thread t2 it puts a message in the i-th queue where i = t2 * n + t1.
-* Insertions are then cheap, while extractions lazily lock the queues
-* (costing linear time in the number of worked threads, which seems to be
-* acceptable in practice).
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file datatypes/msg_queue.c
+ *
+ * @brief Message queue datatype
+ *
+ * This is the message queue for the parallel runtime.
+ * The design is pretty simple. A queue for n threads is composed by a n * n
+ * square matrix of simpler queues. If thread t1 wants to send a message to
+ * thread t2 it puts a message in the i-th queue where i = t2 * n + t1.
+ * Insertions are then cheap, while extractions lazily lock the queues
+ * (costing linear time in the number of worked threads, which seems to be
+ * acceptable in practice).
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <datatypes/msg_queue.h>
 
 #include <core/core.h>
@@ -41,12 +26,10 @@
 
 /// A queue synchronized by a spinlock
 struct msg_queue {
-	alignas(CACHE_LINE_SIZE) struct {
-		/// Synchronizes access to the queue
-		spinlock_t lck;
-		/// The actual queue element of the matrix
-		binary_heap(struct lp_msg *) q;
-	};
+	/// Synchronizes access to the queue
+	alignas(CACHE_LINE_SIZE) spinlock_t lck;
+	/// The actual queue element of the matrix
+	binary_heap(struct lp_msg *) q;
 };
 
 /// The queues matrix, linearized in a contiguous array
@@ -62,7 +45,8 @@ static struct msg_queue *queues;
  */
 void msg_queue_global_init(void)
 {
-	queues = mm_alloc(n_threads * n_threads * sizeof(*queues));
+	queues = mm_aligned_alloc(CACHE_LINE_SIZE, n_threads * n_threads *
+			sizeof(*queues));
 }
 
 /**
@@ -71,7 +55,7 @@ void msg_queue_global_init(void)
 void msg_queue_init(void)
 {
 	rid_t i = n_threads;
-	while(i--) {
+	while (i--) {
 		heap_init(mqueue(i, rid)->q);
 		spin_init(&(mqueue(i, rid)->lck));
 	}
@@ -83,14 +67,12 @@ void msg_queue_init(void)
 void msg_queue_fini(void)
 {
 	rid_t i = n_threads;
-	while(i--) {
+	while (i--) {
 		struct msg_queue *this_q = mqueue(i, rid);
 		array_count_t j = heap_count(this_q->q);
-		while(j--) {
+		while (j--) {
 			struct lp_msg *msg = heap_items(this_q->q)[j];
-			if(!(atomic_load_explicit(
-				&msg->flags, memory_order_relaxed) & MSG_FLAG_PROCESSED))
-				msg_allocator_free(msg);
+			msg_allocator_free(msg);
 		}
 		heap_fini(this_q->q);
 	}
@@ -118,7 +100,7 @@ struct lp_msg *msg_queue_extract(void)
 	struct msg_queue *bid_q = mqueue(rid, rid);
 	struct lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
 
-	while(i--) {
+	while (i--) {
 		struct msg_queue *this_q = mqueue(i, rid);
 		if(!spin_trylock(&this_q->lck))
 			continue;
@@ -158,20 +140,20 @@ simtime_t msg_queue_time_peek(void)
 	bool done[t_cnt];
 	memset(done, 0, sizeof(done));
 
-	for(rid_t i = 0, r = t_cnt; r; i = (i + 1) % t_cnt){
-		if(done[i])
+	for (rid_t i = 0, r = t_cnt; r; i = (i + 1) % t_cnt) {
+		if (done[i])
 			continue;
 
 		struct msg_queue *this_q = mqueue(i, rid);
-		if(!spin_trylock(&this_q->lck))
+		if (!spin_trylock(&this_q->lck))
 			continue;
 
 		done[i] = true;
 		--r;
-		if (heap_count(this_q->q) && t_min >
-					     heap_min(this_q->q)->dest_t) {
+		if (heap_count(this_q->q) &&
+				t_min > heap_min(this_q->q)->dest_t)
 			t_min = heap_min(this_q->q)->dest_t;
-		}
+
 		spin_unlock(&this_q->lck);
 	}
 
@@ -184,7 +166,7 @@ simtime_t msg_queue_time_peek(void)
  */
 void msg_queue_insert(struct lp_msg *msg)
 {
-	rid_t dest_rid = lid_to_rid[msg->dest];
+	rid_t dest_rid = lid_to_rid(msg->dest);
 	struct msg_queue *this_q = mqueue(rid, dest_rid);
 	spin_lock(&this_q->lck);
 	heap_insert(this_q->q, msg_is_before, msg);

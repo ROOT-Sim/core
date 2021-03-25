@@ -1,28 +1,11 @@
 /**
-* @file gvt/termination.c
-*
-* @brief Termination detection module
-*
-* This module implements the termination detection checks.
-*
-* @copyright
-* Copyright (C) 2008-2020 HPDCS Group
-* https://hpdcs.github.io
-*
-* This file is part of ROOT-Sim (ROme OpTimistic Simulator).
-*
-* ROOT-Sim is free software; you can redistribute it and/or modify it under the
-* terms of the GNU General Public License as published by the Free Software
-* Foundation; only version 3 of the License applies.
-*
-* ROOT-Sim is distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-* A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* ROOT-Sim; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * @file gvt/termination.c
+ *
+ * @brief Termination detection module
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <gvt/termination.h>
 
 #include <core/init.h>
@@ -30,9 +13,8 @@
 #include <gvt/gvt.h>
 #include <lp/lp.h>
 
-atomic_uint thr_to_end;
-atomic_int nodes_to_end;
-
+_Atomic(nid_t) nodes_to_end;
+static _Atomic(rid_t) thr_to_end;
 static __thread uint64_t lps_to_end;
 static __thread simtime_t max_t;
 
@@ -68,31 +50,22 @@ void termination_on_ctrl_msg(void)
 
 void termination_on_gvt(simtime_t current_gvt)
 {
-	if (unlikely((!lps_to_end && max_t < current_gvt) ||
-			current_gvt >= global_config.termination_time)) {
-		max_t = SIMTIME_MAX;
-		unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U,
-			memory_order_relaxed) - 1;
-		if (!t) {
-			atomic_fetch_sub_explicit(&nodes_to_end, 1U,
-				memory_order_relaxed);
-#ifdef ROOTSIM_MPI
-			mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
-#endif
-		}
-	}
+	if (likely((lps_to_end || max_t >= current_gvt) &&
+			current_gvt < global_config.termination_time))
+		return;
+	max_t = SIMTIME_MAX;
+	unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U,
+			memory_order_relaxed);
+	if (t == 1)
+		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
 }
 
 void termination_force(void)
 {
 	nid_t i = atomic_load_explicit(&nodes_to_end, memory_order_relaxed);
-	atomic_fetch_sub_explicit(&nodes_to_end, i, memory_order_relaxed);
-#ifdef ROOTSIM_MPI
 	while (i--)
 		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
-#endif
 }
-
 
 void termination_on_lp_rollback(simtime_t msg_time)
 {
