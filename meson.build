@@ -36,7 +36,8 @@ llvm_dep = dependency('llvm', version : '>= 9.0', required : true)
 mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 
 # Clang compiler
-clang_compiler = find_program('clang')
+clang_compiler = find_program(llvm_dep.get_variable(configtool : 'bindir') / 
+  'clang')
 
 # Custom threads library dependency
 rs_thr_dep = declare_dependency(link_with :
