@@ -290,12 +290,14 @@ void process_msg(void)
 	if (unlikely(flags & MSG_FLAG_ANTI)) {
 		if (flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 			handle_remote_anti_msg(proc_p, msg);
-		 } else if (flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
+			return;
+		}
+		if (flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 			array_count_t past_i = match_anti_msg(proc_p, msg);
 			do_rollback(proc_p, past_i);
 			termination_on_lp_rollback(msg->dest_t);
-			msg_allocator_free(msg);
 		}
+		msg_allocator_free(msg);
 		return;
 	}
 
