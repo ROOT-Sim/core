@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 
-project('ROOT-Sim', ['c', 'cpp'], version : '3.0.0',
+project('ROOT-Sim', ['c', 'cpp'], version : '3.0.0-alpha.3',
   default_options : ['c_std=c11', 'cpp_std=c++14', 'buildtype=release',
   'warning_level=3', 'unity=on', 'unity_size=10000', 'b_lto=true'])
 
