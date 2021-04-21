@@ -52,7 +52,8 @@ struct lp_msg {
 
 enum msg_flag {
 	MSG_FLAG_ANTI 		= 1,
-	MSG_FLAG_PROCESSED	= 2
+	MSG_FLAG_PROCESSED	= 2,
+	MSG_FLAG_RETRACTABLE	= 4
 };
 
 

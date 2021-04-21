@@ -155,8 +155,9 @@ static inline void send_anti_messages(struct process_data *proc_p,
 	for (array_count_t i = sent_i + 1; i < array_count(proc_p->sent_msgs);
 			++i) {
 		struct lp_msg *msg = array_get_at(proc_p->sent_msgs, i);
-		if (!msg)
+		if (!msg) {
 			continue;
+		}
 
 		nid_t dest_nid = lid_to_nid(msg->dest);
 		if (dest_nid != nid) {
@@ -179,8 +180,15 @@ static inline void reinsert_invalid_past_messages(struct process_data *proc_p,
 		struct lp_msg *msg = array_get_at(proc_p->past_msgs, i);
 		int msg_status = atomic_fetch_add_explicit(&msg->flags,
 			-MSG_FLAG_PROCESSED, memory_order_relaxed);
-		if (!(msg_status & MSG_FLAG_ANTI))
+		if (!(msg_status & MSG_FLAG_ANTI)) {
+#ifdef RETRACTABILITY
+			if(unlikely(is_retractable_dummy(msg))){
+				msg_allocator_free(msg);
+				continue;
+			}
+#endif
 			msg_queue_insert(msg);
+		}
 	}
 
 	array_count(proc_p->past_msgs) = past_i;
@@ -194,6 +202,9 @@ static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 	silent_execution(proc_p, last_i, past_i);
 	send_anti_messages(proc_p, past_i);
 	reinsert_invalid_past_messages(proc_p, past_i);
+#ifdef RETRACTABILITY
+	retractable_rollback_handle();
+#endif
 
 	stats_time_take(STATS_ROLLBACK);
 }
@@ -284,6 +295,19 @@ void process_msg(void)
 	struct process_data *proc_p = &this_lp->p;
 	current_lp = this_lp;
 
+#ifdef RETRACTABILITY
+	bool is_ret = is_retractable(this_msg);
+
+	// Is the message retractable AND valid?
+	if(unlikely(is_ret)){
+		if(!is_valid_retractable(this_msg)){
+			this_msg->dest_t = -1;
+			DescheduleRetractableEvent();// Actually probably not needed
+			return;
+		}
+	}
+#endif
+
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags,
 			MSG_FLAG_PROCESSED, memory_order_relaxed);
 
@@ -309,6 +333,14 @@ void process_msg(void)
 		do_rollback(proc_p, past_i);
 		termination_on_lp_rollback(msg->dest_t);
 	}
+
+#ifdef RETRACTABILITY
+	// Is the message retractable? We already know that if it is, it's valid
+	if(unlikely(is_ret)){
+		current_lp->r_msg = NULL; // Now the msg is handled by the processedQ
+		DescheduleRetractableEvent();
+	}
+#endif
 
 	array_push(proc_p->sent_msgs, NULL);
 	array_push(proc_p->past_msgs, msg);

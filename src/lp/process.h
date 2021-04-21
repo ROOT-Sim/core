@@ -13,6 +13,12 @@
 #include <datatypes/array.h>
 #include <lp/msg.h>
 
+#ifdef RETRACTABILITY
+#include <lib/retractable/retractable.h>
+static __thread bool silent_processing;
+#endif
+
+
 /// The message processing data produced by the LP
 struct process_data {
 	/// The messages processed in the past by the owner LP

@@ -59,6 +59,11 @@ else
   compiler_c_args += '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
 endif
 
+if get_option('retractable_msg').enabled()
+  rootsim_lib += ['lib' / 'retractable' / 'retractable.c']
+  compiler_c_args += ['-DRETRACTABILITY']
+endif
+
 # ROOT-Sim compiler
 rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c', 
   c_args : compiler_c_args, install : true)
