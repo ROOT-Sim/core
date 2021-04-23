@@ -15,7 +15,7 @@
 
 #ifdef RETRACTABILITY
 #include <lib/retractable/retractable.h>
-static __thread bool silent_processing;
+_Thread_local bool silent_processing;
 #endif
 
 

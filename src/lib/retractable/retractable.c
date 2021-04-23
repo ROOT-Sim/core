@@ -1,6 +1,8 @@
 #include <lib/retractable/retractable.h>
 
-extern __thread bool silent_processing;
+//~ extern _Thread_local bool silent_processing;
+
+#define current_lid (current_lp-lps)
 
 void retractable_lib_lp_init(){
 	
@@ -17,11 +19,12 @@ void retractable_lib_lp_init(){
  * to the right position in the input queue */
 void msg_queue_insert_retractable()
 {
-	lp_msg* msg = current_lp->r_msg;
+	struct lp_msg* msg = current_lp->r_msg;
 	
-	unsigned cur_rid = lid_to_rid[current_lid];
+	unsigned cur_rid = lid_to_rid(current_lid);
 	
-	struct queue_t *this_q = &mqueue(cur_rid, cur_rid);
+	//~ struct queue_t *this_q = &mqueue(cur_rid, cur_rid);
+	struct msg_queue *this_q = mqueue(cur_rid, cur_rid);
 	
 	if(current_lp->lib_ctx_p->r_ts < 0) // The message is not to be scheduled
 		return;
@@ -87,20 +90,22 @@ inline void retractable_msg_schedule(simtime_t timestamp, unsigned event_type)//
 	return;
 }
 
-inline bool is_retractable_and_valid(lp_msg* msg){
+inline bool is_retractable_and_valid(struct lp_msg* msg){
 	//~ return (msg==(lps[msg->dest].r_msg)) && (msg->dest_t == current_lp->lsm_p->r_ts);
 	return is_retractable(msg) && is_valid_retractable(msg);
 }
 
-inline bool is_valid_retractable(lp_msg* msg){
+inline bool is_valid_retractable(struct lp_msg* msg){
 	return (msg->dest_t) == (current_lp->lib_ctx_p->r_ts);
 }
 
-//~ inline bool is_retractable(lp_msg* msg){
+//~ inline bool is_retractable(struct lp_msg* msg){
 	//~ return msg==lps[msg->dest].r_msg;
 //~ }
 
-//~ inline bool is_retractable_dummy(lp_msg* msg){
+//~ inline bool is_retractable_dummy(struct lp_msg* msg){
 	//~ // & with MSG_FLAG_PROCESSED is not needed because of when this check is carried out
 	//~ return msg->flags & MSG_FLAG_RETRACTABLE;// & MSG_FLAG_PROCESSED
 //~ }
+
+#undef current_lp

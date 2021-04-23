@@ -42,8 +42,10 @@ struct lp_msg {
 	uint32_t m_seq;
 	/// The message type, a user controlled field
 	uint32_t m_type;
-	 /// The message payload size
+	/// The message payload size
 	uint32_t pl_size;
+	/// Position for heap data structure
+	uint_fast32_t pos;
 	/// The initial part of the payload
 	unsigned char pl[BASE_PAYLOAD_SIZE];
 	/// The continuation of the payload

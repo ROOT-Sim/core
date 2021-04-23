@@ -28,7 +28,7 @@ struct lp_ctx {
 	
 #ifdef RETRACTABILITY
 	/// Pointer to this LP's retractable message
-	struct _lp_msg* r_msg;
+	struct lp_msg* r_msg;
 #endif
 
 	/// The memory allocator state of this LP

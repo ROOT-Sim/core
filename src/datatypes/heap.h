@@ -54,9 +54,11 @@ __extension__({								\
 	){								\
 		array_items(self)[__i_h] = 				\
 			array_items(self)[(__i_h - 1U) / 2U];		\
+		array_items(self)[__i_h]->pos = __i_h;			\
 		__i_h = (__i_h - 1U) / 2U;				\
 	}								\
 	array_items(self)[__i_h] = elem;				\
+	array_items(self)[__i_h]->pos = __i_h;				\
 	__i_h;								\
 })
 
@@ -85,8 +87,58 @@ __extension__({								\
 		}							\
 		array_items(self)[(__i_h - 1U) / 2U] =			\
 			array_items(self)[__i_h];			\
+		array_items(self)[(__i_h - 1U) / 2U]->pos = (__i_h - 1U) / 2U;\
 		__i_h = __i_h * 2U + 1U;				\
 	}								\
 	array_items(self)[(__i_h - 1U) / 2U] = __last_h;		\
+	array_items(self)[(__i_h - 1U) / 2U]->pos = (__i_h - 1U) / 2U;	\
 	__ret_h;							\
+})
+
+/**
+ * @brief Moves an element in the heap according to new priority
+ * @param self the heap in which to move the element
+ * @param cmp_f a comparing function f(a, b) which returns true iff a < b
+ *
+ * For correct operation of the heap you need to always pass the same @a cmp_f
+ * both for insertion, extraction and priority change
+ */
+#define heap_priority_changed(self, elem, cmp_f)			\
+__extension__({								\
+	__typeof(array_count(self)) __i_h = elem->pos;			\
+	if(__i_h && cmp_f(elem, array_items(self)[(__i_h - 1U) / 2U])) {\
+									\
+	while(								\
+		__i_h && 						\
+		cmp_f(elem, array_items(self)[(__i_h - 1U) / 2U])	\
+	){								\
+		array_items(self)[__i_h] = 				\
+			array_items(self)[(__i_h - 1U) / 2U];		\
+		array_items(self)[__i_h]->pos = __i_h;			\
+		__i_h = (__i_h - 1U) / 2U;				\
+	}								\
+	array_items(self)[__i_h] = elem;				\
+	array_items(self)[__i_h]->pos = __i_h;				\
+									\
+	} else {							\
+									\
+	__i_h = __i_h * 2U + 1U;					\
+	while (__i_h < array_count(self)) {				\
+		__i_h += __i_h + 1 < array_count(self) &&		\
+			cmp_f(						\
+				array_items(self)[__i_h + 1U],		\
+				array_items(self)[__i_h]		\
+			);						\
+		if (!cmp_f(array_items(self)[__i_h], elem)) {		\
+			break;						\
+		}							\
+		array_items(self)[(__i_h - 1U) / 2U] =			\
+			array_items(self)[__i_h];			\
+		array_items(self)[(__i_h - 1U) / 2U]->pos = (__i_h - 1U) / 2U;\
+		__i_h = __i_h * 2U + 1U;				\
+	}								\
+	array_items(self)[(__i_h - 1U) / 2U] = elem;			\
+	array_items(self)[(__i_h - 1U) / 2U]->pos = (__i_h - 1U) / 2U;	\
+									\
+	}								\
 })

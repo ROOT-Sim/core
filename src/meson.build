@@ -43,6 +43,11 @@ else
   rootsim_srcs += 'distributed' / 'no_mpi.c'
 endif
 
+if get_option('retractable_msg').enabled()
+  rootsim_c_args += '-DRETRACTABILITY=1'
+  rootsim_srcs += 'lib' / 'retractable' / 'retractable.c'
+endif
+
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
   dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
 
@@ -57,11 +62,6 @@ if mpi_dep.found()
   compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_compiler.full_path() + ' MPICH_CC=' + clang_compiler.full_path() + ' mpicc"'
 else
   compiler_c_args += '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
-endif
-
-if get_option('retractable_msg').enabled()
-  rootsim_lib += ['lib' / 'retractable' / 'retractable.c']
-  compiler_c_args += ['-DRETRACTABILITY']
 endif
 
 # ROOT-Sim compiler

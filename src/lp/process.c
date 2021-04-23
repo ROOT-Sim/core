@@ -18,7 +18,8 @@
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 
-static _Thread_local bool silent_processing = false;
+//~ static _Thread_local bool silent_processing = false;
+_Thread_local bool silent_processing = false;
 static _Thread_local dyn_array(struct lp_msg *) early_antis;
 
 void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
@@ -296,12 +297,12 @@ void process_msg(void)
 	current_lp = this_lp;
 
 #ifdef RETRACTABILITY
-	bool is_ret = is_retractable(this_msg);
+	bool is_ret = is_retractable(msg);
 
 	// Is the message retractable AND valid?
 	if(unlikely(is_ret)){
-		if(!is_valid_retractable(this_msg)){
-			this_msg->dest_t = -1;
+		if(!is_valid_retractable(msg)){
+			msg->dest_t = -1;
 			DescheduleRetractableEvent();// Actually probably not needed
 			return;
 		}
