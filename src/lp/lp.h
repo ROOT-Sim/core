@@ -17,9 +17,6 @@
 #include <lp/process.h>
 #include <mm/model_allocator.h>
 
-//~ FIXME: move elsewhere
-#include <modules/retractable/retractable.h>
-
 /// A complete LP context
 struct lp_ctx {
 	/// The termination time of this LP, handled by the termination module
