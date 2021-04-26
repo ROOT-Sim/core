@@ -45,7 +45,7 @@ endif
 
 if get_option('retractable_msg').enabled()
   rootsim_c_args += '-DRETRACTABILITY=1'
-  rootsim_srcs += 'lib' / 'retractable' / 'retractable.c'
+  rootsim_srcs += 'modules' / 'retractable' / 'retractable.c'
 endif
 
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,

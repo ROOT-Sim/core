@@ -26,9 +26,9 @@ void lib_lp_init(void)
 {
 	random_lib_lp_init();
 	state_lib_lp_init();
-#ifdef RETRACTABILITY
-	retractable_lib_lp_init();
-#endif
+//~ #ifdef RETRACTABILITY
+	//~ retractable_lib_lp_init();
+//~ #endif
 
 }
 

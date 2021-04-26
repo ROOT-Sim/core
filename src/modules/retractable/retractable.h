@@ -6,11 +6,11 @@
 #include <lib/lib_internal.h>
 #include <lib/lib.h>
 
-extern void retractable_lib_lp_init(void);
+void retractable_lib_lp_init(void);
 
 void msg_queue_insert_retractable();
 
-inline void retractable_msg_schedule(simtime_t timestamp, unsigned event_type);//, const void *payload, unsigned payload_size)
+//~ inline void retractable_msg_schedule(simtime_t timestamp, unsigned event_type);//, const void *payload, unsigned payload_size)
 extern void retractable_msg_schedule(simtime_t timestamp, unsigned event_type);//, const void *payload, unsigned payload_size)
 
 inline bool is_retractable(struct lp_msg* msg){

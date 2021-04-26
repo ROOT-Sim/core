@@ -66,6 +66,12 @@ void lp_init(void)
 		model_allocator_lp_init();
 		current_lp->lib_ctx_p = malloc_mt(sizeof(*current_lp->lib_ctx_p));
 		lib_lp_init_pr();
+
+#ifdef RETRACTABILITY
+		retractable_lib_lp_init();
+#endif
+		
+		
 		process_lp_init();
 		termination_lp_init();
 	}
