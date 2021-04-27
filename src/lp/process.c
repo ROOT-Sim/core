@@ -18,6 +18,10 @@
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 
+#ifdef RETRACTABILITY
+#include <modules/retractable/retractable.h>
+#endif
+
 //~ static _Thread_local bool silent_processing = false;
 _Thread_local bool silent_processing = false;
 static _Thread_local dyn_array(struct lp_msg *) early_antis;
@@ -137,6 +141,10 @@ static inline void silent_execution(struct process_data *proc_p,
 			state_p
 		);
 		stats_time_take(STATS_MSG_SILENT);
+		
+		if(unlikely(is_retractable(msg))){
+			DescheduleRetractableEvent();
+		}
 	}
 
 	silent_processing = false;
@@ -183,7 +191,7 @@ static inline void reinsert_invalid_past_messages(struct process_data *proc_p,
 			-MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if (!(msg_status & MSG_FLAG_ANTI)) {
 #ifdef RETRACTABILITY
-			if(unlikely(is_retractable_dummy(msg))){
+			if(unlikely(is_retractable(msg))){
 				msg_allocator_free(msg);
 				continue;
 			}

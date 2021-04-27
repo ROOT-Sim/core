@@ -26,10 +26,11 @@ struct lp_ctx {
 	/// The message processing context of this LP
 	struct process_data p;
 	
-//~ #ifdef RETRACTABILITY
+#ifdef RETRACTABILITY
 	/// Pointer to this LP's retractable message
 	struct lp_msg* r_msg;
-//~ #endif
+	struct lp_msg* r_msg_padding;
+#endif
 
 	/// The memory allocator state of this LP
 	struct mm_state mm_state;

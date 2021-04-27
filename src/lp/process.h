@@ -14,7 +14,6 @@
 #include <lp/msg.h>
 
 #ifdef RETRACTABILITY
-#include <modules/retractable/retractable.h>
 _Thread_local bool silent_processing;
 #endif
 

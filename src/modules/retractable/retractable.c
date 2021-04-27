@@ -4,6 +4,11 @@
 
 #define current_lid (current_lp-lps)
 
+extern bool is_retractable(const struct lp_msg* msg);
+extern bool is_retractable_and_valid(const struct lp_msg* msg);
+extern bool is_valid_retractable(const struct lp_msg* msg);
+extern void DescheduleRetractableEvent();
+
 void retractable_lib_lp_init(){
 	
 	current_lp->r_msg = NULL;
@@ -65,13 +70,7 @@ void retractable_rollback_handle(){
 	return;
 }
 
-inline void DescheduleRetractableEvent()
-{
-	// Just set the timestamp in LP memory to be invalid
-	current_lp->lib_ctx_p->r_ts = -1.0;
-}
-
-inline void retractable_msg_schedule(simtime_t timestamp, unsigned event_type)//, const void *payload, unsigned payload_size)
+void retractable_msg_schedule(simtime_t timestamp, unsigned event_type)//, const void *payload, unsigned payload_size)
 {
 
 	current_lp->lib_ctx_p->r_ts = timestamp;
@@ -89,25 +88,7 @@ inline void retractable_msg_schedule(simtime_t timestamp, unsigned event_type)//
 	return;
 }
 
-inline bool is_retractable_and_valid(struct lp_msg* msg){
-	//~ return (msg==(lps[msg->dest].r_msg)) && (msg->dest_t == current_lp->lsm_p->r_ts);
-	return is_retractable(msg) && is_valid_retractable(msg);
-}
-
-inline bool is_valid_retractable(struct lp_msg* msg){
-	return (msg->dest_t)!=-1 && (msg->dest_t)==(current_lp->lib_ctx_p->r_ts);
-}
-
 extern void ScheduleRetractableEvent(simtime_t timestamp, unsigned event_type);
 extern void ScheduleRetractableEvent_pr(simtime_t timestamp, unsigned event_type);
-
-//~ inline bool is_retractable(struct lp_msg* msg){
-	//~ return msg==lps[msg->dest].r_msg;
-//~ }
-
-//~ inline bool is_retractable_dummy(struct lp_msg* msg){
-	//~ // & with MSG_FLAG_PROCESSED is not needed because of when this check is carried out
-	//~ return msg->flags & MSG_FLAG_RETRACTABLE;// & MSG_FLAG_PROCESSED
-//~ }
 
 #undef current_lp

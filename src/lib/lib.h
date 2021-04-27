@@ -23,13 +23,11 @@ struct lib_ctx {
 	uint64_t rng_s[4];
 	double unif;
 
-//~ FIXME: readd ifdefs
-//~ #ifdef RETRACTABILITY
+	//FIXME: readd ifdefs
 	// retractability library
 	simtime_t r_ts; // Timestamp of retractable msg
 	uint32_t r_e_type; // Event type
-	//char* r_payload;
-//~ #endif
+	//TODO: char* r_payload;
 
 	// todo remove
 	void *state_s;

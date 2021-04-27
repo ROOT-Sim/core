@@ -13,6 +13,10 @@
 #include <core/sync.h>
 #include <gvt/fossil.h>
 
+#ifdef RETRACTABILITY
+#include <modules/retractable/retractable.h>
+#endif
+
 uint64_t lid_node_first;
 __thread uint64_t lid_thread_first;
 __thread uint64_t lid_thread_end;
