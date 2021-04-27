@@ -131,6 +131,11 @@ static inline void silent_execution(struct process_data *proc_p,
 	void *state_p = current_lp->lib_ctx_p->state_s;
 	for (array_count_t k = last_i + 1; k < past_i; ++k) {
 		const struct lp_msg *msg = array_get_at(proc_p->past_msgs, k);
+		
+		if(unlikely(is_retractable(msg))){
+			DescheduleRetractableEvent();
+		}
+		
 		stats_time_start(STATS_MSG_SILENT);
 		ProcessEvent_pr(
 			msg->dest,
@@ -141,10 +146,6 @@ static inline void silent_execution(struct process_data *proc_p,
 			state_p
 		);
 		stats_time_take(STATS_MSG_SILENT);
-		
-		if(unlikely(is_retractable(msg))){
-			DescheduleRetractableEvent();
-		}
 	}
 
 	silent_processing = false;
