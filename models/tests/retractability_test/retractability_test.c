@@ -38,14 +38,15 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	case TIMEOUT:
 	{
 		lp_id_t dest = Random() * n_lps;
-		printf("[LP %lu] timed out! Sending event to LP %lu\n", me, dest);
-		ScheduleNewEvent(dest, now + fabs(Normal() * 5.) + 20., EVT, NULL, 0);
+		simtime_t dest_t = now + fabs(Normal() * 5.) + 20.;
+		printf("[LP %lu @%lf] timed out! Sending event to LP %lu @%lf\n", me, now, dest, dest_t);
+		ScheduleNewEvent(dest, dest_t, EVT, NULL, 0);
 		break;
 	}
 	case EVT:
 	{
 		++*state;
-		printf("[LP %lu] Received event! new state:%u. New timeout time:%lf\n", me, *state, now+DELAY);
+		printf("[LP %lu @%lf] Received event! new state:%u. New timeout time:%lf\n", me, now, *state, now+DELAY);
 		ScheduleRetractableEvent(now + DELAY, TIMEOUT);
 		break;
 	}
@@ -55,5 +56,5 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 bool CanEnd(lp_id_t me, const unsigned *state)
 {
 	(void)me;
-	return *state > 1000;
+	return *state > 100;
 }

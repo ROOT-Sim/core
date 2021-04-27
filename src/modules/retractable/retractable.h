@@ -32,9 +32,14 @@ inline bool is_retractable_dummy(struct lp_msg* msg){
 
 void retractable_rollback_handle();
 
-inline void ScheduleRetractableEvent(simtime_t timestamp, unsigned event_type){		
+inline void ScheduleRetractableEvent(simtime_t timestamp, unsigned event_type){
 	retractable_msg_schedule(timestamp, event_type);
 }
+
+inline void ScheduleRetractableEvent_pr(simtime_t timestamp, unsigned event_type){
+	ScheduleRetractableEvent(timestamp, event_type);
+}
+
 
 extern void DescheduleRetractableEvent();
 inline void DescheduleRetractableEvent();

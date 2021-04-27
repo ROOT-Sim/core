@@ -50,11 +50,11 @@ extern lp_id_t n_lps;
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *event_content, unsigned event_size);
 
-#ifdef RETRACTABILITY
+//~ #ifdef RETRACTABILITY
 // For retractable events
 extern void ScheduleRetractableEvent(simtime_t timestamp, unsigned event_type);
 extern void DescheduleRetractableEvent();
-#endif
+//~ #endif
 
 
 extern void SetState(void *new_state);

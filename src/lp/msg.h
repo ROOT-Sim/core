@@ -58,5 +58,5 @@ enum msg_flag {
 	MSG_FLAG_RETRACTABLE	= 4
 };
 
-
+#define MSG_FLAGS_BITS 3
 
