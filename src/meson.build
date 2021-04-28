@@ -46,6 +46,11 @@ endif
 if get_option('retractable_msg').enabled()
   rootsim_c_args += '-DRETRACTABILITY=1'
   rootsim_srcs += 'modules' / 'retractable' / 'retractable.c'
+  
+  if get_option('neural_interface').enabled()
+    rootsim_c_args += '-DNEURAL=1'
+    rootsim_srcs += 'modules' / 'neural_model_interface' / 'neural_model_interface.c'
+  endif
 endif
 
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,

@@ -1,21 +1,16 @@
-#include <NeuRome.h>
 #include <core/core.h>
 #include <lib/lib_internal.h>
 #include <datatypes/array.h>
 //#include <errno.h>
 
-#ifndef NEUROME_SERIAL
 #include <lp/lp.h>
-#endif
+
 // for ScheduleLocalSpike
 #include <lp/msg.h>
 
 #define SPIKE 1 // Event definition
 #define MAYBESPIKE 2
 #define MAYBESPIKEWAKE 3
-#define MANYSPIKES 4
-
-#define EDIFFERENTNODE 200
 
 /* <INTERFACES> */
 

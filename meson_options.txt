@@ -4,3 +4,5 @@ option('incremental_state_saving', type : 'feature', value : 'disabled', descrip
 option('mpi', type : 'feature', value : 'auto', description : '')
 option('retractable_msg', type : 'feature', value : 'enabled', description : 
   'allows LPs to each have a single, self-scheduled retractable message')
+option('neural_interface', type : 'feature', value : 'enabled', description : 
+  'Activates neural interface')

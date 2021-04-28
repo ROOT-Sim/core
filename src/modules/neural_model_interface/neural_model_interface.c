@@ -1,4 +1,6 @@
-#include <modules/neural_model_interface.h>
+#include <modules/neural_model_interface/neural_model_interface.h>
+#include <lib/random/xoroshiro.h>
+#include <math.h>
 
 // This only works if retractability is enabled!
 
@@ -16,17 +18,12 @@
 
 #define setCurLP(lp_id) (current_lp = &lps[lp_id])
 
-__thread uint64_t lps_offset = 0;
-__thread uint64_t th_lps_cnt = 0;
-
 __thread bool will_spike = 0;
 
 void schedule_local_spike(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size);
-lp_msg* ScheduleMessage(lp_id_t receiver, simtime_t timestamp,
+struct lp_msg* ScheduleMessage(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size);
-
-void SendManySpikes(unsigned long int sender, simtime_t spiketime, __neuron_s* state);
 
 inline bool is_on_curr_node(lp_id_t ID);
 extern bool is_on_curr_node(lp_id_t ID);
@@ -49,7 +46,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 
 	switch(event) {
 
-		case INIT:
+		case LP_INIT:
 		{
 			if (me == 0) {
 				printdbg("Running with %lu LPs and %lu neurons\n", n_lps, n_lps);
@@ -71,7 +68,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 		
 		case MAYBESPIKE:
 		{
-			// With framework-provided retractable messages, it's valid!
+			// Framework-provided retractable messages -> valid
 			printdbg("[F - MS N%lu] Spiking!\n", me);
 			SendSpike(me, now);
 			
@@ -102,7 +99,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 			break;
 		}
 		
-		case DEINIT:
+		case LP_FINI:
 		{
 			GatherStatistics(now, me, state->neuron_state);
 			break;
@@ -115,7 +112,6 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 }
 
 bool CanEnd(lp_id_t me, const void *snapshot) {
-	// With clustering we need to change this. Maybe make each LP have a list of pointers to probed neurons it manages.
 	if (unlikely(((__neuron_s*)snapshot)->is_probed)){
 		return NeuronCanEnd(me, ((__neuron_s*)snapshot)->neuron_state);
 	}
@@ -125,7 +121,7 @@ bool CanEnd(lp_id_t me, const void *snapshot) {
 // FIXME
 /* Get the state of the current LP */
 inline __neuron_s* fetch_current_state(){
-	return l_s_m_p->state_s;
+	return current_lp->lib_ctx_p->state_s;
 }
 extern __neuron_s* fetch_current_state();
 
@@ -138,7 +134,7 @@ inline __neuron_s* fetch_LP_state(lp_id_t ID){
 		return NULL; // LP is not on the current node
 	}
 	
-	return lps[ID].lsm_p->state_s;
+	return lps[ID].lib_ctx_p->state_s;
 }
 
 
@@ -151,7 +147,7 @@ inline bool is_on_curr_node(lp_id_t ID){
 }
 extern bool is_on_curr_node(lp_id_t ID);
 
-// FIXME: can we use lid_to_rid to perform this check without checking for node first?
+
 inline bool is_on_curr_thread(lp_id_t ID){
 	return is_on_curr_node(ID) ? (lid_to_rid(ID) == rid) : 0;
 }
@@ -190,79 +186,24 @@ void SendSpike(unsigned long int sender, simtime_t spiketime){
  * but only if it does not receive any spikes in the meantime */
 void MaybeSpike(lp_id_t sender, simtime_t spiketime){
 	
-	#ifdef NEUROME_SERIAL
-	__neuron_s* state = fetch_current_state();
-	
-	state->maybe_spike_str->maybe_spike_id++;
-	
-	unsigned long int value = state->maybe_spike_str->maybe_spike_id;
-	
-	lp_msg* msg;
-	
-	if (state->maybeSpikeMsg!=NULL){
-		printdbg("[F] MS N%lu's maybeSpikeMsg exists\n", sender);
-		msg = state->maybeSpikeMsg;
-		msg->dest_t = spiketime;
-		msg->m_type = MAYBESPIKE;
-		memcpy(msg->pl, &value, sizeof(value));
-		heap_priority_changed(queue, msg, msg_is_before);
-	} else {
-		printdbg("[F] MS N%lu's maybeSpikeMsg does not exist\n", sender);
-		msg = ScheduleMessage(sender, spiketime, MAYBESPIKE, &value, sizeof(value));
-		printdbg("[F] MS N%lu's maybeSpikeMsg created\n", sender);
-		state->maybeSpikeMsg = msg;
-	}
-	
-	#else
-	
 	(void) sender;
 	
-	//~ ScheduleNewEvent(sender, spiketime, MAYBESPIKE, &value, sizeof(value));
 	will_spike = 1;
 	ScheduleRetractableEvent(spiketime, MAYBESPIKE);
 	
-	#endif
 }
 
-// TODO: change name
 /* Neuron calls this when he wants to spike at some time t in the future and then get woken up,
  * but only if it does not receive any spikes in the meantime. */
 void MaybeSpikeAndWake(lp_id_t sender, simtime_t spiketime){
 	
 	printdbg("[F] MSW Requested by N%lu for time %lf\n", sender, spiketime);
-		
-	#ifdef NEUROME_SERIAL
-	__neuron_s* state = fetch_current_state();
-	state->maybe_spike_str->maybe_spike_id++;
-	
-	unsigned long int value = state->maybe_spike_str->maybe_spike_id;
-	
-	lp_msg* msg;
-	
-	if (state->maybeSpikeMsg!=NULL){
-		printdbg("[F] MSW N%lu's maybeSpikeMsg exists\n", sender);
-		msg = state->maybeSpikeMsg;
-		msg->dest_t = spiketime;
-		msg->m_type = MAYBESPIKEWAKE;
-		memcpy(msg->pl, &value, sizeof(value));
-		heap_priority_changed(queue, msg, msg_is_before);
-	} else {
-		printdbg("[F] MSW N%lu's maybeSpikeMsg does not exist\n", sender);
-		//~ ScheduleNewEvent(sender, spiketime, MAYBESPIKEWAKE, &value, sizeof(value));
-		msg = ScheduleMessage(sender, spiketime, MAYBESPIKEWAKE, &value, sizeof(value));
-		printdbg("[F] MSW N%lu's maybeSpikeMsg created\n", sender);
-		state->maybeSpikeMsg = msg;
-	}
-	
-	#else
 	
 	(void) sender;
 	
-	//~ ScheduleNewEvent(sender, spiketime, MAYBESPIKEWAKE, &value, sizeof(value));
 	will_spike = 1;
 	ScheduleRetractableEvent(spiketime, MAYBESPIKEWAKE);
 	
-	#endif
 }
 
 /* Create a new synapse from src to dest.
@@ -274,9 +215,7 @@ void* NewSynapse(unsigned long int src_neuron, unsigned long int dest_neuron, si
 	// Maybe check if we can do this, or throw an error
 	//if(neuron_module_topology_init_already_done) *esplodi*;
 	
-	//~ if(!is_on_curr_node(src_neuron)){// Fall through
 	if(!is_on_curr_thread(src_neuron)){// Fall through
-		errno = EREMOTE;
 		return NULL;
 	}
 	
@@ -285,26 +224,19 @@ void* NewSynapse(unsigned long int src_neuron, unsigned long int dest_neuron, si
 	__neuron_s* target_lp_state = fetch_LP_state(src_neuron);
 	
 	if (target_lp_state==NULL){// This should not happen
-		errno = EREMOTE;
 		return NULL;
 	}
 	
-	// Set cur_lp/current_lp to the lp that will manage the synapse so the mm mallocs correctly
+	// Set current_lp to the lp that will manage the synapse so the mm mallocs correctly
 	setCurLP(src_neuron);
 	
 	__syn_t *synapse;
 
-	#ifdef NEUROME_SERIAL
-	(void) is_static;
-	//~ synapse_state = mm_alloc(syn_state_size);
-	synapse = mm_alloc(offsetof(__syn_t, data) + syn_state_size);
-	#else
 	if(is_static){
 		synapse = mm_alloc(offsetof(__syn_t, data) + syn_state_size);
 	} else {
-		synapse = __wrap_malloc(offsetof(__syn_t, data) + syn_state_size);
+		synapse = malloc_mt(offsetof(__syn_t, data) + syn_state_size);
 	}
-	#endif
 	
 	synapse->target = dest_neuron;
 	synapse->delay = delay;
@@ -314,7 +246,7 @@ void* NewSynapse(unsigned long int src_neuron, unsigned long int dest_neuron, si
 	array_push(target_lp_state->synapses, synapse);
 
 	// Reset current LP to the zeroth of the thread
-	setCurLP(lps_offset);
+	setCurLP(lid_thread_first);
 	
 	return synapse->data;
 }
@@ -341,7 +273,6 @@ void NewSpikeTrain(unsigned long int target_count, unsigned long int target_neur
 void NewProbe(unsigned long int target_neuron){
 	
 	if(!is_on_curr_thread(target_neuron)){// Fall through
-		errno = EREMOTE;
 		return;
 	}
 	
@@ -364,9 +295,7 @@ void snn_module_lp_init(){// Init the neuron memory here (memory manager is up a
 	__neuron_s* state;
 	
 	// Iterate on LPs owned by this thread
-	lps_iter_init(lps_offset, th_lps_cnt);
-	uint64_t lp_top = lps_offset + th_lps_cnt;
-	for(unsigned long int lp_id = lps_offset; lp_id < lp_top; lp_id++){
+	for(lp_id_t lp_id = lid_thread_first; lp_id < lid_thread_end; lp_id++){
 		
 		setCurLP(lp_id);
 		
@@ -391,106 +320,104 @@ void snn_module_lp_init(){// Init the neuron memory here (memory manager is up a
 	//~ printdbg("[SNN module] lp init with %lu LPS\n", n_lps);
 	
 	// Reset current LP to the zeroth of the thread
-	setCurLP(lps_offset);
+	setCurLP(lid_thread_first);
 	
 	// Set the RNG state (of the first LP, which is the current) to a fixed one and save the previous
 	// Save
 	uint64_t prev_rng_s[4];
 	double prev_unif;
 	
-	memcpy(prev_rng_s, l_s_m_p->rng_s, sizeof(uint64_t)*4);
-	prev_unif = l_s_m_p->unif;
+	memcpy(prev_rng_s, current_lp->lib_ctx_p->rng_s, sizeof(uint64_t)*4);
+	prev_unif = current_lp->lib_ctx_p->unif;
 	
 	// Init RNG with a fixed seed
-	random_init(l_s_m_p->rng_s, 42);
-	l_s_m_p->unif=NAN;
+	random_init(current_lp->lib_ctx_p->rng_s, 0, 42);
+	current_lp->lib_ctx_p->unif=NAN;
 	
 	SNNInitTopology(n_lps);
 	//set the flag? Smth like: neuron_topology_init_already_done = 1;
 	
 	// Restore the RNG state to the previous one
-	memcpy(l_s_m_p->rng_s, prev_rng_s, sizeof(uint64_t)*4);
-	l_s_m_p->unif = prev_unif;
+	memcpy(current_lp->lib_ctx_p->rng_s, prev_rng_s, sizeof(uint64_t)*4);
+	current_lp->lib_ctx_p->unif = prev_unif;
 	
-	// Prune doubled synapses
-	prune_all_synapses();
+	//~ // Prune doubled synapses
+	//~ prune_all_synapses();
 	
-	compact_all_synapses();
+	//~ compact_all_synapses();
 	
 	printdbg("[SNN M T%u] Synapses pruned and compacted\n", rid);
 	
 	return;
 }
 
-int cmpsyns(const void* a, const void* b){
-	__syn_t* sa = (__syn_t*) a;
-	__syn_t* sb = (__syn_t*) b;
+//~ int cmpsyns(const void* a, const void* b){
+	//~ __syn_t* sa = (__syn_t*) a;
+	//~ __syn_t* sb = (__syn_t*) b;
 	
-	return (sa->target - sb->target);
+	//~ return (sa->target - sb->target);
 	
-}
+//~ }
 
-void prune_all_synapses(){
-	uint64_t lp_top = lps_offset + th_lps_cnt;
-	for(unsigned long int lp_id = lps_offset; lp_id < lp_top; lp_id++){		
-		prune_synapses(lp_id);
-	}
-}
+//~ void prune_all_synapses(){
+	//~ for(lp_id_t lp_id = lid_thread_first; lp_id < lid_thread_end; lp_id++){		
+		//~ prune_synapses(lp_id);
+	//~ }
+//~ }
 
-void prune_synapses(lp_id_t lp_id){
-	// This invokes memory operations. We don't want them to be executed from a different thread than the owner.
-	if(!is_on_curr_thread(lp_id)){
-		printdbg("[prune_synapses] LP%lu is not managed by thread %d\n", lp_id, rid);
-		return;
-	}
-	__neuron_s* state = fetch_LP_state(lp_id);
-	// Sort synapses for faster removal
-	qsort(array_items(state->synapses), array_count(state->synapses), sizeof(__syn_t*), cmpsyns);
+//~ void prune_synapses(lp_id_t lp_id){
+	//~ // This invokes memory operations. We don't want them to be executed from a different thread than the owner.
+	//~ if(!is_on_curr_thread(lp_id)){
+		//~ printdbg("[prune_synapses] LP%lu is not managed by thread %d\n", lp_id, rid);
+		//~ return;
+	//~ }
+	//~ __neuron_s* state = fetch_LP_state(lp_id);
+	//~ // Sort synapses for faster removal
+	//~ qsort(array_items(state->synapses), array_count(state->synapses), sizeof(__syn_t*), cmpsyns);
 	
-	__syn_t* syn;
-	__syn_t* syn_prev;
+	//~ __syn_t* syn;
+	//~ __syn_t* syn_prev;
 	
-	for(unsigned long int i=1; i < array_count(state->synapses); i++){
-		// i-th and previous synapse
-		syn = array_get_at(state->synapses, i);
-		syn_prev = array_get_at(state->synapses, i-1);
+	//~ for(unsigned long int i=1; i < array_count(state->synapses); i++){
+		//~ // i-th and previous synapse
+		//~ syn = array_get_at(state->synapses, i);
+		//~ syn_prev = array_get_at(state->synapses, i-1);
 		
-		if(syn->target == syn_prev->target){
-			// Physically remove synapse
-			array_remove_at(state->synapses, i);
-			i--; // The array has shrunk! We want the same i next iteration
-		}
-	}
-}
+		//~ if(syn->target == syn_prev->target){
+			//~ // Physically remove synapse
+			//~ array_remove_at(state->synapses, i);
+			//~ i--; // The array has shrunk! We want the same i next iteration
+		//~ }
+	//~ }
+//~ }
 
-void compact_all_synapses(){
-	unsigned int saved = 0;
-	uint64_t lp_top = lps_offset + th_lps_cnt;
-	for(unsigned long int lp_id = lps_offset; lp_id < lp_top; lp_id++){
-		saved += compact_synapses(lp_id);
-	}
+//~ void compact_all_synapses(){
+	//~ unsigned int saved = 0;
+	//~ for(lp_id_t lp_id = lid_thread_first; lp_id < lid_thread_end; lp_id++){
+		//~ saved += compact_synapses(lp_id);
+	//~ }
 	
-	printf("Saved %u slots by compacting\n", saved);
-}
+	//~ printf("Saved %u slots by compacting\n", saved);
+//~ }
 
-unsigned int compact_synapses(lp_id_t lp_id){
-	// This invokes memory operations. We don't want them to be executed from a different thread than the owner.
-	if(!is_on_curr_thread(lp_id)){
-		printdbg("[compact_synapses] LP%lu is not managed by thread %d\n", lp_id, rid);
-		return 0;
-	}
-	__neuron_s* state = fetch_LP_state(lp_id);
-	unsigned int initial_size = array_capacity(state->synapses);
-	array_compact(state->synapses);
-	return initial_size - array_capacity(state->synapses);
-}
+//~ unsigned int compact_synapses(lp_id_t lp_id){
+	//~ // This invokes memory operations. We don't want them to be executed from a different thread than the owner.
+	//~ if(!is_on_curr_thread(lp_id)){
+		//~ printdbg("[compact_synapses] LP%lu is not managed by thread %d\n", lp_id, rid);
+		//~ return 0;
+	//~ }
+	//~ __neuron_s* state = fetch_LP_state(lp_id);
+	//~ unsigned int initial_size = array_capacity(state->synapses);
+	//~ array_compact(state->synapses);
+	//~ return initial_size - array_capacity(state->synapses);
+//~ }
 
 /* This is a ScheduleNewEvent for spikes that do not originate from an LP (e.g. spiketrains).
  * Scheduling a message for an LP that lies on a different node = bad bad. Be careful using this */
 void schedule_local_spike(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size){
 			
-	lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type,
+	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type,
 		payload, payload_size);
 	
 	// Is this needed? msg_allocator_pack already calls this
