@@ -411,6 +411,7 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 	// Ugly v
 	//~ double* synapse;
 	double delay;
+	double wt; // weight
 	int nsyn = 0;
 	
 	// Connection between neuron populations
@@ -449,9 +450,11 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 						//clip(d_ex + std_d_ex*randn(), 0.1*ms, d_ex*inf)
 						delay = g_d_ex + g_std_d_ex*Normal();
 						if(delay < 0.1){delay=0.1;}
+						// Make sure to always make the same number of calls to RNG regardless of conditions
+						wt = g_w_ex + g_std_w_ex*Normal();
 						synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
 						if(synapse==NULL){continue;}
-						synapse->weight = g_w_ex + g_std_w_ex*Normal();
+						synapse->weight = wt;
 						if(synapse->weight < 0.0){synapse->weight = 0.0;}
 						synapse->weight *= 2.0;
 						// Ugly v
@@ -468,9 +471,10 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 						*/
 						delay = g_d_ex + g_std_d_ex*Normal();
 						if(delay < 0.1){delay=0.1;}
+						wt = g_w_ex + g_std_w_ex*Normal();
 						synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
 						if(synapse==NULL){continue;}
-						synapse->weight = g_w_ex + g_std_w_ex*Normal();
+						synapse->weight = wt;
 						if(synapse->weight < 0.0){synapse->weight = 0.0;}
 						// Ugly v
 						//~ synapse = NewSynapse(src_neuron, dst_neuron, sizeof(float), true, delay);
@@ -488,8 +492,9 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 					delay = g_d_in + g_std_d_in*Normal();
 					if(delay < 0.1){delay=0.1;}
 					synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
+					wt = -(g_w_ex + g_std_w_ex*Normal());
 					if(synapse==NULL){continue;}
-					synapse->weight = -(g_w_ex + g_std_w_ex*Normal());
+					synapse->weight = wt;
 					if(synapse->weight > 0.0){synapse->weight = 0.0;}
 					synapse->weight *= in_g;
 					// Ugly v
