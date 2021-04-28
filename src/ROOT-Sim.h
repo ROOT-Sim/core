@@ -44,6 +44,7 @@ enum ap_event_key {
 
 __attribute((weak)) extern struct ap_option model_options[];
 __attribute((weak)) extern void model_parse(int key, const char *arg);
+extern void arg_parse_error(const char *fmt, ...);
 
 extern lp_id_t n_lps;
 
@@ -95,3 +96,25 @@ extern __attribute__ ((pure)) lp_id_t RegionsCount(void);
 extern __attribute__ ((pure)) lp_id_t DirectionsCount(void);
 extern __attribute__ ((pure)) lp_id_t GetReceiver(lp_id_t from, enum _direction_t direction);
 extern lp_id_t FindReceiver(void);
+
+/// A set of configurable values used by other modules
+struct simulation_configuration {
+	/// The target termination logical time
+	simtime_t termination_time;
+	/// The gvt period expressed in microseconds
+	unsigned gvt_period;
+	/// The log verbosity level
+	int verbosity;
+	/// The seed used to initialize the pseudo random numbers
+	uint64_t prng_seed;
+	/// If set, worker threads are bound to physical cores
+	bool core_binding;
+	/// If set, the simulation will run on the serial runtime
+	bool is_serial;
+};
+
+/// The configuration filled in by init_args_parse()
+extern struct simulation_configuration global_config;
+
+// INTERFACES for neural_model_interface
+typedef lp_id_t neuron_id_t;

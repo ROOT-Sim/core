@@ -31,11 +31,15 @@ extern bool is_on_curr_node(lp_id_t ID);
 inline __neuron_s* fetch_LP_state(lp_id_t ID);
 extern __neuron_s* fetch_LP_state(lp_id_t ID);
 /* Check if synapse going from src_n to dst_n already exists */
-bool synapse_exists(__neuron_s* lp_state, unsigned long int dst_n);
+bool synapse_exists(__neuron_s* lp_state, neuron_id_t dst_n);
 void prune_synapses(lp_id_t lp_id);
 void prune_all_synapses();
 unsigned int compact_synapses(lp_id_t lp_id);
 void compact_all_synapses();
+
+inline void ProcessEvent_pr(lp_id_t me, simtime_t now, unsigned int event, const void* evt_content, unsigned int size, void* lp_state){
+	ProcessEvent(me, now, event, evt_content, size, lp_state);
+}
 
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt_content, unsigned int size, void* lp_state) {
 	(void)size;
@@ -104,6 +108,11 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 			GatherStatistics(now, me, state->neuron_state);
 			break;
 		}
+		case MODEL_INIT:
+		case MODEL_FINI:
+		{
+			return;
+		}
 	}
 	
 	if(!will_spike){ // If the neuron did not spike as a result of this event, Deschedule the currently scheduled retractable event
@@ -154,13 +163,13 @@ inline bool is_on_curr_thread(lp_id_t ID){
 extern bool is_on_curr_thread(lp_id_t ID);
 
 /* When the neuron wants to send the spike, it calls this */
-void SendSpike(unsigned long int sender, simtime_t spiketime){
+void SendSpike(neuron_id_t sender, simtime_t spiketime){
 	printdbg("[LP%lu]SendSpike\n", sender);
 	
 	__neuron_s* state = fetch_current_state();
 	double value;
 	event_t new_event;
-	unsigned long int target_n;
+	neuron_id_t target_n;
 	__syn_t *syn;
 	simtime_t delivery_time;
 	
@@ -211,7 +220,7 @@ void MaybeSpikeAndWake(lp_id_t sender, simtime_t spiketime){
  * + If synapse is static, non-rollbackable memory is allocated
  * Then returns the pointer.
  * The delay is used by the framework for spike scheduling. */
-void* NewSynapse(unsigned long int src_neuron, unsigned long int dest_neuron, size_t syn_state_size, bool is_static, simtime_t delay){
+void* NewSynapse(neuron_id_t src_neuron, neuron_id_t dest_neuron, size_t syn_state_size, bool is_static, simtime_t delay){
 	// Maybe check if we can do this, or throw an error
 	//if(neuron_module_topology_init_already_done) *esplodi*;
 	
@@ -253,11 +262,11 @@ void* NewSynapse(unsigned long int src_neuron, unsigned long int dest_neuron, si
 
 // FIXME: this will be invoked once per thread. Make sure no doubled spikes are scheduled globally. The if check should take care of this
 /* Create a new input spike train with its targets */
-void NewSpikeTrain(unsigned long int target_count, unsigned long int target_neurons[], unsigned long int spike_count, double intensities[], simtime_t timings[]){
+void NewSpikeTrain(unsigned long int target_count, neuron_id_t target_neurons[], unsigned long int spike_count, double intensities[], simtime_t timings[]){
 	event_t new_event;
 	printdbg("[F] Spike train. Scheduling %lu spikes towards %lu neurons (%lu spikes total)\n", spike_count, target_count, spike_count*target_count);
 	
-	for (unsigned long int i=0; i<target_count; i++){
+	for (neuron_id_t i=0; i<target_count; i++){
 		if (is_on_curr_thread(target_neurons[i])){ // Only schedule events directed to this thread.
 			for (unsigned long int j=0; j<spike_count; j++){
 				new_event.value = intensities[j];
@@ -270,7 +279,7 @@ void NewSpikeTrain(unsigned long int target_count, unsigned long int target_neur
 }
 
 /* Set a neuron to be probed */
-void NewProbe(unsigned long int target_neuron){
+void NewProbe(neuron_id_t target_neuron){
 	
 	if(!is_on_curr_thread(target_neuron)){// Fall through
 		return;
@@ -424,13 +433,4 @@ void schedule_local_spike(lp_id_t receiver, simtime_t timestamp,
 	atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
 	
 	msg_queue_insert(msg);	
-}
-
-/* Malloc memory that does NOT get ROLLED BACK */
-void* st_malloc(size_t size){
-	return mm_alloc(size);
-}
-/* Free memory allocated through st_malloc */
-void st_free(void* ptr){
-	mm_free(ptr);
 }
