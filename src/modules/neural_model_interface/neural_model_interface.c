@@ -20,12 +20,12 @@
 
 __thread bool will_spike = 0;
 
+extern void SetState_pr(void* state);
 void schedule_local_spike(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size);
 struct lp_msg* ScheduleMessage(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size);
 
-inline bool is_on_curr_node(lp_id_t ID);
 extern bool is_on_curr_node(lp_id_t ID);
 
 inline __neuron_s* fetch_LP_state(lp_id_t ID);
@@ -36,6 +36,7 @@ void prune_synapses(lp_id_t lp_id);
 void prune_all_synapses();
 unsigned int compact_synapses(lp_id_t lp_id);
 void compact_all_synapses();
+inline __neuron_s* fetch_current_state();
 
 inline void ProcessEvent_pr(lp_id_t me, simtime_t now, unsigned int event, const void* evt_content, unsigned int size, void* lp_state){
 	ProcessEvent(me, now, event, evt_content, size, lp_state);
@@ -55,7 +56,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 			if (me == 0) {
 				printdbg("Running with %lu LPs and %lu neurons\n", n_lps, n_lps);
 			}
-			NeuronHandleSpike(me, now, 0.0, state->neuron_state);
+			
+			NeuronHandleSpike_pr(me, now, 0.0, fetch_current_state()->neuron_state);
 			
 			break;
 		}
@@ -65,7 +67,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 		{
 			printdbg("[F] Spike directed to N%lu with value: %lf\n", me, content->value);
 			
-			NeuronHandleSpike(me, now, content->value, state->neuron_state);
+			NeuronHandleSpike_pr(me, now, content->value, state->neuron_state);
 			
 			break;
 		}
@@ -78,7 +80,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 			
 			if(state->is_probed){
 				printdbg("[F - MS N%lu] Neuron is probed\n", me);
-				ProbeRead(now, me, state->neuron_state);
+				ProbeRead_pr(now, me, state->neuron_state);
 			}
 			
 			break;
@@ -91,11 +93,11 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 			SendSpike(me, now);
 			
 			printdbg("[F - MSW N%lu] Waking neuron\n", me);
-			NeuronWake(me, now, state->neuron_state);
+			NeuronWake_pr(me, now, state->neuron_state);
 			
 			if(state->is_probed){
 				printdbg("[F - MSW N%lu] Neuron is probed\n", me);
-				ProbeRead(now, me, state->neuron_state);
+				ProbeRead_pr(now, me, state->neuron_state);
 			}
 			
 			printdbg("[F - MSW N%lu] Done\n", me);
@@ -105,7 +107,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 		
 		case LP_FINI:
 		{
-			GatherStatistics(now, me, state->neuron_state);
+			GatherStatistics_pr(now, me, state->neuron_state);
 			break;
 		}
 		case MODEL_INIT:
@@ -122,7 +124,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 
 bool CanEnd(lp_id_t me, const void *snapshot) {
 	if (unlikely(((__neuron_s*)snapshot)->is_probed)){
-		return NeuronCanEnd(me, ((__neuron_s*)snapshot)->neuron_state);
+		return NeuronCanEnd_pr(me, ((__neuron_s*)snapshot)->neuron_state);
 	}
 	return true;
 }
@@ -151,10 +153,10 @@ inline bool is_on_curr_node(lp_id_t ID){
 #ifdef ROOTSIM_MPI
 	return (lid_to_nid(ID) == nid);
 #else
+	(void) ID;
 	return 1;
 #endif
 }
-extern bool is_on_curr_node(lp_id_t ID);
 
 
 inline bool is_on_curr_thread(lp_id_t ID){
@@ -184,10 +186,10 @@ void SendSpike(neuron_id_t sender, simtime_t spiketime){
 		
 		delivery_time = spiketime + syn->delay;
 
-		value = SynapseHandleSpike(delivery_time, sender, target_n, syn->data);
+		value = SynapseHandleSpike_pr(delivery_time, sender, target_n, syn->data);
 		new_event.value = value;
 		
-		ScheduleNewEvent(target_n, delivery_time, SPIKE, &new_event, sizeof(new_event));
+		ScheduleNewEvent_pr(target_n, delivery_time, SPIKE, &new_event, sizeof(new_event));
 	}
 }
 
@@ -311,7 +313,7 @@ void snn_module_lp_init(){// Init the neuron memory here (memory manager is up a
 		state = mm_alloc(sizeof(__neuron_s));
 		//~ printdbg("[SNN module] Mallocd neuron %lu block state. Setting state...\n", lp_g_id);
 		
-		SetState(state);
+		SetState_pr(state);
 		
 		//~ printdbg("[SNN module] State set\n");
 		
@@ -320,7 +322,7 @@ void snn_module_lp_init(){// Init the neuron memory here (memory manager is up a
 		
 		state->is_probed = 0;
 				
-		state->neuron_state = NeuronInit(lp_id);
+		state->neuron_state = NeuronInit_pr(lp_id);
 		
 		printdbg("[SNN M T%u] Neuron %lu initialized\n", rid, lp_id);
 		
@@ -336,19 +338,22 @@ void snn_module_lp_init(){// Init the neuron memory here (memory manager is up a
 	uint64_t prev_rng_s[4];
 	double prev_unif;
 	
-	memcpy(prev_rng_s, current_lp->lib_ctx_p->rng_s, sizeof(uint64_t)*4);
-	prev_unif = current_lp->lib_ctx_p->unif;
+	struct lib_ctx *ctx = lib_ctx_get();
+	
+	memcpy(prev_rng_s, ctx->rng_s, sizeof(uint64_t)*4);
+	prev_unif = ctx->unif;
 	
 	// Init RNG with a fixed seed
-	random_init(current_lp->lib_ctx_p->rng_s, 0, 42);
-	current_lp->lib_ctx_p->unif=NAN;
+	//~ random_init(current_lp->lib_ctx_p->rng_s, 0, 42);
+	random_init(ctx->rng_s, 0, 42);
+	ctx->unif=NAN;
 	
-	SNNInitTopology(n_lps);
+	SNNInitTopology_pr(n_lps);
 	//set the flag? Smth like: neuron_topology_init_already_done = 1;
 	
 	// Restore the RNG state to the previous one
-	memcpy(current_lp->lib_ctx_p->rng_s, prev_rng_s, sizeof(uint64_t)*4);
-	current_lp->lib_ctx_p->unif = prev_unif;
+	memcpy(ctx->rng_s, prev_rng_s, sizeof(uint64_t)*4);
+	ctx->unif = prev_unif;
 	
 	//~ // Prune doubled synapses
 	//~ prune_all_synapses();
@@ -420,6 +425,7 @@ void snn_module_lp_init(){// Init the neuron memory here (memory manager is up a
 	//~ array_compact(state->synapses);
 	//~ return initial_size - array_capacity(state->synapses);
 //~ }
+
 
 /* This is a ScheduleNewEvent for spikes that do not originate from an LP (e.g. spiketrains).
  * Scheduling a message for an LP that lies on a different node = bad bad. Be careful using this */

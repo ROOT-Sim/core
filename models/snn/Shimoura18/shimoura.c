@@ -359,20 +359,15 @@ void ProbeRead(simtime_t now, unsigned long int monitored_neuron, const neuron_s
 
 void GatherStatistics(simtime_t now, unsigned long int neuron_id, const neuron_state_t* state){
 	if(neuron_id >= 77169) {return;}//Poisson neuron
-	
-	//TODO: Fill this in to gather statistics and print them to file
-	double spike_frequency = 1000 * state->times_fired/now;
-	//~ double spike_freq_till_last = state->times_fired/state->last_updated;
-	
+
 	if(outFile == NULL){//First neuron to write. Open file and write
 		outFile = fopen("Shimoura18Run", "w");
 	}
 	
-	fprintf(outFile, "N%lu, f%lf\n", neuron_id, spike_frequency);
+	fprintf(outFile, "N%lu, s%lu\n", neuron_id, state->times_fired);
 	
 }
 
-// TODO: properly replicate the topology used in the paper
 void SNNInitTopology(unsigned long int neuron_count){
 	ShimouraTopology();
 }
@@ -380,26 +375,10 @@ void SNNInitTopology(unsigned long int neuron_count){
 /* Initializes the topology */
 void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 	int nsyn_type = 0;
-	
-	//double std_w_ex = 0.1*w_ex;
-	
-	//~ # Total cortical Population (excluding thalamic neurons)
-	//~ N = sum(n_layer[:-1])
 
 	// Index of the first neuron for every population
 	unsigned int nn_cum[9];
 	gen_indexes(n_layer, nn_cum, 9);
-	
-	/* // This generated an array pop which contained all neurons divided by population. pop[i] contains neurons of population i
-	pop = [] //Pop[i] contains the index of the first neuron of population i
-	for r in range(0, 8):
-		pop.append(NeuronGroup[nn_cum[r]:nn_cum[r+1]])
-
-		// This normalized the DC current on every population.
-		# DC-current normalized by population
-		if (stim == 1):
-			NeuronGroup.Iext[pop[r]] = 0.3512*pA*bg_layer[r]
-	*/
 	
 	//###########################################################################
 	//# Connecting neurons
@@ -408,8 +387,6 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 	unsigned long int src_neuron;
 	unsigned long int dst_neuron;
 	synapse_t* synapse;
-	// Ugly v
-	//~ double* synapse;
 	double delay;
 	double wt; // weight
 	int nsyn = 0;
@@ -420,18 +397,16 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 
 			if (nsyn_type==0){
 				// number of synapses calculated with equation 3 from the article
-				nsyn = log(1.0-table[r][c])/log(1.0 - (1.0/(n_layer[c]*n_layer[r])));
+				//~ nsyn = log(1.0-table[r][c])/log(1.0 - (1.0/(n_layer[c]*n_layer[r])));
+				nsyn = 0.02 * log(1.0-table[r][c])/log(1.0 - (1.0/(n_layer[c]*n_layer[r])));
 				printf("NSYN from %d to %d: %d\n", c, r, nsyn);
 			} else if (nsyn_type==1) {
 				// number of synapses calculated with equation 5 from the article
-				nsyn = table[r][c]*n_layer[c]*n_layer[r];
+				//~ nsyn = table[r][c]*n_layer[c]*n_layer[r];
+				nsyn = 0.02 * table[r][c]*n_layer[c]*n_layer[r];
 				printf("NSYN from %d to %d: %d\n", c, r, nsyn);
 			}
 
-			/* This generates two arrays of random ints. n_layer[x] is the max value
-			pre_index = randint(n_layer[c], size=nsyn)
-			post_index = randint(n_layer[r], size=nsyn)
-			* */
 			syn_ct += nsyn;
 
 			while(nsyn--){
@@ -441,13 +416,6 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 				if ((c % 2) == 0){ // Excitatory connections
 					// Synaptic weight from L4e to L2/3e is doubled
 					if (c == 2 && r == 0){
-						/*
-						con.append(Synapses(pop[c], pop[r], model=syn_model, on_pre=pre_eq))
-						con[-1].connect(i = pre_index, j = post_index)
-						con[-1].w = '2.0*clip((w_ex + std_w_ex*randn()),w_ex*0.0, w_ex*inf)'
-						con[-1].delay = 'clip(d_ex + std_d_ex*randn(), 0.1*ms, d_ex*inf)'
-						*/
-						//clip(d_ex + std_d_ex*randn(), 0.1*ms, d_ex*inf)
 						delay = g_d_ex + g_std_d_ex*Normal();
 						if(delay < 0.1){delay=0.1;}
 						// Make sure to always make the same number of calls to RNG regardless of conditions
@@ -457,18 +425,7 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 						synapse->weight = wt;
 						if(synapse->weight < 0.0){synapse->weight = 0.0;}
 						synapse->weight *= 2.0;
-						// Ugly v
-						//~ synapse = NewSynapse(src_neuron, dst_neuron, sizeof(float), true, delay);
-						//~ *synapse = g_w_ex + g_std_w_ex*Normal();
-						//~ if(*synapse < 0.0){*synapse = 0.0;}
-						//~ *synapse *= 2.0;
 					} else {
-						/*
-						con.append(Synapses(pop[c], pop[r], model=syn_model, on_pre=pre_eq))
-						con[-1].connect(i = pre_index, j = post_index)
-						con[-1].w = 'clip((w_ex + std_w_ex*randn()),w_ex*0.0, w_ex*inf)'
-						con[-1].delay = 'clip(d_ex + std_d_ex*randn(), 0.1*ms, d_ex*inf)'
-						*/
 						delay = g_d_ex + g_std_d_ex*Normal();
 						if(delay < 0.1){delay=0.1;}
 						wt = g_w_ex + g_std_w_ex*Normal();
@@ -476,19 +433,9 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 						if(synapse==NULL){continue;}
 						synapse->weight = wt;
 						if(synapse->weight < 0.0){synapse->weight = 0.0;}
-						// Ugly v
-						//~ synapse = NewSynapse(src_neuron, dst_neuron, sizeof(float), true, delay);
-						//~ *synapse = g_w_ex + g_std_w_ex*Normal();
-						//~ if(*synapse < 0.0){*synapse = 0.0;}
 					}
 
 				} else { // Inhibitory connections
-					/*
-					con.append(Synapses(pop[c], pop[r], model=syn_model, on_pre=pre_eq))
-					con[-1].connect(i = pre_index, j = post_index)
-					con[-1].w = '-g*clip((w_ex + std_w_ex*randn()),w_ex*0.0, w_ex*inf)'
-					con[-1].delay = 'clip(d_in + std_d_in*randn(), 0.1*ms, d_in*inf)'
-					*/
 					delay = g_d_in + g_std_d_in*Normal();
 					if(delay < 0.1){delay=0.1;}
 					synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
@@ -497,38 +444,12 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 					synapse->weight = wt;
 					if(synapse->weight > 0.0){synapse->weight = 0.0;}
 					synapse->weight *= in_g;
-					// Ugly v
-					//~ synapse = NewSynapse(src_neuron, dst_neuron, sizeof(float), true, delay);
-					//~ *synapse = -(g_w_ex + g_std_w_ex*Normal());
-					//~ if(*synapse > 0.0){*synapse = 0.0;}
-					//~ *synapse *= in_g;
 				}
 			}
 
 			printf("TotalSynapses %llu\n", syn_ct);
 		}
 	}
-	
-	//###########################################################################
-	//# Creating poissonian background inputs
-	//###########################################################################
-	//~ bg_in  = []
-	//~ if (stim==0):
-		//~ for r in range(0, 8):
-			//~ bg_in.append(PoissonInput(pop[r], 'I', bg_layer[r], bg_freq*Hz, weight=w_ex))
-
-	//###############################################################################
-	//# Creating thalamic neurons as poissonian inputs
-	//###############################################################################
-	// Thalamic neurons are the nineth population of neurons.
-	//~ thal_con = []
-	//~ thal_input = []
-	//~ if thal==1:
-		//~ thal_input = PoissonGroup(n_layer[8], rates=120.0*Hz)	#from PD paper: rates=15Hz
-		//~ for r in range(0,8):
-			//~ thal_con.append(Synapses(thal_input, pop[r], model=syn_model, on_pre=pre_eq))
-			//~ thal_con[-1].connect(p=table[r][8])
-			//~ thal_con[-1].w = 0.0
 	
 	if(thal==1){
 		for (int r = 0; r<8; r++) {
@@ -538,22 +459,13 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 			for(int i=0; i<nsyn; i++){
 				src_neuron = (unsigned long int) (Random()*(n_layer[8])) + nn_cum[8];
 				dst_neuron = (unsigned long int) (Random()*(n_layer[r])) + nn_cum[r];
-				/*
-				thal_con.append(Synapses(thal_input, pop[r], model=syn_model, on_pre=pre_eq))
-				thal_con[-1].connect(p=table[r][8])
-				thal_con[-1].w = 0.0
-				*/
 				delay = 0.1;
 				if(delay < 0.1){delay=0.1;}
 				synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
+				wt = g_w_ex + (g_w_ex*0.1*Normal());
 				if(synapse==NULL){continue;}
-				synapse->weight = g_w_ex + (g_w_ex*0.1*Normal());
+				synapse->weight = wt;
 				if(synapse->weight < 0.0){synapse->weight = 0.0;}
-				// Ugly v
-				//~ float w = g_w_ex + (g_w_ex*0.1*Normal());
-				//~ if (w<0) {continue;}
-				//~ synapse = NewSynapse(src_neuron, dst_neuron, sizeof(float), true, delay);
-				//~ *synapse = w;
 			}
 		}
 		syn_ct += nsyn;
@@ -564,7 +476,6 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 	//###########################################################################
 	//# Creating spike monitors
 	//###########################################################################
-	//smon_net = SpikeMonitor(NeuronGroup)
 	for(unsigned long int i=0; i<nn_cum[7]; i++){ //Probe every neuron
 		NewProbe(i);
 	}
@@ -593,102 +504,6 @@ int n2pop(unsigned long int neuron_ID){
 	return -1;
 }
 
-void feedForwardTopologyNSpikes(unsigned long int neuron_count){
-	unsigned int layers = 10;
-	unsigned int neurons_per_layer = neuron_count / layers;
-	// All the remaining neurons are here
-	unsigned int neurons_in_last_layer = neuron_count - neurons_per_layer*(layers-1);
-	
-	// Last layer is fully probed
-	for(unsigned long int n=0; n<neurons_in_last_layer; n++){
-		NewProbe(neuron_count-n-1);
-	}
-	
-	synapse_t* syn;
-	unsigned long int dst_offset = neurons_per_layer;
-	unsigned long int src_offset = 0;
-	unsigned long int src_n = 0;
-	
-	// Layered Topology (skip second-to-last)
-	for(unsigned int l=0; l<layers-2; l++){
-		
-		for(unsigned long int n=0; n < neurons_per_layer; n++){
-			
-			src_n = src_offset + n;
-			
-			unsigned long int dst_offset_l = n * CONNECTIONS;
-			
-			for(unsigned long int i=0; i<CONNECTIONS; i++){
-				
-				//~ syn = NewSynapse(src_n, dst_offset + mod(dst_offset_l + i, neurons_per_layer), sizeof(synapse_t));
-				syn = NewSynapse(src_n, dst_offset + ((dst_offset + i) % neurons_per_layer), sizeof(synapse_t), true, g_d_ex);
-				
-				// Synapse memory is on another node
-				if (syn==NULL) break;
-				//~ syn->weight = SYNAPSE_WEIGHT;
-				syn->weight = g_w_ex;
-			}
-			
-		}
-		
-		src_offset += neurons_per_layer;
-		dst_offset += neurons_per_layer;
-		
-	}
-	
-	// Connect second-to-last layer to the last.
-	for(unsigned long int n=0; n<neurons_per_layer; n++){
-		
-		src_n = src_offset + n;
-		
-		unsigned long int dst_offset_l = n * CONNECTIONS;
-		
-		for(unsigned long int i=0; i<CONNECTIONS; i++){
-			
-			syn = NewSynapse(src_n, dst_offset + ((dst_offset_l + i) % neurons_in_last_layer), sizeof(synapse_t), true, g_d_ex);
-			
-			// Use a global variable to signal that the synapse memory is on another node
-			if (syn==NULL) break;
-			
-			//~ syn->weight = SYNAPSE_WEIGHT;
-			syn->weight = g_w_ex;
-			
-		}
-	}
-	
-	// Spike train the first layer
-	unsigned long int spike_c = (unsigned long int) (Random() * 1000);
-	spike_c = (spike_c > 0u) ? spike_c : 500u;
-	
-	unsigned long int* target_ns = malloc(sizeof(unsigned long int) * neurons_per_layer);
-	
-	double * intensities = malloc(sizeof(double) * spike_c);
-	double * timings = malloc(sizeof(double) * spike_c);
-	
-	// Select targets
-	for(unsigned long int i = 0; i<neurons_per_layer; i++){
-		target_ns[i] = i;
-	}
-	
-	timings[0] = Random() * 5.0;
-	//~ intensities[0] = SYNAPSE_WEIGHT;
-	intensities[0] = g_w_ex;
-	
-	// Spike intensities and timings
-	for(unsigned long int i=1; i<spike_c; i++){
-		//~ intensities[i] = Random() * SYNAPSE_WEIGHT * 3.0;
-		intensities[i] = Random() * g_w_ex * 3.0;
-		timings[i] = timings[i-1] + Random() * 5.0;
-	}
-	
-	//NewSpikeTrain(unsigned long int target_count, unsigned long int target_neurons[], unsigned long int spike_count, double intensities[], simtime_t timings[]);
-	NewSpikeTrain(neurons_per_layer, target_ns, spike_c, intensities, timings);
-	
-	free(target_ns);
-	free(intensities);
-	free(timings);
-}
-
 void get_bg_layer(int bg_type){
 	//# Background number per layer
 	if (bg_type == 0) {
@@ -702,8 +517,8 @@ void get_bg_layer(int bg_type){
 		//#layer-independent-random:
 		for (int i=0; i<8; i+=2) {
 		    //# range of the number of inputs given to an excitatory population:
-		    unsigned int exc_bound_A = bg_layer_specific[i];
-		    unsigned int exc_bound_B = bg_layer_independent[i];
+		    int exc_bound_A = bg_layer_specific[i];
+		    int exc_bound_B = bg_layer_independent[i];
 		    unsigned int diff_exc = abs(exc_bound_A-exc_bound_B);
 			double exc_input;
 			
@@ -763,7 +578,6 @@ void bring_to_present(neuron_state_t* state, simtime_t now){
 	double delta_t;
 	double If;
 	
-	//~ if(state->times_fired){
 	simtime_t ref_end = state->last_fired + n_params.refractory_period; // When will refractory period end
 	
 	if(ref_end > state->last_updated){ // The neuron is in refractory period at t0
@@ -805,7 +619,6 @@ void bring_to_present(neuron_state_t* state, simtime_t now){
 	
 	printdbg("BTP: delta_t: %lf\n", delta_t);
 	
-	//~ If = exp((-delta_t) * (params->inv_syn_tau)) * state->I;
 	If = get_I_f(delta_t, state->I);
 	
 	printdbg("BTP: If: %lf\n", If);
@@ -813,8 +626,6 @@ void bring_to_present(neuron_state_t* state, simtime_t now){
 	double dvdt = (-state->membrane_potential + n_params.reset_potential)* n_params.inv_tau_m + (state->I + n_helper->Iext)*(n_params.inv_C_m);
 	printdbg("BTP: dV/dt: %lf\n", dvdt); // Questo mi esce 0 ma V cresce uguale... Errore di calcolo da qualche parte?
 	
-	//~ double aux = (state->membrane_potential - params->A2 - (state->I)*(params->A0)) * exp((-delta_t) * (params->inv_tau_m));
-	//~ double V = If*(params->A0) + params->A2 + aux;
 	double V = get_V_t(n_helper, state->membrane_potential, state->I, If, delta_t);
 	
 	printdbg("BTP: Vf: %lf\n", V);
@@ -833,8 +644,7 @@ simtime_t getNextFireTime(neuron_state_t* state){
 	 * We need an I that can overcome it */
 	double Icond = state->helper->Icond;
 	
-	printdbg("getFT: Icond: %lf\n", Icond);
-	//~ printf("getFT: Icond: %lf\n", Icond);	
+	printdbg("getFT: Icond: %lf\n", Icond);	
 	
 	// Down here only non-self-spiking neurons are considered.
 	double I0 = state->I;
@@ -863,7 +673,6 @@ simtime_t getNextFireTime(neuron_state_t* state){
 		t0 = ref_end; // When will refractory period end, new t0
 		
 		delta_t = t0 - state->last_updated;
-		//~ I0 = exp((-delta_t)*params->inv_syn_tau)*I0;
 		I0 = get_I_f(delta_t, I0);
 		V0 = n_params.reset_potential; // Potential is clamped to reset potential
 		printdbg("getFT: Ref period out of the way\n");
@@ -920,45 +729,6 @@ simtime_t getNextFireTime(neuron_state_t* state){
 	
 	/* Otherwise */
 	return t0 + findSpikeDeltaBinary(n_helper, V0, I0, delta_t);
-	//~ return t0 + findSpikeDeltaNewton(params, V0, I0, delta_t);
-}
-
-// TODO: fix this to actually look for the right time value.
-/* Compute the time after which the spike will take place given T0=0, V0 and I0.
- * Uses Newton-Raphson */
-double findSpikeDeltaNewton(struct neuron_helper_t* n_helper, double V0, double I0, double time_interval){
-	double delta_t = 0;
-	unsigned int its = 0; // Iteration counter
-	
-	double It;
-	double Vt;
-	double dvdt;
-	
-	// While V is farther than epsilon from Vth
-	do {
-		
-		/* Compute I(delta_t) */
-		It = get_I_f(delta_t, I0);
-		/* Now compute V(delta_t) - Vth. This translation is needed or we find dt s.t. V(dt)=0, and not s.t. V(dt)=Vth.
-		 * Also this does not pose any problem since translating along the y axis does not change the derivative */
-		Vt = get_V_t(n_helper, V0, I0, It, delta_t) - n_params.threshold;
-		
-		dvdt = (-Vt + n_params.reset_potential)*(n_params.inv_tau_m) + (It + n_helper->Iext)*(n_params.inv_C_m);
-		
-		delta_t = delta_t - (Vt/dvdt);
-		
-		its++;
-		
-	} while(!doubleEquals(Vt, 0.0, V_TOLERANCE) && its < 500);
-	
-	//~ if(its>=50 && !doubleEquals(V, params->threshold, 0.000000001)){ // Reached max iterations but not close enough
-		//~ delta_t = findSpikeDeltaBinary(neuron_params_t* params, double V0, double I0, double time_interval);
-	//~ }
-	
-	printdbg("Newton-Raphson spikedelta: %lf\n", delta_t);
-	if(its>=500) printdbg("Reached MAX ITERATIONS\n");
-	return delta_t;
-	
 }
 
 /* Compute the time after which the spike will take place given T0=0, V0 and I0, on a NON-self-spiking neuron. */
@@ -1011,7 +781,6 @@ double getSelfSpikeTime(struct neuron_helper_t *n_helper){
 	
 	double delta_t = 0;
 	
-	//~ double It;
 	double Vt;
 	double It;
 	double tmin = 0;
@@ -1063,7 +832,6 @@ double getSelfSpikeTime(struct neuron_helper_t *n_helper){
 double findSpikeDeltaBinaryBlind(struct neuron_helper_t* helper, double V0, double I0){
 	double delta_t = 0;
 	
-	//~ double It;
 	double Vt;
 	double It;
 	double tmin = 0;

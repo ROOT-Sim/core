@@ -15,9 +15,6 @@
 /* <INTERFACES> */
 typedef lp_id_t neuron_id_t;
 
-/* Called at the start of the simulation. Use this to call all the initializations */
-//~ extern void NetworkInit();
-
 /* neuron sends the spike */
 void SendSpike(neuron_id_t sender, simtime_t spiketime);
 
@@ -30,6 +27,7 @@ void MaybeSpikeAndWake(neuron_id_t sender, simtime_t spiketime);
 
 /* Initialize the neuron */
 extern void* NeuronInit(neuron_id_t me);
+extern void* NeuronInit_pr(neuron_id_t me);
 
 /* Invoked in NetworkInit by modeller to create a synapse. Can be static (non-rollbacked) and can have delay */
 //~ void* NewSynapse(unsigned long int src_neuron, unsigned long int dest_neuron, size_t syn_state_size);
@@ -48,23 +46,30 @@ void NewProbe(neuron_id_t target_neuron);
  * Called after monitored_neuron receives an input, and after it fires. */
 // Think: should we make it possible for this to be issued periodically?
 extern void ProbeRead(simtime_t now, neuron_id_t monitored_neuron, const void* neuron_state);
+extern void ProbeRead_pr(simtime_t now, neuron_id_t monitored_neuron, const void* neuron_state);
 
 /* neuron receives spike */
 extern void NeuronHandleSpike(neuron_id_t neuron_id, simtime_t now, double value, void* neuron_state);
+extern void NeuronHandleSpike_pr(neuron_id_t neuron_id, simtime_t now, double value, void* neuron_state);
 /* Wake the neuron after spiking (or something like this) */
 extern void NeuronWake(neuron_id_t me, simtime_t now, void* neuron_state);
+extern void NeuronWake_pr(neuron_id_t me, simtime_t now, void* neuron_state);
 
 /* synapse handles the spike by updating its state and *returning* the spike intensity */
 extern double SynapseHandleSpike(simtime_t now, neuron_id_t src_neuron, neuron_id_t dest_neuron, void* synapse_state);
+extern double SynapseHandleSpike_pr(simtime_t now, neuron_id_t src_neuron, neuron_id_t dest_neuron, void* synapse_state);
 
 /* is the neuron done? */
 extern bool NeuronCanEnd(neuron_id_t me, void* snapshot);
+extern bool NeuronCanEnd_pr(neuron_id_t me, void* snapshot);
 
 /* Gather statistics about the run */
 extern void GatherStatistics(simtime_t now, neuron_id_t neuron_id, const void* neuron_state);
+extern void GatherStatistics_pr(simtime_t now, neuron_id_t neuron_id, const void* neuron_state);
 
 /* This is what the user calls */
 extern void SNNInitTopology(neuron_id_t n_neurons);
+extern void SNNInitTopology_pr(neuron_id_t n_neurons);
 
 /* </INTERFACES> */
 
