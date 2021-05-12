@@ -414,36 +414,31 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 				dst_neuron = (unsigned long int) (Random()*(n_layer[r])) + nn_cum[r];
 				
 				if ((c % 2) == 0){ // Excitatory connections
+					
+					delay = g_d_ex + g_std_d_ex*Normal();
+					if(delay < 0.1){delay=0.1;}
+					// Make sure to always make the same number of calls to RNG regardless of conditions
+					wt = g_w_ex + g_std_w_ex*Normal();
+					synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
+					if(synapse==NULL){continue;}
+					synapse->weight = wt;
+					if(synapse->weight < 0.0){synapse->weight = 0.0;}
 					// Synaptic weight from L4e to L2/3e is doubled
 					if (c == 2 && r == 0){
-						delay = g_d_ex + g_std_d_ex*Normal();
-						if(delay < 0.1){delay=0.1;}
-						// Make sure to always make the same number of calls to RNG regardless of conditions
-						wt = g_w_ex + g_std_w_ex*Normal();
-						synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
-						if(synapse==NULL){continue;}
-						synapse->weight = wt;
-						if(synapse->weight < 0.0){synapse->weight = 0.0;}
 						synapse->weight *= 2.0;
-					} else {
-						delay = g_d_ex + g_std_d_ex*Normal();
-						if(delay < 0.1){delay=0.1;}
-						wt = g_w_ex + g_std_w_ex*Normal();
-						synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
-						if(synapse==NULL){continue;}
-						synapse->weight = wt;
-						if(synapse->weight < 0.0){synapse->weight = 0.0;}
 					}
-
+					
 				} else { // Inhibitory connections
+					
 					delay = g_d_in + g_std_d_in*Normal();
 					if(delay < 0.1){delay=0.1;}
-					synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
 					wt = -(g_w_ex + g_std_w_ex*Normal());
+					synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
 					if(synapse==NULL){continue;}
 					synapse->weight = wt;
 					if(synapse->weight > 0.0){synapse->weight = 0.0;}
 					synapse->weight *= in_g;
+					
 				}
 			}
 
@@ -461,8 +456,8 @@ void ShimouraTopology(){//(stim, bg_type, w_ex, g, bg_freq, nsyn_type, thal)
 				dst_neuron = (unsigned long int) (Random()*(n_layer[r])) + nn_cum[r];
 				delay = 0.1;
 				if(delay < 0.1){delay=0.1;}
-				synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
 				wt = g_w_ex + (g_w_ex*0.1*Normal());
+				synapse = NewSynapse(src_neuron, dst_neuron, sizeof(synapse_t), true, delay);
 				if(synapse==NULL){continue;}
 				synapse->weight = wt;
 				if(synapse->weight < 0.0){synapse->weight = 0.0;}
@@ -516,10 +511,10 @@ void get_bg_layer(int bg_type){
 		bg_layer = malloc(sizeof(unsigned int) * 8);
 		//#layer-independent-random:
 		for (int i=0; i<8; i+=2) {
-		    //# range of the number of inputs given to an excitatory population:
-		    int exc_bound_A = bg_layer_specific[i];
-		    int exc_bound_B = bg_layer_independent[i];
-		    unsigned int diff_exc = abs(exc_bound_A-exc_bound_B);
+			//# range of the number of inputs given to an excitatory population:
+			int exc_bound_A = bg_layer_specific[i];
+			int exc_bound_B = bg_layer_independent[i];
+			unsigned int diff_exc = abs(exc_bound_A-exc_bound_B);
 			double exc_input;
 			
 			//# range of the number of inputs given to an inhibitory population:
@@ -528,34 +523,34 @@ void get_bg_layer(int bg_type){
 			double diff_inh;
 			double inh_input;
 			
-		    //# randomly choosing a number for the external input to an excitatory population:
-		    if (exc_bound_A<=exc_bound_B) {
+			//# randomly choosing a number for the external input to an excitatory population:
+			if (exc_bound_A<=exc_bound_B) {
 				exc_input = exc_bound_A + Random()*diff_exc;
 			} else {//if (exc_bound_A>exc_bound_B){
 				exc_input = exc_bound_B + Random()*diff_exc;
 			}
 
-		    //# range of the number of inputs given to an inhibitory population:
-		    if (i!=6) {
+			//# range of the number of inputs given to an inhibitory population:
+			if (i!=6) {
 				//# eq. 4 from the article
 				inh_bound_A = ((1-0.1)/(1+0.1))*exc_input;
 			} else {
 				// # eq. 4 from the article
 				inh_bound_A = ((1-0.2)/(1+0.2))*exc_input;
 			}
-		    inh_bound_B = exc_input;
-		    diff_inh = fabs(inh_bound_A-inh_bound_B);
+			inh_bound_B = exc_input;
+			diff_inh = fabs(inh_bound_A-inh_bound_B);
 
-		    //# randomly choosing a number for the external input to an inhibitory population:
-		    if (inh_bound_A<=inh_bound_B) {
+			//# randomly choosing a number for the external input to an inhibitory population:
+			if (inh_bound_A<=inh_bound_B) {
 				inh_input = inh_bound_A + Random()*diff_inh;
 			} else {
 				inh_input = inh_bound_B + Random()*diff_inh;
 			}
 
-		    //# array created to save the values:
-		    bg_layer[i] = (unsigned int) exc_input;
-		    bg_layer[i+1] = (unsigned int) inh_input;
+			//# array created to save the values:
+			bg_layer[i] = (unsigned int) exc_input;
+			bg_layer[i+1] = (unsigned int) inh_input;
 		}
 	}
 }

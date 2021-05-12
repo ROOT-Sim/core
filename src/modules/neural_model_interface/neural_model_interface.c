@@ -338,7 +338,7 @@ void snn_module_lp_init(){// Init the neuron memory here (memory manager is up a
 	uint64_t prev_rng_s[4];
 	double prev_unif;
 	
-	struct lib_ctx *ctx = lib_ctx_get();
+	struct lib_ctx *ctx = current_lp->lib_ctx_p;
 	
 	memcpy(prev_rng_s, ctx->rng_s, sizeof(uint64_t)*4);
 	prev_unif = ctx->unif;
