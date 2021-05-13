@@ -155,8 +155,9 @@ static inline void send_anti_messages(struct process_data *proc_p,
 	for (array_count_t i = sent_i + 1; i < array_count(proc_p->sent_msgs);
 			++i) {
 		struct lp_msg *msg = array_get_at(proc_p->sent_msgs, i);
-		if (!msg)
+		if (!msg) {
 			continue;
+		}
 
 		nid_t dest_nid = lid_to_nid(msg->dest);
 		if (dest_nid != nid) {
@@ -179,8 +180,9 @@ static inline void reinsert_invalid_past_messages(struct process_data *proc_p,
 		struct lp_msg *msg = array_get_at(proc_p->past_msgs, i);
 		int msg_status = atomic_fetch_add_explicit(&msg->flags,
 			-MSG_FLAG_PROCESSED, memory_order_relaxed);
-		if (!(msg_status & MSG_FLAG_ANTI))
+		if (!(msg_status & MSG_FLAG_ANTI)) {
 			msg_queue_insert(msg);
+		}
 	}
 
 	array_count(proc_p->past_msgs) = past_i;
@@ -219,11 +221,11 @@ static inline array_count_t match_straggler_msg(
 static inline array_count_t match_remote_msg(const struct process_data *proc_p,
 		const struct lp_msg *r_msg)
 {
-	uint32_t m_id = r_msg->raw_flags >> 2, m_seq = r_msg->m_seq;
+	uint32_t m_id = r_msg->raw_flags >> MSG_FLAGS_BITS, m_seq = r_msg->m_seq;
 	array_count_t past_i = array_count(proc_p->past_msgs) - 1;
 	while (past_i) {
 		struct lp_msg *msg = array_get_at(proc_p->past_msgs, past_i);
-		if (msg->raw_flags >> 2 == m_id && msg->m_seq == m_seq) {
+		if (msg->raw_flags >> MSG_FLAGS_BITS == m_id && msg->m_seq == m_seq) {
 			msg->raw_flags |= MSG_FLAG_ANTI;
 			break;
 		}
@@ -238,7 +240,7 @@ static inline void handle_remote_anti_msg(struct process_data *proc_p,
 {
 	array_count_t past_i = match_remote_msg(proc_p, msg);
 	if (unlikely(!past_i)) {
-		msg->raw_flags >>= 2;
+		msg->raw_flags >>= MSG_FLAGS_BITS;
 		array_push(early_antis, msg);
 		return;
 	}
@@ -252,7 +254,7 @@ static inline void handle_remote_anti_msg(struct process_data *proc_p,
 static inline bool check_early_anti_messages(struct lp_msg *msg)
 {
 	uint32_t m_id;
-	if (likely(!array_count(early_antis) || !(m_id = msg->raw_flags >> 2)))
+	if (likely(!array_count(early_antis) || !(m_id = msg->raw_flags >> MSG_FLAGS_BITS)))
 		return false;
 	uint32_t m_seq = msg->m_seq;
 	if (!m_id)
@@ -278,11 +280,11 @@ void process_msg(void)
 		return;
 	}
 
-	gvt_on_msg_extraction(msg->dest_t);
-
 	struct lp_ctx *this_lp = &lps[msg->dest];
 	struct process_data *proc_p = &this_lp->p;
 	current_lp = this_lp;
+
+	gvt_on_msg_extraction(msg->dest_t);
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags,
 			MSG_FLAG_PROCESSED, memory_order_relaxed);

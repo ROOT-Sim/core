@@ -77,6 +77,12 @@ void msg_allocator_fossil_collect(simtime_t current_gvt)
 		// of the destination time in order to avoid a pseudo memory
 		// leak for LPs which send messages distant in logical time.
 		if (current_gvt > msg->dest_t) {
+#ifdef PUBSUB
+			if(is_pubsub_msg(msg)){
+				pubsub_msg_free(msg);
+				continue;
+			}
+#endif
 			msg_allocator_free(msg);
 		} else {
 			array_get_at(free_gvt_list, j) = msg;

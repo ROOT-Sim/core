@@ -13,6 +13,10 @@
 #include <core/sync.h>
 #include <gvt/fossil.h>
 
+#ifdef PUBSUB
+#include <modules/publish_subscribe/pubsub.h>
+#endif
+
 uint64_t lid_node_first;
 __thread uint64_t lid_thread_first;
 __thread uint64_t lid_thread_end;
@@ -66,6 +70,12 @@ void lp_init(void)
 		model_allocator_lp_init();
 		current_lp->lib_ctx_p = malloc_mt(sizeof(*current_lp->lib_ctx_p));
 		lib_lp_init_pr();
+
+#ifdef PUBSUB
+		pubsub_lib_lp_init();
+#endif
+		
+		
 		process_lp_init();
 		termination_lp_init();
 	}

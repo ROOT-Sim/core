@@ -43,6 +43,11 @@ else
   rootsim_srcs += 'distributed' / 'no_mpi.c'
 endif
 
+if get_option('pubsub_msg').enabled()
+  rootsim_c_args += '-DPUBSUB=1'
+  rootsim_srcs += 'modules' / 'publish_subscribe' / 'pubsub.c'
+endif
+
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
   dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
 

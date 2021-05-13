@@ -51,7 +51,7 @@ static inline void fossil_lp_collect(simtime_t current_gvt)
 
 void fossil_collect(simtime_t current_gvt)
 {
-#ifdef ROOTSIM_MPI
+#if defined(ROOTSIM_MPI) || defined(PUBSUB)
 	msg_allocator_fossil_collect(current_gvt);
 #endif
 	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {

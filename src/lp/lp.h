@@ -25,6 +25,12 @@ struct lp_ctx {
 	struct lib_ctx *lib_ctx_p;
 	/// The message processing context of this LP
 	struct process_data p;
+	
+#ifdef PUBSUB
+	/// Bitmap for subbed nodes
+	struct block_bitmap* subnodes;
+#endif
+
 	/// The memory allocator state of this LP
 	struct mm_state mm_state;
 };
