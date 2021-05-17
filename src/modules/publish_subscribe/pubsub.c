@@ -9,7 +9,7 @@
 #define n_offset_of_children_count(msg)	(n_stripped_payload_size((msg)))
 #define n_offset_of_children_ptr(msg)	(n_offset_of_children_count((msg)) + sizeof(size_t))
 #define n_children_count(msg)		(*((size_t*) ((msg)->pl + n_offset_of_children_count((msg)))))
-#define n_children_ptr(msg)		(*((lp_msg***) ((msg)->pl + n_offset_of_children_ptr((msg)))))
+#define n_children_ptr(msg)		(*((struct lp_msg***) ((msg)->pl + n_offset_of_children_ptr((msg)))))
 
 // For when the message is being handled at thread level
 #define size_of_thread_pubsub_info	(sizeof(lp_entry_arr*) + size_of_pubsub_info)
@@ -19,22 +19,21 @@
 #define t_offset_of_children_ptr(msg)	(t_offset_of_children_count((msg)) + sizeof(size_t))
 #define t_lp_arr(msg)			(*((lp_entry_arr**) ((msg)->pl + t_offset_of_lp_arr((msg)))))
 #define t_children_count(msg)		(*((size_t*) ((msg)->pl + t_offset_of_children_count((msg)))))
-#define t_children_ptr(msg)		(*((lp_msg***) ((msg)->pl + t_offset_of_children_ptr((msg)))))
+#define t_children_ptr(msg)		(*((struct lp_msg***) ((msg)->pl + t_offset_of_children_ptr((msg)))))
 
 // Valid for both Node-level and Thread-level
-#define offset_of_children_ptr(msg)	((msg)->pl_size - sizeof(lp_msg**))
-#define children_ptr(msg)		(*((lp_msg***) ((msg)->pl + offset_of_children_ptr((msg)))))
+#define offset_of_children_ptr(msg)	((msg)->pl_size - sizeof(struct lp_msg**))
+#define children_ptr(msg)		(*((struct lp_msg***) ((msg)->pl + offset_of_children_ptr((msg)))))
 #define offset_of_children_count(msg)	(offset_of_children_ptr(msg) - sizeof(size_t))
 #define children_count(msg)		(*((size_t*) ((msg)->pl + offset_of_children_count((msg)))))
 
 // For locally (same-node) generated Node-level messages
-#define offset_of_child_for_mpi(msg)	(offset_of_children_count(msg) - sizeof(lp_msg*))
-#define child_for_mpi(msg)		(*((lp_msg**) ((msg)->pl + offset_of_child_for_mpi((msg)))))
+#define offset_of_child_for_mpi(msg)	(offset_of_children_count(msg) - sizeof(struct lp_msg*))
+#define child_for_mpi(msg)		(*((struct lp_msg**) ((msg)->pl + offset_of_child_for_mpi((msg)))))
 
 #define LP_ID_MSB (((lp_id_t) 1) << (sizeof(lp_id_t)*CHAR_BIT - 1))
 
-extern __thread bool silent_processing;
-
+extern _Thread_local bool silent_processing;
 
 
 typedef struct table_lp_entry_t{
@@ -54,11 +53,11 @@ typedef dyn_array(table_thread_entry_t) t_entry_arr;
 t_entry_arr *subscribersTable;
 spinlock_t *tableLocks;
 
-inline void mpi_pubsub_remote_msg_send(lp_msg *msg, nid_t dest_nid);
+inline void mpi_pubsub_remote_msg_send(struct lp_msg *msg, nid_t dest_nid);
 
-inline void mpi_pubsub_remote_anti_msg_send(lp_msg *msg, nid_t dest_nid);
+inline void mpi_pubsub_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 
-void node_actually_antimessage(lp_msg *msg);
+void node_actually_antimessage(struct lp_msg *msg);
 
 // OK
 void pubsub_lib_lp_init(){
@@ -83,13 +82,13 @@ void pubsub_lib_global_init(){ // Init hashtable and locks
 	return;
 }
 
-inline void send_pubsub_msg_to_remote_nid(lp_msg *msg, nid_t dest_nid){
+inline void send_pubsub_msg_to_remote_nid(struct lp_msg *msg, nid_t dest_nid){
 	if (likely(dest_nid != nid)){// Send to remote nodes
 		mpi_pubsub_remote_msg_send(msg, dest_nid);
 	}
 }
 
-inline void send_to_sub_nodes(lp_msg *msg){
+inline void send_to_sub_nodes(struct lp_msg *msg){
 	// send to all subscribers
 	block_bitmap* subs = current_lp->subnodes;
 	
@@ -106,7 +105,7 @@ inline void send_to_sub_nodes(lp_msg *msg){
 }
 
 // This function handles a pubsub message for the node.
-void node_handle_published_message(lp_msg* msg){
+void node_handle_published_message(struct lp_msg* msg){
 	
 	/*
 	 * The parent message keeps track of its children by keeping
@@ -138,7 +137,7 @@ void node_handle_published_message(lp_msg* msg){
 	// Copy the msg payload
 	// Here msg->pl contains [og_pl, pubsub_info], so the size to copy is n_stripped_payload_size
 	memcpy(child_payload, msg->pl, n_stripped_payload_size(msg));
-	(*((lp_msg***) (child_payload + offset_of_children_ptr(msg)))) = NULL;
+	(*((struct lp_msg***) (child_payload + offset_of_children_ptr(msg)))) = NULL;
 	(*((size_t*) (child_payload + offset_of_children_count(msg)))) = 0;
 	// *child_payload right now:
 	// Byte offsets	:v-0       		v-og_pl_size	v-(pl_size+sizeof(void*))	
@@ -156,7 +155,7 @@ void node_handle_published_message(lp_msg* msg){
 #endif
 
 	n_children_count(msg) = n_ch_count;
-	n_children_ptr(msg) = mm_alloc(sizeof(lp_msg*) * n_ch_count);
+	n_children_ptr(msg) = mm_alloc(sizeof(struct lp_msg*) * n_ch_count);
 
 	int it = 0;
 	
@@ -164,10 +163,10 @@ void node_handle_published_message(lp_msg* msg){
 	if(from_local_node){
 		
 		// Create a clone to be sent to other nodes
-		lp_msg *clone_msg = msg_allocator_alloc(
+		struct lp_msg *clone_msg = msg_allocator_alloc(
 					n_stripped_payload_size(msg));
 		
-		memcpy(clone_msg, msg, n_stripped_payload_size(msg) + offsetof(lp_msg, pl));
+		memcpy(clone_msg, msg, n_stripped_payload_size(msg) + offsetof(struct lp_msg, pl));
 		children_ptr(msg)[0] = clone_msg;
 		++it;
 		msg_allocator_free_at_gvt(clone_msg);
@@ -195,7 +194,7 @@ void node_handle_published_message(lp_msg* msg){
 		
 		// Create child message
 		// Target holds the target thread's tid
-		lp_msg *child_msg = msg_allocator_pack(
+		struct lp_msg *child_msg = msg_allocator_pack(
 					t_entry->tid,
 					msg->dest_t, 
 					msg->m_type,
@@ -246,7 +245,7 @@ void node_handle_published_message(lp_msg* msg){
  * it to the children of the msg we are unpacking here.
  * */
 // This function is called when a thread extracts a pubsub message from its queue
-void thread_handle_published_message(lp_msg* msg){
+void thread_handle_published_message(struct lp_msg* msg){
 	
 	// Check if antimsgd to be safe
 	if(msg->flags & MSG_FLAG_ANTI){
@@ -284,7 +283,7 @@ void thread_handle_published_message(lp_msg* msg){
 		return;
 	}
 	
-	children_ptr(msg) = mm_alloc(sizeof(lp_msg*) * array_count(lp_arr));
+	children_ptr(msg) = mm_alloc(sizeof(struct lp_msg*) * array_count(lp_arr));
 	// Contents msg->pl now:
 	// Byte offsets	:v-0    v-og_pl_size	v-(pl_size+sizeof(void*))	
 	// Contents	:[ pl	| &lp_arr	| childCount	| lp_msg**	]
@@ -292,7 +291,7 @@ void thread_handle_published_message(lp_msg* msg){
 	// Here create the payload for the messages LPs will receive
 	size_t original_pl_size = t_stripped_payload_size(msg);
 	
-	lp_msg* child_msg;
+	struct lp_msg* child_msg;
 	
 	// For each subscribed LP
 	for(array_count_t i=0; i < array_count(lp_arr); i++){
@@ -386,7 +385,7 @@ void PublishNewEvent(simtime_t timestamp, unsigned event_type, const void *paylo
 	
 	// A node-level pubsub message is created.
 	// Then the MPI send wrapper makes sure to only send user data
-	lp_msg *msg = msg_allocator_alloc(payload_size + size_of_pubsub_info);
+	struct lp_msg *msg = msg_allocator_alloc(payload_size + size_of_pubsub_info);
 	msg->dest = current_lid;
 	msg->dest_t = timestamp;
 	msg->m_type = event_type;
@@ -403,7 +402,7 @@ void PublishNewEvent(simtime_t timestamp, unsigned event_type, const void *paylo
 }
 
 // Called from within remote_msg_map.c or when antimessaging sent msgs
-void node_handle_published_antimessage(lp_msg* msg){
+void node_handle_published_antimessage(struct lp_msg* msg){
 		
 	int flags = atomic_fetch_add_explicit(&msg->flags,
 			MSG_FLAG_ANTI, memory_order_relaxed);
@@ -422,22 +421,21 @@ void node_handle_published_antimessage(lp_msg* msg){
 	return;
 }
 
-extern void send_pubsub_anti_to_remote_nid(lp_msg *msg, nid_t dest_nid);
-inline void send_pubsub_anti_to_remote_nid(lp_msg *msg, nid_t dest_nid){
+static inline void send_pubsub_anti_to_remote_nid(struct lp_msg *msg, nid_t dest_nid){
 	if (likely(dest_nid != nid)){// Send to remote nodes
 		mpi_pubsub_remote_anti_msg_send(msg, dest_nid);
 	}
 }
 
-void node_actually_antimessage(lp_msg *msg){
+void node_actually_antimessage(struct lp_msg *msg){
 	
 	// Carry out the antimessaging
 	size_t child_count = n_children_count(msg);
 	
 	// TODO: make sure that child_count is correctly set by the
 	// positive handler in case the handling is interrupted halfway
-	lp_msg** children = n_children_ptr(msg);
-	lp_msg* cmsg;
+	struct lp_msg** children = n_children_ptr(msg);
+	struct lp_msg* cmsg;
 	
 #ifdef ROOTSIM_MPI
 	// If the message is from local node, send antimessages via MPI!
@@ -486,7 +484,7 @@ void node_actually_antimessage(lp_msg *msg){
 }
 
 // This is called when a pubsub message with ANTI flag set is extracted
-void thread_handle_published_antimessage(lp_msg *msg){
+void thread_handle_published_antimessage(struct lp_msg *msg){
 	
 	// msg comes from incoming queue => no race conditions
 	if(!(msg->flags & MSG_FLAG_PROCESSED)){
@@ -497,8 +495,8 @@ void thread_handle_published_antimessage(lp_msg *msg){
 	// else
 	// Antimessage the children
 	int child_count = t_children_count(msg);
-	lp_msg** children = t_children_ptr(msg);
-	lp_msg* cmsg;
+	struct lp_msg** children = t_children_ptr(msg);
+	struct lp_msg* cmsg;
 	
 	for(int i=0; i<child_count; i++){
 		cmsg = children[i];
@@ -665,10 +663,10 @@ void Subscribe(lp_id_t subscriber_id, lp_id_t publisher_id){
 }
 
 // Free a pubsub msg
-void pubsub_msg_free(lp_msg* msg){
+void pubsub_msg_free(struct lp_msg* msg){
 	
 	// children_ptr(msg) works for both node and thread-level
-	lp_msg **c_ptr = children_ptr(msg);
+	struct lp_msg **c_ptr = children_ptr(msg);
 	
 	if(c_ptr){
 		// Free the array pointing to children
@@ -681,7 +679,7 @@ void pubsub_msg_free(lp_msg* msg){
 }
 
 // Insert a thread-level pubsub message in queue
-void pubsub_msg_queue_insert(lp_msg* msg){
+void pubsub_msg_queue_insert(struct lp_msg* msg){
 	
 	// msg->dest contains the thread id 
 	unsigned dest_rid = msg->dest;
@@ -693,7 +691,7 @@ void pubsub_msg_queue_insert(lp_msg* msg){
 }
 
 // Only use this after setting the msg ID
-inline void mpi_pubsub_remote_msg_send(lp_msg *msg, nid_t dest_nid)
+inline void mpi_pubsub_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	gvt_on_remote_msg_send(dest_nid);
 
@@ -708,7 +706,7 @@ inline void mpi_pubsub_remote_msg_send(lp_msg *msg, nid_t dest_nid)
 }
 
 // Only use this after correctly setting the ID
-inline void mpi_pubsub_remote_anti_msg_send(lp_msg *msg, nid_t dest_nid)
+inline void mpi_pubsub_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	gvt_on_remote_msg_send(dest_nid);
 
