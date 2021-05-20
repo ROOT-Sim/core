@@ -53,10 +53,12 @@ compiler_c_args = [
   '-DROOTSIM_OPTIMIZATION_OPTIONS="' + ' '.join(c_optimization_options) + '"'
 ]
 
+c_compiler = meson.get_compiler('c').cmd_array()[0]
+
 if mpi_dep.found()
-  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_compiler.full_path() + ' MPICH_CC=' + clang_compiler.full_path() + ' mpicc"'
+  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + c_compiler + ' MPICH_CC=' + c_compiler + ' mpicc"'
 else
-  compiler_c_args += '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
+  compiler_c_args += '-DROOTSIM_CC="' + c_compiler + '"'
 endif
 
 # ROOT-Sim compiler
