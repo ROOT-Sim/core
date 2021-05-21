@@ -84,7 +84,7 @@ enum _direction_t {
 struct topology_t;
 
 extern struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int out_of_topology);
-extern unsigned long long RegionsCount(struct topology_t *topology);
-extern unsigned long long DirectionsCount(struct topology_t *topology);
-extern lp_id_t GetReceiver(struct topology_t *topology, lp_id_t from, enum _direction_t direction);
-extern lp_id_t FindReceiver(struct topology_t *topology);
+extern unsigned long long RegionsCount(const struct topology_t *topology);
+extern unsigned long long DirectionsCount(const struct topology_t *topology);
+extern lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direction_t direction);
+extern lp_id_t FindReceiver(const struct topology_t *topology);
