@@ -67,7 +67,6 @@ endif
 i = 1
 foreach t_name, t_spec : test_specs
   t_srcs = t_spec.get('src')
-  t_srcs += 'test' / 'test_framework.c'
   t_deps = []
   
   if t_spec.get('rslib', false)
@@ -80,6 +79,8 @@ foreach t_name, t_spec : test_specs
       t_deps += rs_thr_dep
     endif
   endif
+  
+  t_srcs += 'test' / 'test_framework.c'
 
   t_full_name = 'test_' + i.to_string() + '_' + t_name
 
