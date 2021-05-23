@@ -11,7 +11,7 @@ branch_name = check_output(['git', 'branch', '--show-current']).decode().strip()
 
 # Split version in major, minor, hotfix
 version = describe_str.split("-", 1)[0]
-major, minor, hotfix = version.split(".", 3)
+major, minor, hotfix = map(int, version.split(".", 3))
 
 branch_type = branch_name.split("-", 1)[0]
 

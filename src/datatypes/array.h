@@ -100,16 +100,6 @@ __extension__({								\
 	array_count(self)++;						\
 })
 
-#define array_remove_at_lazy(self, i)					\
-__extension__({								\
-	__typeof__(*array_items(self)) __rmval;				\
-	array_count(self)--;						\
-	__rmval = array_items(self)[(i)];				\
-	array_items(self)[(i)] = array_items(self)[array_count(self)];	\
-	array_shrink(self);						\
-	__rmval;							\
-})
-
 #define array_remove_at(self, i)					\
 __extension__({								\
 	__typeof__(*array_items(self)) __rmval;				\

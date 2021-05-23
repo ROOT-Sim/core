@@ -37,4 +37,4 @@ html_target = custom_target('htmldocs',
                             output: 'html',
                             command: [doxygen, doxyfile])
 
-run_target('docs', command : '', depends : html_target)
+alias_target('docs', html_target)

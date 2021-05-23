@@ -18,6 +18,8 @@
 #define LOG_LEVEL LOG_TRACE
 #endif
 
+#define LOG_CAN_LOG_AT_BUILD(l) (l >= LOG_LEVEL)
+
 extern int log_level;
 extern bool log_colored;
 

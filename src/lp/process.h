@@ -24,6 +24,9 @@ struct process_data {
 	dyn_array(struct lp_msg *) sent_msgs;
 };
 
+extern void process_global_init(void);
+extern void process_global_fini(void);
+
 extern void process_lp_init(void);
 extern void process_lp_deinit(void);
 extern void process_lp_fini(void);

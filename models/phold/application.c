@@ -13,13 +13,16 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	(void)content;
 	(void)size;
 	switch (event_type) {
-	case INIT:
+	case LP_INIT:
 		state = malloc(sizeof(unsigned));
 		*state = 0;
 		SetState(state);
 		break;
-	case DEINIT:
+	case LP_FINI:
 		free(state);
+		return;
+	case MODEL_INIT:
+	case MODEL_FINI:
 		return;
 	default:
 		++*state;
@@ -27,7 +30,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	}
 
 	lp_id_t dest = Random() * n_lps;
-	ScheduleNewEvent(dest, now + fabs(Normal() * 5.0) + 20.0, 1, NULL, 0);
+	ScheduleNewEvent(dest, now + fabs(Normal() * 5.) + 20., 0, NULL, 0);
 }
 
 bool CanEnd(lp_id_t me, const unsigned *state)

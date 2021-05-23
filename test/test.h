@@ -31,18 +31,12 @@ struct test_config {
 	int (*test_fnc)(void);
 	/// @a test_fnc is executed with that many cores
 	unsigned threads_count;
-	/// The expected output from the whole sequence of test_printf() calls
-	const char *expected_output;
-	/// The expected output size of the full sequence of test_printf() calls
-	size_t expected_output_size;
 	/// The command line arguments passed to the wrapped main function
 	const char **test_arguments;
 };
 
 /// The test configuration object, must be defined by the test sources
 extern const struct test_config test_config;
-
-extern int test_printf(const char *restrict fmt, ...);
 extern bool test_thread_barrier(void);
 
 // core.c mock

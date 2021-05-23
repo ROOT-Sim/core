@@ -21,7 +21,7 @@
 #define COMPLETE_EVENTS 10000
 
 enum {
-	LOOP = INIT + 1,
+	LOOP,
 	RECEIVE
 };
 
@@ -31,7 +31,7 @@ typedef struct _buffer {
 	uint64_t data[];
 } buffer;
 
-typedef struct _lp_state_type {
+typedef struct _lp_state {
 	unsigned events;
 	unsigned buffer_count;
 	uint32_t total_checksum;
@@ -45,4 +45,4 @@ buffer* allocate_buffer(lp_state *state, const unsigned *data, unsigned count);
 buffer* deallocate_buffer(buffer *head, unsigned i);
 void crc_table_init(void);
 
-extern const char model_expected_output_64[679];
+extern const uint32_t model_expected_output[];

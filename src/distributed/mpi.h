@@ -15,8 +15,6 @@
  */
 #pragma once
 
-#ifdef ROOTSIM_MPI
-
 #include <lp/msg.h>
 
 /// A control message MPI tag value
@@ -39,14 +37,13 @@ extern void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl);
 extern void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest);
 extern void mpi_remote_msg_handle(void);
 
-extern void mpi_reduce_sum_scatter(const unsigned node_vals[n_nodes], unsigned *result);
+extern void mpi_reduce_sum_scatter(const unsigned values[n_nodes],
+		unsigned *result);
 extern bool mpi_reduce_sum_scatter_done(void);
 
-extern void mpi_reduce_min(simtime_t *node_min_p);
+extern void mpi_reduce_min(double *node_min_p);
 extern bool mpi_reduce_min_done(void);
 
 extern void mpi_node_barrier(void);
 extern void mpi_blocking_data_send(const void *data, int data_size, nid_t dest);
 extern void *mpi_blocking_data_rcv(int *data_size_p, nid_t src);
-
-#endif

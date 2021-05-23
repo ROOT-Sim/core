@@ -41,11 +41,17 @@ __extension__({				\
 #ifndef CACHE_LINE_SIZE // TODO: calculate and inject at build time
 /// The size of a cpu cache line
 /** Used to align some data structures in order to avoid false sharing */
-#define CACHE_LINE_SIZE 64
+#define CACHE_LINE_SIZE 128
 #endif
 
-#define INIT 0
-#define DEINIT UINT_MAX
+// this definition is shared with ROOT-Sim.h
+// TODO: generate ROOT-Sim.h at build time
+enum rootsim_event {
+	MODEL_INIT = 65532,
+	LP_INIT,
+	LP_FINI,
+	MODEL_FINI
+};
 
 /// Optimize the branch as likely taken
 #define likely(exp) __builtin_expect(!!(exp), 1)
@@ -62,8 +68,8 @@ typedef double simtime_t;
 #define MAX_NODES (1 << 16)
 /// The maximum number of supported threads
 /** FIXME: this is used very limitedly. Consider its removal */
-#define MAX_THREADS (1 << 10)
-#define lid_to_nid(lid) (nid_t)(lid / n_lps_node)
+#define MAX_THREADS_EXP 12
+#define MAX_THREADS (1 << MAX_THREADS_EXP)
 
 /// Used to uniquely identify LPs in the simulation
 typedef uint64_t lp_id_t;
@@ -76,17 +82,17 @@ typedef int nid_t;
 extern lp_id_t n_lps;
 /// The total number of LPs hosted in the node
 extern lp_id_t n_lps_node;
-/// The total number of MPI nodes in the simulation
+/// The total number of threads running in the node
 extern rid_t n_threads;
 /// The identifier of the thread
 extern __thread rid_t rid;
 
 #ifdef ROOTSIM_MPI
 
+/// The total number of MPI nodes in the simulation
 extern nid_t n_nodes;
 /// The node identifier of the node
 extern nid_t nid;
-/// The total number of threads running in the node
 
 #else
 enum {nid = 0, n_nodes = 1};

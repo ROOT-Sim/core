@@ -8,11 +8,16 @@ instr_cfg = custom_target(
   command : [llvm_cfg_gen, '@OUTPUT@']
 )
 
+rootsim_llvm_lib_dep = [llvm_dep]
+if get_option('b_sanitize') == 'address'
+  rootsim_llvm_lib_dep += meson.get_compiler('c').find_library('asan', 
+    static : true)
+endif
+
 # ROOT-Sim LLVM plugin for model instrumentation
 rootsim_llvm_lib = shared_library('rootsim-llvm', ['instr_llvm.cpp', instr_cfg],
-  dependencies : llvm_dep, name_prefix : 'lib', name_suffix : 'so',
-  cpp_args : [log_level_def, rootsim_version_def, '-Wno-unused-parameter'],
-  include_directories : src_inc_dir, install : true)
+  dependencies : rootsim_llvm_lib_dep, name_prefix : 'lib', name_suffix : 'so',
+  cpp_args : log_level_def, include_directories : src_inc_dir, install : true)
 
 clang_arguments = c_optimization_options
 clang_arguments += ['@EXTRA_ARGS@', '-I', meson.source_root() / 'src', 

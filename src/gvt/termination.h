@@ -12,7 +12,7 @@
 
 #include <stdatomic.h>
 
-extern atomic_int nodes_to_end;
+extern _Atomic(nid_t) nodes_to_end;
 
 #define termination_cant_end() (atomic_load_explicit(&nodes_to_end, memory_order_relaxed) > 0)
 
