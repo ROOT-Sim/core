@@ -14,10 +14,13 @@ if get_option('b_sanitize') == 'address'
     static : true)
 endif
 
+rootsim_llvm_lib_cpp_args = [log_level_def, '-Wno-unused-parameter']
+
 # ROOT-Sim LLVM plugin for model instrumentation
 rootsim_llvm_lib = shared_library('rootsim-llvm', ['instr_llvm.cpp', instr_cfg],
   dependencies : rootsim_llvm_lib_dep, name_prefix : 'lib', name_suffix : 'so',
-  cpp_args : log_level_def, include_directories : src_inc_dir, install : true)
+  cpp_args : rootsim_llvm_lib_cpp_args, include_directories : src_inc_dir, 
+  install : true)
 
 clang_arguments = c_optimization_options
 clang_arguments += ['@EXTRA_ARGS@', '-I', meson.source_root() / 'src', 

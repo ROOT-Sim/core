@@ -101,13 +101,11 @@ void parallel_simulation(void)
 	thr_id_t thrs[n_threads];
 	rid_t i = n_threads;
 	while (i--) {
-		if (thread_start(&thrs[i], parallel_thread_run,
-				  (void *)(uintptr_t)i)) {
+		if (thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
 			log_log(LOG_FATAL, "Unable to create a thread!");
 			abort();
 		}
-		if (global_config.core_binding &&
-				thread_affinity_set(thrs[i], i)) {
+		if (global_config.core_binding && thread_affinity_set(thrs[i], i)) {
 			log_log(LOG_FATAL, "Unable to set a thread affinity!");
 			abort();
 		}

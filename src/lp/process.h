@@ -27,6 +27,9 @@ struct process_data {
 extern void process_global_init(void);
 extern void process_global_fini(void);
 
+extern void process_init(void);
+extern void process_fini(void);
+
 extern void process_lp_init(void);
 extern void process_lp_deinit(void);
 extern void process_lp_fini(void);

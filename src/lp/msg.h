@@ -18,7 +18,11 @@
 
 #define BASE_PAYLOAD_SIZE 32
 
-#define msg_is_before(msg_a, msg_b) ((msg_a)->dest_t < (msg_b)->dest_t || ((msg_a)->dest_t == (msg_b)->dest_t && (msg_a)->raw_flags > (msg_b)->raw_flags))
+#define msg_is_before_serial(ma, mb) ((ma)->dest_t < (mb)->dest_t)
+
+#define msg_is_before(ma, mb) (msg_is_before_serial(ma, mb) || 		\
+	((ma)->dest_t == (mb)->dest_t && (ma)->raw_flags > (mb)->raw_flags))
+
 #define msg_bare_size(msg) (offsetof(struct lp_msg, pl) + (msg)->pl_size)
 #define msg_anti_size() (offsetof(struct lp_msg, m_seq) + sizeof(uint32_t))
 
