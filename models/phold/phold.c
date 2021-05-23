@@ -18,72 +18,62 @@
 #define EVENT   1
 
 struct lp_state {
-	long long seed;
-	double lvt;
-	unsigned int processed;
+	unsigned processed;
 };
 
 struct event_content {
 	unsigned long long dummy;
 };
 
-void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *content, unsigned size, unsigned *s)
+void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *content, unsigned size, void *s)
 {
 
 	struct lp_state *state = (struct lp_state *) s;
 	struct event_content new_event = {me};
 
-	unsigned int receiver;
-	double timestamp;
-
-	if(state != NULL) {
-		state->lvt = now;
-	}
-
 	switch(event_type) {
-		case LP_INIT:
-			state = malloc(sizeof(unsigned));
-			memset(state, 0, sizeof(struct lp_state));
-			SetState(state);
+	case LP_INIT:
+		state = malloc(sizeof(struct lp_state));
+		memset(state, 0, sizeof(*state));
+		SetState(state);
 
-			// Inject events in the system
-			if(me < MESSAGE_POPULATION) {
-				ScheduleNewEvent(me, 0.01, EVENT, NULL, 0);
-			}
-			break;
+		// Inject events in the system
+		if (me < MESSAGE_POPULATION)
+			ScheduleNewEvent(me, 0.01, EVENT, NULL, 0);
 
-		case LP_FINI:
-			free(state);
-			return;
+		break;
 
-		case MODEL_INIT:
-		case MODEL_FINI:
-			return;
+	case LP_FINI:
+		free(state);
+		return;
 
-		case EVENT:
-			state->processed++;
+	case MODEL_INIT:
+	case MODEL_FINI:
+		return;
 
-			for(int i = 0; i < COMPUTATION_GRAIN; i++) {
-				new_event.dummy += i;
-			}
+	case EVENT:
+		state->processed++;
 
-			receiver = (unsigned int) (Random() * (double) n_lps);
-			timestamp = now + LOOKAHEAD + Random() * TIMESTAMP_INCREMENT;
-			ScheduleNewEvent(receiver, timestamp, EVENT, &new_event, sizeof(struct event_content));
+		for(int i = 0; i < COMPUTATION_GRAIN; i++)
+			new_event.dummy += i;
 
-			break;
+		lp_id_t receiver = Random() * n_lps;
+		simtime_t timestamp = now + LOOKAHEAD + Random() * TIMESTAMP_INCREMENT;
+		ScheduleNewEvent(receiver, timestamp, EVENT, &new_event, sizeof(new_event));
 
-		default:
-			fprintf(stderr, "Unknown event type\n");
-			abort();
+		break;
+
+	default:
+		fprintf(stderr, "Unknown event type\n");
+		abort();
 	}
 }
 
-bool CanEnd(lp_id_t me, const unsigned *snapshot)
+bool CanEnd(lp_id_t me, const void *snapshot)
 {
 	struct lp_state *state = (struct lp_state *) snapshot;
 
-	if(state->processed < TOTAL_EVENTS) {
+	if (state->processed < TOTAL_EVENTS) {
 		return false;
 	}
 	return true;
