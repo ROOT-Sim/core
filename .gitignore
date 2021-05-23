@@ -56,3 +56,6 @@ dkms.conf
 
 # Common name for Meson build folder
 build/
+
+# ROOT-Sim statistics
+*.bin

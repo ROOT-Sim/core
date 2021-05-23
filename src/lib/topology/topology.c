@@ -210,6 +210,9 @@ __attribute__ ((pure)) lp_id_t GetReceiver(lp_id_t from,
 
 lp_id_t FindReceiver(void)
 {
+	if(n_lps == 1)
+		return 0;
+
 	const lp_id_t dir_cnt = DirectionsCount();
 	const unsigned bits = 64 - intrinsics_clz(dir_cnt);
 	uint64_t rnd = RandomU64();
