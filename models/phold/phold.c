@@ -11,8 +11,6 @@
 #define EVENT   1
 
 struct lp_state {
-	long long seed;
-	double lvt;
 	unsigned int processed;
 };
 
@@ -41,63 +39,56 @@ struct ap_option model_options[] = {{"population",     OPT_POP,       "UINT",   
 struct topology_t *topology;
 
 __attribute__((used))
-void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *content, unsigned size, unsigned *s)
+void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *content, unsigned size, void *s)
 {
 
 	struct lp_state *state = (struct lp_state *) s;
 	struct event_content new_event = {me};
 
-	unsigned int receiver;
-	double timestamp;
-
-	if(state != NULL) {
-		state->lvt = now;
-	}
-
 	switch(event_type) {
 
-		case MODEL_INIT:
-			topology = TopologyInit(TOPOLOGY_MESH, 0);
-			break;
+	case MODEL_INIT:
+		topology = TopologyInit(TOPOLOGY_MESH, 0);
+		break;
 
-		case LP_INIT:
-			state = malloc(sizeof(unsigned));
-			memset(state, 0, sizeof(struct lp_state));
-			SetState(state);
+	case LP_INIT:
+		state = malloc(sizeof(struct lp_state));
+		memset(state, 0, sizeof(*state));
+		SetState(state);
 
-			// Inject events in the system
-			if(me < message_population) {
-				ScheduleNewEvent(me, 0.01, EVENT, NULL, 0);
-			}
-			break;
+		// Inject events in the system
+		if(me < message_population) {
+			ScheduleNewEvent(me, 0.01, EVENT, NULL, 0);
+		}
+		break;
 
-		case LP_FINI:
-			free(state);
-			return;
+	case LP_FINI:
+		free(state);
+		return;
 
 		case MODEL_FINI:
 			return;
 
-		case EVENT:
-			state->processed++;
+	case EVENT:
+		state->processed++;
 
-			for(int i = 0; i < computation_grain; i++) {
-				new_event.dummy += i;
-			}
+		for(int i = 0; i < computation_grain; i++) {
+			new_event.dummy += i;
+		}
 
-			timestamp = now + lookahead + Random() * timestamp_increment;
-			ScheduleNewEvent(FindReceiver(topology), timestamp, EVENT, &new_event, sizeof(struct event_content));
+		simtime_t timestamp = now + lookahead + Random() * timestamp_increment;
+		ScheduleNewEvent(FindReceiver(topology), timestamp, EVENT, &new_event, sizeof(struct event_content));
 
-			break;
+		break;
 
-		default:
-			fprintf(stderr, "Unknown event type\n");
-			abort();
+	default:
+		fprintf(stderr, "Unknown event type\n");
+		abort();
 	}
 }
 
 __attribute__((used))
-bool CanEnd(lp_id_t me, const unsigned *snapshot)
+bool CanEnd(lp_id_t me, const void *snapshot)
 {
 	struct lp_state *state = (struct lp_state *) snapshot;
 
