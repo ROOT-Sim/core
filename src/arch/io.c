@@ -62,9 +62,10 @@ FILE *io_file_tmp_get(void)
 
 #ifdef __WINDOWS
 
+#include <fnctl.h>
+#include <io.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <io.h>
 
 bool io_terminal_can_colorize(void)
 {
@@ -105,7 +106,7 @@ FILE *io_file_tmp_get(void)
 			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 			&tmp_sa, CREATE_ALWAYS,
 			FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
-	if (file_handle == INVALID_HANDLE)
+	if (file_handle == INVALID_HANDLE_VALUE)
 		return NULL;
 
 	int fd = _open_osfhandle((intptr_t)file_handle, _O_RDWR);

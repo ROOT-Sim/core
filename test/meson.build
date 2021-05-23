@@ -13,10 +13,10 @@ test_model_srcs = [
 ]
 
 test_specs = {
-  'fail_init': {'src' : ['test' / 'fail_init.c'], 'fail' : true},
-  'fail_body': {'src' : ['test' / 'fail_body.c'], 'fail' : true},
-  'fail_fini': {'src' : ['test' / 'fail_fini.c'], 'fail' : true},
-  'fail_main': {'src' : ['test' / 'fail_main.c'], 'fail' : true, 'has_main' : true},
+  'fail_init': {'src' : ['self' / 'fail_init.c'], 'fail' : true},
+  'fail_body': {'src' : ['self' / 'fail_body.c'], 'fail' : true},
+  'fail_fini': {'src' : ['self' / 'fail_fini.c'], 'fail' : true},
+  'fail_main': {'src' : ['self' / 'fail_main.c'], 'fail' : true, 'has_main' : true},
 
   'unit_init' : {'src' : ['core' / 'init_test.c', src_dir / 'core' / 'init.c', src_dir / 'core' / 'arg_parse.c'], 'has_main' : true},
   'unit_sync' : {'src' : ['core' / 'sync_test.c', src_dir / 'core' / 'sync.c']},
@@ -29,37 +29,32 @@ test_specs = {
 
   'integration_serial': {
     'src' : ['integration' / 'integration_serial.c'] + test_model_srcs,
-    'run_plugin' : true,
     'rslib' : true
   },
   'integration_single':  {
     'src' : ['integration' / 'integration_parallel_single.c'] + test_model_srcs,
-    'run_plugin' : true,
     'rslib' : true,
     'mpi' : true
   },
   'integration_multi': {
     'src' : ['integration' / 'integration_parallel_multi.c'] + test_model_srcs,
-    'run_plugin' : true,
     'rslib' : true,
     'mpi' : true
   },
 
   'model_pcs': {
     'src' : [
-      'models' / 'model_test.c', 
-      models_dir / 'pcs' / 'application.c', 
+      'models' / 'model_test.c',
+      models_dir / 'pcs' / 'application.c',
       models_dir / 'pcs' / 'functions_app.c'
     ],
-    'run_plugin' : true,
     'rslib' : true
   },
   'model_phold': {
     'src' : [
-      'models' / 'model_test.c', 
-      models_dir / 'phold' / 'application.c', 
+      'models' / 'model_test.c',
+      models_dir / 'phold' / 'application.c',
     ],
-    'run_plugin' : true,
     'rslib' : true
   }
 }
@@ -73,36 +68,34 @@ endif
 i = 1
 foreach t_name, t_spec : test_specs
   t_srcs = t_spec.get('src')
-  if t_spec.get('run_plugin', false)
-    t_srcs = [clang_with_plugin.process(t_srcs)]
-  endif
-
+  t_srcs += 'test' / 'test_framework.c'
   t_deps = []
-  t_srcs += 'test.c'
   
   if t_spec.get('rslib', false)
+    t_srcs = [clang_with_plugin.process(t_srcs)]
     t_deps += rootsim_dep
   else
-    t_srcs += src_dir / 'mm' / 'mm.c'
+    t_srcs += 'test' / 'test_stubs.c'
     if not t_spec.get('has_main', false)
-      t_srcs += 'test_main.c'
+      t_srcs += 'test' / 'test_main.c'
       t_deps += rs_thr_dep
     endif
   endif
-  
+
   t_full_name = 'test_' + i.to_string() + '_' + t_name
-  
+
   test_executable = executable(t_full_name, t_srcs, dependencies : t_deps,
-    include_directories : src_inc_dir, c_args : t_spec.get('c_args', []) + 
-    ['-DROOTSIM_TEST_NAME="' + t_name + '"'], link_args : '-no-pie')
-    
+    include_directories : src_inc_dir, c_args : t_spec.get('c_args', []) +
+    ['-DROOTSIM_TEST_NAME="' + t_name + '"'], link_args : '-no-pie',
+    link_language : 'c')
+
   if mpi_dep.found() and t_spec.get('mpi', false)
-    test(t_full_name + '_mpi', mpiexec_cmd, 
+    test(t_full_name + '_mpi', mpiexec_cmd,
       args : ['-n', '2', test_executable.full_path()])
   endif
-  
+
   test(t_full_name, test_executable, is_parallel : false,
     should_fail : t_spec.get('fail', false))
-  
+
   i = i + 1
 endforeach

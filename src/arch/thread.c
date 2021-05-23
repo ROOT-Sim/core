@@ -113,7 +113,7 @@ unsigned thread_cores_count(void)
 
 int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 {
-	*thr_p = CreateThread(NULL, 0, t_fnc, arg, 0, NULL);
+	*thr_p = CreateThread(NULL, 0, t_fnc, t_fnc_arg, 0, NULL);
 	return -(*thr_p == NULL);
 }
 
