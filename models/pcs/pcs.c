@@ -2,6 +2,8 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
+#include <ROOT-Sim.h>
+
 #include "pcs.h"
 
 #include <stdlib.h>
@@ -61,7 +63,7 @@ void model_parse(int key, const char *arg)
 
 #undef HANDLE_CASE
 
-struct topology_settings_t topology_settings = {.default_geometry = TOPOLOGY_HEXAGON};
+struct topology_t *topology;
 
 double current_ta(struct lp_state *state, double current_time)
 {
@@ -204,7 +206,7 @@ static void setup_call(unsigned me, double now, struct lp_state *state, double e
 	if(new_call.end_time <= handoff_time) {
 		ScheduleNewEvent(me, new_call.end_time, END_CALL, &new_call, sizeof(new_call));
 	} else {
-		new_call.cell = FindReceiver();
+		new_call.cell = FindReceiver(topology);
 		ScheduleNewEvent(me, handoff_time, HANDOFF_LEAVE, &new_call, sizeof(new_call));
 	}
 }
@@ -224,7 +226,7 @@ static void preload(unsigned int me, struct lp_state *state)
 		if(new_call.end_time <= handoff_time) {
 			ScheduleNewEvent(me, new_call.end_time, END_CALL, &new_call, sizeof(new_call));
 		} else {
-			new_call.cell = FindReceiver();
+			new_call.cell = FindReceiver(topology);
 			ScheduleNewEvent(me, handoff_time, HANDOFF_LEAVE, &new_call, sizeof(new_call));
 		}
 	}
@@ -242,6 +244,10 @@ void ProcessEvent(lp_id_t me, simtime_t now, int event_type, void *e, unsigned i
 	}
 
 	switch(event_type) {
+
+		case MODEL_INIT:
+			topology = TopologyInit(TOPOLOGY_HEXAGON, 0);
+			break;
 
 		case LP_INIT:
 			state = malloc(sizeof(struct lp_state));
@@ -292,9 +298,11 @@ void ProcessEvent(lp_id_t me, simtime_t now, int event_type, void *e, unsigned i
 			break;
 
 		case LP_FINI:
-		case MODEL_INIT:
+			free(state);
+			return;
+
 		case MODEL_FINI:
-			break;
+			return;
 		default:
 			fprintf(stdout, "PCS: Unknown event type! (me = %lu - event type = %d)\n", me, event_type);
 			abort();

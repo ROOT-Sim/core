@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
-#include <ROOT-Sim.h>
 
 // Default configuration parameters
 #define CHANNELS_PER_CELL     1000
@@ -91,25 +90,3 @@ struct lp_state {
 	unsigned long long *channel_state;
 	struct channel channels;
 };
-
-
-/*
-typedef struct _lp_state_type{
-	unsigned int channel_counter; // How many channels are currently free
-	unsigned int arriving_calls; // How many calls have been delivered within this cell
-	unsigned int complete_calls; // Number of calls which were completed within this cell
-	unsigned int blocked_on_setup; // Number of calls blocked due to lack of free channels
-	unsigned int blocked_on_handoff; // Number of calls blocked due to lack of free channels in HANDOFF_RECV
-	unsigned int leaving_handoffs; // How many calls were diverted to a different cell
-	unsigned int arriving_handoffs; // How many calls were received from other cells
-	unsigned int cont_no_sir_aim; // Used for fading recheck
-	unsigned int executed_events; // Total number of events
-
-	simtime_t lvt; // Last executed event was at this simulation time
-
-	double ta; // Current call interarrival frequency for this cell
-
-	unsigned int *channel_state;
-	struct _channel *channels;
-} lp_state_type;
-*/

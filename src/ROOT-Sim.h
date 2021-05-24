@@ -81,12 +81,10 @@ enum _direction_t {
 	DIRECTION_INVALID = INT_MAX	//!< A generic invalid direction
 };
 
-extern struct topology_settings_t {
-	enum _topology_geometry_t default_geometry;
-	lp_id_t out_of_topology;
-} topology_settings;
+struct topology_t;
 
-extern __attribute__ ((pure)) lp_id_t RegionsCount(void);
-extern __attribute__ ((pure)) lp_id_t DirectionsCount(void);
-extern __attribute__ ((pure)) lp_id_t GetReceiver(lp_id_t from, enum _direction_t direction);
-extern lp_id_t FindReceiver(void);
+extern struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int out_of_topology);
+extern unsigned long long RegionsCount(const struct topology_t *topology);
+extern unsigned long long DirectionsCount(const struct topology_t *topology);
+extern lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direction_t direction);
+extern lp_id_t FindReceiver(const struct topology_t *topology);
