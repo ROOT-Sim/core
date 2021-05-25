@@ -62,7 +62,7 @@ FILE *io_file_tmp_get(void)
 
 #ifdef __WINDOWS
 
-#include <fnctl.h>
+#include <fcntl.h>
 #include <io.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
