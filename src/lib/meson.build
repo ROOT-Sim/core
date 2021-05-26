@@ -6,6 +6,8 @@ lib_srcs = files(
   'random' / 'random.c',
   'state' / 'state.c',
   'topology' / 'topology.c',
+  'config' / 'jsmn.c',
+  'config' / 'reflect.c',
   'lib.c'
 )
 

@@ -1,7 +1,7 @@
 /**
  * @file datatypes/array.h
  *
- * @brief Dynamic array datatype
+ * @brief Dynamic array datatype of elements of a given type
  *
  * Dynamic array datatype
  *
