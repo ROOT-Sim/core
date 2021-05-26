@@ -8,7 +8,7 @@
  */
 #include <test.h>
 
-#define ROOTSIM_TEST_LPS_COUNT "256"
+#define ROOTSIM_TEST_LPS_COUNT "64"
 
 static const char *test_arguments[] = {
 	"--lp",

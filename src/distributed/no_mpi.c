@@ -16,6 +16,9 @@
 
 #include <distributed/mpi.h>
 
+#include <gvt/gvt.h>
+#include <gvt/termination.h>
+
 void mpi_global_init(int *argc_p, char ***argv_p)
 {
 	(void)argc_p;

@@ -49,8 +49,7 @@ test_specs = {
   'model_pcs': {
     'src' : [
       'models' / 'model_test.c',
-      models_dir / 'pcs' / 'application.c',
-      models_dir / 'pcs' / 'functions_app.c'
+      models_dir / 'pcs' / 'pcs.c',
     ],
     'run_plugin' : true,
     'rslib' : true
@@ -58,7 +57,7 @@ test_specs = {
   'model_phold': {
     'src' : [
       'models' / 'model_test.c',
-      models_dir / 'phold' / 'application.c',
+      models_dir / 'phold' / 'phold.c',
     ],
     'run_plugin' : true,
     'rslib' : true
