@@ -25,10 +25,10 @@ struct keyval {
 };
 
 struct history {
-	double _autoconf_array *ppu;
+	double *ppu;
 };
 
-struct _autoconf conf {
+struct conf {
 	int id;
 	char *type;
 	char *name;

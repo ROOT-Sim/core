@@ -1,17 +1,14 @@
 # SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 
-# Build the LLVM instrumentation plugin
-# TODO re-enable incremental state saving
-subdir('instr')
-# Build the model libraries
-# TODO integrate the plugin system
-subdir('lib')
+######################
+#  ROOT-Sim Kernel   #
+######################
 
 rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
 rootsim_c_args = [rootsim_version_def, log_level_def]
 
-# ROOT-Sim library sources
+# ROOT-Sim core sources
 rootsim_srcs = [
   'arch' / 'io.c',
   'arch' / 'mem.c',
@@ -46,6 +43,40 @@ endif
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
   dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
 
+######################
+# ROOT-Sim Compiler  #
+######################
+
+instr_cfg = custom_target(
+  'instr_cfg',
+  output : 'instr_cfg.cpp',
+  input : [],
+  command : [llvm_cfg_gen, '@OUTPUT@']
+)
+
+rootsim_llvm_lib_dep = [llvm_dep]
+if get_option('b_sanitize') == 'address'
+  rootsim_llvm_lib_dep += meson.get_compiler('c').find_library('asan',
+    static : true)
+endif
+
+rootsim_llvm_lib_cpp_args = [log_level_def, '-Wno-unused-parameter']
+
+# ROOT-Sim LLVM plugin for model instrumentation
+rootsim_llvm_lib = shared_library('rootsim-cc_llvm', ['compiler' / 'rootsim-cc_llvm.cpp', instr_cfg],
+  dependencies : rootsim_llvm_lib_dep, name_prefix : 'lib', name_suffix : 'so',
+  cpp_args : rootsim_llvm_lib_cpp_args, include_directories : src_inc_dir,
+  install : true)
+
+clang_arguments = c_optimization_options
+clang_arguments += ['@EXTRA_ARGS@', '-I', meson.source_root() / 'src',
+  '-I', '@CURRENT_SOURCE_DIR@', '@INPUT@', '-c', '-o', '@OUTPUT@',
+  '-Xclang', '-load', '-Xclang', rootsim_llvm_lib.full_path()]
+
+clang_with_plugin = generator(clang_compiler, output : '@BASENAME@.o',
+  arguments : clang_arguments, depends : rootsim_llvm_lib)
+
+
 # ROOT-Sim compiler defines
 compiler_c_args = [
   '-DROOTSIM_LIB_DIR="' + get_option('prefix') / get_option('libdir') / '"',
@@ -60,9 +91,27 @@ else
   compiler_c_args += '-DROOTSIM_CC="' + clang_path + '"'
 endif
 
-# ROOT-Sim compiler
-rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c', 
+# Build the compiler
+rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'rootsim-cc.c',
   c_args : compiler_c_args, install : true)
 
-# Install headers
+######################
+#  Model Libraries   #
+######################
+# Model helper library sources
+lib_srcs = files(
+  'lib' / 'random' / 'random.c',
+  'lib' / 'state' / 'state.c',
+  'lib' / 'topology' / 'topology.c',
+  'lib' / 'config' / 'jsmn.c',
+  'lib' / 'config' / 'reflect.c',
+  'lib' / 'lib.c'
+)
+
+lib_objs = clang_with_plugin.process(lib_srcs)
+rootsim_mods_lib = static_library('rootsim-mods', lib_objs, install : true)
+
+######################
+#  ROOT-Sim Header   #
+######################
 install_headers('ROOT-Sim.h')

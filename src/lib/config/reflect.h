@@ -18,8 +18,6 @@
 
 
 #define _autoconf __attribute__((annotate("reflect")))
-#define _autoconf_array __attribute__((annotate("reflect_array")))
-
 
 /**
  * @brief Describe a mapping from a JSON file to a C struct member

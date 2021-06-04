@@ -18,12 +18,24 @@ struct event_content {
 	unsigned long long dummy;
 };
 
-// Default configuration values
-unsigned int message_population = 100;
-double timestamp_increment = 1.00;
-double lookahead = 0.50;
-unsigned int computation_grain = 1000;
-unsigned int total_events = 5000;
+struct foo {
+	unsigned bar;
+	unsigned long long foo;
+	char **vettore;
+	char *stringa;
+};
+
+struct conf {
+	unsigned message_population;
+	double timestamp_increment;
+	double lookahead;
+	unsigned computation_grain;
+	unsigned total_events;
+	double *values;
+	struct foo *foo;
+};
+
+_autoconf struct conf configuration = {100, 1.00, 0.50, 1000, 5000};
 
 enum {
 	OPT_POP, OPT_TIMEINC, OPT_LOOKAHEAD, OPT_GRAIN, OPT_EVENTS
@@ -57,7 +69,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 		SetState(state);
 
 		// Inject events in the system
-		if(me < message_population) {
+		if(me < configuration.message_population) {
 			ScheduleNewEvent(me, 0.01, EVENT, NULL, 0);
 		}
 		break;
@@ -72,11 +84,11 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 	case EVENT:
 		state->processed++;
 
-		for(int i = 0; i < computation_grain; i++) {
+		for(int i = 0; i < configuration.computation_grain; i++) {
 			new_event.dummy += i;
 		}
 
-		simtime_t timestamp = now + lookahead + Random() * timestamp_increment;
+		simtime_t timestamp = now + configuration.lookahead + Random() * configuration.timestamp_increment;
 		ScheduleNewEvent(FindReceiver(topology), timestamp, EVENT, &new_event, sizeof(struct event_content));
 
 		break;
@@ -92,7 +104,7 @@ bool CanEnd(lp_id_t me, const void *snapshot)
 {
 	struct lp_state *state = (struct lp_state *) snapshot;
 
-	if(state->processed < total_events) {
+	if(state->processed < configuration.total_events) {
 		return false;
 	}
 	return true;

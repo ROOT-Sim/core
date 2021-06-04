@@ -1,10 +1,14 @@
 # SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 
+fs = import('fs')
+
 src_dir = meson.source_root() / 'src'
 models_dir = meson.source_root() / 'models'
 # Test dependencies
 rootsim_dep = declare_dependency(link_with : [rootsim_lib, rootsim_mods_lib])
+
+model_runner = find_program(meson.source_root() / 'scripts' / 'model_runner.py')
 
 test_model_srcs = [
   'integration' / 'model' / 'application.c',
@@ -25,7 +29,7 @@ test_specs = {
   'unit_msg_allocator' : {'src' : ['mm' / 'msg_allocator_test.c', src_dir / 'mm' / 'msg_allocator.c']},
   'unit_lp' : {'src' : ['lp' / 'lp_test.c', src_dir / 'lp' / 'lp.c']},
   'unit_buddy_allocator' : {'src' : ['mm' / 'buddy' / 'buddy_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c']},
-  'unit_compiler' : {'src' : ['compiler' / 'compiler_test.c', src_dir / 'compiler' / 'compiler.c'], 'has_main' : true, 'c_args' : compiler_c_args},
+  'unit_compiler' : {'src' : ['compiler' / 'compiler_test.c', src_dir / 'compiler' / 'rootsim-cc.c'], 'has_main' : true, 'c_args' : compiler_c_args},
   'unit_reflect' : {'src' : ['lib' / 'reflect.c', src_dir / 'lib' / 'config' / 'jsmn.c', src_dir / 'lib' / 'config' / 'reflect.c', src_dir / 'datatypes' / 'vector.c']},
 
   'integration_serial': {
@@ -46,7 +50,7 @@ test_specs = {
     'mpi' : true
   },
 
-  'model_pcs': {
+  'mocked_pcs': {
     'src' : [
       'models' / 'model_test.c',
       models_dir / 'pcs' / 'pcs.c',
@@ -54,13 +58,20 @@ test_specs = {
     'run_plugin' : true,
     'rslib' : true
   },
-  'model_phold': {
+  'mocked_phold': {
     'src' : [
       'models' / 'model_test.c',
       models_dir / 'phold' / 'phold.c',
     ],
     'run_plugin' : true,
     'rslib' : true
+  },
+
+  'compiled_phold': {
+    'src' : [
+      models_dir / 'phold' / 'phold.c',
+    ],
+    'compile_model' : true,
   }
 }
 
@@ -72,7 +83,23 @@ endif
 # Tests builds
 i = 1
 foreach t_name, t_spec : test_specs
+  t_full_name = 'test_' + i.to_string() + '_' + t_name
   t_srcs = t_spec.get('src')
+
+  if t_spec.get('compile_model', false)
+    test_executable = custom_target(t_full_name,
+                                    output: t_full_name,
+                                    input: t_srcs,
+                                    command: [rootsim_cc, '@INPUT@',
+                                              '-rsinc', src_dir,
+                                              '-rslib', fs.parent(rootsim_lib.full_path()),
+                                              '-o', '@OUTPUT@'],
+                                    depends: rootsim_llvm_lib,
+                                    build_always: true)
+    test(t_full_name, model_runner, args: test_executable.full_path())
+    continue
+  endif
+
   if t_spec.get('run_plugin', false)
     t_srcs = [clang_with_plugin.process(t_srcs)]
   endif
@@ -89,8 +116,6 @@ foreach t_name, t_spec : test_specs
       t_deps += rs_thr_dep
     endif
   endif
-
-  t_full_name = 'test_' + i.to_string() + '_' + t_name
 
   test_executable = executable(t_full_name, t_srcs, dependencies : t_deps,
     include_directories : src_inc_dir, c_args : t_spec.get('c_args', []) +
