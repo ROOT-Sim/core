@@ -119,7 +119,7 @@ int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 
 int thread_affinity_set(thr_id_t thr, unsigned core)
 {
-	return -(SetThreadAffinityMask(thr, 1 << core) != 0);
+	return -(SetThreadAffinityMask(thr, 1 << core) == 0);
 }
 
 int thread_wait(thr_id_t thr, thr_ret_t *ret)

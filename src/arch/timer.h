@@ -43,20 +43,20 @@ extern timer_uint timer_perf_freq;
 
 inline timer_uint timer_new(void)
 {
-	LARGE_INTEGER __start_time;
-	QueryPerformanceCounter(&__start_time);
-	return (timer_uint)__start_time.QuadPart;
+	LARGE_INTEGER start_time;
+	QueryPerformanceCounter(&start_time);
+	return (timer_uint)start_time.QuadPart;
 }
 
 
 inline timer_uint timer_value(timer_uint start)
 {
 	if (unlikely(timer_perf_freq == 0)) {
-		LARGE_INTEGER __perf;
-		QueryPerformanceFrequency(&__perf);
-		timer_perf_freq = __perf.QuadPart;
+		LARGE_INTEGER perf;
+		QueryPerformanceFrequency(&perf);
+		timer_perf_freq = perf.QuadPart;
 	}
-	return (timer_new() - start) / timer_perf_freq;
+	return (timer_new() - start) * 1000000U / timer_perf_freq;
 }
 
 #endif
