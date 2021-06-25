@@ -43,6 +43,10 @@ else
   rootsim_srcs += 'distributed' / 'no_mpi.c'
 endif
 
+if get_option('iss').enabled()
+  rootsim_c_args += '-DROOTSIM_INCREMENTAL=1'
+endif
+
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
   dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
 

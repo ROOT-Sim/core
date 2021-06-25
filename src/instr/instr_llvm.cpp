@@ -131,7 +131,9 @@ public:
 				F_vec.push_back(&F);
 			}
 		}
-
+#ifdef ROOTSIM_INCREMENTAL
+		FunctionCallee wfnc = InitMemtraceFunction(M, "__write_mem");
+#endif
 		for (Function *F : F_vec) {
 			if (isToSubstitute(F->getName()))
 				VMap[F] = CloneFunctionStub(*F, instr_cfg.sub_suffix);
@@ -151,11 +153,27 @@ public:
 #endif
 			CloneFunctionIntoAndMap(Cloned, *F, VMap,
 						instr_cfg.proc_suffix);
-
+#ifdef ROOTSIM_INCREMENTAL
 			for (BasicBlock &B : *Cloned)
 				for (Instruction &I : B)
-					;// TODO: incremental instrumentation
+					InstrumentWriteInstruction(M, &I, wfnc);
+#endif
 		}
+
+#ifdef ROOTSIM_INCREMENTAL
+		errs() << "Instrumented " << raw_ostream::GREEN << stats[TRACED_STORE] << " stores\n";
+		errs().resetColor();
+		errs() << "Instrumented " << raw_ostream::GREEN << stats[TRACED_MEMSET] << " memsets\n";
+		errs().resetColor();
+		errs() << "Instrumented " << raw_ostream::GREEN << stats[TRACED_MEMCPY] << "memcpys\n";
+		errs().resetColor();
+		errs() << "Encountered " << raw_ostream::CYAN << stats[TRACED_CALL] << " calls\n";
+		errs().resetColor();
+		errs() << "Encountered " << raw_ostream::RED << stats[TRACED_ATOMIC] << " atomics\n";
+		errs().resetColor();
+		errs() << "Encountered " << raw_ostream::RED << stats[TRACED_UNKNOWN] << " unknown instructions\n";
+		errs().resetColor();
+#endif
 
 		return true;
 	}
@@ -198,9 +216,8 @@ private:
 	void InstrumentWriteInstruction(Module &M, Instruction *TI,
 					FunctionCallee memtrace_fnc)
 	{
-		if (!TI->mayWriteToMemory()) {
+		if (!TI->mayWriteToMemory())
 			return;
-		}
 
 		Value *args[2];
 
@@ -220,7 +237,7 @@ private:
 		} else if (MemCpyInst *MCI = dyn_cast<MemCpyInst>(TI)) {
 			args[0] = MCI->getRawDest();
 			args[1] = MCI->getLength();
-			++stats[TRACED_STORE];
+			++stats[TRACED_MEMCPY];
 		} else {
 			 if (isa<CallBase>(TI)) {
 				 ++stats[TRACED_CALL];

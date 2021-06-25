@@ -16,6 +16,10 @@ endif
 
 rootsim_llvm_lib_cpp_args = [log_level_def, '-Wno-unused-parameter']
 
+if get_option('iss').enabled()
+  rootsim_llvm_lib_cpp_args += '-DROOTSIM_INCREMENTAL=1'
+endif
+
 # ROOT-Sim LLVM plugin for model instrumentation
 rootsim_llvm_lib = shared_library('rootsim-llvm', ['instr_llvm.cpp', instr_cfg],
   dependencies : rootsim_llvm_lib_dep, name_prefix : 'lib', name_suffix : 'so',

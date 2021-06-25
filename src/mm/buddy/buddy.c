@@ -172,7 +172,7 @@ __extension__({								\
 			uint_fast32_t __o = 				\
 				((__i + 1) << __l) - (1 << B_TOTAL_EXP);\
 			on_visit(__o, __len);				\
-		} else if(__lon != __l) {				\
+		} else if (__lon != __l) {				\
 			__i = left_child(__i) + __vis;			\
 			__vis = false;					\
 			__l--;						\
@@ -182,7 +182,7 @@ __extension__({								\
 			__vis = !(__i & 1U);				\
 			__i = parent(__i);				\
 			__l++;						\
-		} while(__vis);						\
+		} while (__vis);						\
 									\
 		if (__l > B_TOTAL_EXP) break;				\
 		__vis = true;						\
@@ -381,7 +381,7 @@ void model_allocator_checkpoint_next_force_full(void)
 {
 #ifdef ROOTSIM_INCREMENTAL
 	struct mm_state *self = &current_lp->mm_state;
-	self->dirty_mem = self->used_mem * B_LOG_INCREMENTAL_THRESHOLD;
+	self->dirty_mem = UINT32_MAX;
 #endif
 }
 
