@@ -20,7 +20,7 @@ endif
 
 # Workaround to have reproducible unity builds
 if get_option('unity') == 'on'
-  add_global_arguments(['-ffile-prefix-map=' + meson.build_root() / '..=..'], 
+  add_global_arguments(['-ffile-prefix-map=' + meson.build_root() / '..=..'],
     language : 'c')
 endif
 
@@ -37,7 +37,7 @@ llvm_dep = dependency('llvm', version : '>= 9.0', required : true)
 mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 
 # Clang compiler
-clang_compiler = find_program(llvm_dep.get_variable(configtool : 'bindir') / 
+clang_compiler = find_program(llvm_dep.get_variable(configtool : 'bindir') /
   'clang')
 
 # Custom threads library dependency
@@ -45,7 +45,7 @@ rs_thr_dep = declare_dependency(link_with :
   static_library('rootsim-threads', 'src' / 'arch' / 'thread.c',
     dependencies: dependency('threads'), include_directories : src_inc_dir))
 
-# Used in some defines, the llvm plugin and the tests    
+# Used in some defines, the llvm plugin and the tests
 c_optimization_options = ['-O' + get_option('optimization')]
 if get_option('debug')
   c_optimization_options += '-g'

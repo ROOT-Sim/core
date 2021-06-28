@@ -60,7 +60,7 @@ else
 endif
 
 # ROOT-Sim compiler
-rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c', 
+rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c',
   c_args : compiler_c_args, install : true)
 
 # Install headers
