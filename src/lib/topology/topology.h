@@ -35,7 +35,7 @@ enum _direction_t {
 	DIRECTION_NW,	//!< North-west direction
 	DIRECTION_SE,	//!< South-east direction
 
-	DIRECTION_INVALID = ULLONG_MAX	//!< A generic invalid direction
+	DIRECTION_INVALID = INT_MAX	//!< A generic invalid direction
 };
 
 struct topology_t;

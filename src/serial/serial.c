@@ -1,7 +1,7 @@
 /**
  * @file serial/serial.c
  *
- * @brief Sequential simlation engine
+ * @brief Sequential simulation engine
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -126,8 +126,8 @@ static void serial_simulation_run(void)
 					cur_msg->dest_t
 				);
 			s_current_lp->last_evt_time = cur_msg->dest_t;
+			current_evt_time = cur_msg->dest_t;
 		}
-		current_evt_time = cur_msg->dest_t;
 #endif
 
 		stats_time_start(STATS_MSG_PROCESSED);
