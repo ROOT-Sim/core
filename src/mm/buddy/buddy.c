@@ -182,7 +182,7 @@ __extension__({								\
 			__vis = !(__i & 1U);				\
 			__i = parent(__i);				\
 			__l++;						\
-		} while (__vis);						\
+		} while (__vis);					\
 									\
 		if (__l > B_TOTAL_EXP) break;				\
 		__vis = true;						\
@@ -191,8 +191,11 @@ __extension__({								\
 
 #ifdef ROOTSIM_INCREMENTAL
 
-void __write_mem(void *ptr, size_t siz)
+void __write_mem(const void *ptr, size_t siz)
 {
+	if (!siz)
+		return;
+
 	struct mm_state *self = &current_lp->mm_state;
 	uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->base_mem;
 	if (diff >= (1 << B_TOTAL_EXP))
@@ -201,16 +204,18 @@ void __write_mem(void *ptr, size_t siz)
 	uint_fast32_t i = (diff >> B_BLOCK_EXP) +
 		(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 
+	self->dirty_mem += siz;
+
 	siz += diff & ((1 << B_BLOCK_EXP) - 1);
 	--siz;
 	siz >>= B_BLOCK_EXP;
-	self->dirty_mem += siz;
+
 	do {
 		bitmap_set(self->dirty, i + siz);
 	} while(siz--);
 }
 
-static struct mm_checkpoint *checkpoint_incremental_take(struct mm_state *self)
+static struct mm_checkpoint *checkpoint_incremental_take(const struct mm_state *self)
 {
 	uint_fast32_t bset = bitmap_count_set(self->dirty, sizeof(self->dirty));
 
@@ -256,23 +261,16 @@ __extension__({								\
 		memcpy(self->longest + (i << B_BLOCK_EXP), ptr,		\
 		       1 << B_BLOCK_EXP);				\
 		bitmap_reset(self->dirty, i);				\
-		bset--;							\
 	}								\
 	ptr += 1 << B_BLOCK_EXP;					\
 })
 
-	uint_fast32_t bset = bitmap_count_set(self->dirty, sizeof(self->dirty));
 	do {
 		const unsigned char *ptr = cur_ckp->longest;
 		bitmap_foreach_set(cur_ckp->dirty, sizeof(cur_ckp->dirty),
 			copy_dirty_block);
 		cur_ckp = array_get_at(self->logs, --i).c;
-	} while (bset && cur_ckp->is_incremental);
-
-#undef copy_dirty_block
-
-	if (!bset)
-		return;
+	} while (cur_ckp->is_incremental);
 
 #define copy_block_from_ckp(i) 						\
 __extension__({								\
@@ -283,25 +281,24 @@ __extension__({								\
 	const unsigned tree_bit_size =
 		bitmap_required_size(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 	bitmap_foreach_set(self->dirty, tree_bit_size, copy_block_from_ckp);
-#undef copy_block_from_ckp
+
 
 #define buddy_block_dirty_from_ckp(offset, len)				\
 __extension__({								\
-	uint_fast32_t b_off = (offset >> B_BLOCK_EXP) + 		\
+	uint_fast32_t i = (offset >> B_BLOCK_EXP) + 			\
 		(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));		\
 	uint_fast32_t b_len = len >> B_BLOCK_EXP;			\
 	while (b_len--) {						\
-		if (bitmap_check(self->dirty, b_off)) {			\
-			memcpy(self->longest + (b_off << B_BLOCK_EXP), 	\
-			       ptr, (1 << B_BLOCK_EXP));		\
-		}							\
-		ptr += 1 << B_BLOCK_EXP;				\
-		b_off++;						\
+		copy_dirty_block(i);					\
+		i++;							\
 	}								\
 })
 
 	const unsigned char *ptr = cur_ckp->base_mem;
-	buddy_tree_visit(self->longest, buddy_block_dirty_from_ckp);
+	buddy_tree_visit(cur_ckp->longest, buddy_block_dirty_from_ckp);
+
+#undef copy_dirty_block
+#undef copy_block_from_ckp
 #undef buddy_block_dirty_from_ckp
 }
 
@@ -388,7 +385,6 @@ void model_allocator_checkpoint_next_force_full(void)
 array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 {
 	struct mm_state *self = &current_lp->mm_state;
-
 	array_count_t i = array_count(self->logs) - 1;
 	while (array_get_at(self->logs, i).ref_i > ref_i) {
 		i--;

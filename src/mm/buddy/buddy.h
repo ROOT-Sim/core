@@ -17,11 +17,11 @@
 
 #define B_TOTAL_EXP 17U
 #define B_BLOCK_EXP 6U
-#define B_LOG_INCREMENTAL_THRESHOLD 0.5
-#define B_LOG_FREQUENCY 50
+#define B_LOG_INCREMENTAL_THRESHOLD 1.5
+#define B_LOG_FREQUENCY 7
 
 /// The checkpointable memory context assigned to a single LP
-struct mm_state { // todo incremental checkpoints
+struct mm_state {
 	/// The array of checkpoints
 	dyn_array(
 		/// Binds a checkpoint together with a reference index
@@ -81,6 +81,12 @@ static_assert(
 	offsetof(struct mm_state, longest) ==
 	offsetof(struct mm_state, base_mem) -
 	sizeof(((struct mm_state *)0)->longest),
+	"longest and base_mem are not contiguous, this will break incremental checkpointing");
+
+static_assert(
+	offsetof(struct mm_checkpoint, longest) ==
+	offsetof(struct mm_checkpoint, base_mem) -
+	sizeof(((struct mm_checkpoint *)0)->longest),
 	"longest and base_mem are not contiguous, this will break incremental checkpointing");
 
 

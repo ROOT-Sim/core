@@ -68,7 +68,7 @@ namespace {
 	{
 		std::string NewFName = F.getName().str() + suffix;
 		Function *NewF = Function::Create(
-			cast<FunctionType>(F.getValueType()),
+			F.getFunctionType(),
 			F.getLinkage(),
 			F.getAddressSpace(),
 			NewFName,
@@ -90,11 +90,8 @@ namespace {
 		SmallVector<ReturnInst *, 8> Returns;
 		CloneFunctionInto(NewF, &F, VMap, true, Returns, suffix);
 
-		for (const Argument &I : F.args()) {
-			VMap.erase(&I);
-		}
-		// XXX: solves a LLVM bug but removes debug info from clones
-		NewF->setSubprogram(nullptr);
+		 for (const Argument &I : F.args())
+			 VMap.erase(&I);
 	}
 
 class RootsimCC: public ModulePass {
@@ -131,15 +128,18 @@ public:
 				F_vec.push_back(&F);
 			}
 		}
-#ifdef ROOTSIM_INCREMENTAL
-		FunctionCallee wfnc = InitMemtraceFunction(M, "__write_mem");
-#endif
+
 		for (Function *F : F_vec) {
 			if (isToSubstitute(F->getName()))
 				VMap[F] = CloneFunctionStub(*F, instr_cfg.sub_suffix);
 			else
 				VMap[F] = CloneFunctionStub(*F, instr_cfg.proc_suffix);
 		}
+
+#ifdef ROOTSIM_INCREMENTAL
+		FunctionCallee wfnc = InitMemtraceFunction(M, "__write_mem");
+		std::vector<Instruction *> I_instr_vec;
+#endif
 
 		for (Function *F : F_vec) {
 			if (F->isDeclaration() || isToSubstitute(F->getName()))
@@ -154,18 +154,21 @@ public:
 			CloneFunctionIntoAndMap(Cloned, *F, VMap,
 						instr_cfg.proc_suffix);
 #ifdef ROOTSIM_INCREMENTAL
-			for (BasicBlock &B : *Cloned)
-				for (Instruction &I : B)
-					InstrumentWriteInstruction(M, &I, wfnc);
+			for (inst_iterator I = inst_begin(Cloned), E = inst_end(Cloned); I != E; ++I)
+					if (I->mayWriteToMemory())
+						I_instr_vec.push_back(&*I);
 #endif
 		}
 
 #ifdef ROOTSIM_INCREMENTAL
+		for (Instruction *I : I_instr_vec)
+			InstrumentWriteInstruction(M, I, wfnc);
+
 		errs() << "Instrumented " << raw_ostream::GREEN << stats[TRACED_STORE] << " stores\n";
 		errs().resetColor();
 		errs() << "Instrumented " << raw_ostream::GREEN << stats[TRACED_MEMSET] << " memsets\n";
 		errs().resetColor();
-		errs() << "Instrumented " << raw_ostream::GREEN << stats[TRACED_MEMCPY] << "memcpys\n";
+		errs() << "Instrumented " << raw_ostream::GREEN << stats[TRACED_MEMCPY] << " memcpys\n";
 		errs().resetColor();
 		errs() << "Encountered " << raw_ostream::CYAN << stats[TRACED_CALL] << " calls\n";
 		errs().resetColor();
@@ -195,11 +198,10 @@ private:
 #endif
 	}
 
-	// TODO: this code has been refactored and improved but it is unused
 	FunctionCallee InitMemtraceFunction(Module &M, const char *memtrace_name)
 	{
 		Type *MemtraceArgs[] = {
-			PointerType::getUnqual(Type::getVoidTy(M.getContext())),
+			Type::getInt8PtrTy(M.getContext()),
 			IntegerType::get(M.getContext(), sizeof(size_t) * CHAR_BIT)
 		};
 
@@ -212,13 +214,9 @@ private:
 		return M.getOrInsertFunction(memtrace_name, Fty);
 	}
 
-	// TODO: this code has been refactored and improved but it is unused
 	void InstrumentWriteInstruction(Module &M, Instruction *TI,
-					FunctionCallee memtrace_fnc)
+					FunctionCallee &memtrace_fnc)
 	{
-		if (!TI->mayWriteToMemory())
-			return;
-
 		Value *args[2];
 
 		if (StoreInst *SI = dyn_cast<StoreInst>(TI)) {
