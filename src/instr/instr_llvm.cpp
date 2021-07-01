@@ -24,9 +24,14 @@ extern "C"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Pass.h"
+#include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/Cloning.h"
+
+#ifndef ROOTSIM_VERSION
+#define ROOTSIM_VERSION "debugging_version"
+#endif
 
 using namespace llvm;
 
@@ -243,19 +248,30 @@ private:
 
 char RootsimCC::ID = 0;
 
-static void loadPass(
-	const PassManagerBuilder &Builder,
-	llvm::legacy::PassManagerBase &PM
-) {
+static void loadPass(const PassManagerBuilder &Builder,
+		llvm::legacy::PassManagerBase &PM)
+{
 	(void)Builder;
 	PM.add(new RootsimCC());
 }
 
 static RegisterStandardPasses clangtoolLoader_Ox(
-	PassManagerBuilder::EP_ModuleOptimizerEarly,
-	loadPass
-);
+	PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+
 static RegisterStandardPasses clangtoolLoader_O0(
-	PassManagerBuilder::EP_EnabledOnOptLevel0,
-	loadPass
-);
+	PassManagerBuilder::EP_EnabledOnOptLevel0, loadPass);
+
+void rootsimPluginRegister(PassBuilder &PB)
+{
+
+}
+
+llvm::PassPluginLibraryInfo rootsimPluginInfoGet() {
+	return {LLVM_PLUGIN_API_VERSION, "ROOT-Sim plugin", ROOTSIM_VERSION,
+		rootsimPluginRegister};
+}
+
+extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo llvmGetPassPluginInfo()
+{
+	return rootsimPluginInfoGet();
+}

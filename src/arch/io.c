@@ -36,9 +36,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
 
 #ifdef __POSIX
+
+#include <unistd.h>
 
 bool io_terminal_can_colorize(void)
 {
@@ -61,7 +62,10 @@ FILE *io_file_tmp_get(void)
 
 #ifdef __WINDOWS
 
+#include <fcntl.h>
 #include <io.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 bool io_terminal_can_colorize(void)
 {
@@ -97,15 +101,15 @@ FILE *io_file_tmp_get(void)
 		return NULL;
 
 	SECURITY_ATTRIBUTES tmp_sa = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
-	HANDLE h = CreateFile(
+	HANDLE file_handle = CreateFile(
 			tmp_path, GENERIC_READ | GENERIC_WRITE,
 			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 			&tmp_sa, CREATE_ALWAYS,
 			FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
-	if (h == INVALID_HANDLE)
+	if (file_handle == INVALID_HANDLE_VALUE)
 		return NULL;
 
-	int fd = _open_osfhandle((intptr_t)h, _O_RDWR);
+	int fd = _open_osfhandle((intptr_t)file_handle, _O_RDWR);
 	if (fd == -1)
 		return NULL;
 

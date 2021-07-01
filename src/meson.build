@@ -8,7 +8,6 @@ subdir('instr')
 # TODO integrate the plugin system
 subdir('lib')
 
-rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
 rootsim_c_args = [rootsim_version_def, log_level_def]
 
 # ROOT-Sim library sources
@@ -61,7 +60,7 @@ else
 endif
 
 # ROOT-Sim compiler
-rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c', 
+rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c',
   c_args : compiler_c_args, install : true)
 
 # Install headers

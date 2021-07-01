@@ -43,6 +43,7 @@ static const char cmd_line_prefix[] =
 	ROOTSIM_CC " "
 	ROOTSIM_OPTIMIZATION_OPTIONS " "
 	"-I" ROOTSIM_INC_DIR " "
+	"-fuse-ld=lld "
 	"-Xclang -load "
 	"-Xclang " ROOTSIM_LIB_DIR "librootsim-llvm.so"
 ;

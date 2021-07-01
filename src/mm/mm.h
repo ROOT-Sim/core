@@ -12,6 +12,8 @@
 
 #include <log/log.h>
 
+#include <arch/mem.h>
+
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -26,7 +28,7 @@
  */
 inline void *mm_aligned_alloc(size_t alignment, size_t mem_size)
 {
-	void *ret = aligned_alloc(alignment, mem_size);
+	void *ret = mem_aligned_alloc(alignment, mem_size);
 
 	if (__builtin_expect(mem_size && !ret, 0)) {
 		log_log(LOG_FATAL, "Out of memory!");
@@ -34,6 +36,19 @@ inline void *mm_aligned_alloc(size_t alignment, size_t mem_size)
 	}
 	return ret;
 }
+
+/**
+ * @brief A version of the stdlib free() for aligned blocks used internally
+ * @param ptr a pointer to the memory area to free
+ *
+ * Needed because Windows has a separate function to handle the release of
+ * memory allocated with its non standard _aligned_malloc()
+ */
+inline void mm_aligned_free(void *ptr)
+{
+	mem_aligned_free(ptr);
+}
+
 
 /**
  * @brief A version of the stdlib malloc() used internally
