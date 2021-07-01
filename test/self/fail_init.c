@@ -1,5 +1,5 @@
 /**
- * @file test/test/fail_init.c
+ * @file test/self/fail_init.c
  *
  * @brief Test: expected failure, @ref test_config.test_init_fnc failure
  *

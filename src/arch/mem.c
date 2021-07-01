@@ -11,8 +11,6 @@
  */
 #include <arch/mem.h>
 
-#include <arch/platform.h>
-
 #ifdef __POSIX
 
 #include <sys/resource.h>

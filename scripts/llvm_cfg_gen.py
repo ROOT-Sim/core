@@ -8,7 +8,7 @@ instr_specs = {
     "to_substitute" : ["malloc", "free", "realloc", "calloc", "lp_id_get", "lib_ctx_get"],
     "substituted_suffix" : "_mt",
     "processed_suffix" : "_pr",
-    "to_ignore" : ["_log_log", "mm_alloc"]
+    "to_ignore" : ["_log_log", "__acrt_iob_func", "mm_alloc"]
 }
 
 def collection_to_c_array(coll, indent):
