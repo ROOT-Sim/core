@@ -11,4 +11,5 @@ lib_srcs = files(
 
 lib_objs = clang_with_plugin.process(lib_srcs)
 
-rootsim_mods_lib = static_library('rootsim-mods', lib_objs, install : true)
+rootsim_mods_lib = static_library('rootsim-mods', lib_objs, link_language : 'c',
+  install : true)

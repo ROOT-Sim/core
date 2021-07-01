@@ -42,8 +42,9 @@ else
   rootsim_srcs += 'distributed' / 'no_mpi.c'
 endif
 
-rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
-  dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
+rootsim_lib = static_library('rootsim', rootsim_srcs, link_language : 'c',
+  c_args : rootsim_c_args, dependencies : [mpi_dep, m_dep, rs_thr_dep],
+  install : true)
 
 # ROOT-Sim compiler defines
 compiler_c_args = [

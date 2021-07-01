@@ -12,16 +12,24 @@ assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
   'CXX=clang++\'')
 
 # This stuff would otherwise break our fragile linking process
-add_global_link_arguments(['-no-pie'], language : 'c')
-add_global_arguments(['-fno-pic'], language : 'c')
+add_project_link_arguments(['-no-pie'], language : 'c')
+add_project_arguments(['-fno-pic'], language : 'c')
 if meson.get_compiler('c').get_id() != 'clang'
-  add_global_arguments(['-no-pie'], language : 'c')
+  add_project_arguments(['-no-pie'], language : 'c')
 endif
 
 # Workaround to have reproducible unity builds
 if get_option('unity') == 'on'
   add_global_arguments(['-ffile-prefix-map=' + meson.build_root() / '..=..'],
     language : 'c')
+endif
+
+# Handle symbols visibility
+if meson.get_compiler('c').has_argument('-fvisibility=hidden')
+  add_project_arguments(['-fvisibility=hidden'], language : ['c', 'cpp'])
+  add_project_link_arguments(['-fvisibility=hidden'], language : ['c', 'cpp'])
+else
+  warning('compiler does not support `-fvisibility=hidden`')
 endif
 
 # Include directory used explicitly in tests and LLVM plugin compilation
