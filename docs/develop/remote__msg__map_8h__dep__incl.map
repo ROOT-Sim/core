@@ -1,0 +1,8 @@
+<map id="src/datatypes/remote_msg_map.h" name="src/datatypes/remote_msg_map.h">
+<area shape="rect" id="node1" title="Message map datatype." alt="" coords="348,5,509,47"/>
+<area shape="rect" id="node2" href="$remote__msg__map_8c.html" title="Message map datatype." alt="" coords="5,95,167,136"/>
+<area shape="rect" id="node3" href="$mpi_8c.html" title="MPI Support Module." alt="" coords="191,102,346,129"/>
+<area shape="rect" id="node4" href="$fossil_8c.html" title="Housekeeping operations." alt="" coords="371,102,487,129"/>
+<area shape="rect" id="node5" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="511,102,669,129"/>
+<area shape="rect" id="node6" href="$remote__msg__map__test_8c.html" title="Test: concurrent hash map for register incoming remote messages." alt="" coords="693,95,860,136"/>
+</map>

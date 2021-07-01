@@ -1,0 +1,13 @@
+<map id="src/lp/msg.h" name="src/lp/msg.h">
+<area shape="rect" id="node1" title="Message management functions." alt="" coords="435,5,537,32"/>
+<area shape="rect" id="node2" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="200,80,295,107"/>
+<area shape="rect" id="node6" title=" " alt="" coords="413,229,487,256"/>
+<area shape="rect" id="node9" title=" " alt="" coords="404,155,475,181"/>
+<area shape="rect" id="node11" title=" " alt="" coords="550,80,649,107"/>
+<area shape="rect" id="node3" href="$log_8h.html" title="Logging library." alt="" coords="152,229,231,256"/>
+<area shape="rect" id="node4" title=" " alt="" coords="111,304,194,331"/>
+<area shape="rect" id="node5" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="202,155,293,181"/>
+<area shape="rect" id="node8" title=" " alt="" coords="317,155,380,181"/>
+<area shape="rect" id="node10" title=" " alt="" coords="5,155,76,181"/>
+<area shape="rect" id="node7" title=" " alt="" coords="255,229,325,256"/>
+</map>

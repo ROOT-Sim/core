@@ -1,0 +1,4 @@
+<map id="mpi_global_init" name="mpi_global_init">
+<area shape="rect" id="node1" title="Initializes the MPI environment." alt="" coords="5,5,128,32"/>
+<area shape="rect" id="node2" href="$mpi_8c.html#a7f81b013141c5b392cf492c9e1e386d8" title="Handles a MPI error." alt="" coords="176,5,333,32"/>
+</map>

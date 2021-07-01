@@ -1,0 +1,32 @@
+<map id="src/core/intrinsics.h" name="src/core/intrinsics.h">
+<area shape="rect" id="node1" title="Easier access to compiler extensions." alt="" coords="1967,5,2115,32"/>
+<area shape="rect" id="node2" href="$bitmap_8h.html" title="Bitmap data type." alt="" coords="1285,87,1457,114"/>
+<area shape="rect" id="node4" href="$buddy_8c.html" title="A Buddy System implementation." alt="" coords="5,401,173,427"/>
+<area shape="rect" id="node12" href="$random_8c.html" title="Random Number Generators." alt="" coords="1395,490,1575,517"/>
+<area shape="rect" id="node14" href="$topology_8c.html" title="Topology library." alt="" coords="1600,490,1792,517"/>
+<area shape="rect" id="node21" href="$remote__msg__map_8c.html" title="Message map datatype." alt="" coords="2161,80,2322,121"/>
+<area shape="rect" id="node22" href="$test__rng_8h.html" title="Pseudo random number generator for tests." alt="" coords="1893,319,2009,345"/>
+<area shape="rect" id="node3" href="$buddy_8h.html" title="A Buddy System implementation." alt="" coords="831,169,1001,196"/>
+<area shape="rect" id="node5" href="$model__allocator_8h.html" title="Memory management functions for simulation models." alt="" coords="821,244,1011,271"/>
+<area shape="rect" id="node6" href="$fossil_8c.html" title="Housekeeping operations." alt="" coords="198,401,314,427"/>
+<area shape="rect" id="node7" href="$lp_8h.html" title="LP construction functions." alt="" coords="873,319,959,345"/>
+<area shape="rect" id="node20" href="$buddy__test_8c.html" title="Test: rollbackable buddy system allocator." alt="" coords="1505,393,1671,435"/>
+<area shape="rect" id="node8" href="$msg__queue_8c.html" title="Message queue datatype." alt="" coords="816,401,1016,427"/>
+<area shape="rect" id="node9" href="$termination_8c.html" title="Termination detection module." alt="" coords="1040,401,1197,427"/>
+<area shape="rect" id="node10" href="$lib__internal_8h.html" title="Internal core libraries." alt="" coords="1222,401,1373,427"/>
+<area shape="rect" id="node15" href="$lp_8c.html" title="LP construction functions." alt="" coords="1397,401,1481,427"/>
+<area shape="rect" id="node16" href="$process_8c.html" title="LP state management functions." alt="" coords="339,401,461,427"/>
+<area shape="rect" id="node17" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="486,401,645,427"/>
+<area shape="rect" id="node18" href="$msg__queue__test_8c.html" title="Test: parallel message queue." alt="" coords="1695,393,1843,435"/>
+<area shape="rect" id="node19" href="$lp__test_8c.html" title="Test: logical process lifetime handler module." alt="" coords="669,401,792,427"/>
+<area shape="rect" id="node11" href="$lib_8c.html" title="Model library main module." alt="" coords="1107,490,1199,517"/>
+<area shape="rect" id="node13" href="$state_8c.html" title="LP main state management." alt="" coords="1224,490,1371,517"/>
+<area shape="rect" id="node23" href="$remote__msg__map__test_8c.html" title="Test: concurrent hash map for register incoming remote messages." alt="" coords="1867,393,2034,435"/>
+<area shape="rect" id="node24" href="$application_8h.html" title="Header of the model used to verify the runtime correctness." alt="" coords="2229,393,2395,435"/>
+<area shape="rect" id="node25" href="$integration__parallel__multi_8c.html" title="Test: integration test of the parallel runtime with actual concurrency." alt="" coords="2611,483,2808,524"/>
+<area shape="rect" id="node26" href="$integration__parallel__single_8c.html" title="Test: integration test of the parallel runtime with one single thread." alt="" coords="2832,483,3029,524"/>
+<area shape="rect" id="node27" href="$integration__serial_8c.html" title="Test: integration test of the serial runtime." alt="" coords="1816,483,2013,524"/>
+<area shape="rect" id="node28" href="$application_8c.html" title="Main module of the model used to verify the runtime correctness." alt="" coords="2038,483,2205,524"/>
+<area shape="rect" id="node29" href="$functions_8c.html" title="Helper functions of the model used to verify the runtime correctness." alt="" coords="2229,483,2395,524"/>
+<area shape="rect" id="node30" href="$output_8c.html" title="Expected output of the model used to verify the runtime correctness." alt="" coords="2419,483,2586,524"/>
+</map>

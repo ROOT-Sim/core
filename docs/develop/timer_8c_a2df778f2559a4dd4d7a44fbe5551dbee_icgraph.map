@@ -1,0 +1,4 @@
+<map id="timer_new" name="timer_new">
+<area shape="rect" id="node1" title="Gets a new starting point for an time interval measure." alt="" coords="216,5,307,32"/>
+<area shape="rect" id="node2" href="$serial_8c.html#a70913c10670a746231c4047d2ff20bc6" title="Runs the serial simulation." alt="" coords="5,5,168,32"/>
+</map>

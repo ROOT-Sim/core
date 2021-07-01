@@ -1,0 +1,46 @@
+var topology_8h =
+[
+    [ "topology_settings_t", "structtopology__settings__t.html", "structtopology__settings__t" ],
+    [ "_direction_t", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75e", [
+      [ "DIRECTION_N", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea0b6d647eb18d4e6c1af7ffd6e2f6e83c", null ],
+      [ "DIRECTION_S", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75eadae837b770c77c494259db1e438f1823", null ],
+      [ "DIRECTION_E", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea91218ad3b3a944f722b5c451fe23a962", null ],
+      [ "DIRECTION_W", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea91c80c8d0494916dffbd47f13ef09741", null ],
+      [ "DIRECTION_NE", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea1713f8a1df33423392a89f25feecf543", null ],
+      [ "DIRECTION_SW", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea3d4ce910c2cc3c5409ddcb30bb3238b8", null ],
+      [ "DIRECTION_NW", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75eaa325e54a21a7045dee61a0c27f7469fd", null ],
+      [ "DIRECTION_SE", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea81b87f633155896c78ea5db8e0f95614", null ],
+      [ "DIRECTION_INVALID", "topology_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea4f528268f0ec8968cef722b9d6200470", null ],
+      [ "DIRECTION_N", "ROOT-Sim_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea0b6d647eb18d4e6c1af7ffd6e2f6e83c", null ],
+      [ "DIRECTION_S", "ROOT-Sim_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75eadae837b770c77c494259db1e438f1823", null ],
+      [ "DIRECTION_E", "ROOT-Sim_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea91218ad3b3a944f722b5c451fe23a962", null ],
+      [ "DIRECTION_W", "ROOT-Sim_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea91c80c8d0494916dffbd47f13ef09741", null ],
+      [ "DIRECTION_NE", "ROOT-Sim_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea1713f8a1df33423392a89f25feecf543", null ],
+      [ "DIRECTION_SW", "ROOT-Sim_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea3d4ce910c2cc3c5409ddcb30bb3238b8", null ],
+      [ "DIRECTION_NW", "ROOT-Sim_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75eaa325e54a21a7045dee61a0c27f7469fd", null ],
+      [ "DIRECTION_SE", "ROOT-Sim_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea81b87f633155896c78ea5db8e0f95614", null ],
+      [ "DIRECTION_INVALID", "ROOT-Sim_8h.html#ab67d3ea2fc5f081cb3d9e5a7008bf75ea4f528268f0ec8968cef722b9d6200470", null ]
+    ] ],
+    [ "_topology_geometry_t", "topology_8h.html#a261622d6fcc1de048481fa0e7a7c898b", [
+      [ "TOPOLOGY_HEXAGON", "topology_8h.html#a261622d6fcc1de048481fa0e7a7c898ba8d1cbaf0b34bb0cf98d34616305dfeb7", null ],
+      [ "TOPOLOGY_SQUARE", "topology_8h.html#a261622d6fcc1de048481fa0e7a7c898ba281f7a6e296768b15ebd9ba08fdcfe1a", null ],
+      [ "TOPOLOGY_RING", "topology_8h.html#a261622d6fcc1de048481fa0e7a7c898babfcfab0ff166a36ee1ef1c47afef8f85", null ],
+      [ "TOPOLOGY_BIDRING", "topology_8h.html#a261622d6fcc1de048481fa0e7a7c898baa3a22aa2f21bfe1710b9dfc2aea9648f", null ],
+      [ "TOPOLOGY_TORUS", "topology_8h.html#a261622d6fcc1de048481fa0e7a7c898ba55ddad40cbf7e567831d2bc0b3509b12", null ],
+      [ "TOPOLOGY_STAR", "topology_8h.html#a261622d6fcc1de048481fa0e7a7c898ba39232ee34d229567b643c49d2fe6346d", null ],
+      [ "TOPOLOGY_MESH", "topology_8h.html#a261622d6fcc1de048481fa0e7a7c898ba18a6be81217e6a19e23e12d2f24a94ca", null ],
+      [ "TOPOLOGY_HEXAGON", "ROOT-Sim_8h.html#a261622d6fcc1de048481fa0e7a7c898ba8d1cbaf0b34bb0cf98d34616305dfeb7", null ],
+      [ "TOPOLOGY_SQUARE", "ROOT-Sim_8h.html#a261622d6fcc1de048481fa0e7a7c898ba281f7a6e296768b15ebd9ba08fdcfe1a", null ],
+      [ "TOPOLOGY_RING", "ROOT-Sim_8h.html#a261622d6fcc1de048481fa0e7a7c898babfcfab0ff166a36ee1ef1c47afef8f85", null ],
+      [ "TOPOLOGY_BIDRING", "ROOT-Sim_8h.html#a261622d6fcc1de048481fa0e7a7c898baa3a22aa2f21bfe1710b9dfc2aea9648f", null ],
+      [ "TOPOLOGY_TORUS", "ROOT-Sim_8h.html#a261622d6fcc1de048481fa0e7a7c898ba55ddad40cbf7e567831d2bc0b3509b12", null ],
+      [ "TOPOLOGY_STAR", "ROOT-Sim_8h.html#a261622d6fcc1de048481fa0e7a7c898ba39232ee34d229567b643c49d2fe6346d", null ],
+      [ "TOPOLOGY_MESH", "ROOT-Sim_8h.html#a261622d6fcc1de048481fa0e7a7c898ba18a6be81217e6a19e23e12d2f24a94ca", null ]
+    ] ],
+    [ "DirectionsCount", "topology_8h.html#a1e42e547b529366a427c982ba3f15a01", null ],
+    [ "FindReceiver", "topology_8h.html#a120c5ee33be799ad70a274cbd0d01b89", null ],
+    [ "GetReceiver", "topology_8h.html#aeeb7d27d64d1fc6d33de2bb6b52af00d", null ],
+    [ "RegionsCount", "topology_8h.html#a989a6cabe643cb8619047298673fbe09", null ],
+    [ "topology_global_init", "topology_8h.html#a40d58a220d0b4ee4ac7d80ea09f4a340", null ],
+    [ "topology_settings", "topology_8h.html#af8a669f2733661647a4f8a39fc59a162", null ]
+];

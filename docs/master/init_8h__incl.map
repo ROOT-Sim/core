@@ -1,0 +1,12 @@
+<map id="src/core/init.h" name="src/core/init.h">
+<area shape="rect" id="node1" title="Initialization routines." alt="" coords="329,5,440,32"/>
+<area shape="rect" id="node2" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="260,80,355,107"/>
+<area shape="rect" id="node3" href="$log_8h.html" title="Logging library." alt="" coords="457,229,536,256"/>
+<area shape="rect" id="node4" title=" " alt="" coords="183,304,266,331"/>
+<area shape="rect" id="node10" title=" " alt="" coords="428,155,499,181"/>
+<area shape="rect" id="node5" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="262,155,353,181"/>
+<area shape="rect" id="node8" title=" " alt="" coords="29,155,92,181"/>
+<area shape="rect" id="node9" title=" " alt="" coords="116,155,187,181"/>
+<area shape="rect" id="node6" title=" " alt="" coords="358,229,433,256"/>
+<area shape="rect" id="node7" title=" " alt="" coords="263,229,333,256"/>
+</map>

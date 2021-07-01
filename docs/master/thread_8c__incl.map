@@ -1,0 +1,5 @@
+<map id="src/arch/thread.c" name="src/arch/thread.c">
+<area shape="rect" id="node1" title="Generic architecture management facilities." alt="" coords="5,5,136,32"/>
+<area shape="rect" id="node2" href="$thread_8h.html" title="Generic architecture management facilities." alt="" coords="17,80,125,107"/>
+<area shape="rect" id="node3" href="$platform_8h.html" title="Determine on what OS we are compiling." alt="" coords="9,155,132,181"/>
+</map>

@@ -1,0 +1,20 @@
+<map id="src/mm/buddy/buddy.h" name="src/mm/buddy/buddy.h">
+<area shape="rect" id="node1" title="A Buddy System implementation." alt="" coords="915,5,1085,32"/>
+<area shape="rect" id="node2" href="$buddy_8c.html" title="A Buddy System implementation." alt="" coords="5,237,173,263"/>
+<area shape="rect" id="node3" href="$model__allocator_8h.html" title="Memory management functions for simulation models." alt="" coords="985,80,1175,107"/>
+<area shape="rect" id="node4" href="$fossil_8c.html" title="Housekeeping operations." alt="" coords="1535,237,1651,263"/>
+<area shape="rect" id="node5" href="$lp_8h.html" title="LP construction functions." alt="" coords="1004,155,1089,181"/>
+<area shape="rect" id="node18" href="$buddy__test_8c.html" title="Test: rollbackable buddy system allocator." alt="" coords="1676,229,1841,271"/>
+<area shape="rect" id="node6" href="$msg__queue_8c.html" title="Message queue datatype." alt="" coords="847,237,1047,263"/>
+<area shape="rect" id="node7" href="$termination_8c.html" title="Termination detection module." alt="" coords="1071,237,1228,263"/>
+<area shape="rect" id="node8" href="$lib__internal_8h.html" title="Internal core libraries." alt="" coords="1253,237,1403,263"/>
+<area shape="rect" id="node13" href="$lp_8c.html" title="LP construction functions." alt="" coords="1427,237,1511,263"/>
+<area shape="rect" id="node14" href="$process_8c.html" title="LP state management functions." alt="" coords="197,237,320,263"/>
+<area shape="rect" id="node15" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="345,237,503,263"/>
+<area shape="rect" id="node16" href="$msg__queue__test_8c.html" title="Test: parallel message queue." alt="" coords="527,229,675,271"/>
+<area shape="rect" id="node17" href="$lp__test_8c.html" title="Test: logical process lifetime handler module." alt="" coords="700,237,823,263"/>
+<area shape="rect" id="node9" href="$lib_8c.html" title="Model library main module." alt="" coords="1027,319,1119,345"/>
+<area shape="rect" id="node10" href="$random_8c.html" title="Random Number Generators." alt="" coords="1143,319,1323,345"/>
+<area shape="rect" id="node11" href="$state_8c.html" title="LP main state management." alt="" coords="1348,319,1495,345"/>
+<area shape="rect" id="node12" href="$topology_8c.html" title="Topology library." alt="" coords="1519,319,1711,345"/>
+</map>

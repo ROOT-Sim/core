@@ -1,0 +1,11 @@
+<map id="src/mm/msg_allocator.h" name="src/mm/msg_allocator.h">
+<area shape="rect" id="node1" title="Memory management functions for messages." alt="" coords="608,5,787,32"/>
+<area shape="rect" id="node2" href="$msg__queue_8c.html" title="Message queue datatype." alt="" coords="5,87,205,114"/>
+<area shape="rect" id="node3" href="$mpi_8c.html" title="MPI Support Module." alt="" coords="229,87,384,114"/>
+<area shape="rect" id="node4" href="$fossil_8c.html" title="Housekeeping operations." alt="" coords="409,87,525,114"/>
+<area shape="rect" id="node5" href="$process_8c.html" title="LP state management functions." alt="" coords="549,87,672,114"/>
+<area shape="rect" id="node6" href="$msg__allocator_8c.html" title="Memory management functions for messages." alt="" coords="697,87,874,114"/>
+<area shape="rect" id="node7" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="898,87,1057,114"/>
+<area shape="rect" id="node8" href="$serial_8c.html" title="Sequential simlation engine." alt="" coords="1081,87,1213,114"/>
+<area shape="rect" id="node9" href="$msg__allocator__test_8c.html" title="Test: message allocator." alt="" coords="1237,80,1411,121"/>
+</map>

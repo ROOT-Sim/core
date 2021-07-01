@@ -1,0 +1,11 @@
+<map id="src/serial/serial.h" name="src/serial/serial.h">
+<area shape="rect" id="node1" title="Sequential simlation engine." alt="" coords="465,5,598,32"/>
+<area shape="rect" id="node2" href="$lib__internal_8h.html" title="Internal core libraries." alt="" coords="229,80,380,107"/>
+<area shape="rect" id="node7" href="$process_8c.html" title="LP state management functions." alt="" coords="405,80,527,107"/>
+<area shape="rect" id="node8" href="$main_8c.html" title="Simulator main entry point." alt="" coords="552,80,641,107"/>
+<area shape="rect" id="node9" href="$serial_8c.html" title="Sequential simlation engine." alt="" coords="665,80,797,107"/>
+<area shape="rect" id="node3" href="$lib_8c.html" title="Model library main module." alt="" coords="5,155,97,181"/>
+<area shape="rect" id="node4" href="$random_8c.html" title="Random Number Generators." alt="" coords="121,155,301,181"/>
+<area shape="rect" id="node5" href="$state_8c.html" title="LP main state management." alt="" coords="326,155,473,181"/>
+<area shape="rect" id="node6" href="$topology_8c.html" title="Topology library." alt="" coords="497,155,689,181"/>
+</map>

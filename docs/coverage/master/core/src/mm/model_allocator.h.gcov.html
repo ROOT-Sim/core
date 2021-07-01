@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - ROOT-Sim master Documentation Coverage - core/src/mm/model_allocator.h</title>
+  <link rel="stylesheet" type="text/css" href="../../../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../../../index.html">top level</a> - <a href="index.html">core/src/mm</a> - model_allocator.h</td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">ROOT-Sim master Documentation Coverage</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">12</td>
+            <td class="headerCovTableEntryLo">8.3 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2021-03-25 15:11:55</td>
+            <td></td>
+          </tr>
+          <tr><td><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span><span class="lineCov">          1 : /**</span></a>
+<a name="2"><span class="lineNum">       2 </span>            :  * @file mm/model_allocator.h</a>
+<a name="3"><span class="lineNum">       3 </span>            :  *</a>
+<a name="4"><span class="lineNum">       4 </span>            :  * @brief Memory management functions for simulation models</a>
+<a name="5"><span class="lineNum">       5 </span>            :  *</a>
+<a name="6"><span class="lineNum">       6 </span>            :  * Memory management functions for simulation models</a>
+<a name="7"><span class="lineNum">       7 </span>            :  *</a>
+<a name="8"><span class="lineNum">       8 </span>            :  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group &lt;rootsim@googlegroups.com&gt;</a>
+<a name="9"><span class="lineNum">       9 </span>            :  * SPDX-License-Identifier: GPL-3.0-only</a>
+<a name="10"><span class="lineNum">      10 </span>            :  */</a>
+<a name="11"><span class="lineNum">      11 </span>            : #pragma once</a>
+<a name="12"><span class="lineNum">      12 </span>            : </a>
+<a name="13"><span class="lineNum">      13 </span>            : #include &lt;datatypes/array.h&gt;</a>
+<a name="14"><span class="lineNum">      14 </span>            : #include &lt;mm/buddy/buddy.h&gt;</a>
+<a name="15"><span class="lineNum">      15 </span>            : </a>
+<a name="16"><span class="lineNum">      16 </span><span class="lineNoCov">          0 : extern void model_allocator_lp_init(void);</span></a>
+<a name="17"><span class="lineNum">      17 </span><span class="lineNoCov">          0 : extern void model_allocator_lp_fini(void);</span></a>
+<a name="18"><span class="lineNum">      18 </span><span class="lineNoCov">          0 : extern void model_allocator_checkpoint_take(array_count_t ref_i);</span></a>
+<a name="19"><span class="lineNum">      19 </span><span class="lineNoCov">          0 : extern void model_allocator_checkpoint_next_force_full(void);</span></a>
+<a name="20"><span class="lineNum">      20 </span><span class="lineNoCov">          0 : extern array_count_t model_allocator_checkpoint_restore(array_count_t ref_i);</span></a>
+<a name="21"><span class="lineNum">      21 </span><span class="lineNoCov">          0 : extern array_count_t model_allocator_fossil_lp_collect(array_count_t tgt_ref_i);</span></a>
+<a name="22"><span class="lineNum">      22 </span>            : </a>
+<a name="23"><span class="lineNum">      23 </span><span class="lineNoCov">          0 : extern void __write_mem(void *ptr, size_t siz);</span></a>
+<a name="24"><span class="lineNum">      24 </span>            : </a>
+<a name="25"><span class="lineNum">      25 </span><span class="lineNoCov">          0 : extern void *malloc_mt(size_t req_size);</span></a>
+<a name="26"><span class="lineNum">      26 </span><span class="lineNoCov">          0 : extern void *calloc_mt(size_t nmemb, size_t req_size);</span></a>
+<a name="27"><span class="lineNum">      27 </span><span class="lineNoCov">          0 : extern void free_mt(void *ptr);</span></a>
+<a name="28"><span class="lineNum">      28 </span><span class="lineNoCov">          0 : extern void *realloc_mt(void *ptr, size_t req_size);</span></a>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.14</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

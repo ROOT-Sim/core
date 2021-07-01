@@ -1,0 +1,9 @@
+<map id="src/datatypes/msg_queue.h" name="src/datatypes/msg_queue.h">
+<area shape="rect" id="node1" title="Message queue datatype." alt="" coords="427,5,629,32"/>
+<area shape="rect" id="node2" href="$msg__queue_8c.html" title="Message queue datatype." alt="" coords="5,87,205,114"/>
+<area shape="rect" id="node3" href="$mpi_8c.html" title="MPI Support Module." alt="" coords="229,87,384,114"/>
+<area shape="rect" id="node4" href="$gvt_8c.html" title="Global Virtual Time." alt="" coords="409,87,511,114"/>
+<area shape="rect" id="node5" href="$process_8c.html" title="LP state management functions." alt="" coords="536,87,659,114"/>
+<area shape="rect" id="node6" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="683,87,842,114"/>
+<area shape="rect" id="node7" href="$msg__queue__test_8c.html" title="Test: parallel message queue." alt="" coords="866,80,1014,121"/>
+</map>

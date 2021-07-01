@@ -1,0 +1,5 @@
+<map id="arg_parse_run" name="arg_parse_run">
+<area shape="rect" id="node1" title="Parses the command line options." alt="" coords="277,5,392,32"/>
+<area shape="rect" id="node2" href="$init_8h.html#a35e9eb5e5015755a9ca51bc111593481" title="Parses ROOT&#45;Sim command line arguments." alt="" coords="108,5,229,32"/>
+<area shape="rect" id="node3" href="$main_8c.html#a3c04138a5bfe5d72780bb7e82a18e627" title="The main entry point of the custom compiler." alt="" coords="5,5,60,32"/>
+</map>

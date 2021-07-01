@@ -1,0 +1,4 @@
+<map id="stats_global_fini" name="stats_global_fini">
+<area shape="rect" id="node1" title="Finalizes the stats subsystem in the node." alt="" coords="5,5,133,32"/>
+<area shape="rect" id="node2" href="$mpi_8c.html#acb1301d97e9200c5b2e9a4dc27bc72d3" title="A node barrier." alt="" coords="181,5,317,32"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="src/lib/lib_internal.h" name="src/lib/lib_internal.h">
+<area shape="rect" id="node1" title="Internal core libraries." alt="" coords="229,5,380,32"/>
+<area shape="rect" id="node2" href="$lib_8c.html" title="Model library main module." alt="" coords="5,80,97,107"/>
+<area shape="rect" id="node3" href="$random_8c.html" title="Random Number Generators." alt="" coords="121,80,301,107"/>
+<area shape="rect" id="node4" href="$state_8c.html" title="LP main state management." alt="" coords="326,80,473,107"/>
+<area shape="rect" id="node5" href="$topology_8c.html" title="Topology library." alt="" coords="497,80,689,107"/>
+</map>

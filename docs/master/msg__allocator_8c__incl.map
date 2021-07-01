@@ -1,0 +1,19 @@
+<map id="src/mm/msg_allocator.c" name="src/mm/msg_allocator.c">
+<area shape="rect" id="node1" title="Memory management functions for messages." alt="" coords="119,5,297,32"/>
+<area shape="rect" id="node2" href="$msg__allocator_8h.html" title="Memory management functions for messages." alt="" coords="188,80,343,107"/>
+<area shape="rect" id="node4" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="89,229,183,256"/>
+<area shape="rect" id="node15" href="$array_8h.html" title="Dynamic array datatype." alt="" coords="367,80,502,107"/>
+<area shape="rect" id="node16" href="$gvt_8h.html" title="Global Virtual Time." alt="" coords="32,80,112,107"/>
+<area shape="rect" id="node3" href="$msg_8h.html" title="Message management functions." alt="" coords="198,155,277,181"/>
+<area shape="rect" id="node14" title=" " alt="" coords="303,155,390,181"/>
+<area shape="rect" id="node8" title=" " alt="" coords="448,379,523,405"/>
+<area shape="rect" id="node11" title=" " alt="" coords="167,304,238,331"/>
+<area shape="rect" id="node13" title=" " alt="" coords="259,229,357,256"/>
+<area shape="rect" id="node5" href="$log_8h.html" title="Logging library." alt="" coords="90,379,169,405"/>
+<area shape="rect" id="node6" title=" " alt="" coords="19,453,101,480"/>
+<area shape="rect" id="node7" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="357,304,448,331"/>
+<area shape="rect" id="node10" title=" " alt="" coords="29,304,91,331"/>
+<area shape="rect" id="node12" title=" " alt="" coords="262,304,333,331"/>
+<area shape="rect" id="node9" title=" " alt="" coords="353,379,423,405"/>
+<area shape="rect" id="node17" title=" " alt="" coords="26,155,113,181"/>
+</map>

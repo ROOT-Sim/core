@@ -1,0 +1,5 @@
+<map id="file_open" name="file_open">
+<area shape="rect" id="node1" title="A version of fopen() which accepts a printf style format string." alt="" coords="5,31,87,57"/>
+<area shape="rect" id="node2" href="$mm_8c.html#af66ae2c31965b29586901a21fab3e012" title="A version of the stdlib malloc() used internally." alt="" coords="135,5,221,32"/>
+<area shape="rect" id="node3" href="$mm_8c.html#a55545df4b4307c86f0f95c42f1d68b07" title="A version of the stdlib free() used internally." alt="" coords="137,56,219,83"/>
+</map>

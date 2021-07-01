@@ -1,0 +1,9 @@
+<map id="src/core/sync.h" name="src/core/sync.h">
+<area shape="rect" id="node1" title="Easier Synchronization primitives." alt="" coords="461,5,580,32"/>
+<area shape="rect" id="node2" href="$sync_8c.html" title="Easier Synchronization primitives." alt="" coords="5,80,124,107"/>
+<area shape="rect" id="node3" href="$msg__queue_8c.html" title="Message queue datatype." alt="" coords="147,80,347,107"/>
+<area shape="rect" id="node4" href="$mpi_8c.html" title="MPI Support Module." alt="" coords="371,80,526,107"/>
+<area shape="rect" id="node5" href="$lp_8c.html" title="LP construction functions." alt="" coords="551,80,635,107"/>
+<area shape="rect" id="node6" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="659,80,817,107"/>
+<area shape="rect" id="node7" href="$sync__test_8c.html" title="Test: synchronization primitives test." alt="" coords="841,80,997,107"/>
+</map>

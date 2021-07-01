@@ -1,0 +1,4 @@
+<map id="mm_aligned_free" name="mm_aligned_free">
+<area shape="rect" id="node1" title="A version of the stdlib free() for aligned blocks used internally." alt="" coords="224,5,360,32"/>
+<area shape="rect" id="node2" href="$msg__queue_8h.html#aa844d4519564dd2b7ceb64a0f1deaee1" title="Finalizes the message queue at the node level." alt="" coords="5,5,176,32"/>
+</map>

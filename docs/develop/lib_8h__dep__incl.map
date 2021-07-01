@@ -1,0 +1,20 @@
+<map id="src/lib/lib.h" name="src/lib/lib.h">
+<area shape="rect" id="node1" title="Model library main header." alt="" coords="918,5,1011,32"/>
+<area shape="rect" id="node2" href="$lib_8c.html" title="Model library main module." alt="" coords="5,244,97,271"/>
+<area shape="rect" id="node3" href="$lib__internal_8h.html" title="Internal core libraries." alt="" coords="136,162,287,189"/>
+<area shape="rect" id="node7" href="$lp_8h.html" title="LP construction functions." alt="" coords="922,80,1007,107"/>
+<area shape="rect" id="node14" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="1816,162,1975,189"/>
+<area shape="rect" id="node18" href="$serial_8c.html" title="Sequential simlation engine." alt="" coords="1083,80,1215,107"/>
+<area shape="rect" id="node4" href="$random_8c.html" title="Random Number Generators." alt="" coords="121,244,301,271"/>
+<area shape="rect" id="node5" href="$state_8c.html" title="LP main state management." alt="" coords="326,244,473,271"/>
+<area shape="rect" id="node6" href="$topology_8c.html" title="Topology library." alt="" coords="497,244,689,271"/>
+<area shape="rect" id="node8" href="$msg__queue_8c.html" title="Message queue datatype." alt="" coords="311,162,511,189"/>
+<area shape="rect" id="node9" href="$fossil_8c.html" title="Housekeeping operations." alt="" coords="536,162,652,189"/>
+<area shape="rect" id="node10" href="$termination_8c.html" title="Termination detection module." alt="" coords="677,162,834,189"/>
+<area shape="rect" id="node11" href="$lp_8c.html" title="LP construction functions." alt="" coords="859,162,943,189"/>
+<area shape="rect" id="node12" href="$process_8c.html" title="LP state management functions." alt="" coords="967,162,1090,189"/>
+<area shape="rect" id="node13" href="$buddy_8c.html" title="A Buddy System implementation." alt="" coords="1114,162,1282,189"/>
+<area shape="rect" id="node15" href="$msg__queue__test_8c.html" title="Test: parallel message queue." alt="" coords="1307,155,1455,196"/>
+<area shape="rect" id="node16" href="$lp__test_8c.html" title="Test: logical process lifetime handler module." alt="" coords="1479,162,1602,189"/>
+<area shape="rect" id="node17" href="$buddy__test_8c.html" title="Test: rollbackable buddy system allocator." alt="" coords="1626,155,1791,196"/>
+</map>

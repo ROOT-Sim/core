@@ -1,0 +1,9 @@
+<map id="src/log/log.c" name="src/log/log.c">
+<area shape="rect" id="node1" title="Logging library." alt="" coords="162,5,262,32"/>
+<area shape="rect" id="node2" href="$log_8h.html" title="Logging library." alt="" coords="19,80,98,107"/>
+<area shape="rect" id="node4" href="$io_8h.html" title="Generic input&#45;output facilities." alt="" coords="134,80,213,107"/>
+<area shape="rect" id="node6" title=" " alt="" coords="259,155,325,181"/>
+<area shape="rect" id="node7" title=" " alt="" coords="288,80,363,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,155,88,181"/>
+<area shape="rect" id="node5" href="$platform_8h.html" title="Determine on what OS we are compiling." alt="" coords="112,155,235,181"/>
+</map>

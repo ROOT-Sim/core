@@ -1,0 +1,9 @@
+<map id="src/distributed/mpi.h" name="src/distributed/mpi.h">
+<area shape="rect" id="node1" title="MPI Support Module." alt="" coords="394,5,550,32"/>
+<area shape="rect" id="node2" href="$mpi_8c.html" title="MPI Support Module." alt="" coords="5,80,160,107"/>
+<area shape="rect" id="node3" href="$gvt_8c.html" title="Global Virtual Time." alt="" coords="185,80,287,107"/>
+<area shape="rect" id="node4" href="$termination_8c.html" title="Termination detection module." alt="" coords="312,80,469,107"/>
+<area shape="rect" id="node5" href="$process_8c.html" title="LP state management functions." alt="" coords="493,80,616,107"/>
+<area shape="rect" id="node6" href="$main_8c.html" title="Simulator main entry point." alt="" coords="641,80,730,107"/>
+<area shape="rect" id="node7" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="754,80,913,107"/>
+</map>

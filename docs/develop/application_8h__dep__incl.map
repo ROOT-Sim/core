@@ -1,0 +1,9 @@
+<map id="test/integration/model/application.h" name="test/integration/model/application.h">
+<area shape="rect" id="node1" title="Header of the model used to verify the runtime correctness." alt="" coords="566,5,733,47"/>
+<area shape="rect" id="node2" href="$integration__parallel__multi_8c.html" title="Test: integration test of the parallel runtime with actual concurrency." alt="" coords="5,95,203,136"/>
+<area shape="rect" id="node3" href="$integration__parallel__single_8c.html" title="Test: integration test of the parallel runtime with one single thread." alt="" coords="227,95,424,136"/>
+<area shape="rect" id="node4" href="$integration__serial_8c.html" title="Test: integration test of the serial runtime." alt="" coords="448,95,645,136"/>
+<area shape="rect" id="node5" href="$application_8c.html" title="Main module of the model used to verify the runtime correctness." alt="" coords="670,95,837,136"/>
+<area shape="rect" id="node6" href="$functions_8c.html" title="Helper functions of the model used to verify the runtime correctness." alt="" coords="861,95,1027,136"/>
+<area shape="rect" id="node7" href="$output_8c.html" title="Expected output of the model used to verify the runtime correctness." alt="" coords="1051,95,1218,136"/>
+</map>

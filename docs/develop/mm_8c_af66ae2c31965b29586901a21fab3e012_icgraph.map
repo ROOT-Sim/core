@@ -1,0 +1,5 @@
+<map id="mm_alloc" name="mm_alloc">
+<area shape="rect" id="node1" title="A version of the stdlib malloc() used internally." alt="" coords="225,31,312,57"/>
+<area shape="rect" id="node2" href="$stats_8c.html#a67e625728da937e5dced9ff57d5658ad" title="A version of fopen() which accepts a printf style format string." alt="" coords="51,5,132,32"/>
+<area shape="rect" id="node3" href="$msg__queue_8h.html#a08b5ae723c5e7095622d9d6b5fe0071c" title="Initializes the message queue at the node level." alt="" coords="5,56,177,83"/>
+</map>

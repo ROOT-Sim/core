@@ -1,0 +1,6 @@
+<map id="main" name="main">
+<area shape="rect" id="node1" title="The main entry point of the custom compiler." alt="" coords="5,56,60,83"/>
+<area shape="rect" id="node2" href="$test__main_8c.html#a75df443fcc70c0c050957579b73db99f" title="The entry point of the test threads." alt="" coords="108,5,219,32"/>
+<area shape="rect" id="node3" href="$thread_8h.html#aa9cef3cc764b8b6ff9a4fa1658bb7489" title="Creates a thread." alt="" coords="113,56,214,83"/>
+<area shape="rect" id="node4" href="$thread_8h.html#af6314249b63c49e7eb83bd57c02ccef9" title="Wait for specified thread to complete execution." alt="" coords="114,107,213,133"/>
+</map>

@@ -1,0 +1,19 @@
+<map id="src/main.c" name="src/main.c">
+<area shape="rect" id="node1" title="Simulator main entry point." alt="" coords="264,5,353,32"/>
+<area shape="rect" id="node2" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="236,229,330,256"/>
+<area shape="rect" id="node11" href="$init_8h.html" title="Initialization routines." alt="" coords="37,155,124,181"/>
+<area shape="rect" id="node12" href="$mpi_8h.html" title="MPI Support Module." alt="" coords="371,80,504,107"/>
+<area shape="rect" id="node15" href="$stats_8h.html" title="Statistics module." alt="" coords="320,155,411,181"/>
+<area shape="rect" id="node16" href="$parallel_8h.html" title="Concurrent simulation engine." alt="" coords="528,80,664,107"/>
+<area shape="rect" id="node17" href="$serial_8h.html" title="Sequential simlation engine." alt="" coords="134,80,245,107"/>
+<area shape="rect" id="node3" href="$log_8h.html" title="Logging library." alt="" coords="214,379,293,405"/>
+<area shape="rect" id="node4" title=" " alt="" coords="112,453,195,480"/>
+<area shape="rect" id="node5" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="330,304,420,331"/>
+<area shape="rect" id="node8" title=" " alt="" coords="192,304,254,331"/>
+<area shape="rect" id="node9" title=" " alt="" coords="445,304,516,331"/>
+<area shape="rect" id="node10" title=" " alt="" coords="45,304,116,331"/>
+<area shape="rect" id="node6" title=" " alt="" coords="475,379,550,405"/>
+<area shape="rect" id="node7" title=" " alt="" coords="340,379,410,405"/>
+<area shape="rect" id="node13" href="$msg_8h.html" title="Message management functions." alt="" coords="441,155,520,181"/>
+<area shape="rect" id="node14" title=" " alt="" coords="591,229,690,256"/>
+</map>

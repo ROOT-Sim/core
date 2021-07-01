@@ -1,0 +1,16 @@
+<map id="src/mm/model_allocator.h" name="src/mm/model_allocator.h">
+<area shape="rect" id="node1" title="Memory management functions for simulation models." alt="" coords="201,5,392,32"/>
+<area shape="rect" id="node2" href="$array_8h.html" title="Dynamic array datatype." alt="" coords="121,155,256,181"/>
+<area shape="rect" id="node10" href="$buddy_8h.html" title="A Buddy System implementation." alt="" coords="306,80,453,107"/>
+<area shape="rect" id="node3" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="45,229,135,256"/>
+<area shape="rect" id="node8" title=" " alt="" coords="255,229,341,256"/>
+<area shape="rect" id="node9" title=" " alt="" coords="160,229,231,256"/>
+<area shape="rect" id="node4" href="$log_8h.html" title="Logging library." alt="" coords="100,304,179,331"/>
+<area shape="rect" id="node6" title=" " alt="" coords="394,304,469,331"/>
+<area shape="rect" id="node7" title=" " alt="" coords="5,304,76,331"/>
+<area shape="rect" id="node5" title=" " alt="" coords="98,379,181,405"/>
+<area shape="rect" id="node11" href="$bitmap_8h.html" title="Bitmap data type." alt="" coords="331,155,481,181"/>
+<area shape="rect" id="node14" title=" " alt="" coords="505,155,579,181"/>
+<area shape="rect" id="node12" href="$intrinsics_8h.html" title="Easier access to compiler extensions." alt="" coords="461,229,586,256"/>
+<area shape="rect" id="node13" title=" " alt="" coords="365,229,436,256"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="stats_thread" name="stats_thread">
+<area shape="rect" id="node1" title="A container for statistics in a logical time period." alt="" coords="13,95,116,121"/>
+<area shape="rect" id="node2" href="$structstats__measure.html" title="A set of statistical values of a single metric." alt="" coords="5,5,124,32"/>
+</map>

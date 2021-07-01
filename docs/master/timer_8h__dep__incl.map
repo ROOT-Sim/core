@@ -1,0 +1,7 @@
+<map id="src/arch/timer.h" name="src/arch/timer.h">
+<area shape="rect" id="node1" title="Timers." alt="" coords="208,5,331,32"/>
+<area shape="rect" id="node2" href="$timer_8c.html" title="Timers." alt="" coords="5,80,128,107"/>
+<area shape="rect" id="node3" href="$gvt_8c.html" title="Global Virtual Time." alt="" coords="153,80,255,107"/>
+<area shape="rect" id="node4" href="$stats_8c.html" title="Statistics module." alt="" coords="280,80,392,107"/>
+<area shape="rect" id="node5" href="$serial_8c.html" title="Sequential simlation engine." alt="" coords="417,80,549,107"/>
+</map>

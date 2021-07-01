@@ -1,0 +1,14 @@
+<map id="src/distributed/mpi.h" name="src/distributed/mpi.h">
+<area shape="rect" id="node1" title="MPI Support Module." alt="" coords="408,5,564,32"/>
+<area shape="rect" id="node2" href="$msg_8h.html" title="Message management functions." alt="" coords="447,80,525,107"/>
+<area shape="rect" id="node3" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="200,155,295,181"/>
+<area shape="rect" id="node7" title=" " alt="" coords="413,304,487,331"/>
+<area shape="rect" id="node10" title=" " alt="" coords="404,229,475,256"/>
+<area shape="rect" id="node12" title=" " alt="" coords="550,155,649,181"/>
+<area shape="rect" id="node4" href="$log_8h.html" title="Logging library." alt="" coords="152,304,231,331"/>
+<area shape="rect" id="node5" title=" " alt="" coords="111,379,194,405"/>
+<area shape="rect" id="node6" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="202,229,293,256"/>
+<area shape="rect" id="node9" title=" " alt="" coords="317,229,380,256"/>
+<area shape="rect" id="node11" title=" " alt="" coords="5,229,76,256"/>
+<area shape="rect" id="node8" title=" " alt="" coords="255,304,325,331"/>
+</map>

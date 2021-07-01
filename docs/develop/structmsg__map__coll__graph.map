@@ -1,0 +1,5 @@
+<map id="msg_map" name="msg_map">
+<area shape="rect" id="node1" title="The message hash map used to register external messages." alt="" coords="25,184,111,211"/>
+<area shape="rect" id="node2" href="$structmsg__map__node.html" title="A bucket of the remote messages hash map." alt="" coords="5,95,131,121"/>
+<area shape="rect" id="node3" href="$structlp__msg.html" title="A model simulation message." alt="" coords="33,5,103,32"/>
+</map>

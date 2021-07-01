@@ -1,0 +1,4 @@
+<map id="mm_aligned_alloc" name="mm_aligned_alloc">
+<area shape="rect" id="node1" title="A version of the stdlib aligned_alloc() used internally." alt="" coords="225,5,367,32"/>
+<area shape="rect" id="node2" href="$msg__queue_8h.html#a08b5ae723c5e7095622d9d6b5fe0071c" title="Initializes the message queue at the node level." alt="" coords="5,5,177,32"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="mpi_control_msg_send_to" name="mpi_control_msg_send_to">
+<area shape="rect" id="node1" title="Sends a platform control message to a specific nodes." alt="" coords="5,31,197,57"/>
+<area shape="rect" id="node2" href="$no__mpi_8c.html#ab616305be6f28212df6209add7b2d49c" title="Sends a platform control message to all the nodes, including self." alt="" coords="245,31,451,57"/>
+<area shape="rect" id="node3" href="$gvt_8c.html#a51288803831c19ccf9e228a747856441" title="Handles a MSG_CTRL_GVT_DONE control message." alt="" coords="499,5,667,32"/>
+<area shape="rect" id="node4" href="$gvt_8c.html#a1ef978b8eb04f03a70530097af46d436" title="Handles a MSG_CTRL_GVT_START control message." alt="" coords="504,56,661,83"/>
+</map>

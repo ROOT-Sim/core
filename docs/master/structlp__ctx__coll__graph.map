@@ -1,0 +1,6 @@
+<map id="lp_ctx" name="lp_ctx">
+<area shape="rect" id="node1" title="A complete LP context." alt="" coords="141,95,203,121"/>
+<area shape="rect" id="node2" href="$structmm__state.html" title="The checkpointable memory context assigned to a single LP." alt="" coords="5,5,93,32"/>
+<area shape="rect" id="node3" href="$structprocess__data.html" title="The message processing data produced by the LP." alt="" coords="118,5,226,32"/>
+<area shape="rect" id="node4" href="$structlib__ctx.html" title=" " alt="" coords="250,5,315,32"/>
+</map>

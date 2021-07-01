@@ -1,0 +1,15 @@
+<map id="test/integration/integration_parallel_single.c" name="test/integration/integration_parallel_single.c">
+<area shape="rect" id="node1" title="Test: integration test of the parallel runtime with one single thread." alt="" coords="235,5,432,47"/>
+<area shape="rect" id="node2" href="$test_8h.html" title="Test framework header." alt="" coords="207,169,265,196"/>
+<area shape="rect" id="node7" href="$application_8h.html" title="Header of the model used to verify the runtime correctness." alt="" coords="307,95,533,121"/>
+<area shape="rect" id="node3" title=" " alt="" coords="195,244,277,271"/>
+<area shape="rect" id="node4" title=" " alt="" coords="5,244,80,271"/>
+<area shape="rect" id="node5" title=" " alt="" coords="397,244,467,271"/>
+<area shape="rect" id="node6" title=" " alt="" coords="104,244,171,271"/>
+<area shape="rect" id="node8" href="$ROOT-Sim_8h.html" title="ROOT&#45;Sim header for model development." alt="" coords="370,169,470,196"/>
+<area shape="rect" id="node11" href="$test__rng_8h.html" title="Pseudo random number generator for tests." alt="" coords="550,169,637,196"/>
+<area shape="rect" id="node9" title=" " alt="" coords="302,244,373,271"/>
+<area shape="rect" id="node10" title=" " alt="" coords="491,244,562,271"/>
+<area shape="rect" id="node12" href="$intrinsics_8h.html" title="Easier access to compiler extensions." alt="" coords="587,244,712,271"/>
+<area shape="rect" id="node13" title=" " alt="" coords="737,244,823,271"/>
+</map>

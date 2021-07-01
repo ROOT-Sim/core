@@ -1,0 +1,8 @@
+<map id="init_args_parse" name="init_args_parse">
+<area shape="rect" id="node1" title="Parses ROOT&#45;Sim command line arguments." alt="" coords="5,81,127,108"/>
+<area shape="rect" id="node2" href="$arg__parse_8c.html#aae3bd36ea44655ef931579fc2513ab32" title="Parses the command line options." alt="" coords="175,81,289,108"/>
+<area shape="rect" id="node3" href="$arg__parse_8c.html#a8cab67eafad2a89b02339105eac84254" title="Prints a parsing related error message and exits with a bad exit code." alt="" coords="365,5,489,32"/>
+<area shape="rect" id="node4" href="$arg__parse_8c.html#a10040bc5a2ef3dd49007eed20332b1dd" title="Parses a single option by calling the appropriate parser or throwing an error." alt="" coords="367,56,487,83"/>
+<area shape="rect" id="node5" href="$arg__parse_8c.html#ae041c7baf07a9b81405d7497ab26c839" title="Sets up the ap_section structs and their ap_option structs by sorting them. The internal ap_section s..." alt="" coords="337,107,517,133"/>
+<area shape="rect" id="node6" href="$arg__parse_8c.html#ae9efa11f5e109b7fabf4b1bece642717" title="Undos the injection of the internal ap_section struct." alt="" coords="349,157,505,184"/>
+</map>

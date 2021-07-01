@@ -1,0 +1,13 @@
+<map id="test/test/test_stubs.c" name="test/test/test_stubs.c">
+<area shape="rect" id="node1" title="Test stubs source." alt="" coords="179,5,338,32"/>
+<area shape="rect" id="node2" href="$test_8h.html" title="Test framework header." alt="" coords="144,155,203,181"/>
+<area shape="rect" id="node7" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="299,80,389,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="192,229,275,256"/>
+<area shape="rect" id="node4" title=" " alt="" coords="299,229,373,256"/>
+<area shape="rect" id="node5" title=" " alt="" coords="97,229,167,256"/>
+<area shape="rect" id="node6" title=" " alt="" coords="5,229,72,256"/>
+<area shape="rect" id="node8" href="$log_8h.html" title="Logging library." alt="" coords="227,155,306,181"/>
+<area shape="rect" id="node9" href="$mem_8h.html" title="Platform specific memory utilities." alt="" coords="399,155,499,181"/>
+<area shape="rect" id="node11" title=" " alt="" coords="545,229,615,256"/>
+<area shape="rect" id="node10" href="$platform_8h.html" title="Determine on what OS we are compiling." alt="" coords="397,229,520,256"/>
+</map>

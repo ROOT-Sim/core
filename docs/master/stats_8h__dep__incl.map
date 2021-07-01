@@ -1,0 +1,9 @@
+<map id="src/log/stats.h" name="src/log/stats.h">
+<area shape="rect" id="node1" title="Statistics module." alt="" coords="339,5,452,32"/>
+<area shape="rect" id="node2" href="$gvt_8c.html" title="Global Virtual Time." alt="" coords="5,80,108,107"/>
+<area shape="rect" id="node3" href="$stats_8c.html" title="Statistics module." alt="" coords="133,80,245,107"/>
+<area shape="rect" id="node4" href="$process_8c.html" title="LP state management functions." alt="" coords="269,80,391,107"/>
+<area shape="rect" id="node5" href="$main_8c.html" title="Simulator main entry point." alt="" coords="416,80,505,107"/>
+<area shape="rect" id="node6" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="529,80,688,107"/>
+<area shape="rect" id="node7" href="$serial_8c.html" title="Sequential simlation engine." alt="" coords="712,80,844,107"/>
+</map>

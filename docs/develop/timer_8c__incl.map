@@ -1,0 +1,7 @@
+<map id="src/arch/timer.c" name="src/arch/timer.c">
+<area shape="rect" id="node1" title="Timers." alt="" coords="127,5,249,32"/>
+<area shape="rect" id="node2" href="$timer_8h.html" title="Timers." alt="" coords="138,80,238,107"/>
+<area shape="rect" id="node3" href="$platform_8h.html" title="Determine on what OS we are compiling." alt="" coords="5,155,128,181"/>
+<area shape="rect" id="node4" title=" " alt="" coords="153,155,223,181"/>
+<area shape="rect" id="node5" title=" " alt="" coords="248,155,312,181"/>
+</map>

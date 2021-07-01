@@ -1,0 +1,4 @@
+<map id="print_usage_option" name="print_usage_option">
+<area shape="rect" id="node1" title="Prints the help text for a single option." alt="" coords="152,5,299,32"/>
+<area shape="rect" id="node2" href="$arg__parse_8c.html#a0edd37fe65f6a8b1e530370f6e6402f3" title="Prints the usage text for the whole argument parsing context." alt="" coords="5,5,104,32"/>
+</map>

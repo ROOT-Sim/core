@@ -1,0 +1,23 @@
+<map id="src/distributed/mpi.c" name="src/distributed/mpi.c">
+<area shape="rect" id="node1" title="MPI Support Module." alt="" coords="429,5,584,32"/>
+<area shape="rect" id="node2" href="$mpi_8h.html" title="MPI Support Module." alt="" coords="238,80,372,107"/>
+<area shape="rect" id="node4" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="332,229,427,256"/>
+<area shape="rect" id="node14" href="$sync_8h.html" title="Easier Synchronization primitives." alt="" coords="765,155,861,181"/>
+<area shape="rect" id="node15" href="$array_8h.html" title="Dynamic array datatype." alt="" coords="824,80,959,107"/>
+<area shape="rect" id="node17" href="$msg__queue_8h.html" title="Message queue datatype." alt="" coords="36,80,214,107"/>
+<area shape="rect" id="node18" href="$gvt_8h.html" title="Global Virtual Time." alt="" coords="396,80,476,107"/>
+<area shape="rect" id="node20" href="$termination_8h.html" title="Termination detection module." alt="" coords="495,155,630,181"/>
+<area shape="rect" id="node21" href="$msg__allocator_8h.html" title="Memory management functions for messages." alt="" coords="500,80,654,107"/>
+<area shape="rect" id="node3" href="$msg_8h.html" title="Message management functions." alt="" coords="230,155,308,181"/>
+<area shape="rect" id="node8" title=" " alt="" coords="486,379,561,405"/>
+<area shape="rect" id="node11" title=" " alt="" coords="254,304,324,331"/>
+<area shape="rect" id="node13" title=" " alt="" coords="513,229,612,256"/>
+<area shape="rect" id="node5" href="$log_8h.html" title="Logging library." alt="" coords="586,379,664,405"/>
+<area shape="rect" id="node6" title=" " alt="" coords="584,453,666,480"/>
+<area shape="rect" id="node7" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="580,304,670,331"/>
+<area shape="rect" id="node10" title=" " alt="" coords="348,304,411,331"/>
+<area shape="rect" id="node12" title=" " alt="" coords="704,304,775,331"/>
+<area shape="rect" id="node9" title=" " alt="" coords="688,379,759,405"/>
+<area shape="rect" id="node16" title=" " alt="" coords="654,155,740,181"/>
+<area shape="rect" id="node19" title=" " alt="" coords="384,155,471,181"/>
+</map>
