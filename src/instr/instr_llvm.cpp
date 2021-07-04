@@ -2,7 +2,7 @@
  * @file instr/instr_llvm.cpp
  *
  * @brief LLVM plugin to instrument memory writes
- * 
+ *
  * This is the LLVM plugin which instruments memory allocations so as to enable
  * transparent rollbacks of application code state.
  *
@@ -142,7 +142,7 @@ public:
 		}
 
 #ifdef ROOTSIM_INCREMENTAL
-		FunctionCallee wfnc = InitMemtraceFunction(M, "__write_mem");
+		FunctionCallee wfnc = InitMemtraceFunction(M, "__write_mem_gen");
 		std::vector<Instruction *> I_instr_vec;
 #endif
 

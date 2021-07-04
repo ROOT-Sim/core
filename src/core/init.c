@@ -37,11 +37,15 @@ enum option_key {
 	OPT_BIND,
 	OPT_SERIAL,
 	OPT_SEED,
+	OPT_HINC,
 	OPT_LAST
 };
 
 /// The array of ROOT-Sim supported command line options
 static struct ap_option ap_options[] = {
+#ifdef ROOTSIM_INCREMENTAL
+	{"hinc", 	OPT_HINC, NULL, "Enables hardware assisted memory tracing"},
+#endif
 	{"lp", 		OPT_NPRC, "VALUE", "Total number of Logical Processes being launched at simulation startup"},
 	{"log-level", 	OPT_LOG,  "VALUE", "Logging level"},
 	{"time", 	OPT_SIMT, "VALUE", "Logical time at which the simulation will be considered completed"},
@@ -106,6 +110,10 @@ static void parse_opt(int key, const char *arg)
 {
 	bool parse_err = false;
 	switch (key) {
+
+	case OPT_HINC:
+		global_config.hinc = true;
+		break;
 
 	case OPT_NPRC:
 		n_lps = parse_ullong_limits(arg, 1, UINT_MAX, &parse_err);

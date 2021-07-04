@@ -13,7 +13,7 @@ assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
 
 # This stuff would otherwise break our fragile linking process
 add_global_link_arguments(['-no-pie'], language : 'c')
-add_global_arguments(['-fno-pic'], language : 'c')
+add_global_arguments(['-fno-pic', '-mptwrite'], language : 'c')
 if meson.get_compiler('c').get_id() != 'clang'
   add_global_arguments(['-no-pie'], language : 'c')
 endif

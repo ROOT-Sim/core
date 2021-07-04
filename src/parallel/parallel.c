@@ -81,10 +81,14 @@ static void parallel_global_init(void)
 	msg_queue_global_init();
 	termination_global_init();
 	gvt_global_init();
+
+	hardware_inc_global_init();
 }
 
 static void parallel_global_fini(void)
 {
+	hardware_inc_global_fini();
+
 	msg_queue_global_fini();
 	lp_global_fini();
 	process_global_fini();

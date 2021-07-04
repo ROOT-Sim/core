@@ -23,6 +23,7 @@ rootsim_srcs = [
   'gvt' / 'fossil.c',
   'gvt' / 'gvt.c',
   'gvt' / 'termination.c',
+  'lib' / 'hardware_inc' / 'hardware_inc.c',
   'log' / 'log.c',
   'log' / 'stats.c',
   'lp' / 'lp.c',

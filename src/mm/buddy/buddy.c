@@ -353,6 +353,10 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 	if (ref_i % B_LOG_FREQUENCY)
 		return;
 
+#ifdef ROOTSIM_INCREMENTAL
+	hardware_inc_on_take();
+#endif
+
 	struct mm_state *self = &current_lp->mm_state;
 	struct mm_checkpoint *ckp;
 
@@ -407,6 +411,10 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 		mm_free(array_get_at(self->logs, j).c);
 	}
 	array_count(self->logs) = i + 1;
+
+#ifdef ROOTSIM_INCREMENTAL
+	hardware_inc_on_restore();
+#endif
 
 	return array_get_at(self->logs, i).ref_i;
 }
