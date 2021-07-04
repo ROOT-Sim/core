@@ -36,20 +36,26 @@ void hardware_inc_global_init(void)
 		log_log(LOG_FATAL, "Error, cannot open %s", HINC_DEV_NAME);
 		exit(-1);
 	}
+}
 
+void hardware_inc_init(void)
+{
 	if (ioctl(hinc_fd, PTWRITE_PROFILER_ON) < 0){
 		log_log(LOG_FATAL, "IOCTL: PTWRITE_PROFILER_ON failed");
 		exit(-1);
 	}
 }
 
+void hardware_inc_fini(void)
+{
+	if (ioctl(hinc_fd, PTWRITE_PROFILER_OFF) < 0)
+		log_log(LOG_ERROR, "IOCTL: PTWRITE_PROFILER_OFF failed");
+}
+
 void hardware_inc_global_fini(void)
 {
 	if (!global_config.hinc)
 		return;
-
-	if (ioctl(hinc_fd, PTWRITE_PROFILER_OFF) < 0)
-		log_log(LOG_ERROR, "IOCTL: PTWRITE_PROFILER_OFF failed");
 
 	if (close(hinc_fd) < 0)
 		log_log(LOG_ERROR, "Error, cannot close %s", HINC_DEV_NAME);

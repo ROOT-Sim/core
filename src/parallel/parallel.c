@@ -25,6 +25,7 @@
 static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
 	rid = (uintptr_t)rid_arg;
+	hardware_inc_init();
 	stats_init();
 	msg_allocator_init();
 	msg_queue_init();
@@ -68,6 +69,7 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 	msg_queue_fini();
 	sync_thread_barrier();
 	msg_allocator_fini();
+	hardware_inc_fini();
 
 	return THREAD_RET_SUCCESS;
 }
