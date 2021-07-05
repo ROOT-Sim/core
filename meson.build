@@ -2,21 +2,15 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 project('ROOT-Sim', ['c', 'cpp'], version : '3.0.0-alpha.3',
-  default_options : ['c_std=c11', 'cpp_std=c++14', 'buildtype=release',
-  'warning_level=3', 'unity=on', 'unity_size=10000', 'b_lto=true'])
+  meson_version : '>=0.55', default_options : ['c_std=c11', 'cpp_std=c++14',
+  'buildtype=release', 'warning_level=3', 'unity=on', 'unity_size=10000',
+  'b_lto=true', 'b_pie=false', 'b_staticpic=false'])
 
 # This is needed since our compiler uses a LLVM plugin
 assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
   'LTO builds are only supported with the clang compiler;\neither pass ' +
   '\'-Db_lto=false\' to the meson command or prepend it with \'env CC=clang ' +
   'CXX=clang++\'')
-
-# This stuff would otherwise break our fragile linking process
-add_project_link_arguments(['-no-pie'], language : 'c')
-add_project_arguments(['-fno-pic'], language : 'c')
-if meson.get_compiler('c').get_id() != 'clang'
-  add_project_arguments(['-no-pie'], language : 'c')
-endif
 
 # Workaround to have reproducible unity builds
 if get_option('unity') == 'on'
