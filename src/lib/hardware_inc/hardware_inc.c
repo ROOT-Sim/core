@@ -13,12 +13,12 @@
 
 #define _IO_NB	1
 
-/* No parameters */
-#define PTWRITE_PMC_SETUP	_IO(PTWRITE_IOC_MAGIC, _IO_NB)
-#define PTWRITE_PROFILER_ON	_IO(PTWRITE_IOC_MAGIC, _IO_NB + 1)
-#define PTWRITE_PROFILER_OFF	_IO(PTWRITE_IOC_MAGIC, _IO_NB + 2)
+#define PTWRITE_PMC_SETUP		_IO(PTWRITE_IOC_MAGIC, _IO_NB)
+#define PTWRITE_PROFILER_ON		_IO(PTWRITE_IOC_MAGIC, _IO_NB + 1)
+#define PTWRITE_PROFILER_OFF		_IO(PTWRITE_IOC_MAGIC, _IO_NB + 2)
+#define PTWRITE_PROFILER_CLEAR		_IO(PTWRITE_IOC_MAGIC, _IO_NB + 3)
 /* Read from kernel space */
-#define PTWRITE_GET_PAYLOADS	_IOR(PTWRITE_IOC_MAGIC, _IO_NB + 3, void *)
+#define PTWRITE_GET_PAYLOADS		_IOR(PTWRITE_IOC_MAGIC, _IO_NB + 8, void *)
 
 #define HINC_DEV_NAME "/dev/ptwrite"
 #define MEM_SIZE (4096 << 3)
@@ -78,8 +78,7 @@ void hardware_inc_on_restore(void)
 	if (!global_config.hinc)
 		return;
 
-	// TODO ask Stefano for an IOCTL to clear the internal kernel buffer
-	ioctl(hinc_fd, PTWRITE_GET_PAYLOADS, payloads);
+	ioctl(hinc_fd, PTWRITE_PROFILER_CLEAR);
 }
 
 void __write_mem_gen(const void *ptr, size_t s)

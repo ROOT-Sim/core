@@ -22,9 +22,14 @@
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
+static atomic_bool is_started;
+
 static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
 	rid = (uintptr_t)rid_arg;
+
+	while (!is_started);
+
 	hardware_inc_init();
 	stats_init();
 	msg_allocator_init();
@@ -112,6 +117,8 @@ void parallel_simulation(void)
 			abort();
 		}
 	}
+
+	is_started = true;
 
 	i = n_threads;
 	while (i--)
