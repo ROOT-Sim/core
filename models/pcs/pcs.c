@@ -7,15 +7,38 @@
 #include "pcs.h"
 
 #include <stdlib.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
-bool preload_model = false;
-unsigned complete_calls = COMPLETE_CALLS, channels_per_cell = CHANNELS_PER_CELL; // Total channels per each cell
-double ref_ta = TA_BASE,   // Initial call inter-arrival frequency (reference for all cells)
-ta_duration = TA_DURATION, // Average duration of a call
-ta_change = TA_CHANGE; // Average time after which a call is diverted to another cell
+struct conf {
+	bool preload_model;
+	unsigned complete_calls;
+	unsigned channels_per_cell; // Total channels per each cell
+	double ref_ta; // Initial call inter-arrival frequency (reference for all cells)
+	double ta_duration; // Average duration of a call
+	double ta_change; // Average time after which a call is diverted to another cell
+};
+
+static struct conf conf = {
+	.preload_model = false,
+	.complete_calls = COMPLETE_CALLS,
+	.channels_per_cell = CHANNELS_PER_CELL,
+	.ref_ta = TA_BASE,
+	.ta_duration = TA_DURATION,
+	.ta_change = TA_CHANGE
+};
+
+struct autoconf_name_map autoconf_structs[] = {
+	{"preload_model", offsetof(struct conf, preload_model), AUTOCONF_BOOL, NULL, 0},
+	{"complete_calls", offsetof(struct conf, complete_calls), AUTOCONF_UNSIGNED, NULL, 0},
+	{"channels_per_cell", offsetof(struct conf, channels_per_cell), AUTOCONF_UNSIGNED, NULL, 0},
+	{"ref_ta", offsetof(struct conf, ref_ta), AUTOCONF_DOUBLE, NULL, 0},
+	{"ta_duration", offsetof(struct conf, ta_duration), AUTOCONF_DOUBLE, NULL, 0},
+	{"ta_change", offsetof(struct conf, ta_change), AUTOCONF_DOUBLE, NULL, 0},
+	{0}
+};
 
 enum {
 	OPT_TAREF, OPT_TAD, OPT_TAC, OPT_CPC, OPT_CC, OPT_NOPRELOAD
