@@ -30,7 +30,7 @@ static struct conf conf = {
 	.ta_change = TA_CHANGE
 };
 
-struct autoconf_name_map autoconf_structs[] = {
+struct autoconf_name_map struct_conf[] = {
 	{"preload_model", offsetof(struct conf, preload_model), AUTOCONF_BOOL, NULL, 0},
 	{"complete_calls", offsetof(struct conf, complete_calls), AUTOCONF_UNSIGNED, NULL, 0},
 	{"channels_per_cell", offsetof(struct conf, channels_per_cell), AUTOCONF_UNSIGNED, NULL, 0},
@@ -39,6 +39,9 @@ struct autoconf_name_map autoconf_structs[] = {
 	{"ta_change", offsetof(struct conf, ta_change), AUTOCONF_DOUBLE, NULL, 0},
 	{0}
 };
+
+struct autoconf_name_map autoconf_structs[] = {{"struct conf",    struct_conf},
+					       {0}};
 
 enum {
 	OPT_TAREF, OPT_TAD, OPT_TAC, OPT_CPC, OPT_CC, OPT_NOPRELOAD
@@ -65,21 +68,23 @@ void model_parse(int key, const char *arg)
 {
 
 	switch(key) {
-		HANDLE_CASE(OPT_TAREF, "%lf", ref_ta);
-		HANDLE_CASE(OPT_TAD, "%lf", ta_duration);
-		HANDLE_CASE(OPT_TAC, "%lf", ta_change);
-		HANDLE_CASE(OPT_CPC, "%u", channels_per_cell);
-		HANDLE_CASE(OPT_CC, "%u", complete_calls);
+		HANDLE_CASE(OPT_TAREF, "%lf", conf.ref_ta);
+		HANDLE_CASE(OPT_TAD, "%lf", conf.ta_duration);
+		HANDLE_CASE(OPT_TAC, "%lf", conf.ta_change);
+		HANDLE_CASE(OPT_CPC, "%u", conf.channels_per_cell);
+		HANDLE_CASE(OPT_CC, "%u", conf.complete_calls);
 
 		case OPT_NOPRELOAD:
-			preload_model = false;
+			conf.preload_model = false;
 			break;
 
 		case AP_KEY_FINI:
 			printf("CURRENT CONFIGURATION:\ncomplete calls: %u\nreference TA: %.02f\nta_duration: %.02f\n"
 	  			"ta_change: %.02f\nchannels_per_cell: %u\npreload_model: %s\n",
-			       complete_calls, ref_ta, ta_duration, ta_change, channels_per_cell,
-			       preload_model ? "true" : "false");
+				conf.complete_calls, conf.ref_ta,
+				conf.ta_duration, conf.ta_change,
+				conf.channels_per_cell,
+				conf.preload_model ? "true" : "false");
 			fflush(stdout);
 	}
 }
@@ -211,7 +216,7 @@ static void setup_call(unsigned me, double now, struct lp_state *state, double e
 	new_call.channel = allocation(state);
 
 	if(end_time < 0) {
-		new_call.end_time = now + Expent(ta_duration);
+		new_call.end_time = now + Expent(conf.ta_duration);
 
 		timestamp = now + Expent(current_ta(state, now));
 		ScheduleNewEvent(me, timestamp, START_CALL, NULL, 0);
@@ -224,7 +229,7 @@ static void setup_call(unsigned me, double now, struct lp_state *state, double e
 		return;
 	}
 
-	handoff_time = now + Expent(ta_change);
+	handoff_time = now + Expent(conf.ta_change);
 
 	if(new_call.end_time <= handoff_time) {
 		ScheduleNewEvent(me, new_call.end_time, END_CALL, &new_call, sizeof(new_call));
@@ -243,8 +248,8 @@ static void preload(unsigned int me, struct lp_state *state)
 
 	for(int i = 0; i < CHANNELS_PER_CELL * eta; i++) {
 		new_call.channel = allocation(state);
-		new_call.end_time = Expent(ta_duration);
-		double handoff_time = Expent(ta_change);
+		new_call.end_time = Expent(conf.ta_duration);
+		double handoff_time = Expent(conf.ta_change);
 
 		if(new_call.end_time <= handoff_time) {
 			ScheduleNewEvent(me, new_call.end_time, END_CALL, &new_call, sizeof(new_call));
@@ -282,14 +287,14 @@ void ProcessEvent(lp_id_t me, simtime_t now, int event_type, void *e, unsigned i
 			memset(state, 0, sizeof(struct lp_state));
 
 			// Setup channel state
-			state->channel_state = malloc(sizeof(unsigned long long) * (channels_per_cell / BITS + 1));
-			memset(state->channel_state, 0, sizeof(unsigned long long) * (channels_per_cell / BITS + 1));
+			state->channel_state = malloc(sizeof(unsigned long long) * (conf.channels_per_cell / BITS + 1));
+			memset(state->channel_state, 0, sizeof(unsigned long long) * (conf.channels_per_cell / BITS + 1));
 
-			state->channel_counter = channels_per_cell;
+			state->channel_counter = conf.channels_per_cell;
 			state->channels.channel_id = -1;
 			state->ta = TA_BASE; // <--- configure this on a per-LP basis based on a conf file?
 
-			if(preload_model) {
+			if(conf.preload_model) {
 				preload(me, state);
 			}
 
@@ -338,7 +343,7 @@ bool CanEnd(lp_id_t me, struct lp_state *snapshot)
 {
 	(void) me;
 
-	if(snapshot->complete_calls < complete_calls) {
+	if(snapshot->complete_calls < conf.complete_calls) {
 		return false;
 	}
 	return true;

@@ -16,6 +16,7 @@
 #include <stdio.h>
 
 /// The exit code of tests when something fails horribly
+/** Triggers an unconditional failure, even for expected-failure tests */
 #define TEST_BAD_FAIL_EXIT_CODE 99
 
 /// A complete test configuration
@@ -39,7 +40,7 @@ struct test_config {
 extern const struct test_config test_config;
 extern bool test_thread_barrier(void);
 
-// core.c mock
+// core.h typedefs
 typedef uint64_t lp_id_t;
 typedef unsigned rid_t;
 typedef int nid_t;

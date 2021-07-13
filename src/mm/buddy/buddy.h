@@ -12,6 +12,7 @@
 #include <datatypes/bitmap.h>
 
 #include <assert.h>
+#include <stdalign.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -35,9 +36,10 @@ struct mm_state { // todo incremental checkpoints
 	/// The count of allocated bytes
 	uint_fast32_t used_mem;
 	/// The checkpointed binary tree representing the buddy system
-	uint_least8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))]; // last char is actually unused
+	/** the last char is actually unused */
+	alignas(16) uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
 	/// The memory buffer served to the model
-	unsigned char base_mem[1U << B_TOTAL_EXP];
+	alignas(16) unsigned char base_mem[1U << B_TOTAL_EXP];
 #ifdef ROOTSIM_INCREMENTAL
 	/// The bytes count of the memory dirtied by writes
 	uint_fast32_t dirty_mem;
@@ -72,7 +74,7 @@ struct mm_checkpoint { // todo only log longest[] if changed, or incrementally
 	/// The used memory in bytes when this checkpoint was taken
 	uint_fast32_t used_mem;
 	/// The checkpointed binary tree representing the buddy system
-	uint_least8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
+	uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
 	/// The checkpointed memory buffer assigned to the model
 	unsigned char base_mem[];
 };

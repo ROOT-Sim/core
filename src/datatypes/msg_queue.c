@@ -83,7 +83,7 @@ void msg_queue_fini(void)
  */
 void msg_queue_global_fini(void)
 {
-	mm_free(queues);
+	mm_aligned_free(queues);
 }
 
 /**

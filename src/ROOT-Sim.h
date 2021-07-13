@@ -92,6 +92,11 @@ struct autoconf_type_map {
 	size_t struct_size; ///< If struct_name is not null, the size in bytes of the corresponding struct
 };
 
+struct autoconf_name_map {
+	char *struct_name;
+	struct autoconf_type_map *members;
+};
+
 
 enum _topology_geometry_t {
 	TOPOLOGY_HEXAGON = 1,	//!< hexagonal grid topology

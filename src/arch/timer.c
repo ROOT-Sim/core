@@ -17,10 +17,10 @@ timer_uint timer_perf_freq = 0;
 
 /**
  * @brief Gets a new starting point for an time interval measure
- * @returns a timer_uint value, a not meaningful value by itself
+ * @return a timer_uint value, a not meaningful value by itself
  *
- * The returned value can be used in the timer_value() macro to obtain a time
- * interval with microsecond resolution
+ * The returned value can be used in conjunction with timer_value() to measure a
+ * time interval with microsecond resolution
  */
 extern timer_uint timer_new(void);
 

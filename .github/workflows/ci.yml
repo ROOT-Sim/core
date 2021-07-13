@@ -22,7 +22,9 @@ jobs:
     - name: Install Meson and Ninja
       run: pip install meson ninja
     - name: Install OpenMPI
-      run: sudo apt-get install openmpi-bin libopenmpi-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install openmpi-bin libopenmpi-dev
     - name: Set up build folder
       run: meson setup builddir/ -Db_coverage=true -Db_lto=false
       env:
@@ -31,28 +33,29 @@ jobs:
     - name: Run tests
       run: meson test -C builddir/ -v
     - name: Generate and upload coverage report
-      uses: codecov/codecov-action@v1.0.14
+      uses: codecov/codecov-action@v1
       with:
         fail_ci_if_error: true
 
   windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
     steps:
     - name: Fetch ROOT-Sim repository
       uses: actions/checkout@v2
-    - name: Set up Python 3
-      uses: actions/setup-python@v2
+    - name: Set up MSYS2 with Meson and LLVM
+      uses: msys2/setup-msys2@v2
       with:
-        python-version: '3.x'
-    - name: Download and install LLVM
-      shell: cmd
-      run: |
-        curl -fsSL -o "LLVM-11.0.0-win64.exe" "https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/LLVM-11.0.0-win64.exe"
-        LLVM-11.0.0-win64.exe /S
-    - name: Install Meson and Ninja
-      run: pip install meson ninja
+        msystem: UCRT64
+        release: true
+        install: >-
+          mingw-w64-ucrt-x86_64-llvm
+          mingw-w64-ucrt-x86_64-clang
+          mingw-w64-ucrt-x86_64-meson
     - name: Set up build folder
-      run: meson setup builddir/
+      run: meson setup builddir/ -Db_lto=false
       env:
         CC: clang
         CXX: clang++
