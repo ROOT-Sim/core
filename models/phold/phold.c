@@ -6,6 +6,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <stddef.h>
 #include <stdio.h>
 
 #define EVENT   1
@@ -18,22 +19,36 @@ struct event_content {
 	unsigned long long dummy;
 };
 
-// Default configuration values
-unsigned int message_population = 100;
-double timestamp_increment = 1.00;
-double lookahead = 0.50;
-unsigned int computation_grain = 1000;
-unsigned int total_events = 5000;
+struct conf {
+	unsigned message_population;
+	double timestamp_increment;
+	double lookahead;
+	unsigned computation_grain;
+	unsigned total_events;
+};
+
+struct conf configuration = {100, 1.00, 0.50, 1000, 5000};
+struct autoconf_type_map struct_conf[] = {
+	{"message_population", offsetof(struct conf, message_population), AUTOCONF_UNSIGNED, NULL, 0},
+	{"timestamp_increment", offsetof(struct conf, timestamp_increment), AUTOCONF_DOUBLE, NULL, 0},
+	{"lookahead", offsetof(struct conf, lookahead), AUTOCONF_DOUBLE, NULL, 0},
+	{"computation_grain", offsetof(struct conf, computation_grain), AUTOCONF_UNSIGNED, NULL, 0},
+	{"total_events", offsetof(struct conf, total_events), AUTOCONF_UNSIGNED, NULL, 0},
+	{0}
+};
+
+struct autoconf_name_map autoconf_structs[] = {{"struct conf",    struct_conf},
+					       {0}};
 
 enum {
 	OPT_POP, OPT_TIMEINC, OPT_LOOKAHEAD, OPT_GRAIN, OPT_EVENTS
 };
 
-struct ap_option model_options[] = {{"population",     OPT_POP,       "UINT",   NULL},
+struct ap_option model_options[] = {{"population",     OPT_POP,       "UINT", NULL},
 				    {"time-increment", OPT_TIMEINC,   "FLOAT", NULL},
 				    {"lookahead",      OPT_LOOKAHEAD, "FLOAT", NULL},
-				    {"event-grain",    OPT_GRAIN,     "UINT",  NULL},
-				    {"total-events",   OPT_EVENTS,    "UINT",   NULL},
+				    {"event-grain",    OPT_GRAIN,     "UINT", NULL},
+				    {"total-events",   OPT_EVENTS,    "UINT", NULL},
 				    {0}};
 
 struct topology_t *topology;
@@ -57,7 +72,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 		SetState(state);
 
 		// Inject events in the system
-		if(me < message_population) {
+		if(me < configuration.message_population) {
 			ScheduleNewEvent(me, 0.01, EVENT, NULL, 0);
 		}
 		break;
@@ -72,11 +87,11 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 	case EVENT:
 		state->processed++;
 
-		for(int i = 0; i < computation_grain; i++) {
+		for(int i = 0; i < configuration.computation_grain; i++) {
 			new_event.dummy += i;
 		}
 
-		simtime_t timestamp = now + lookahead + Random() * timestamp_increment;
+		simtime_t timestamp = now + configuration.lookahead + Random() * configuration.timestamp_increment;
 		ScheduleNewEvent(FindReceiver(topology), timestamp, EVENT, &new_event, sizeof(struct event_content));
 
 		break;
@@ -92,7 +107,7 @@ bool CanEnd(lp_id_t me, const void *snapshot)
 {
 	struct lp_state *state = (struct lp_state *) snapshot;
 
-	if(state->processed < total_events) {
+	if(state->processed < configuration.total_events) {
 		return false;
 	}
 	return true;
