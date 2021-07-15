@@ -66,8 +66,9 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 		free(state);
 		return;
 
-		case MODEL_FINI:
-			return;
+	case MODEL_FINI:
+		TopologyFini(topology);
+		return;
 
 	case EVENT:
 		state->processed++;

@@ -67,7 +67,7 @@ endif
 i = 1
 foreach t_name, t_spec : test_specs
   t_srcs = t_spec.get('src')
-  t_deps = []
+  t_deps = [m_dep]
 
   if t_spec.get('rslib', false)
     t_srcs = [clang_with_plugin.process(t_srcs)]

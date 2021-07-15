@@ -4,7 +4,7 @@
 project('ROOT-Sim', ['c', 'cpp'], version : '3.0.0-alpha.3',
   meson_version : '>=0.55', default_options : ['c_std=c11', 'cpp_std=c++14',
   'buildtype=release', 'warning_level=3', 'unity=on', 'unity_size=10000',
-  'b_lto=true', 'b_pie=false', 'b_staticpic=false'])
+  'b_lto=true', 'b_pie=false', 'b_staticpic=false', 'b_lundef=false'])
 
 # This is needed since our compiler uses a LLVM plugin
 assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
@@ -16,14 +16,6 @@ assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
 if get_option('unity') == 'on'
   add_global_arguments(['-ffile-prefix-map=' + meson.build_root() / '..=..'],
     language : 'c')
-endif
-
-# Handle symbols visibility
-if meson.get_compiler('c').has_argument('-fvisibility=hidden')
-  add_project_arguments(['-fvisibility=hidden'], language : ['c', 'cpp'])
-  add_project_link_arguments(['-fvisibility=hidden'], language : ['c', 'cpp'])
-else
-  warning('compiler does not support `-fvisibility=hidden`')
 endif
 
 # Include directory used explicitly in tests and LLVM plugin compilation

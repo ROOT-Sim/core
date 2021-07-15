@@ -302,6 +302,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, int event_type, void *e, unsigned i
 			return;
 
 		case MODEL_FINI:
+			TopologyFini(topology);
 			return;
 		default:
 			fprintf(stdout, "PCS: Unknown event type! (me = %lu - event type = %d)\n", me, event_type);

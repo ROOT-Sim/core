@@ -20,6 +20,7 @@
 
 #if defined(__linux__)
 #define __LINUX
+#define _GNU_SOURCE
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)

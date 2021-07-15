@@ -14,6 +14,7 @@ rootsim_c_args = [rootsim_version_def, log_level_def]
 rootsim_srcs = [
   'arch' / 'io.c',
   'arch' / 'mem.c',
+  'arch' / 'thread.c',
   'arch' / 'timer.c',
   'core' / 'arg_parse.c',
   'core' / 'core.c',
@@ -42,9 +43,9 @@ else
   rootsim_srcs += 'distributed' / 'no_mpi.c'
 endif
 
-rootsim_lib = static_library('rootsim', rootsim_srcs, link_language : 'c',
-  c_args : rootsim_c_args, dependencies : [mpi_dep, m_dep, rs_thr_dep],
-  install : true)
+rootsim_lib = both_libraries('rootsim', rootsim_srcs, link_language : 'c',
+  c_args : rootsim_c_args, dependencies : [mpi_dep, m_dep, dependency('threads')],
+  gnu_symbol_visibility : 'hidden', install : true)
 
 # ROOT-Sim compiler defines
 compiler_c_args = [

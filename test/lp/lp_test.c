@@ -45,6 +45,7 @@ void lib_lp_fini_pr(void){ lib_calls[current_lp - lps]--;}
 static int lp_test_init(void)
 {
 	n_lps = N_LPS;
+	n_threads = N_THREADS;
 	lp_global_init();
 	return 0;
 }

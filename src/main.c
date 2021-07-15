@@ -16,7 +16,7 @@
 #include <parallel/parallel.h>
 #include <serial/serial.h>
 
-int main(int argc, char **argv)
+visible int main(int argc, char **argv)
 {
 	stats_global_time_start();
 	mpi_global_init(&argc, &argv);

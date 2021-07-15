@@ -21,7 +21,7 @@
 static _Thread_local bool silent_processing = false;
 static _Thread_local dyn_array(struct lp_msg *) early_antis;
 
-void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
+visible void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 		unsigned event_type, const void *payload, unsigned payload_size)
 {
 	if (unlikely(silent_processing))

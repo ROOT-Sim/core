@@ -10,6 +10,7 @@
  */
 #pragma once
 
+#include <core/visibility.h>
 #include <log/log.h>
 #include <mm/mm.h>
 
@@ -79,7 +80,7 @@ typedef unsigned rid_t;
 typedef int nid_t;
 
 /// The total number of LPs in the simulation
-extern lp_id_t n_lps;
+visible extern lp_id_t n_lps;
 /// The total number of LPs hosted in the node
 extern lp_id_t n_lps_node;
 /// The total number of threads running in the node

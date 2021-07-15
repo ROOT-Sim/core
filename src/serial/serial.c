@@ -169,7 +169,7 @@ static void serial_simulation_run(void)
 	stats_dump();
 }
 
-void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
+visible void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size)
 {
 #if LOG_DEBUG >= LOG_LEVEL
@@ -202,12 +202,12 @@ void serial_simulation(void)
 	serial_simulation_fini();
 }
 
-lp_id_t lp_id_get(void)
+visible lp_id_t lp_id_get(void)
 {
 	return s_current_lp - s_lps;
 }
 
-struct lib_ctx *lib_ctx_get(void)
+visible struct lib_ctx *lib_ctx_get(void)
 {
 	return &s_current_lp->lib_ctx;
 }

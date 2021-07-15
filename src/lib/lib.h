@@ -10,6 +10,8 @@
  */
 #pragma once
 
+#include <core/visibility.h>
+
 #include <lib/random/random.h>
 #include <lib/state/state.h>
 #include <lib/topology/topology.h>
@@ -22,12 +24,12 @@ struct lib_ctx {
 	void *state_s;
 };
 
-extern void lib_global_init(void);
-extern void lib_global_fini(void);
+visible extern void lib_global_init(void);
+visible extern void lib_global_fini(void);
 
-extern void lib_lp_init(void);
-extern void lib_lp_fini(void);
+visible extern void lib_lp_init(void);
+visible extern void lib_lp_fini(void);
 
-extern void lib_lp_init_pr(void);
-extern void lib_lp_fini_pr(void);
+visible extern void lib_lp_init_pr(void);
+visible extern void lib_lp_fini_pr(void);
 

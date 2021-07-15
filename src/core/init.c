@@ -24,7 +24,7 @@
 #define ROOTSIM_VERSION "debugging_version"
 #endif
 
-struct simulation_configuration global_config;
+visible struct simulation_configuration global_config;
 
 /// This is the list of arg_parse.h mnemonics for command line arguments
 enum option_key {

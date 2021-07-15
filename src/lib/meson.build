@@ -10,6 +10,10 @@ lib_srcs = files(
 )
 
 lib_objs = clang_with_plugin.process(lib_srcs)
+lib_objs_fpic = clang_with_plugin.process(lib_srcs, 
+  extra_args : ['-fPIC', '-fvisibility=hidden'])
 
-rootsim_mods_lib = static_library('rootsim-mods', lib_objs, link_language : 'c',
-  install : true)
+static_library('rootsim-mods', lib_objs, link_language : 'c',
+  gnu_symbol_visibility : 'hidden', install : true)
+rootsim_mods_lib = shared_library('rootsim-mods', lib_objs_fpic, link_language : 'c',
+  gnu_symbol_visibility : 'hidden', install : true)

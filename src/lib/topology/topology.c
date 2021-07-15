@@ -31,9 +31,12 @@ struct topology_t {
  * @todo: out of topology should go, in favor of file-based configuration
  * @todo: the mm_alloc() call here shall be redirected to the LP allocator IF a mutable topology (e.g. graph) is used.
  */
-struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int out_of_topology)
+visible struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int out_of_topology)
 {
-	struct topology_t *topology = mm_alloc(sizeof(*topology));
+	struct topology_t *topology = malloc(sizeof(*topology));
+	if (topology == NULL)
+		log_log(LOG_FATAL, "Not enough memory for the topology!");
+
 	memset(topology, 0, sizeof(*topology));
 
 	topology->geometry = geometry;
@@ -78,12 +81,17 @@ struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int
 	return topology;
 }
 
-unsigned long long RegionsCount(const struct topology_t *topology)
+visible extern void TopologyFini(struct topology_t *topology)
+{
+	free(topology);
+}
+
+visible unsigned long long RegionsCount(const struct topology_t *topology)
 {
 	return topology->regions_cnt;
 }
 
-unsigned long long DirectionsCount(const struct topology_t *topology)
+visible unsigned long long DirectionsCount(const struct topology_t *topology)
 {
 	switch (topology->geometry) {
 		case TOPOLOGY_MESH:
@@ -103,7 +111,7 @@ unsigned long long DirectionsCount(const struct topology_t *topology)
 	__builtin_unreachable();
 }
 
-lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direction_t direction)
+visible lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direction_t direction)
 {
 	const lp_id_t sender = from;
 	const uint32_t edge = topology->edge;
@@ -223,7 +231,7 @@ lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direc
 	return DIRECTION_INVALID;
 }
 
-lp_id_t FindReceiver(const struct topology_t *topology)
+visible lp_id_t FindReceiver(const struct topology_t *topology)
 {
 	// Consider the degenerate case of a run with one single LP
 	if (unlikely(topology->regions_cnt == 1))

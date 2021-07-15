@@ -49,7 +49,7 @@ void model_allocator_lp_fini(void)
 	array_fini(current_lp->mm_state.logs);
 }
 
-void *malloc_mt(size_t req_size)
+visible void *malloc_mt(size_t req_size)
 {
 	if(unlikely(!req_size))
 		return NULL;
@@ -97,7 +97,7 @@ void *malloc_mt(size_t req_size)
 	return ((char *)self->base_mem) + offset;
 }
 
-void *calloc_mt(size_t nmemb, size_t size)
+visible void *calloc_mt(size_t nmemb, size_t size)
 {
 	size_t tot = nmemb * size;
 	void *ret = malloc_mt(tot);
@@ -108,7 +108,7 @@ void *calloc_mt(size_t nmemb, size_t size)
 	return ret;
 }
 
-void free_mt(void *ptr)
+visible void free_mt(void *ptr)
 {
 	if (unlikely(!ptr))
 		return;
@@ -146,7 +146,7 @@ void free_mt(void *ptr)
 	}
 }
 
-void *realloc_mt(void *ptr, size_t req_size)
+visible void *realloc_mt(void *ptr, size_t req_size)
 {
 	if (!req_size) {
 		free_mt(ptr);
@@ -191,7 +191,7 @@ __extension__({								\
 
 #ifdef ROOTSIM_INCREMENTAL
 
-void __write_mem(void *ptr, size_t siz)
+visible void __write_mem(void *ptr, size_t siz)
 {
 	struct mm_state *self = &current_lp->mm_state;
 	uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->base_mem;

@@ -16,7 +16,7 @@
 #include <stdio.h>
 
 /// The minimum log level of the messages to display
-int log_level = LOG_LEVEL;
+visible int log_level = LOG_LEVEL;
 /// If set, uses color codes to color the log outputs
 bool log_colored;
 
@@ -41,7 +41,7 @@ static const struct {
  * @param fmt a printf-style format string for the message to log
  * @param ... the list of arguments to fill in the format string @a fmt
  */
-void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
+visible void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 {
 	va_list args;
 

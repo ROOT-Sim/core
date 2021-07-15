@@ -11,6 +11,8 @@
  */
 #pragma once
 
+#include <core/visibility.h>
+
 extern void state_lib_lp_init(void);
 
-extern void SetState(void *state);
+visible extern void SetState(void *state);

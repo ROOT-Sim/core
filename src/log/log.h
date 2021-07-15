@@ -10,6 +10,8 @@
  */
 #pragma once
 
+#include <core/visibility.h>
+
 #include <stdbool.h>
 
 #ifndef LOG_LEVEL
@@ -20,7 +22,7 @@
 
 #define LOG_CAN_LOG_AT_BUILD(l) (l >= LOG_LEVEL)
 
-extern int log_level;
+visible extern int log_level;
 extern bool log_colored;
 
 /// The logging level reserved to very low priority messages
@@ -54,6 +56,6 @@ extern bool log_colored;
 			_log_log(lvl, __FILE__, __LINE__, __VA_ARGS__);	\
 	} while(0)
 
-void _log_log(int level, const char *file, unsigned line, const char *fmt, ...);
+visible void _log_log(int level, const char *file, unsigned line, const char *fmt, ...);
 
 void log_logo_print(void);

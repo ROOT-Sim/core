@@ -79,9 +79,6 @@ void main_wrapper(void)
 
 	puts("Starting " ROOTSIM_TEST_NAME " test");
 
-	extern rid_t n_threads;
-	n_threads = test_config.threads_count;
-
 	atexit(test_atexit);
 
 	if (init_arguments(&test_argc, &test_argv) == -1)

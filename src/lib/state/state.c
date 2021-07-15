@@ -13,7 +13,7 @@
 
 #include <lib/lib_internal.h>
 
-void SetState(void *state)
+visible void SetState(void *state)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
 	ctx->state_s = state;

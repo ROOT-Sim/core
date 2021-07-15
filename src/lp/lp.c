@@ -93,12 +93,12 @@ void lp_fini(void)
 	current_lp = NULL;
 }
 
-lp_id_t lp_id_get_mt(void)
+visible lp_id_t lp_id_get_mt(void)
 {
 	return current_lp - lps;
 }
 
-struct lib_ctx *lib_ctx_get_mt(void)
+visible struct lib_ctx *lib_ctx_get_mt(void)
 {
 	return current_lp->lib_ctx_p;
 }

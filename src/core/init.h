@@ -33,6 +33,6 @@ struct simulation_configuration {
 };
 
 /// The configuration filled in by init_args_parse()
-extern struct simulation_configuration global_config;
+visible extern struct simulation_configuration global_config;
 
 extern void init_args_parse(int argc, char **argv);

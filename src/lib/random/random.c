@@ -26,7 +26,7 @@ void random_lib_lp_init(void)
 	ctx->unif = NAN;
 }
 
-double Random(void)
+visible double Random(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
 	uint64_t u_val = random_u64(ctx->rng_s);
@@ -45,7 +45,7 @@ double Random(void)
 	return ret;
 }
 
-uint64_t RandomU64(void)
+visible uint64_t RandomU64(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
 	return random_u64(ctx->rng_s);
@@ -58,7 +58,7 @@ uint64_t RandomU64(void)
  * @param mean Mean value of the distribution
  * @return A random number
  */
-double Expent(double mean)
+visible double Expent(double mean)
 {
 	if (unlikely(mean < 0)) {
 		log_log(LOG_WARN, "Passed a negative mean into Expent()");
@@ -71,7 +71,7 @@ double Expent(double mean)
  *
  * @return A random number
  */
-double Normal(void)
+visible double Normal(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
 	if (isnan(ctx->unif)) {
@@ -96,12 +96,12 @@ double Normal(void)
 	}
 }
 
-int RandomRange(int min, int max)
+visible int RandomRange(int min, int max)
 {
 	return (int)floor(Random() * (max - min + 1)) + min;
 }
 
-int RandomRangeNonUniform(int x, int min, int max)
+visible int RandomRangeNonUniform(int x, int min, int max)
 {
 	return (((RandomRange(0, x) | RandomRange(min, max))) %
 			(max - min + 1)) + min;
@@ -115,7 +115,7 @@ int RandomRangeNonUniform(int x, int min, int max)
  * @param ia Integer Order of the Gamma Distribution
  * @return A random number
  */
-double Gamma(unsigned ia)
+visible double Gamma(unsigned ia)
 {
 	if (unlikely(ia < 1)) {
 		log_log(LOG_WARN, "Gamma distribution must have a ia "
@@ -159,7 +159,7 @@ double Gamma(unsigned ia)
  *
  * @return A random number
  */
-double Poisson(void)
+visible double Poisson(void)
 {
 	return -log(1 - Random());
 }
@@ -173,7 +173,7 @@ double Poisson(void)
  * @param limit The largest sample to retrieve
  * @return A random number
  */
-unsigned Zipf(double skew, unsigned limit)
+visible unsigned Zipf(double skew, unsigned limit)
 {
 	double b = pow(2., skew - 1.);
 	double x, t;

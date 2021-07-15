@@ -37,6 +37,7 @@ void msg_allocator_free(struct lp_msg *msg)
 
 static int msg_queue_test_init(void)
 {
+	n_threads = THREAD_CNT;
 	msg_queue_global_init();
 	return 0;
 }

@@ -10,7 +10,7 @@
  */
 #include <core/core.h>
 
-lp_id_t n_lps;
+visible lp_id_t n_lps;
 
 rid_t n_threads;
 __thread rid_t rid;
