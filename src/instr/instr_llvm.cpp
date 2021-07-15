@@ -2,7 +2,7 @@
  * @file instr/instr_llvm.cpp
  *
  * @brief LLVM plugin to instrument memory writes
- * 
+ *
  * This is the LLVM plugin which instruments memory allocations so as to enable
  * transparent rollbacks of application code state.
  *
@@ -226,9 +226,9 @@ private:
 
 		if (StoreInst *SI = dyn_cast<StoreInst>(TI)) {
 			Value *V = SI->getPointerOperand();
-			PointerType *pointerType = cast<PointerType>(V->getType());
-			uint64_t storeSize = M.getDataLayout()
-				.getTypeStoreSize(pointerType->getPointerElementType());
+			PointerType *pType = cast<PointerType>(V->getType());
+			uint64_t storeSize = M.getDataLayout().getTypeStoreSize(
+					pType->getElementType());
 			args[0] = V;
 			args[1] = ConstantInt::get(IntegerType::get(M.getContext(),
 				sizeof(size_t) * CHAR_BIT), storeSize);
