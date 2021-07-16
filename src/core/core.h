@@ -99,8 +99,8 @@ extern nid_t nid;
 enum {nid = 0, n_nodes = 1};
 #endif
 
-extern void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
+want_visible extern void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, void *state);
-extern void ProcessEvent_pr(lp_id_t me, simtime_t now, unsigned event_type,
+want_visible extern void ProcessEvent_pr(lp_id_t me, simtime_t now, unsigned event_type,
 	const void *content, unsigned size, void *state);
-extern bool CanEnd(lp_id_t me, const void *state);
+want_visible extern bool CanEnd(lp_id_t me, const void *state);

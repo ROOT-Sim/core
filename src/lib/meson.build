@@ -9,9 +9,10 @@ lib_srcs = files(
   'lib.c'
 )
 
-lib_objs = clang_with_plugin.process(lib_srcs)
+lib_objs = clang_with_plugin.process(lib_srcs,
+  extra_args : ['-DROOTSIM_MOD_BUILD=1'])
 lib_objs_fpic = clang_with_plugin.process(lib_srcs, 
-  extra_args : ['-fPIC', '-fvisibility=hidden'])
+  extra_args : ['-fPIC', '-fvisibility=hidden', '-DROOTSIM_MOD_BUILD=1'])
 
 static_library('rootsim-mods', lib_objs, link_language : 'c',
   gnu_symbol_visibility : 'hidden', install : true)

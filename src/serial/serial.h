@@ -17,5 +17,10 @@ extern void serial_simulation(void);
 visible extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size);
 
+#ifdef ROOTSIM_MOD_BUILD
+want_visible __attribute__ ((pure)) extern lp_id_t lp_id_get(void);
+want_visible __attribute__ ((pure)) extern struct lib_ctx *lib_ctx_get(void);
+#else
 visible __attribute__ ((pure)) extern lp_id_t lp_id_get(void);
 visible __attribute__ ((pure)) extern struct lib_ctx *lib_ctx_get(void);
+#endif

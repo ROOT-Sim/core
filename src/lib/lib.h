@@ -24,6 +24,7 @@ struct lib_ctx {
 	void *state_s;
 };
 
+#ifdef ROOTSIM_MOD_BUILD
 visible extern void lib_global_init(void);
 visible extern void lib_global_fini(void);
 
@@ -32,4 +33,13 @@ visible extern void lib_lp_fini(void);
 
 visible extern void lib_lp_init_pr(void);
 visible extern void lib_lp_fini_pr(void);
+#else
+want_visible extern void lib_global_init(void);
+want_visible extern void lib_global_fini(void);
 
+want_visible extern void lib_lp_init(void);
+want_visible extern void lib_lp_fini(void);
+
+want_visible extern void lib_lp_init_pr(void);
+want_visible extern void lib_lp_fini_pr(void);
+#endif
