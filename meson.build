@@ -20,8 +20,10 @@ endif
 
 # Workaround to have reproducible unity builds
 if get_option('unity') == 'on'
-  add_global_arguments(['-ffile-prefix-map=' + meson.build_root() / '..=..'],
-    language : 'c')
+  prefix_arg = '-ffile-prefix-map=' + meson.build_root() / '..=..'
+  if meson.get_compiler('c').has_argument(prefix_arg)
+    add_global_arguments(prefix_arg, language : 'c')
+  endif
 endif
 
 # Include directory used explicitly in tests and LLVM plugin compilation
