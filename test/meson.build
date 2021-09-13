@@ -88,7 +88,7 @@ foreach t_name, t_spec : test_specs
 
   test_executable = executable(t_full_name, t_srcs, dependencies : t_deps,
     include_directories : src_inc_dir, c_args : t_spec.get('c_args', []) +
-    ['-DROOTSIM_TEST_NAME="' + t_name + '"'], link_args : '-no-pie',
+    ['-DROOTSIM_TEST_NAME="' + t_name + '"'] + rootsim_c_args, link_args : '-no-pie',
     link_language : 'c')
 
   if mpi_dep.found() and t_spec.get('mpi', false)

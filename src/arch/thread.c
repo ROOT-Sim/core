@@ -69,12 +69,25 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 
 #else
 
+// FIXME: it's quadratic in the number of cores when used core times
 int thread_affinity_set(thr_id_t thr, unsigned core)
 {
 	cpu_set_t cpuset;
-	CPU_ZERO(&cpuset);
-	CPU_SET(core, &cpuset);
-	return -(pthread_setaffinity_np(thr, sizeof(cpuset), &cpuset) != 0);
+	sched_getaffinity(0, sizeof(cpuset), &cpuset);
+
+	for (unsigned i = 0; i < CPU_SETSIZE; ++i) {
+		if (!CPU_ISSET(i, &cpuset))
+			continue;
+
+		if (core == 0) {
+			CPU_ZERO(&cpuset);
+			CPU_SET(i, &cpuset);
+			return -(pthread_setaffinity_np(thr, sizeof(cpuset),
+					&cpuset) != 0);
+		}
+		--core;
+	}
+	return -1;
 }
 
 #endif

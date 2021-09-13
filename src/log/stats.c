@@ -319,6 +319,9 @@ void stats_on_gvt(simtime_t gvt)
 	file_write_chunk(stats_node_tmp, &stats_node_cur, sizeof(stats_node_cur));
 	memset(&stats_node_cur, 0, sizeof(stats_node_cur));
 
+	if (nid != 0)
+		return;
+
 	printf("\rVirtual time: %lf", gvt);
 	fflush(stdout);
 }

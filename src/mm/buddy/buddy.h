@@ -18,8 +18,7 @@
 
 #define B_TOTAL_EXP 17U
 #define B_BLOCK_EXP 6U
-#define B_LOG_INCREMENTAL_THRESHOLD 1.5
-#define B_LOG_FREQUENCY 7
+#define B_LOG_FREQUENCY 50
 
 /// The checkpointable memory context assigned to a single LP
 struct mm_state {
@@ -40,37 +39,10 @@ struct mm_state {
 	alignas(16) uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
 	/// The memory buffer served to the model
 	alignas(16) unsigned char base_mem[1U << B_TOTAL_EXP];
-#ifdef ROOTSIM_INCREMENTAL
-	/// The bytes count of the memory dirtied by writes
-	uint_fast32_t dirty_mem;
-	/// Keeps track of memory blocks which have been dirtied by a write
-	block_bitmap dirty[
-		bitmap_required_size(
-		// this tracks writes to the allocation tree
-			(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
-		// while this tracks writes to the actual memory buffer
-			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
-
-		)
-	];
-#endif
 };
 
 /// A restorable checkpoint of the memory context assigned to a single LP
 struct mm_checkpoint { // todo only log longest[] if changed, or incrementally
-#ifdef ROOTSIM_INCREMENTAL
-	/// If set this checkpoint is incremental, else it is a full one
-	bool is_incremental;
-	/// The checkpoint of the dirty bitmap
-	block_bitmap dirty [
-		bitmap_required_size(
-		// this tracks writes to the allocation tree
-			(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
-		// while this tracks writes to the actual memory buffer
-			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
-		)
-	];
-#endif
 	/// The used memory in bytes when this checkpoint was taken
 	uint_fast32_t used_mem;
 	/// The checkpointed binary tree representing the buddy system

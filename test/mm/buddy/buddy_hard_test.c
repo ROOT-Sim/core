@@ -27,6 +27,8 @@
 #define MAX_ALLOC_STEP 50
 #define ALLOC_OSCILLATIONS 100
 
+#define FULL_CHK_P 0.2
+
 #define MAX_ALLOC_E (MAX_ALLOC_S / sizeof(unsigned))
 
 static __thread test_rng_state rng_state;
@@ -48,13 +50,13 @@ static void allocation_init(struct alc *alc)
 	if (alc->ptr == NULL)
 		abort();
 	alc->c = c;
+	__write_mem(alc->ptr, alc->c * sizeof(unsigned));
 
 	while (c--) {
 		unsigned v = lcg_random_u(rng_state);
 		alc->ptr[c] = v;
 		alc->data[c] = v;
 	}
-	__write_mem(alc->ptr, alc->c * sizeof(unsigned));
 }
 
 static struct alc *allocation_all_init(void)
@@ -94,13 +96,13 @@ static void allocation_partial_write(struct alc *alc, unsigned p)
 		unsigned e = lcg_random_u(rng_state) % (c + 1);
 		unsigned l = lcg_random_u(rng_state) % (e + 1);
 
+		__write_mem(alc[i].ptr + l, (e - l) * sizeof(unsigned));
+
 		for (unsigned j = l; j < e; ++j) {
 			unsigned v = lcg_random_u(rng_state);
 			alc[i].ptr[j] = v;
 			alc[i].data[j] = v;
 		}
-
-		__write_mem(alc[i].ptr + l, (e - l) * sizeof(unsigned));
 	}
 
 	w = lcg_random_u(rng_state) % (MAX_ALLOC_CNT / 6);
@@ -140,6 +142,8 @@ static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned 
 		allocation_partial_write(alc, i);
 		if (allocation_check(alc, i))
 			return true;
+		if (lcg_random(rng_state) < FULL_CHK_P)
+			model_allocator_checkpoint_next_force_full();
 		model_allocator_checkpoint_take(i * B_LOG_FREQUENCY);
 	}
 

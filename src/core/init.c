@@ -58,7 +58,34 @@ static struct ap_option ap_options[] = {
  */
 static void print_config(void)
 {
-	// TODO
+	if (log_colored)
+		fprintf(stderr, "\x1b[32m");
+	fprintf(stderr, "ROOT-Sim configuration:\n");
+	if (log_colored)
+		fprintf(stderr, "\x1b[90m");
+
+	fprintf(stderr, "Logical processes: %" PRIu64 "\n", n_lps);
+	fprintf(stderr, "Termination time: ");
+	if (global_config.termination_time == SIMTIME_MAX)
+		fprintf(stderr, "not set\n");
+	else
+		fprintf(stderr, "%lf\n", global_config.termination_time);
+
+	if (global_config.is_serial) {
+		fprintf(stderr, "Parallelism: sequential simulation\n");
+	} else {
+		if (n_nodes > 1)
+			fprintf(stderr, "Parallelism: %d MPI processes\n", n_nodes);
+		else
+			fprintf(stderr, "Parallelism: %u threads\n", n_threads);
+	}
+	fprintf(stderr, "Thread-to-core binding: %s\n",
+			global_config.core_binding ? "enabled" : "disabled");
+	if (log_colored)
+		fprintf(stderr, "\x1b[39m");
+
+	fprintf(stderr, "\n");
+	fflush(stderr);
 }
 
 /**
@@ -175,8 +202,10 @@ static void parse_opt(int key, const char *arg)
 		if(n_lps == 0)
 			arg_parse_error("number of LPs was not provided \"--lp\"");
 
-		log_logo_print();
-		print_config();
+		if (!nid) {
+			log_logo_print();
+			print_config();
+		}
 	}
 
 	if (unlikely(parse_err)) {
@@ -203,7 +232,7 @@ struct ap_section ap_sects[] = {
 
 /// The struct ap_settings with the ROOT-Sim command line parsing configuration
 struct ap_settings ap_sets = {
-	"ROOT-Sim",	// TODO properly fill these fields
+	"ROOT-Sim",
 	ROOTSIM_VERSION,
 	"rootsim@googlegroups.com",
 	ap_sects

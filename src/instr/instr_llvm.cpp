@@ -205,8 +205,10 @@ private:
 
 	FunctionCallee InitMemtraceFunction(Module &M, const char *memtrace_name)
 	{
+		LLVMContext &ctx = M.getContext();
+
 		Type *MemtraceArgs[] = {
-			Type::getInt8PtrTy(M.getContext()),
+			Type::getInt8PtrTy(ctx),
 			IntegerType::get(M.getContext(), sizeof(size_t) * CHAR_BIT)
 		};
 
@@ -215,8 +217,13 @@ private:
 			MemtraceArgs,
 			false
 		);
-
+#if LOG_LEVEL <= LOG_DEBUG
+		AttributeList al = AttributeList();
+		al = al.addAttribute(ctx, 0, Attribute::NoInline);
+		return M.getOrInsertFunction(memtrace_name, Fty, al);
+#else
 		return M.getOrInsertFunction(memtrace_name, Fty);
+#endif
 	}
 
 	void InstrumentWriteInstruction(Module &M, Instruction *TI,
@@ -229,7 +236,9 @@ private:
 			PointerType *pType = cast<PointerType>(V->getType());
 			uint64_t storeSize = M.getDataLayout().getTypeStoreSize(
 					pType->getElementType());
-			args[0] = V;
+
+			args[0] = CastInst::CreatePointerBitCastOrAddrSpaceCast(
+				V, memtrace_fnc.getFunctionType()->getParamType(0), "", TI);
 			args[1] = ConstantInt::get(IntegerType::get(M.getContext(),
 				sizeof(size_t) * CHAR_BIT), storeSize);
 			++stats[TRACED_STORE];
@@ -256,7 +265,8 @@ private:
 			return;
 		}
 
-		CallInst::Create(memtrace_fnc, args, "", TI);
+		CallInst *c = CallInst::Create(memtrace_fnc, args, "", TI);
+		c->setDebugLoc(TI->getDebugLoc());
 	}
 };
 }
@@ -281,7 +291,7 @@ void rootsimPluginRegister(PassBuilder &PB)
 
 }
 
-llvm::PassPluginLibraryInfo rootsimPluginInfoGet() {
+llvm::PassPluginLibraryInfo rootsimPluginInfoGet(void) {
 	return {LLVM_PLUGIN_API_VERSION, "ROOT-Sim plugin", ROOTSIM_VERSION,
 		rootsimPluginRegister};
 }

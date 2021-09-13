@@ -34,18 +34,14 @@ void model_allocator_lp_init(void)
 
 	self->used_mem = 0;
 	array_init(self->logs);
-#ifdef ROOTSIM_INCREMENTAL
-	memset(self->dirty, 0, sizeof(self->dirty));
-	self->dirty_mem = 0;
-#endif
 }
 
 void model_allocator_lp_fini(void)
 {
 	array_count_t i = array_count(current_lp->mm_state.logs);
-	while (i--) {
+	while (i--)
 		mm_free(array_get_at(current_lp->mm_state.logs, i).c);
-	}
+
 	array_fini(current_lp->mm_state.logs);
 }
 
@@ -55,7 +51,6 @@ void *malloc_mt(size_t req_size)
 		return NULL;
 
 	struct mm_state *self = &current_lp->mm_state;
-
 	uint_fast8_t req_blks = max(next_exp_of_2(req_size - 1), B_BLOCK_EXP);
 
 	if (unlikely(self->longest[0] < req_blks)) {
@@ -78,9 +73,7 @@ void *malloc_mt(size_t req_size)
 	/* update the *longest* value back */
 	self->longest[i] = 0;
 	self->used_mem += 1 << node_size;
-#ifdef ROOTSIM_INCREMENTAL
-	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
-#endif
+
 	uint_fast32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
 
 	while (i) {
@@ -89,9 +82,6 @@ void *malloc_mt(size_t req_size)
 			self->longest[left_child(i)],
 			self->longest[right_child(i)]
 		);
-#ifdef ROOTSIM_INCREMENTAL
-		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
-#endif
 	}
 
 	return ((char *)self->base_mem) + offset;
@@ -119,15 +109,12 @@ void free_mt(void *ptr)
 		(((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP) +
 		(1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
-	for (; self->longest[i]; i = parent(i)) {
+	for (; self->longest[i]; i = parent(i))
 		++node_size;
-	}
 
 	self->longest[i] = node_size;
 	self->used_mem -= 1 << node_size;
-#ifdef ROOTSIM_INCREMENTAL
-	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
-#endif
+
 	while (i) {
 		i = parent(i);
 
@@ -139,9 +126,6 @@ void free_mt(void *ptr)
 		} else {
 			self->longest[i] = max(left_longest, right_longest);
 		}
-#ifdef ROOTSIM_INCREMENTAL
-		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
-#endif
 		++node_size;
 	}
 }
@@ -189,130 +173,10 @@ __extension__({								\
 	}								\
 })
 
-#ifdef ROOTSIM_INCREMENTAL
-
-void __write_mem(const void *ptr, size_t siz)
-{
-	if (!siz)
-		return;
-
-	struct mm_state *self = &current_lp->mm_state;
-	uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->base_mem;
-	if (diff >= (1 << B_TOTAL_EXP))
-		return;
-
-	uint_fast32_t i = (diff >> B_BLOCK_EXP) +
-		(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
-
-	self->dirty_mem += siz;
-
-	siz += diff & ((1 << B_BLOCK_EXP) - 1);
-	--siz;
-	siz >>= B_BLOCK_EXP;
-
-	do {
-		bitmap_set(self->dirty, i + siz);
-	} while(siz--);
-}
-
-static struct mm_checkpoint *checkpoint_incremental_take(const struct mm_state *self)
-{
-	uint_fast32_t bset = bitmap_count_set(self->dirty, sizeof(self->dirty));
-
-	struct mm_checkpoint *ret = mm_alloc(
-		offsetof(struct mm_checkpoint, longest) +
-		bset * (1 << B_BLOCK_EXP));
-
-	unsigned char *ptr = ret->longest;
-	const unsigned char *src = self->longest;
-
-#define copy_block_to_ckp(i) 						\
-__extension__({								\
-	memcpy(ptr, src + (i << B_BLOCK_EXP), 1 << B_BLOCK_EXP);	\
-	ptr += 1 << B_BLOCK_EXP;					\
-})
-
-	bitmap_foreach_set(self->dirty, sizeof(self->dirty), copy_block_to_ckp);
-#undef copy_block_to_ckp
-
-	ret->used_mem = self->used_mem;
-	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
-	ret->is_incremental = true;
-	return ret;
-}
-
-static void checkpoint_incremental_restore(struct mm_state *self,
-	const struct mm_checkpoint *ckp)
-{
-	self->used_mem = ckp->used_mem;
-
-	array_count_t i = array_count(self->logs) - 1;
-	const struct mm_checkpoint *cur_ckp = array_get_at(self->logs, i).c;
-
-	while (cur_ckp != ckp) {
-		bitmap_merge_or(self->dirty, cur_ckp->dirty,
-			sizeof(self->dirty));
-		cur_ckp = array_get_at(self->logs, --i).c;
-	}
-
-#define copy_dirty_block(i) 						\
-__extension__({								\
-	if (bitmap_check(self->dirty, i)) {				\
-		memcpy(self->longest + (i << B_BLOCK_EXP), ptr,		\
-		       1 << B_BLOCK_EXP);				\
-		bitmap_reset(self->dirty, i);				\
-	}								\
-	ptr += 1 << B_BLOCK_EXP;					\
-})
-
-	do {
-		const unsigned char *ptr = cur_ckp->longest;
-		bitmap_foreach_set(cur_ckp->dirty, sizeof(cur_ckp->dirty),
-			copy_dirty_block);
-		cur_ckp = array_get_at(self->logs, --i).c;
-	} while (cur_ckp->is_incremental);
-
-#define copy_block_from_ckp(i) 						\
-__extension__({								\
-	memcpy(self->longest + (i << B_BLOCK_EXP), cur_ckp->longest + 	\
-		(i << B_BLOCK_EXP), 1 << B_BLOCK_EXP);			\
-})
-
-	const unsigned tree_bit_size =
-		bitmap_required_size(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
-	bitmap_foreach_set(self->dirty, tree_bit_size, copy_block_from_ckp);
-
-
-#define buddy_block_dirty_from_ckp(offset, len)				\
-__extension__({								\
-	uint_fast32_t i = (offset >> B_BLOCK_EXP) + 			\
-		(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));		\
-	uint_fast32_t b_len = len >> B_BLOCK_EXP;			\
-	while (b_len--) {						\
-		copy_dirty_block(i);					\
-		i++;							\
-	}								\
-})
-
-	const unsigned char *ptr = cur_ckp->base_mem;
-	buddy_tree_visit(cur_ckp->longest, buddy_block_dirty_from_ckp);
-
-#undef copy_dirty_block
-#undef copy_block_from_ckp
-#undef buddy_block_dirty_from_ckp
-}
-
-#endif
-
 static struct mm_checkpoint *checkpoint_full_take(const struct mm_state *self)
 {
 	struct mm_checkpoint *ret = mm_alloc(
 		offsetof(struct mm_checkpoint, base_mem) + self->used_mem);
-
-#ifdef ROOTSIM_INCREMENTAL
-	ret->is_incremental = false;
-	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
-#endif
 
 	ret->used_mem = self->used_mem;
 	memcpy(ret->longest, self->longest, sizeof(ret->longest));
@@ -354,60 +218,32 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 		return;
 
 	struct mm_state *self = &current_lp->mm_state;
-	struct mm_checkpoint *ckp;
-
-#ifdef ROOTSIM_INCREMENTAL
-	if (self->dirty_mem < self->used_mem * B_LOG_INCREMENTAL_THRESHOLD) {
-		ckp = checkpoint_incremental_take(self);
-	} else {
-#endif
-		ckp = checkpoint_full_take(self);
-#ifdef ROOTSIM_INCREMENTAL
-	}
-	memset(self->dirty, 0, sizeof(self->dirty));
-#endif
-
 	struct mm_log mm_log = {
 		.ref_i = ref_i,
-		.c = ckp
+		.c = checkpoint_full_take(self)
 	};
 	array_push(self->logs, mm_log);
 }
 
 void model_allocator_checkpoint_next_force_full(void)
 {
-#ifdef ROOTSIM_INCREMENTAL
-	struct mm_state *self = &current_lp->mm_state;
-	self->dirty_mem = UINT32_MAX;
-#endif
 }
 
 array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 {
 	struct mm_state *self = &current_lp->mm_state;
 	array_count_t i = array_count(self->logs) - 1;
-	while (array_get_at(self->logs, i).ref_i > ref_i) {
+	while (array_get_at(self->logs, i).ref_i > ref_i)
 		i--;
-	}
 
 	const struct mm_checkpoint *ckp = array_get_at(self->logs, i).c;
-#ifdef ROOTSIM_INCREMENTAL
-	if (ckp->is_incremental) {
-		checkpoint_incremental_restore(self, ckp);
-	} else {
-#endif
-		checkpoint_full_restore(self, ckp);
-#ifdef ROOTSIM_INCREMENTAL
-	}
-	memset(self->dirty, 0, sizeof(self->dirty));
-	self->dirty_mem = 0;
-#endif
 
-	for (array_count_t j = array_count(self->logs) - 1; j > i; --j) {
+	checkpoint_full_restore(self, ckp);
+
+	for (array_count_t j = array_count(self->logs) - 1; j > i; --j)
 		mm_free(array_get_at(self->logs, j).c);
-	}
-	array_count(self->logs) = i + 1;
 
+	array_count(self->logs) = i + 1;
 	return array_get_at(self->logs, i).ref_i;
 }
 
@@ -421,21 +257,13 @@ array_count_t model_allocator_fossil_lp_collect(array_count_t tgt_ref_i)
 		ref_i = array_get_at(self->logs, log_i).ref_i;
 	}
 
-#ifdef ROOTSIM_INCREMENTAL
-	while (array_get_at(self->logs, log_i).c->is_incremental) {
-		--log_i;
-		ref_i = array_get_at(self->logs, log_i).ref_i;
-	}
-#endif
-
 	array_count_t j = array_count(self->logs);
 	while (j > log_i) {
 		--j;
 		array_get_at(self->logs, j).ref_i -= ref_i;
 	}
-	while (j--) {
+	while (j--)
 		mm_free(array_get_at(self->logs, j).c);
-	}
 
 	array_truncate_first(self->logs, log_i);
 	return ref_i;
