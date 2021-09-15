@@ -23,9 +23,9 @@
 #include <mm/ckpt_interval.h>
 #include <mm/msg_allocator.h>
 
-static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
+static void worker_thread_init(rid_t this_rid)
 {
-	rid = (uintptr_t)rid_arg;
+	rid = this_rid;
 	stats_init();
 	msg_allocator_init();
 	msg_queue_init();
@@ -41,11 +41,35 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 		log_log(LOG_INFO, "Starting simulation");
 		stats_global_time_take(STATS_GLOBAL_EVENTS_START);
 	}
+}
+
+static void worker_thread_fini(void)
+{
+	if (sync_thread_barrier()) {
+		stats_dump();
+		stats_global_time_take(STATS_GLOBAL_EVENTS_END);
+		log_log(LOG_INFO, "Finalizing simulation");
+
+		mpi_node_barrier();
+		mpi_remote_msg_drain();
+		mpi_node_barrier();
+	}
+
+	process_fini();
+	lp_fini();
+	msg_queue_fini();
+	sync_thread_barrier();
+	msg_allocator_fini();
+}
+
+static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
+{
+	worker_thread_init((uintptr_t) rid_arg);
 
 	while (likely(termination_cant_end())) {
 		mpi_remote_msg_handle();
 
-		unsigned i = 8;
+		unsigned i = 64;
 		while (i--) {
 			process_msg();
 		}
@@ -59,17 +83,7 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 		}
 	}
 
-	if (sync_thread_barrier()) {
-		stats_dump();
-		stats_global_time_take(STATS_GLOBAL_EVENTS_END);
-		log_log(LOG_INFO, "Finalizing simulation");
-	}
-
-	process_fini();
-	lp_fini();
-	msg_queue_fini();
-	sync_thread_barrier();
-	msg_allocator_fini();
+	worker_thread_fini();
 
 	return THREAD_RET_SUCCESS;
 }

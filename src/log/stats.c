@@ -258,8 +258,6 @@ static void stats_file_final_write(FILE *o)
  */
 void stats_global_fini(void)
 {
-	mpi_remote_msg_drain();
-	mpi_node_barrier();
 	if (nid) {
 		stats_files_send();
 		return;
