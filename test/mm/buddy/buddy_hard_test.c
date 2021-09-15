@@ -144,13 +144,13 @@ static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned 
 			return true;
 		if (lcg_random(rng_state) < FULL_CHK_P)
 			model_allocator_checkpoint_next_force_full();
-		model_allocator_checkpoint_take(i * B_LOG_FREQUENCY);
+		model_allocator_checkpoint_take(i);
 	}
 
 	up = max(up, c);
 
 	while (1) {
-		model_allocator_checkpoint_restore(up * B_LOG_FREQUENCY);
+		model_allocator_checkpoint_restore(up);
 
 		if (allocation_check(alc, up))
 			return true;
@@ -162,7 +162,7 @@ static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned 
 		up -= s;
 	}
 
-	model_allocator_checkpoint_restore(down * B_LOG_FREQUENCY);
+	model_allocator_checkpoint_restore(down);
 	return allocation_check(alc, down);
 }
 

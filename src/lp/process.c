@@ -10,6 +10,7 @@
  */
 #include <lp/process.h>
 
+#include <arch/timer.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
 #include <gvt/gvt.h>
@@ -18,6 +19,9 @@
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 
+#define CKPT_RATE_DEFAULT 10
+
+static _Thread_local unsigned ckpt_rate;
 static _Thread_local bool silent_processing = false;
 static _Thread_local dyn_array(struct lp_msg *) early_antis;
 
@@ -60,6 +64,8 @@ void process_global_fini(void)
 void process_init(void)
 {
 	array_init(early_antis);
+	ckpt_rate = global_config.ckpt_interval ? global_config.ckpt_interval :
+			CKPT_RATE_DEFAULT;
 }
 
 void process_fini(void)
@@ -84,6 +90,8 @@ void process_lp_init(void)
 	array_push(proc_p->past_msgs, msg);
 	array_push(proc_p->sent_msgs, NULL);
 	ProcessEvent_pr(this_lp - lps, 0, LP_INIT, NULL, 0, NULL);
+
+	proc_p->ckpt_rem_msgs = ckpt_rate;
 
 	model_allocator_checkpoint_next_force_full();
 	model_allocator_checkpoint_take(0);
@@ -118,15 +126,21 @@ void process_lp_fini(void)
 	array_fini(proc_p->past_msgs);
 }
 
-static inline void silent_execution(struct process_data *proc_p,
+static inline void silent_execution(const struct process_data *proc_p,
 		array_count_t last_i, array_count_t past_i)
 {
+	array_count_t k = last_i + 1;
+	if (unlikely(k >= past_i))
+		return;
+
 	silent_processing = true;
 
 	void *state_p = current_lp->lib_ctx_p->state_s;
-	for (array_count_t k = last_i + 1; k < past_i; ++k) {
+
+	timer_uint t = timer_hr_new();
+
+	do {
 		const struct lp_msg *msg = array_get_at(proc_p->past_msgs, k);
-		stats_time_start(STATS_MSG_SILENT);
 		ProcessEvent_pr(
 			msg->dest,
 			msg->dest_t,
@@ -135,8 +149,11 @@ static inline void silent_execution(struct process_data *proc_p,
 			msg->pl_size,
 			state_p
 		);
-		stats_time_take(STATS_MSG_SILENT);
-	}
+	} while (++k < past_i);
+
+	t = timer_hr_value(t);
+	stats_take(STATS_MSG_SILENT_TIME, t);
+	stats_take(STATS_MSG_SILENT, past_i - last_i - 1);
 
 	silent_processing = false;
 }
@@ -144,15 +161,14 @@ static inline void silent_execution(struct process_data *proc_p,
 static inline void send_anti_messages(struct process_data *proc_p,
 		array_count_t past_i)
 {
-	array_count_t sent_i = array_count(proc_p->sent_msgs) - 1;
+	array_count_t sent_i = array_count(proc_p->sent_msgs);
 	array_count_t b = array_count(proc_p->past_msgs) - past_i;
 	do {
-		struct lp_msg *msg = array_get_at(proc_p->sent_msgs, sent_i);
+		struct lp_msg *msg = array_get_at(proc_p->sent_msgs, --sent_i);
 		b -= msg == NULL;
-		--sent_i;
 	} while(b);
 
-	for (array_count_t i = sent_i + 1; i < array_count(proc_p->sent_msgs);
+	for (array_count_t i = sent_i; i < array_count(proc_p->sent_msgs);
 			++i) {
 		struct lp_msg *msg = array_get_at(proc_p->sent_msgs, i);
 		if (!msg)
@@ -168,7 +184,7 @@ static inline void send_anti_messages(struct process_data *proc_p,
 				msg_queue_insert(msg);
 		}
 	}
-	array_count(proc_p->sent_msgs) = sent_i + 1;
+	array_count(proc_p->sent_msgs) = sent_i;
 }
 
 static inline void reinsert_invalid_past_messages(struct process_data *proc_p,
@@ -188,14 +204,16 @@ static inline void reinsert_invalid_past_messages(struct process_data *proc_p,
 
 static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 {
-	stats_time_start(STATS_ROLLBACK);
+	send_anti_messages(proc_p, past_i);
 
 	array_count_t last_i = model_allocator_checkpoint_restore(past_i - 1);
-	silent_execution(proc_p, last_i, past_i);
-	send_anti_messages(proc_p, past_i);
-	reinsert_invalid_past_messages(proc_p, past_i);
 
-	stats_time_take(STATS_ROLLBACK);
+	stats_take(STATS_ROLLBACK, 1);
+	stats_take(STATS_MSG_ROLLBACK, array_count(proc_p->past_msgs) -
+			last_i - 1);
+
+	silent_execution(proc_p, last_i, past_i);
+	reinsert_invalid_past_messages(proc_p, past_i);
 }
 
 static inline array_count_t match_anti_msg(const struct process_data *proc_p,
@@ -258,16 +276,29 @@ static inline bool check_early_anti_messages(struct lp_msg *msg)
 	if (!m_id)
 		return false;
 	for (array_count_t i = 0; i < array_count(early_antis); ++i) {
-		struct lp_msg *a_msg = array_get_at(early_antis, i);
-		if (a_msg->raw_flags == m_id && a_msg->m_seq == m_seq) {
+		struct lp_msg *m = array_get_at(early_antis, i);
+		if (unlikely(m->raw_flags == m_id && m->m_seq == m_seq)) {
+			msg_allocator_free(m);
 			msg_allocator_free(msg);
-			msg_allocator_free(a_msg);
 			array_get_at(early_antis, i) = array_peek(early_antis);
 			--array_count(early_antis);
 			return true;
 		}
 	}
 	return false;
+}
+
+static inline void checkpoint_take(struct process_data *proc_p)
+{
+	if (likely(++proc_p->ckpt_rem_msgs < ckpt_rate))
+		return;
+	proc_p->ckpt_rem_msgs = 0;
+
+	timer_uint t = timer_hr_new();
+	model_allocator_checkpoint_take(array_count(proc_p->past_msgs) - 1);
+	t = timer_hr_value(t);
+	stats_take(STATS_CKPT_TIME, t);
+	stats_take(STATS_CKPT, 1);
 }
 
 void process_msg(void)
@@ -313,7 +344,6 @@ void process_msg(void)
 	array_push(proc_p->sent_msgs, NULL);
 	array_push(proc_p->past_msgs, msg);
 
-	stats_time_start(STATS_MSG_PROCESSED);
 	ProcessEvent_pr(
 		msg->dest,
 		msg->dest_t,
@@ -322,8 +352,13 @@ void process_msg(void)
 		msg->pl_size,
 		this_lp->lib_ctx_p->state_s
 	);
-	stats_time_take(STATS_MSG_PROCESSED);
+	stats_take(STATS_MSG_PROCESSED, 1);
 
-	model_allocator_checkpoint_take(array_count(proc_p->past_msgs) - 1);
+	checkpoint_take(proc_p);
 	termination_on_msg_process(msg->dest_t);
+}
+
+void process_ckpt_rate_set(unsigned rate)
+{
+	ckpt_rate = rate;
 }

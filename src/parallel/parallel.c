@@ -20,6 +20,7 @@
 #include <lib/lib.h>
 #include <log/stats.h>
 #include <lp/lp.h>
+#include <mm/ckpt_interval.h>
 #include <mm/msg_allocator.h>
 
 static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
@@ -53,6 +54,7 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 		if (unlikely(current_gvt = gvt_phase_run())) {
 			termination_on_gvt(current_gvt);
 			fossil_collect(current_gvt);
+			ckpt_on_gvt();
 			stats_on_gvt(current_gvt);
 		}
 	}

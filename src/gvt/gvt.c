@@ -68,7 +68,6 @@ void gvt_global_init(void)
  */
 void gvt_start_processing(void)
 {
-	stats_time_start(STATS_GVT);
 	current_gvt = SIMTIME_MAX;
 	thread_phase = thread_phase_A;
 }
@@ -241,9 +240,8 @@ simtime_t gvt_phase_run(void)
 	if (unlikely(thread_phase)) {
 		if (!gvt_node_phase_run())
 			return 0.0;
-		if (!rid && !nid)
+		if (!rid)
 			gvt_timer = timer_new();
-		stats_time_take(STATS_GVT);
 		return *reducing_p;
 	}
 
@@ -257,7 +255,7 @@ simtime_t gvt_phase_run(void)
 		mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 	}
 
-	return 0;
+	return 0.0;
 }
 
 #else
@@ -269,7 +267,6 @@ simtime_t gvt_phase_run(void)
 			return 0.0;
 		if (!rid)
 			gvt_timer = timer_new();
-		stats_time_take(STATS_GVT);
 		return gvt_node_reduce();
 	}
 
@@ -279,7 +276,7 @@ simtime_t gvt_phase_run(void)
 	if (unlikely(!rid && global_config.gvt_period < timer_value(gvt_timer)))
 		mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 
-	return 0;
+	return 0.0;
 }
 
 #endif

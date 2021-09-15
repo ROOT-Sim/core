@@ -214,9 +214,6 @@ __extension__({								\
 
 void model_allocator_checkpoint_take(array_count_t ref_i)
 {
-	if (ref_i % B_LOG_FREQUENCY)
-		return;
-
 	struct mm_state *self = &current_lp->mm_state;
 	struct mm_log mm_log = {
 		.ref_i = ref_i,

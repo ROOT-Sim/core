@@ -18,7 +18,6 @@
 
 #define B_TOTAL_EXP 17U
 #define B_BLOCK_EXP 6U
-#define B_LOG_FREQUENCY 50
 
 /// The checkpointable memory context assigned to a single LP
 struct mm_state {

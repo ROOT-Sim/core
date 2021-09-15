@@ -22,6 +22,7 @@ struct process_data {
 	 *  therefore a NULL entry per message processed is inserted in the
 	 *  array in order to distinguish the originator message */
 	dyn_array(struct lp_msg *) sent_msgs;
+	unsigned ckpt_rem_msgs;
 };
 
 extern void process_global_init(void);
@@ -35,4 +36,4 @@ extern void process_lp_deinit(void);
 extern void process_lp_fini(void);
 
 extern void process_msg(void);
-extern void process_msg_sent(struct lp_msg *msg);
+extern void process_ckpt_rate_set(unsigned rate);

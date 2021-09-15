@@ -62,7 +62,7 @@ static int block_size_test(unsigned b_exp)
 
 	errs += malloc_mt(block_size) != NULL;
 
-	model_allocator_checkpoint_take(B_LOG_FREQUENCY);
+	model_allocator_checkpoint_take(1);
 
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
@@ -74,10 +74,9 @@ static int block_size_test(unsigned b_exp)
 
 	errs += malloc_mt(block_size) != NULL;
 
-	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2 - 1);
-	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2);
+	model_allocator_checkpoint_take(2);
 
-	model_allocator_checkpoint_restore(B_LOG_FREQUENCY);
+	model_allocator_checkpoint_restore(1);
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {

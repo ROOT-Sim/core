@@ -27,15 +27,14 @@
 #include <stdio.h>
 
 #define STATS_BUFFER_ENTRIES (1024)
-#define STD_DEV_POWER_2_EXP 5
 #define STATS_MAX_STRLEN 32U
 
 /// A container for statistics in a logical time period
 struct stats_thread {
+	/// The array of statistics taken in the period
+	uint64_t s[STATS_COUNT];
 	/// Real elapsed time in microseconds from simulation beginning
 	uint64_t rt;
-	/// The array of statistics taken in the period
-	struct stats_measure s[STATS_COUNT];
 };
 
 struct stats_node {
@@ -58,8 +57,7 @@ struct stats_glob {
 	uint64_t timestamps[STATS_GLOBAL_COUNT];
 };
 
-static_assert(sizeof(struct stats_measure) == 24 &&
-	      sizeof(struct stats_thread) == 8 + 24 * STATS_COUNT &&
+static_assert(sizeof(struct stats_thread) == 8 + 8 * STATS_COUNT &&
 	      sizeof(struct stats_node) == 16 &&
 	      sizeof(struct stats_glob) == 32 + 8 * (STATS_GLOBAL_COUNT),
 	      "structs aren't naturally packed, parsing may be difficult");
@@ -67,8 +65,12 @@ static_assert(sizeof(struct stats_measure) == 24 &&
 /// The statistics names, used to fill in the header of the final csv
 const char * const s_names[] = {
 	[STATS_ROLLBACK] = "rollbacks",
-	[STATS_GVT] = "gvt",
+	[STATS_MSG_ROLLBACK] = "rollbacked messages",
+	[STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
 	[STATS_MSG_SILENT] = "silent messages",
+	[STATS_CKPT] = "checkpoints",
+	[STATS_CKPT_TIME] = "checkpoints time",
+	[STATS_MSG_SILENT_TIME] = "silent messages time",
 	[STATS_MSG_PROCESSED] = "processed messages"
 };
 
@@ -78,8 +80,6 @@ static struct stats_glob stats_glob_cur;
 static FILE *stats_node_tmp;
 static FILE **stats_tmps;
 static __thread struct stats_thread stats_cur;
-
-static __thread timer_uint last_ts[STATS_COUNT];
 
 static void file_write_chunk(FILE *f, const void *data, size_t data_size)
 {
@@ -284,24 +284,9 @@ void stats_global_fini(void)
 	fclose(stats_node_tmp);
 }
 
-void stats_time_start(enum stats_time this_stat)
+void stats_take(enum stats_time this_stat, unsigned c)
 {
-	last_ts[this_stat] = timer_new();
-}
-
-void stats_time_take(enum stats_time this_stat)
-{
-	struct stats_measure *s_mes = &stats_cur.s[this_stat];
-	const uint64_t t = timer_value(last_ts[this_stat]);
-
-	if (likely(s_mes->count)) {
-		const int64_t num = (t * s_mes->count - s_mes->sum_t);
-		s_mes->var_t += ((num * num) << (2 * STD_DEV_POWER_2_EXP)) /
-			(s_mes->count * (s_mes->count + 1));
-	}
-
-	s_mes->sum_t += t;
-	s_mes->count++;
+	stats_cur.s[this_stat] += c;
 }
 
 void stats_on_gvt(simtime_t gvt)
@@ -328,11 +313,14 @@ void stats_on_gvt(simtime_t gvt)
 
 void stats_dump(void)
 {
-	puts("");
-	fflush(stdout);
+	if (nid == 0) {
+		double t = timer_value(sim_start_ts) / 1000000.0;
+		printf("\nSimulation completed in %.3lf seconds\n", t);
+		fflush(stdout);
+	}
 }
 
-const struct stats_measure *stats_time_query(enum stats_time this_stat)
+uint64_t stats_retrieve(enum stats_time this_stat)
 {
-	return &stats_cur.s[this_stat];
+	return stats_cur.s[this_stat];
 }
