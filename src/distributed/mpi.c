@@ -270,6 +270,43 @@ void mpi_remote_msg_handle(void)
 	}
 }
 
+/**
+ * @brief Empties the queue of incoming MPI messages, ignoring them
+ *
+ * This routine checks, using the MPI probing mechanism, for new remote messages
+ * and it discards them. It is used at simulation completion to clear MPI state.
+ */
+void mpi_remote_msg_drain(void)
+{
+	int pending;
+	MPI_Message mpi_msg;
+	MPI_Status status;
+	void *buffer = NULL;
+
+	while (1) {
+		mpi_lock();
+
+		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
+			&pending, &mpi_msg, &status);
+
+		if (!pending) {
+			mpi_unlock();
+			break;
+		}
+
+		int size;
+		MPI_Get_count(&status, MPI_BYTE, &size);
+
+		if (size)
+			buffer = mm_realloc(buffer, size);
+
+		MPI_Mrecv(buffer, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+		mpi_unlock();
+	}
+
+	mm_free(buffer);
+}
+
 static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
 
 /**

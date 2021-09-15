@@ -36,6 +36,7 @@ extern void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 extern void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl);
 extern void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest);
 extern void mpi_remote_msg_handle(void);
+extern void mpi_remote_msg_drain(void);
 
 extern void mpi_reduce_sum_scatter(const unsigned values[n_nodes],
 		unsigned *result);
