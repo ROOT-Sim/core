@@ -1,5 +1,5 @@
 /**
- * @file test/datatypes/bitmap.c
+ * @file test/datatypes/bitmap_test.c
  *
  * @brief Test: bitmap datatype
  *

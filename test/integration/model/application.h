@@ -25,13 +25,13 @@ enum {
 	RECEIVE
 };
 
-typedef struct _buffer {
+typedef struct {
 	unsigned count;
 	struct _buffer *next;
 	uint64_t data[];
 } buffer;
 
-typedef struct _lp_state {
+typedef struct {
 	unsigned events;
 	unsigned buffer_count;
 	uint32_t total_checksum;

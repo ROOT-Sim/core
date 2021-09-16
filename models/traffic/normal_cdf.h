@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Christian Borgelt
+// SPDX-License-Identifier: MIT
 /*----------------------------------------------------------------------
   File    : normal.h
   Contents: normal distribution functions

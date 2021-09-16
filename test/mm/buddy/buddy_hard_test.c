@@ -36,9 +36,13 @@ static __thread test_rng_state rng_state;
 __thread struct lp_ctx *current_lp; // needed by the model allocator
 __thread simtime_t current_gvt; // needed by the model allocator
 
+/// A single tested allocation
 struct alc {
+	/// The pointer to the memory returned by the tested memory allocator
 	unsigned *ptr;
+	/// The data we expect to find in this allocation
 	unsigned data[MAX_ALLOC_E];
+	/// The size expressed in number of entries of @a data and @a ptr
 	unsigned c;
 };
 

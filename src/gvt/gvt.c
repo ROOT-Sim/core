@@ -82,6 +82,13 @@ void gvt_on_done_ctrl_msg(void)
 	atomic_fetch_sub_explicit(&gvt_nodes, 1U, memory_order_relaxed);
 }
 
+/**
+ * @brief Informs the GVT subsystem that a new message is being processed
+ * @param msg_t the timestamp of the message being processed
+ *
+ * Called by the process layer when processing a new message; used in the actual
+ * GVT calculation
+ */
 void gvt_on_msg_extraction(simtime_t msg_t)
 {
 	if (unlikely(thread_phase && current_gvt > msg_t))
@@ -260,6 +267,13 @@ simtime_t gvt_phase_run(void)
 
 void gvt_msg_drain(void)
 {
+	while (thread_phase != thread_phase_idle) // flush partial gvt algorithm
+		gvt_phase_run();
+
+	if (sync_thread_barrier())
+		mpi_node_barrier();
+	sync_thread_barrier();
+
 	for (int i = 0; i < 2; ++i) { // flush both gvt phases
 		gvt_timer = 0; // this satisfies the timer condition
 		while (!gvt_phase_run())

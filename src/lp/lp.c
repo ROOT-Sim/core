@@ -31,6 +31,9 @@ __extension__({								\
 	_g;								\
 })
 
+/**
+ * @brief Initialize the global data structures for the LPs
+ */
 void lp_global_init(void)
 {
 	lid_node_first = lp_partition_start(nid, lid_to_nid, n_lps, n_nodes, 0);
@@ -47,12 +50,18 @@ void lp_global_init(void)
 	}
 }
 
+/**
+ * @brief Finalize the global data structures for the LPs
+ */
 void lp_global_fini(void)
 {
 	lps += lid_node_first;
 	mm_free(lps);
 }
 
+/**
+ * @brief Initialize the data structures for the current LP
+ */
 void lp_init(void)
 {
 	lid_thread_first = lp_partition_start(rid, lid_to_rid, n_lps_node,
@@ -71,6 +80,9 @@ void lp_init(void)
 	}
 }
 
+/**
+ * @brief Finalize the data structures for the current LP
+ */
 void lp_fini(void)
 {
 	if (sync_thread_barrier()) {

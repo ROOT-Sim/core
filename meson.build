@@ -20,8 +20,8 @@ endif
 
 # Workaround to have reproducible unity builds
 if get_option('unity') == 'on'
-  prefix_arg = '-ffile-prefix-map=' + meson.build_root() / '..=..'
-  if meson.get_compiler('c').has_argument(prefix_arg)
+  if meson.get_compiler('c').has_argument('-ffile-prefix-map=.=.')
+    prefix_arg = '-ffile-prefix-map=' + meson.build_root() / '..=..'
     add_global_arguments(prefix_arg, language : 'c')
   endif
 endif

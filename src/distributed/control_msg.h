@@ -1,3 +1,13 @@
+/**
+ * @file distributed/control_msg.h
+ *
+ * @brief MPI remote control messages header
+ *
+ * The module in which remote control messages are wired to the other modules
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <gvt/gvt.h>

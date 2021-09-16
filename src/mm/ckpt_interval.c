@@ -1,3 +1,13 @@
+/**
+ * @file mm/ckpt_interval.c
+ *
+ * @brief Autonomic checkpoint interval selection module
+ *
+ * The module which attempts to select the best checkpoint interval
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <mm/ckpt_interval.h>
 
 #include <log/stats.h>
@@ -11,6 +21,13 @@ static __thread struct {
 	double ic_s;
 } h;
 
+
+/**
+ * @brief Compute and set the optimal checkpoint interval for the current worker
+ *
+ * This function should be called only at the end of GVT reductions, because
+ * the used statistics values are representative only in that moment
+ */
 void ckpt_on_gvt(void)
 {
 	if (global_config.ckpt_interval)
