@@ -19,8 +19,6 @@
 #include <core/sync.h>
 #include <datatypes/array.h>
 #include <datatypes/msg_queue.h>
-#include <gvt/gvt.h>
-#include <gvt/termination.h>
 #include <mm/msg_allocator.h>
 
 #include <mpi.h>
@@ -211,13 +209,13 @@ void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest)
  */
 void mpi_remote_msg_handle(void)
 {
-	int pending;
-	MPI_Message mpi_msg;
-	MPI_Status status;
-
 	while (1) {
 		if (!mpi_trylock())
 			return;
+
+		int pending;
+		MPI_Message mpi_msg;
+		MPI_Status status;
 
 		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
 			&pending, &mpi_msg, &status);
@@ -231,19 +229,7 @@ void mpi_remote_msg_handle(void)
 			MPI_Mrecv(NULL, 0, MPI_BYTE, &mpi_msg,
 					MPI_STATUS_IGNORE);
 			mpi_unlock();
-			switch (status.MPI_TAG) {
-			case MSG_CTRL_GVT_START:
-				gvt_start_processing();
-				break;
-			case MSG_CTRL_GVT_DONE:
-				gvt_on_done_ctrl_msg();
-				break;
-			case MSG_CTRL_TERMINATION:
-				termination_on_ctrl_msg();
-				break;
-			default:
-				__builtin_unreachable();
-			}
+			control_msg_process(status.MPI_TAG);
 			continue;
 		}
 
@@ -278,13 +264,15 @@ void mpi_remote_msg_handle(void)
  */
 void mpi_remote_msg_drain(void)
 {
-	int pending;
-	MPI_Message mpi_msg;
-	MPI_Status status;
-	void *buffer = NULL;
+	struct lp_msg *msg = NULL;
+	int msg_size = 0;
 
 	while (1) {
 		mpi_lock();
+
+		int pending;
+		MPI_Message mpi_msg;
+		MPI_Status status;
 
 		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
 			&pending, &mpi_msg, &status);
@@ -297,14 +285,27 @@ void mpi_remote_msg_drain(void)
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 
-		if (size)
-			buffer = mm_realloc(buffer, size);
+		if (size > msg_size) {
+			msg = mm_realloc(msg, size);
+			msg_size = size;
+		}
+		MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
-		MPI_Mrecv(buffer, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+		switch(size) {
+		case 0:
+			control_msg_process(status.MPI_TAG);
+			break;
+		case msg_anti_size():
+			gvt_remote_anti_msg_receive(msg);
+			break;
+		default:
+			gvt_remote_msg_receive(msg);
+		}
+
 		mpi_unlock();
 	}
 
-	mm_free(buffer);
+	mm_free(msg);
 }
 
 static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;

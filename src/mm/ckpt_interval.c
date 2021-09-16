@@ -5,7 +5,7 @@
 
 #include <math.h>
 
-static _Thread_local struct {
+static __thread struct {
 	double c_c;
 	double ir_p;
 	double ic_s;

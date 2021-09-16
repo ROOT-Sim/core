@@ -38,19 +38,19 @@ enum node_phase {
 	node_done
 };
 
-static _Thread_local enum thread_phase thread_phase = thread_phase_idle;
+static __thread enum thread_phase thread_phase = thread_phase_idle;
 
 static timer_uint gvt_timer;
 static simtime_t reducing_p[MAX_THREADS];
-static _Thread_local simtime_t current_gvt;
+static __thread simtime_t current_gvt;
 static _Atomic(rid_t) c_a = 0;
 static _Atomic(rid_t) c_b = 0;
 
 static _Atomic(nid_t) gvt_nodes;
 
-_Thread_local _Bool gvt_phase;
-_Thread_local uint32_t remote_msg_seq[2][MAX_NODES];
-_Thread_local uint32_t remote_msg_received[2];
+__thread _Bool gvt_phase;
+__thread uint32_t remote_msg_seq[2][MAX_NODES];
+__thread uint32_t remote_msg_received[2];
 
 /**
  * @brief Initializes the gvt module in the node
@@ -139,8 +139,8 @@ static bool gvt_thread_phase_run(void)
 
 static bool gvt_node_phase_run(void)
 {
-	static _Thread_local enum node_phase node_phase = node_phase_redux_first;
-	static _Thread_local uint32_t last_seq[2][MAX_NODES];
+	static __thread enum node_phase node_phase = node_phase_redux_first;
+	static __thread uint32_t last_seq[2][MAX_NODES];
 	static _Atomic(uint32_t) total_sent[MAX_NODES];
 	static _Atomic(int32_t) total_msg_received;
 	static uint32_t remote_msg_to_receive;
@@ -258,6 +258,15 @@ simtime_t gvt_phase_run(void)
 	return 0.0;
 }
 
+void gvt_msg_drain(void)
+{
+	for (int i = 0; i < 2; ++i) { // flush both gvt phases
+		gvt_timer = 0; // this satisfies the timer condition
+		while (!gvt_phase_run())
+			mpi_remote_msg_drain();
+	}
+}
+
 #else
 
 simtime_t gvt_phase_run(void)
@@ -277,6 +286,10 @@ simtime_t gvt_phase_run(void)
 		mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 
 	return 0.0;
+}
+
+void gvt_msg_drain(void)
+{
 }
 
 #endif

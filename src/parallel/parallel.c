@@ -45,13 +45,13 @@ static void worker_thread_init(rid_t this_rid)
 
 static void worker_thread_fini(void)
 {
+	gvt_msg_drain();
+
 	if (sync_thread_barrier()) {
 		stats_dump();
 		stats_global_time_take(STATS_GLOBAL_EVENTS_END);
 		log_log(LOG_INFO, "Finalizing simulation");
 
-		mpi_node_barrier();
-		mpi_remote_msg_drain();
 		mpi_node_barrier();
 	}
 

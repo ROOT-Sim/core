@@ -15,17 +15,8 @@
  */
 #pragma once
 
+#include <distributed/control_msg.h>
 #include <lp/msg.h>
-
-/// A control message MPI tag value
-enum msg_ctrl_tag {
-	/// Used by the master to start a new gvt reduction operation
-	MSG_CTRL_GVT_START = 1,
-	/// Used by slaves to signal their completion of the gvt protocol
-	MSG_CTRL_GVT_DONE,
-	/// Used in broadcast to signal that local LPs can terminate
-	MSG_CTRL_TERMINATION
-};
 
 extern void mpi_global_init(int *argc_p, char ***argv_p);
 extern void mpi_global_fini(void);

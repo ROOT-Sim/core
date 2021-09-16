@@ -21,9 +21,9 @@
 
 #define CKPT_RATE_DEFAULT 10
 
-static _Thread_local unsigned ckpt_rate;
-static _Thread_local bool silent_processing = false;
-static _Thread_local dyn_array(struct lp_msg *) early_antis;
+static __thread unsigned ckpt_rate;
+static __thread bool silent_processing = false;
+static __thread dyn_array(struct lp_msg *) early_antis;
 
 void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 		unsigned event_type, const void *payload, unsigned payload_size)
