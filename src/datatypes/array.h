@@ -82,6 +82,23 @@ __extension__({								\
 	array_count(self)++;						\
 })
 
+#define array_push_n(self, elems, n)					\
+__extension__({								\
+	array_count_t oc = array_count(self);				\
+	array_count(self) += n;						\
+	if (unlikely(array_count(self) >= array_capacity(self))) {	\
+		do {							\
+			array_capacity(self) *= 2; 			\
+		} while (unlikely(array_count(self) >= array_capacity(self)));\
+		array_items(self) = mm_realloc(				\
+			array_items(self), 				\
+			array_capacity(self) * 				\
+			sizeof(*array_items(self))			\
+		);				 			\
+	} 								\
+	memcpy(array_items(self) + oc, elems, n * sizeof(*array_items(self)));\
+})
+
 #define array_pop(self)							\
 __extension__({								\
 	__typeof__(*array_items(self)) __popval;			\

@@ -25,9 +25,9 @@ enum {
 	RECEIVE
 };
 
-typedef struct {
+typedef struct lp_buffer {
 	unsigned count;
-	struct _buffer *next;
+	struct lp_buffer *next;
 	uint64_t data[];
 } buffer;
 

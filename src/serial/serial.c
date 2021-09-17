@@ -36,7 +36,7 @@ static struct s_lp_ctx *s_lps;
 /// The context of the currently processed LP
 static struct s_lp_ctx *s_current_lp;
 /// The messages queue of the serial runtime
-static binary_heap(struct lp_msg *) queue;
+static heap_declare(struct lp_msg *) queue;
 #if LOG_DEBUG >= LOG_LEVEL
 /// Used for debugging possibly inconsistent models
 static simtime_t current_evt_time;
