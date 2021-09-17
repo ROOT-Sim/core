@@ -20,7 +20,7 @@
 #define THREAD_REPS 100000
 #define BITMAP_ENTRIES 10000
 
-__thread rid_t rid;
+extern __thread rid_t rid;
 
 static int bitmap_test(void)
 {

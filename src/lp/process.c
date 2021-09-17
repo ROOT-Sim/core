@@ -11,6 +11,7 @@
 #include <lp/process.h>
 
 #include <arch/timer.h>
+#include <core/init.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
 #include <gvt/gvt.h>
