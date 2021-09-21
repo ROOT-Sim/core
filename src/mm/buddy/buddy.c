@@ -244,9 +244,9 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 	return array_get_at(self->logs, i).ref_i;
 }
 
-array_count_t model_allocator_fossil_lp_collect(array_count_t tgt_ref_i)
+array_count_t model_allocator_fossil_lp_collect(struct mm_state *self,
+		array_count_t tgt_ref_i)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	array_count_t log_i = array_count(self->logs) - 1;
 	array_count_t ref_i = array_get_at(self->logs, log_i).ref_i;
 	while (ref_i > tgt_ref_i) {
