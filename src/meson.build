@@ -29,6 +29,7 @@ rootsim_srcs = [
   'lp' / 'lp.c',
   'lp' / 'process.c',
   'mm' / 'buddy' / 'buddy.c',
+  'mm' / 'buddy' / 'ckpt.c',
   'mm' / 'ckpt_interval.c',
   'mm' / 'mm.c',
   'mm' / 'msg_allocator.c',

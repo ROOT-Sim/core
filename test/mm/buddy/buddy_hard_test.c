@@ -173,6 +173,7 @@ static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned 
 static int model_allocator_test(void)
 {
 	current_lp = malloc(sizeof(*current_lp));
+	model_allocator_init();
 	model_allocator_lp_init();
 	lcg_init(rng_state, (rid + 1) * 1713);
 
@@ -201,7 +202,7 @@ static int model_allocator_test(void)
 	allocation_all_fini(alc);
 
 	model_allocator_lp_fini();
-
+	model_allocator_fini();
 	free(current_lp);
 
 	return 0;

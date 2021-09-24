@@ -21,6 +21,7 @@
 #include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/ckpt_interval.h>
+#include <mm/model_allocator.h>
 #include <mm/msg_allocator.h>
 
 static void worker_thread_init(rid_t this_rid)
@@ -29,6 +30,7 @@ static void worker_thread_init(rid_t this_rid)
 	stats_init();
 	msg_allocator_init();
 	msg_queue_init();
+	model_allocator_init();
 	sync_thread_barrier();
 	lp_init();
 	process_init();
@@ -57,6 +59,7 @@ static void worker_thread_fini(void)
 
 	process_fini();
 	lp_fini();
+	model_allocator_fini();
 	msg_queue_fini();
 	sync_thread_barrier();
 	msg_allocator_fini();

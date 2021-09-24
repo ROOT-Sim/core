@@ -103,6 +103,7 @@ static int block_size_test(unsigned b_exp)
 static int model_allocator_test(void)
 {
 	current_lp = malloc(sizeof(*current_lp));
+	model_allocator_init();
 	model_allocator_lp_init();
 	lcg_init(rng_state, (rid + 1) * 1713);
 
@@ -121,6 +122,7 @@ static int model_allocator_test(void)
 	free_mt(mem);
 
 	model_allocator_lp_fini();
+	model_allocator_fini();
 	free(current_lp);
 	return -(!!errs);
 }
