@@ -21,8 +21,12 @@ struct process_data {
 	unsigned ckpt_rem_msgs;
 };
 
-#define is_msg_sent(msg_p) (((uintptr_t)(msg_p)) & 1U)
-#define is_msg_past(msg_p) (!is_msg_sent(msg_p))
+#define is_msg_sent(msg_p) (((uintptr_t)(msg_p)) & 3U)
+#define is_msg_remote(msg_p) (((uintptr_t)(msg_p)) & 2U)
+#define is_msg_local_sent(msg_p) (((uintptr_t)(msg_p)) & 1U)
+#define is_msg_past(msg_p) (!(((uintptr_t)(msg_p)) & 3U))
+#define unmark_msg(msg_p) \
+	((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
 
 extern void process_global_init(void);
 extern void process_global_fini(void);

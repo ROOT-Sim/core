@@ -44,3 +44,6 @@ extern bool test_thread_barrier(void);
 typedef uint64_t lp_id_t;
 typedef unsigned rid_t;
 typedef int nid_t;
+
+extern rid_t n_threads;
+extern __thread rid_t rid;

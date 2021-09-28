@@ -6,8 +6,8 @@
 
 #define MAX_WASTED_SPACE 0.2
 
-static _Thread_local double used_mem_avg;
-static _Thread_local dyn_array(struct mm_checkpoint *) avail_ckpts;
+static __thread double used_mem_avg;
+static __thread dyn_array(struct mm_checkpoint *) avail_ckpts;
 
 void model_allocator_init(void)
 {

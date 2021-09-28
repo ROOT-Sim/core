@@ -17,7 +17,7 @@
 
 #include <memory.h>
 
-static inline void fossil_lp_collect(struct lp_ctx *lp, simtime_t current_gvt)
+void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt)
 {
 	struct process_data *proc_p = &lp->p;
 
@@ -43,17 +43,8 @@ static inline void fossil_lp_collect(struct lp_ctx *lp, simtime_t current_gvt)
 	array_count_t k = past_i;
 	while (k--) {
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, k);
-		if (is_msg_past(msg))
-			msg_allocator_free(msg);
+		if (!is_msg_local_sent(msg))
+			msg_allocator_free(unmark_msg(msg));
 	}
 	array_truncate_first(proc_p->p_msgs, past_i);
-}
-
-void fossil_collect(simtime_t current_gvt)
-{
-#ifdef ROOTSIM_MPI
-	msg_allocator_fossil_collect(current_gvt);
-#endif
-	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i)
-		fossil_lp_collect(&lps[i], current_gvt);
 }

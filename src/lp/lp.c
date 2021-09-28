@@ -119,6 +119,14 @@ void lp_fini(void)
 	current_lp = NULL;
 }
 
+void lp_on_gvt(simtime_t gvt)
+{
+	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
+		struct lp_ctx *lp = &lps[i];
+		fossil_lp_on_gvt(lp, gvt);
+	}
+}
+
 /**
  * @brief Compute the id of the currently processed LP
  * @return the id of the current LP

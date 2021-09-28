@@ -12,10 +12,8 @@
 
 #include <arch/thread.h>
 
-#include <limits.h>
 #include <memory.h>
 #include <stdarg.h>
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -92,45 +90,4 @@ void main_wrapper(void)
 		puts("Successfully run " ROOTSIM_TEST_NAME " test");
 
 	exit(test_ret);
-}
-
-/**
- * @brief Synchronizes threads on a barrier
- * @return true if this thread has been elected as leader, false otherwise
- *
- * This is a more battle tested although worse performing version of the thread
- * barrier. We can't rely on the pthread barrier because it's not portable.
- */
-bool test_thread_barrier(void)
-{
-	static atomic_uint b_in, b_out, b_cr;
-
-	unsigned i;
-	unsigned count = test_config.threads_count;
-	unsigned max_in_before_reset = (UINT_MAX / 2) - (UINT_MAX / 2) % count;
-	do {
-		i = atomic_fetch_add_explicit(
-				&b_in, 1U, memory_order_acq_rel) + 1;
-	} while (__builtin_expect(i > max_in_before_reset, 0));
-
-	unsigned cr = atomic_load_explicit(&b_cr, memory_order_relaxed);
-
-	bool leader = i == cr + count;
-	if (leader)
-		atomic_store_explicit(&b_cr, cr + count, memory_order_release);
-	else
-		while (i > cr)
-			cr = atomic_load_explicit(&b_cr, memory_order_relaxed);
-
-	atomic_thread_fence(memory_order_acquire);
-
-	unsigned o = atomic_fetch_add_explicit(&b_out, 1,
-			memory_order_release) + 1;
-	if (__builtin_expect(o == max_in_before_reset, 0)) {
-		atomic_thread_fence(memory_order_acquire);
-		atomic_store_explicit(&b_cr, 0, memory_order_relaxed);
-		atomic_store_explicit(&b_out, 0, memory_order_relaxed);
-		atomic_store_explicit(&b_in, 0, memory_order_release);
-	}
-	return leader;
 }

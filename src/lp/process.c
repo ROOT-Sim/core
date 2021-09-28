@@ -26,7 +26,9 @@ static __thread unsigned ckpt_rate;
 static __thread bool silent_processing = false;
 static __thread dyn_array(struct lp_msg_remote_match) early_antis;
 
+#define mark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))
 #define mark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 1U))
+#define unmark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) - 2U))
 #define unmark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) - 1U))
 
 void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
@@ -47,12 +49,12 @@ void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 	nid_t dest_nid = lid_to_nid(receiver);
 	if (dest_nid != nid) {
 		mpi_remote_msg_send(msg, dest_nid);
-		msg_allocator_free_at_gvt(msg);
+		array_push(proc_p->p_msgs, mark_msg_remote(msg));
 	} else {
 		atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
 		msg_queue_insert(msg);
+		array_push(proc_p->p_msgs, mark_msg_sent(msg));
 	}
-	array_push(proc_p->p_msgs, mark_msg_sent(msg));
 }
 
 void process_global_init(void)
@@ -94,18 +96,17 @@ static inline void checkpoint_take(struct process_data *proc_p)
  */
 void process_lp_init(void)
 {
-	struct lp_ctx *this_lp = current_lp;
-	struct process_data *proc_p = &current_lp->p;
+	struct lp_ctx *lp = current_lp;
+	struct process_data *proc_p = &lp->p;
 
 	array_init(proc_p->p_msgs);
 
-	struct lp_msg *msg = msg_allocator_pack(this_lp - lps, 0, LP_INIT,
-			NULL, 0U);
+	struct lp_msg *msg = msg_allocator_pack(lp - lps, 0, LP_INIT, NULL, 0U);
 
 	proc_p->ckpt_rem_msgs = ckpt_rate;
 	proc_p->last_t = 0;
 
-	ProcessEvent_pr(this_lp - lps, 0, LP_INIT, NULL, 0, NULL);
+	ProcessEvent_pr(lp - lps, 0, LP_INIT, NULL, 0, NULL);
 
 	array_push(proc_p->p_msgs, msg);
 	model_allocator_checkpoint_next_force_full();
@@ -130,8 +131,9 @@ void process_lp_fini(void)
 	struct process_data *proc_p = &current_lp->p;
 	for (array_count_t i = 0; i < array_count(proc_p->p_msgs); ++i) {
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
-		if (is_msg_sent(msg))
+		if (is_msg_local_sent(msg))
 			continue;
+		msg = unmark_msg(msg);
 		uint32_t flags = atomic_load_explicit(&msg->flags,
 				memory_order_relaxed);
 		if (!(flags & MSG_FLAG_ANTI))
@@ -179,12 +181,12 @@ static inline void send_anti_messages(struct process_data *proc_p,
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
 
 		while (is_msg_sent(msg)) {
-			msg = unmark_msg_sent(msg);
-
-			nid_t dest_nid = lid_to_nid(msg->dest);
-			if (dest_nid != nid) {
+			if (is_msg_remote(msg)) {
+				msg = unmark_msg_remote(msg);
+				nid_t dest_nid = lid_to_nid(msg->dest);
 				mpi_remote_anti_msg_send(msg, dest_nid);
 			} else {
+				msg = unmark_msg_sent(msg);
 				int f = atomic_fetch_add_explicit(&msg->flags,
 					MSG_FLAG_ANTI, memory_order_relaxed);
 				if (f & MSG_FLAG_PROCESSED)
@@ -210,14 +212,6 @@ static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 	array_count_t last_i = model_allocator_checkpoint_restore(past_i);
 	silent_execution(proc_p, last_i, past_i);
 	stats_take(STATS_ROLLBACK, 1);
-}
-
-static inline void update_last_msg(struct process_data *proc_p,
-		array_count_t past_i)
-{
-
-	proc_p->last_t = past_i ?
-			array_get_at(proc_p->p_msgs, past_i - 1)->dest_t : 0;
 }
 
 static inline array_count_t match_straggler_msg(

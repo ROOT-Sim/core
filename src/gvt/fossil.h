@@ -13,4 +13,4 @@
 
 #include <core/core.h>
 
-extern void fossil_collect(simtime_t current_gvt);
+extern void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt);

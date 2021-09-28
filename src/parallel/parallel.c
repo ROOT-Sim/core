@@ -80,7 +80,7 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 		simtime_t current_gvt;
 		if (unlikely(current_gvt = gvt_phase_run())) {
 			termination_on_gvt(current_gvt);
-			fossil_collect(current_gvt);
+			lp_on_gvt(current_gvt);
 			ckpt_on_gvt();
 			stats_on_gvt(current_gvt);
 		}

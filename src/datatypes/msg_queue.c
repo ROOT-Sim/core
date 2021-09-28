@@ -22,16 +22,10 @@
 #include <mm/msg_allocator.h>
 
 #include <stdalign.h>
+#include <stdatomic.h>
 
 #define q_elem_is_before(ma, mb) ((ma).t < (mb).t || 		\
 	((ma).t == (mb).t && (ma).m->raw_flags > (mb).m->raw_flags))
-
-#define SWAP(a, b) 							\
-	do {								\
-		__typeof(a) _tmp = (a);					\
-		(a) = (b);						\
-		(b) = _tmp;						\
-	} while(0)
 
 struct q_elem {
 	simtime_t t;
@@ -41,15 +35,19 @@ struct q_elem {
 /// A queue synchronized by a spinlock
 struct msg_queue {
 	/// Synchronizes access to the queue
-	alignas(CACHE_LINE_SIZE) spinlock_t lck;
+	alignas(CACHE_LINE_SIZE) spinlock_t q_lock;
 	/// The actual queue element of the matrix
-	dyn_array(struct q_elem) q;
+	dyn_array(struct q_elem) b;
 };
 
 /// The queues vector
 static struct msg_queue *queues;
 /// The private thread queue
-static __thread heap_declare(struct q_elem) q_priv;
+static __thread struct {
+	heap_declare(struct q_elem) q;
+	struct q_elem *alt_items;
+	array_count_t alt_cap;
+} mqp;
 
 /**
  * @brief Initializes the message queue at the node level
@@ -65,11 +63,15 @@ void msg_queue_global_init(void)
  */
 void msg_queue_init(void)
 {
-	struct msg_queue *mq = &queues[rid];
-	memset(mq, 0 , sizeof(*mq));
-	array_init(mq->q);
+	heap_init(mqp.q);
 
-	heap_init(q_priv);
+	mqp.alt_cap = INIT_SIZE_ARRAY;
+	mqp.alt_items = mm_alloc(sizeof(*mqp.alt_items) * mqp.alt_cap);
+
+	struct msg_queue *mq = &queues[rid];
+
+	array_init(mq->b);
+	spin_init(&mq->q_lock);
 }
 
 /**
@@ -77,16 +79,17 @@ void msg_queue_init(void)
  */
 void msg_queue_fini(void)
 {
-	for (array_count_t i = 0; i < heap_count(q_priv); ++i)
-		msg_allocator_free(heap_items(q_priv)[i].m);
+	for (array_count_t i = 0; i < heap_count(mqp.q); ++i)
+		msg_allocator_free(heap_items(mqp.q)[i].m);
 
-	heap_fini(q_priv);
+	heap_fini(mqp.q);
+	mm_free(mqp.alt_items);
 
 	struct msg_queue *mq = &queues[rid];
-	for (array_count_t i = 0; i < array_count(mq->q); ++i)
-		msg_allocator_free(array_get_at(mq->q, i).m);
+	for (array_count_t i = 0; i < array_count(mq->b); ++i)
+		msg_allocator_free(array_get_at(mq->b, i).m);
 
-	array_fini(mq->q);
+	array_fini(mq->b);
 }
 
 /**
@@ -101,13 +104,22 @@ static inline void msg_queue_insert_queued(void)
 {
 	struct msg_queue *mq = &queues[rid];
 
-	spin_lock(&mq->lck);
-	array_count_t i = array_count(mq->q);
-	array_push_n(q_priv, array_items(mq->q), i);
-	array_count(mq->q) = 0;
-	spin_unlock(&mq->lck);
+	spin_lock(&mq->q_lock);
 
-	heap_commit_n(q_priv, q_elem_is_before, i);
+	struct q_elem *tmp_items = array_items(mq->b);
+	array_count_t c = array_count(mq->b);
+	array_count_t tmp_cap = array_capacity(mq->b);
+
+	array_items(mq->b) = mqp.alt_items;
+	array_count(mq->b) = 0;
+	array_capacity(mq->b) = mqp.alt_cap;
+
+	spin_unlock(&mq->q_lock);
+
+	mqp.alt_items = tmp_items;
+	mqp.alt_cap = tmp_cap;
+
+	heap_insert_n(mqp.q, q_elem_is_before, tmp_items, c);
 }
 
 /**
@@ -121,8 +133,8 @@ static inline void msg_queue_insert_queued(void)
 struct lp_msg *msg_queue_extract(void)
 {
 	msg_queue_insert_queued();
-	return likely(heap_count(q_priv)) ?
-			heap_extract(q_priv, q_elem_is_before).m : NULL;
+	return likely(heap_count(mqp.q)) ?
+			heap_extract(mqp.q, q_elem_is_before).m : NULL;
 }
 
 /**
@@ -137,7 +149,7 @@ struct lp_msg *msg_queue_extract(void)
 simtime_t msg_queue_time_peek(void)
 {
 	msg_queue_insert_queued();
-	return likely(heap_count(q_priv)) ? heap_min(q_priv).t : SIMTIME_MAX;
+	return likely(heap_count(mqp.q)) ? heap_min(mqp.q).t : SIMTIME_MAX;
 }
 
 /**
@@ -146,11 +158,11 @@ simtime_t msg_queue_time_peek(void)
  */
 void msg_queue_insert(struct lp_msg *msg)
 {
-
-	struct msg_queue *mq = &queues[lid_to_rid(msg->dest)];
+	rid_t dest_rid = lid_to_rid(msg->dest);
+	struct msg_queue *mq = &queues[dest_rid];
 	struct q_elem qe = {.t = msg->dest_t, .m = msg};
 
-	spin_lock(&mq->lck);
-	array_push(mq->q, qe);
-	spin_unlock(&mq->lck);
+	spin_lock(&mq->q_lock);
+	array_push(mq->b, qe);
+	spin_unlock(&mq->q_lock);
 }
