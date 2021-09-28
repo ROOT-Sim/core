@@ -104,7 +104,7 @@ __extension__({								\
 	memcpy(&cmp_conf, &default_conf, sizeof(cmp_conf));		\
 })
 
-const static struct simulation_configuration default_conf = {
+static const struct simulation_configuration default_conf = {
 	.is_serial = false,
 	.core_binding = true,
 	.gvt_period = 250000,

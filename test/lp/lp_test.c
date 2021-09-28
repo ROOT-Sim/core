@@ -30,6 +30,7 @@ void *malloc_mt(size_t siz)
 bool sync_thread_barrier(void){ return test_thread_barrier();}
 
 void termination_lp_init(void){ trm_calls[current_lp - lps]++;}
+void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt){ }
 
 void process_lp_init(void){ proc_calls[current_lp - lps]++;}
 void process_lp_fini(void){ proc_calls[current_lp - lps]--;}

@@ -12,8 +12,8 @@
 
 #include <mm/mm.h>
 
-#include <memory.h>
 #include <stdint.h>
+#include <string.h>
 
 /// The initial size of dynamic arrays expressed in the number of elements
 #define INIT_SIZE_ARRAY 8U
