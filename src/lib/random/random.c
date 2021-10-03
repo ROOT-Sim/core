@@ -23,7 +23,7 @@ void random_lib_lp_init(void)
 	lp_id_t lid = lp_id_get();
 	struct lib_ctx *ctx = lib_ctx_get();
 	random_init(ctx->rng_s, lid, seed);
-	ctx->unif = NAN;
+	ctx->has_normal = false;
 }
 
 double Random(void)
@@ -74,7 +74,9 @@ double Expent(double mean)
 double Normal(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
-	if (isnan(ctx->unif)) {
+	if (!ctx->has_normal) {
+		ctx->has_normal = true;
+
 		double v1, v2, rsq;
 		do {
 			v1 = 2.0 * Random() - 1.0;
@@ -89,10 +91,9 @@ double Normal(void)
 		ctx->unif = v1 * fac;
 		return v2 * fac;
 	} else {
+		ctx->has_normal = false;
 		// A deviate is already available
-		double ret = ctx->unif;
-		ctx->unif = NAN;
-		return ret;
+		return ctx->unif;
 	}
 }
 

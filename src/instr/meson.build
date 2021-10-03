@@ -27,9 +27,9 @@ rootsim_llvm_lib = shared_library('rootsim-llvm', ['instr_llvm.cpp', instr_cfg],
   install : true)
 
 clang_arguments = c_optimization_options
-clang_arguments += ['@EXTRA_ARGS@', '-I', meson.source_root() / 'src',
-  '-I', '@CURRENT_SOURCE_DIR@', '@INPUT@', '-c', '-o', '@OUTPUT@',
-  '-Xclang', '-load', '-Xclang', rootsim_llvm_lib.full_path()]
+clang_arguments += ['@EXTRA_ARGS@', '-I', meson.source_root() / 'src', '-c',
+  '-I', '@CURRENT_SOURCE_DIR@', '@INPUT@', '-o', '@OUTPUT@', '-MD', '-MF',
+  '@DEPFILE@', '-Xclang', '-load', '-Xclang', rootsim_llvm_lib.full_path()]
 
 clang_with_plugin = generator(clang_compiler, output : '@BASENAME@.o',
   arguments : clang_arguments, depends : rootsim_llvm_lib)
