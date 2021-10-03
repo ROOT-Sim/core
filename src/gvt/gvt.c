@@ -10,6 +10,7 @@
 
 #include <arch/timer.h>
 #include <core/init.h>
+#include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
 #include <log/stats.h>

@@ -17,12 +17,10 @@
 #include <gvt/gvt.h>
 #include <log/stats.h>
 #include <lp/lp.h>
+#include <mm/auto_ckpt.h>
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 
-#define CKPT_RATE_DEFAULT 10
-
-static __thread unsigned ckpt_rate;
 static __thread bool silent_processing = false;
 static __thread dyn_array(struct lp_msg_remote_match) early_antis;
 
@@ -70,8 +68,6 @@ void process_global_fini(void)
 void process_init(void)
 {
 	array_init(early_antis);
-	ckpt_rate = global_config.ckpt_interval ? global_config.ckpt_interval :
-			CKPT_RATE_DEFAULT;
 }
 
 void process_fini(void)
@@ -81,14 +77,10 @@ void process_fini(void)
 
 static inline void checkpoint_take(struct process_data *proc_p)
 {
-	if (likely(++proc_p->ckpt_rem_msgs < ckpt_rate))
-		return;
-	proc_p->ckpt_rem_msgs = 0;
-
 	timer_uint t = timer_hr_new();
 	model_allocator_checkpoint_take(array_count(proc_p->p_msgs));
-	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 	stats_take(STATS_CKPT, 1);
+	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 }
 
 /**
@@ -103,7 +95,6 @@ void process_lp_init(void)
 
 	struct lp_msg *msg = msg_allocator_pack(lp - lps, 0, LP_INIT, NULL, 0U);
 
-	proc_p->ckpt_rem_msgs = ckpt_rate;
 	proc_p->last_t = 0;
 
 	ProcessEvent_pr(lp - lps, 0, LP_INIT, NULL, 0, NULL);
@@ -169,8 +160,7 @@ static inline void silent_execution(const struct process_data *proc_p,
 	} while (++last_i < past_i);
 
 	silent_processing = false;
-	t = timer_hr_value(t);
-	stats_take(STATS_MSG_SILENT_TIME, t);
+	stats_take(STATS_MSG_SILENT_TIME, timer_hr_value(t));
 }
 
 static inline void send_anti_messages(struct process_data *proc_p,
@@ -320,14 +310,17 @@ void process_msg(void)
 	if (unlikely(flags & MSG_FLAG_ANTI)) {
 		if (flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 			handle_remote_anti_msg(proc_p, msg);
+			auto_ckpt_register_bad(&this_lp->auto_ckpt);
 		} else if (flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 			array_count_t past_i = match_anti_msg(proc_p, msg);
 			do_rollback(proc_p, past_i);
 			proc_p->last_t = past_i == 0 ? 0 :
 				array_get_at(proc_p->p_msgs, --past_i)->dest_t;
 			termination_on_lp_rollback(msg->dest_t);
+			auto_ckpt_register_bad(&this_lp->auto_ckpt);
 		}
 		msg_allocator_free(msg);
+
 		return;
 	}
 
@@ -338,6 +331,7 @@ void process_msg(void)
 		array_count_t past_i = match_straggler_msg(proc_p, msg);
 		do_rollback(proc_p, past_i);
 		termination_on_lp_rollback(msg->dest_t);
+		auto_ckpt_register_bad(&this_lp->auto_ckpt);
 	}
 
 	proc_p->last_t = msg->dest_t;
@@ -350,14 +344,11 @@ void process_msg(void)
 		msg->pl_size,
 		this_lp->lib_ctx_p->state_s
 	);
-	stats_take(STATS_MSG_PROCESSED, 1);
-
 	array_push(proc_p->p_msgs, msg);
-	checkpoint_take(proc_p);
-	termination_on_msg_process(msg->dest_t);
-}
 
-void process_ckpt_rate_set(unsigned rate)
-{
-	ckpt_rate = rate;
+	auto_ckpt_register_good(&this_lp->auto_ckpt);
+	if (auto_ckpt_is_needed(&this_lp->auto_ckpt))
+		checkpoint_take(proc_p);
+
+	termination_on_msg_process(msg->dest_t);
 }

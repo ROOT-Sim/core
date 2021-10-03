@@ -19,6 +19,10 @@
 #define B_TOTAL_EXP 17U
 #define B_BLOCK_EXP 6U
 
+#define buddy_left_child(i) (((i) << 1U) + 1U)
+#define buddy_right_child(i) (((i) << 1U) + 2U)
+#define buddy_parent(i) ((((i) + 1) >> 1U) - 1U)
+
 /// The checkpointable memory context assigned to a single LP
 struct mm_state {
 	/// The array of checkpoints

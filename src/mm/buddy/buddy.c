@@ -16,9 +16,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#define left_child(i) (((i) << 1U) + 1U)
-#define right_child(i) (((i) << 1U) + 2U)
-#define parent(i) ((((i) + 1) >> 1U) - 1U)
 #define is_power_of_2(i) (!((i) & ((i) - 1)))
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
 
@@ -67,7 +64,7 @@ void *malloc_mt(size_t req_size)
 	while (node_size > req_blks) {
 		/* choose the child with smaller longest value which
 		 * is still large at least *size* */
-		i = left_child(i);
+		i = buddy_left_child(i);
 		i += self->longest[i] < req_blks;
 		--node_size;
 	}
@@ -79,10 +76,10 @@ void *malloc_mt(size_t req_size)
 	uint_fast32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
 
 	while (i) {
-		i = parent(i);
+		i = buddy_parent(i);
 		self->longest[i] = max(
-			self->longest[left_child(i)],
-			self->longest[right_child(i)]
+			self->longest[buddy_left_child(i)],
+			self->longest[buddy_right_child(i)]
 		);
 	}
 
@@ -111,22 +108,22 @@ void free_mt(void *ptr)
 		(((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP) +
 		(1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
-	for (; self->longest[i]; i = parent(i))
+	for (; self->longest[i]; i = buddy_parent(i))
 		++node_size;
 
 	self->longest[i] = node_size;
 	self->used_mem -= 1 << node_size;
 
 	while (i) {
-		i = parent(i);
+		i = buddy_parent(i);
 
-		uint_fast8_t left_longest = self->longest[left_child(i)];
-		uint_fast8_t right_longest = self->longest[right_child(i)];
+		uint_fast8_t left_long = self->longest[buddy_left_child(i)];
+		uint_fast8_t right_long = self->longest[buddy_right_child(i)];
 
-		if (left_longest == node_size && right_longest == node_size) {
+		if (left_long == node_size && right_long == node_size) {
 			self->longest[i] = node_size + 1;
 		} else {
-			self->longest[i] = max(left_longest, right_longest);
+			self->longest[i] = max(left_long, right_long);
 		}
 		++node_size;
 	}

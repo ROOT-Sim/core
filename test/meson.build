@@ -92,8 +92,8 @@ foreach t_name, t_spec : test_specs
     link_language : 'c')
 
   if mpi_dep.found() and t_spec.get('mpi', false)
-    test(t_full_name + '_mpi', mpiexec_cmd, args : ['-n', '2', '--map-by',
-    'socket', '--bind-to', 'core', test_executable.full_path()])
+    test(t_full_name + '_mpi', mpiexec_cmd, 
+      args : ['-n', '2', test_executable.full_path()])
   endif
 
   test(t_full_name, test_executable, is_parallel : false,

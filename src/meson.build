@@ -8,6 +8,7 @@ subdir('instr')
 # TODO integrate the plugin system
 subdir('lib')
 
+rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
 rootsim_c_args = [rootsim_version_def, log_level_def]
 
 # ROOT-Sim library sources
@@ -30,7 +31,7 @@ rootsim_srcs = [
   'lp' / 'process.c',
   'mm' / 'buddy' / 'buddy.c',
   'mm' / 'buddy' / 'ckpt.c',
-  'mm' / 'ckpt_interval.c',
+  'mm' / 'auto_ckpt.c',
   'mm' / 'mm.c',
   'mm' / 'msg_allocator.c',
   'parallel' / 'parallel.c',

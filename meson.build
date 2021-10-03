@@ -20,6 +20,15 @@ if get_option('unity') == 'on'
   endif
 endif
 
+# Used in some defines, the llvm plugin and the tests
+if get_option('buildtype') == 'release'
+  c_optimization_options = ['-Ofast', '-march=native', '-mtune=native']
+  add_global_arguments(c_optimization_options, language : 'c')
+  add_global_link_arguments(c_optimization_options, language : 'c')
+else
+  c_optimization_options = ['-O' + get_option('optimization')]
+endif
+
 # Include directory used explicitly in tests and LLVM plugin compilation
 src_inc_dir = include_directories('src')
 
@@ -36,13 +45,6 @@ mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 clang_compiler = find_program(llvm_dep.get_variable(configtool : 'bindir') /
   'clang')
 
-# Custom threads library dependency
-rs_thr_dep = declare_dependency(link_with :
-  static_library('rootsim-threads', 'src' / 'arch' / 'thread.c',
-    dependencies: dependency('threads'), include_directories : src_inc_dir))
-
-# Used in some defines, the llvm plugin and the tests
-c_optimization_options = ['-O' + get_option('optimization')]
 if get_option('debug')
   c_optimization_options += '-g'
 endif
@@ -60,7 +62,10 @@ else
   log_level_def = '-DLOG_LEVEL=LOG_INFO'
 endif
 
-rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
+# Custom threads library dependency
+rs_thr_dep = declare_dependency(link_with :
+  static_library('rootsim-threads', 'src' / 'arch' / 'thread.c',
+    dependencies: dependency('threads'), include_directories : src_inc_dir))
 
 # Used to build the LLVM plugin
 llvm_cfg_gen = find_program('scripts' / 'llvm_cfg_gen.py')

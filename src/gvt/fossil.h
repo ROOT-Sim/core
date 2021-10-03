@@ -12,5 +12,6 @@
 #pragma once
 
 #include <core/core.h>
+#include <lp/lp.h>
 
 extern void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt);

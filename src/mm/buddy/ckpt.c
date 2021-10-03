@@ -70,14 +70,14 @@ __extension__({								\
 				((__i + 1) << __l) - (1 << B_TOTAL_EXP);\
 			on_visit(__o, __len);				\
 		} else if (__lon != __l) {				\
-			__i = left_child(__i) + __vis;			\
+			__i = buddy_left_child(__i) + __vis;		\
 			__vis = false;					\
 			__l--;						\
 			continue;					\
 		}							\
 		do {							\
 			__vis = !(__i & 1U);				\
-			__i = parent(__i);				\
+			__i = buddy_parent(__i);			\
 			__l++;						\
 		} while (__vis);					\
 									\

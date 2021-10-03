@@ -83,12 +83,14 @@ void lp_init(void)
 			lid_node_first, n_lps_node);
 
 	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
-		current_lp = &lps[i];
+		struct lp_ctx *lp = &lps[i];
+		current_lp = lp;
 
 		model_allocator_lp_init();
-		current_lp->lib_ctx_p =
-				malloc_mt(sizeof(*current_lp->lib_ctx_p));
+		lp->lib_ctx_p = malloc_mt(sizeof(*current_lp->lib_ctx_p));
+
 		lib_lp_init_pr();
+		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init();
 		termination_lp_init();
 	}
@@ -124,6 +126,7 @@ void lp_on_gvt(simtime_t gvt)
 	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
 		fossil_lp_on_gvt(lp, gvt);
+		auto_ckpt_lp_on_gvt(&lp->auto_ckpt);
 	}
 }
 

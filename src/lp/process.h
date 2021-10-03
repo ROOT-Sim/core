@@ -18,7 +18,6 @@ struct process_data {
 	/// The messages processed in the past by the owner LP
 	dyn_array(struct lp_msg *) p_msgs;
 	simtime_t last_t;
-	unsigned ckpt_rem_msgs;
 };
 
 #define is_msg_sent(msg_p) (((uintptr_t)(msg_p)) & 3U)
@@ -39,4 +38,3 @@ extern void process_lp_deinit(void);
 extern void process_lp_fini(void);
 
 extern void process_msg(void);
-extern void process_ckpt_rate_set(unsigned rate);
