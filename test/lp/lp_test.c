@@ -48,6 +48,11 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 	auto_ckpt_calls[current_lp - lps] += auto_ckpt != NULL;
 }
 
+void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt)
+{
+	(void)auto_ckpt;
+}
+
 void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt)
 {
 	(void)lp;
