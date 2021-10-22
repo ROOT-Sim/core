@@ -98,6 +98,7 @@ void process_lp_init(void)
 	proc_p->last_t = 0;
 
 	ProcessEvent_pr(lp - lps, 0, LP_INIT, NULL, 0, NULL);
+	stats_take(STATS_MSG_PROCESSED, 1);
 
 	array_push(proc_p->p_msgs, msg);
 	model_allocator_checkpoint_next_force_full();
@@ -344,6 +345,7 @@ void process_msg(void)
 		msg->pl_size,
 		this_lp->lib_ctx_p->state_s
 	);
+	stats_take(STATS_MSG_PROCESSED, 1);
 	array_push(proc_p->p_msgs, msg);
 
 	auto_ckpt_register_good(&this_lp->auto_ckpt);

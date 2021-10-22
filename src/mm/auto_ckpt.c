@@ -70,19 +70,13 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 
 void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt)
 {
-	if (!auto_ckpt->m_bad && !global_config.ckpt_interval)
-		return;
-
-	unsigned mg = auto_ckpt->m_good;
-	stats_take(STATS_MSG_PROCESSED, mg);
-	auto_ckpt->m_good = 0;
-
-	if (unlikely(global_config.ckpt_interval))
+	if (unlikely(!auto_ckpt->m_bad || global_config.ckpt_interval))
 		return;
 
 	auto_ckpt->inv_bad_p = EXP_AVG(8.0, auto_ckpt->inv_bad_p,
-			2.0 * mg / auto_ckpt->m_bad);
+			2.0 * auto_ckpt->m_good / auto_ckpt->m_bad);
 	auto_ckpt->m_bad = 0;
+	auto_ckpt->m_good = 0;
 	auto_ckpt->ckpt_interval = ceil(sqrt(auto_ckpt->inv_bad_p *
 			ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost));
 }
