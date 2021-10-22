@@ -30,6 +30,7 @@ enum stats_time {
 	STATS_MSG_SILENT,
 	STATS_MSG_SILENT_TIME,
 	STATS_MSG_REMOTE_RECEIVED,
+	STATS_REAL_TIME_GVT, // used internally
 	STATS_COUNT
 };
 

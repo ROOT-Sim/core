@@ -28,13 +28,12 @@
 
 #define STATS_BUFFER_ENTRIES (1024)
 #define STATS_MAX_STRLEN 32U
+#define STATS_REAL_TIME STATS_COUNT
 
 /// A container for statistics in a logical time period
 struct stats_thread {
 	/// The array of statistics taken in the period
 	uint64_t s[STATS_COUNT];
-	/// Real elapsed time in microseconds from simulation beginning
-	uint64_t rt;
 };
 
 struct stats_node {
@@ -57,7 +56,7 @@ struct stats_glob {
 	uint64_t timestamps[STATS_GLOBAL_COUNT];
 };
 
-static_assert(sizeof(struct stats_thread) == 8 + 8 * STATS_COUNT &&
+static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT &&
 	      sizeof(struct stats_node) == 16 &&
 	      sizeof(struct stats_glob) == 32 + 8 * (STATS_GLOBAL_COUNT),
 	      "structs aren't naturally packed, parsing may be difficult");
@@ -71,7 +70,8 @@ const char * const s_names[] = {
 	[STATS_CKPT] = "checkpoints",
 	[STATS_CKPT_TIME] = "checkpoints time",
 	[STATS_MSG_SILENT_TIME] = "silent messages time",
-	[STATS_MSG_PROCESSED] = "processed messages"
+	[STATS_MSG_PROCESSED] = "processed messages",
+	[STATS_REAL_TIME_GVT] = "gvt real time"
 };
 
 static timer_uint sim_start_ts;
@@ -212,6 +212,7 @@ static void stats_files_send(void)
 	}
 }
 
+// TODO add other statistics, for example ROOT-Sim config, machine hardware etc
 static void stats_file_final_write(FILE *o)
 {
 	uint16_t endian_check = 61455U; // 0xFOOF
@@ -290,7 +291,7 @@ void stats_take(enum stats_time this_stat, unsigned c)
 
 void stats_on_gvt(simtime_t gvt)
 {
-	stats_cur.rt = timer_value(sim_start_ts);
+	stats_cur.s[STATS_REAL_TIME_GVT] = timer_value(sim_start_ts);
 
 	file_write_chunk(stats_tmps[rid], &stats_cur, sizeof(stats_cur));
 	memset(&stats_cur, 0, sizeof(stats_cur));
