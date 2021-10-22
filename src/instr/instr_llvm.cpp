@@ -93,7 +93,13 @@ namespace {
 		}
 
 		SmallVector<ReturnInst *, 8> Returns;
+#if LLVM_VERSION_MAJOR >= 13
+		CloneFunctionInto(NewF, &F, VMap,
+				CloneFunctionChangeType::LocalChangesOnly,
+				Returns, suffix);
+#else
 		CloneFunctionInto(NewF, &F, VMap, true, Returns, suffix);
+#endif
 
 		 for (const Argument &I : F.args())
 			 VMap.erase(&I);
