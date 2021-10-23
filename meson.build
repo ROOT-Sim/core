@@ -54,6 +54,9 @@ endif
 if get_option('b_sanitize') == 'address'
   c_optimization_options += '-fsanitize=address'
 endif
+if llvm_dep.version().version_compare('>= 13')
+  c_optimization_options += '-flegacy-pass-manager'
+endif
 
 # Logging level define
 if get_option('debug')
