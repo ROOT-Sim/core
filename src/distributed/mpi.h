@@ -24,7 +24,10 @@ enum msg_ctrl_tag {
 	/// Used by slaves to signal their completion of the gvt protocol
 	MSG_CTRL_GVT_DONE,
 	/// Used in broadcast to signal that local LPs can terminate
-	MSG_CTRL_TERMINATION
+	MSG_CTRL_TERMINATION,
+#ifdef PUBSUB
+    MSG_PUBSUB
+#endif
 };
 
 extern void mpi_global_init(int *argc_p, char ***argv_p);

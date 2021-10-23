@@ -76,6 +76,10 @@ static void parallel_global_init(void)
 {
 	stats_global_init();
 	lib_global_init();
+
+    // TODO: check it's correct here. Otherwise after lp_global_init()
+    pubsub_lib_global_init();
+
 	process_global_init();
 	lp_global_init();
 	msg_queue_global_init();

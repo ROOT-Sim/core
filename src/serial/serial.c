@@ -63,6 +63,10 @@ static void serial_simulation_init(void)
 	msg_allocator_init();
 	heap_init(queue);
 	lib_global_init();
+
+    // TODO: check if this works
+    pubsub_lib_global_init();
+
 	serial_model_init();
 
 	s_lps = mm_alloc(sizeof(*s_lps) * n_lps);
@@ -71,6 +75,10 @@ static void serial_simulation_init(void)
 	for (uint64_t i = 0; i < n_lps; ++i) {
 		s_current_lp = &s_lps[i];
 		lib_lp_init();
+
+        // TODO: check if this works
+        pubsub_lib_lp_init();
+
 #if LOG_DEBUG >= LOG_LEVEL
 		s_lps[i].last_evt_time = -1;
 #endif

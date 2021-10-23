@@ -27,11 +27,14 @@
 #define offset_of_children_count(msg)	(offset_of_children_ptr(msg) - sizeof(size_t))
 #define children_count(msg)		(*((size_t*) ((msg)->pl + offset_of_children_count((msg)))))
 
+// TODO: remove?
 // For locally (same-node) generated Node-level messages
 #define offset_of_child_for_mpi(msg)	(offset_of_children_count(msg) - sizeof(struct lp_msg*))
 #define child_for_mpi(msg)		(*((struct lp_msg**) ((msg)->pl + offset_of_child_for_mpi((msg)))))
 
 #define LP_ID_MSB (((lp_id_t) 1) << (sizeof(lp_id_t)*CHAR_BIT - 1))
+
+#define current_lid (current_lp - lps)
 
 extern _Thread_local bool silent_processing;
 
@@ -63,6 +66,7 @@ void node_actually_antimessage(struct lp_msg *msg);
 void pubsub_lib_lp_init(){
 	current_lp->subnodes = mm_alloc(bitmap_required_size(n_nodes));
 	bitmap_initialize(current_lp->subnodes, n_nodes);
+    current_lp->n_remote_sub_nodes = 0;
 	return;
 }
 
@@ -91,7 +95,8 @@ inline void send_pubsub_msg_to_remote_nid(struct lp_msg *msg, nid_t dest_nid){
 inline void send_to_sub_nodes(struct lp_msg *msg){
 	// send to all subscribers
 	block_bitmap* subs = current_lp->subnodes;
-	
+
+    // TODO remove & update usage of msg identifier
 	// Set the msg ID!!
 	msg->msg_id = msg_id_get(msg, gvt_phase_get());
 	
@@ -104,6 +109,8 @@ inline void send_to_sub_nodes(struct lp_msg *msg){
 	bitmap_foreach_set(subs, bmp_sz, send_m_foreach_set_bit);
 }
 
+// FIXME: update and use one message per target node
+// TODO: make sure that child_count is correctly set by this handler even if it stops halfway
 // This function handles a pubsub message for the node.
 void node_handle_published_message(struct lp_msg* msg){
 	
@@ -151,6 +158,10 @@ void node_handle_published_message(struct lp_msg* msg){
 	if(from_local_node){
 		// Plus one message as blueprint for MPI
 		n_ch_count++;
+
+        // TODO: if we keep one message per subscriber node, then n_ch_count+=n_subs
+        // n_ch_count += current_lp->n_sub_nodes;
+
 	}
 #endif
 
@@ -373,7 +384,7 @@ void thread_handle_published_message(struct lp_msg* msg){
 }
 
 inline void PublishNewEvent_pr(simtime_t timestamp, unsigned event_type, const void *payload, unsigned payload_size){
-	PublishNewEvent(timestamp, event_type, *payload, payload_size);
+	PublishNewEvent(timestamp, event_type, payload, payload_size);
 }
 
 // Here the logic that takes care to send the message to every node is implemented.
@@ -401,12 +412,13 @@ void PublishNewEvent(simtime_t timestamp, unsigned event_type, const void *paylo
 	array_push(proc_p->sent_msgs, msg);
 }
 
-// Called from within remote_msg_map.c or when antimessaging sent msgs
+/// Called when MPI extracts a pubsub antimessage
+// FIXME: change this to comply with ROOT-Sim 3's way. i.e. by generating 1 antimessage per thread and enqueueing it, without creating a node-level msg.
 void node_handle_published_antimessage(struct lp_msg* msg){
-		
+
 	int flags = atomic_fetch_add_explicit(&msg->flags,
 			MSG_FLAG_ANTI, memory_order_relaxed);
-		
+
 	// Is the positive handler finished?
 	if(flags & MSG_FLAG_PROCESSED){
 		// Carry out the antimessaging
@@ -421,55 +433,56 @@ void node_handle_published_antimessage(struct lp_msg* msg){
 	return;
 }
 
+// TODO: remove?
 static inline void send_pubsub_anti_to_remote_nid(struct lp_msg *msg, nid_t dest_nid){
 	if (likely(dest_nid != nid)){// Send to remote nodes
 		mpi_pubsub_remote_anti_msg_send(msg, dest_nid);
 	}
 }
 
+// OK?
+/// Carries out the antimessaging
 void node_actually_antimessage(struct lp_msg *msg){
 	
 	// Carry out the antimessaging
 	size_t child_count = n_children_count(msg);
-	
-	// TODO: make sure that child_count is correctly set by the
-	// positive handler in case the handling is interrupted halfway
+
 	struct lp_msg** children = n_children_ptr(msg);
 	struct lp_msg* cmsg;
 	
 #ifdef ROOTSIM_MPI
 	// If the message is from local node, send antimessages via MPI!
-	if( (msg->dest == (lp_id_t) current_lid) && children){
-		
-		// Get the child used as blueprint to send to other nodes
-		cmsg = children[0];
-		
-		// The first child is not a thread-level in this case
-		children++;
-		child_count--;
-		
-		// Update the ID
-		msg_id_anti_phase_set(cmsg->msg_id, gvt_phase_get());
-		
-		inline void send_anti_foreach_set_bit(nid_t nid){
-			send_pubsub_anti_to_remote_nid(cmsg, nid);
-		}
-		
-		block_bitmap* subs = current_lp->subnodes;
-		size_t bmp_sz = bitmap_required_size(n_nodes);
-		// Send a copy to all remote nodes that manage a subbed LP
-		bitmap_foreach_set(subs, bmp_sz, send_anti_foreach_set_bit);
-	}
+	if( (msg->dest == (lp_id_t) current_lid) && current_lp->n_remote_sub_nodes){
+        // The mpi messages will always be sent -> we always have at least n_remote_sub_nodes messages
+        size_t ct = current_lp->n_remote_sub_nodes;
+
+        children += ct;
+        child_count -= ct;
+
+        struct block_bitmap* subs = current_lp->subnodes;
+
+        for (int dest_nid=0; ct>0; dest_nid++){
+            if (likely(dest_nid!=nid)) {
+                if (bitmap_check(subs, dest_nid)) {
+
+                    cmsg = children[-ct];
+                    mpi_pubsub_remote_anti_msg_send(cmsg, dest_nid);
+
+                    ct--;
+                }
+            }
+        }
+    }
 #endif
 	
 	// The message generated no thread-level children
 	if(!child_count) return;
 	
-	// Now antimessage every child
+	// Now antimessage every local child
 	for(long unsigned int i=0; i<child_count; i++){
 		cmsg = children[i];
 		
-		// Set flag to anti
+		// Set anti flag
 		int cflags = atomic_fetch_add_explicit(
 			&cmsg->flags, MSG_FLAG_ANTI,
 			memory_order_relaxed);
@@ -517,10 +530,10 @@ void thread_handle_published_antimessage(struct lp_msg *msg){
 	return;
 }
 
-table_lp_entry_t new_lp_entry(lp_id_t sub_id, void* data, bool justSubscribe){
-	if(justSubscribe){
-		sub_id = sub_id | LP_ID_MSB;
-	}
+// OK
+/// Creates a new entry for LP sub_id to go into the thread's entry
+/// if sub_id's MSB is set, then the module takes the subscribe as a simple subscribe
+table_lp_entry_t new_lp_entry(lp_id_t sub_id, void* data){
 	// Create a new entry for the table
 	table_lp_entry_t lp_entry = {
 		.lid = sub_id,
@@ -529,9 +542,9 @@ table_lp_entry_t new_lp_entry(lp_id_t sub_id, void* data, bool justSubscribe){
 	return lp_entry;
 }
 
+// OK
 table_thread_entry_t new_thread_entry(){
 	// Create a new array to keep LPs of curr thread
-	//~ dyn_array(table_lp_entry_t) lparr;
 	lp_entry_arr lparr;
 	array_init(lparr);
 	// Create thread subscription entry
@@ -569,22 +582,29 @@ int seekInSortedArray(t_entry_arr arr, rid_t tid){
 }
 
 extern void add_subbed_node(lp_id_t sub_id, lp_id_t pub_id);
-// Crashes if LP pub_id is not local
+// OK
+// Crashes if LP pub_id is not node-local. Data race if LP pub_id is not owned by local thread
 inline void add_subbed_node(lp_id_t sub_id, lp_id_t pub_id){
 	nid_t sub_node_id = lid_to_nid(sub_id);
-	// Set sub_node_id-th bit in &lps[pub_id]->subnodes
-	bitmap_set(lps[pub_id].subnodes, sub_node_id);
+
+    if (!bitmap_check(lps[pub_id].subnodes, sub_node_id)) {
+        bitmap_set(lps[pub_id].subnodes, sub_node_id);
+
+        // Newly subbed node is remote
+        if (sub_node_id != nid) {
+            lps[pub_id].n_remote_sub_nodes++;
+            // Can also do this with bitmap_count_set after initialization
+        }
+    }
 }
 
+// OK
 // Subscribe LP subscriber_id to LP publisher_id
-void SubscribeAndHandle(lp_id_t subscriber_id, lp_id_t dirty_publisher_id, void* data){
-//New: void SubscribeAndHandle(lp_id_t dirty_subscriber_id, lp_id_t publisher_id, void* data){//size_t data_size
-	// TODO: use MSB of subscriber_id (after changing it in Subscribe)
-	lp_id_t publisher_id = dirty_publisher_id & ~LP_ID_MSB; // Clear leftmost bit
-	//New: lp_id_t subscriber_id = dirty_subsciber_id & ~LP_ID_MSB; // Clear leftmost bit
+void SubscribeAndHandle(lp_id_t dirty_subscriber_id, lp_id_t publisher_id, void* data){
+	lp_id_t subscriber_id = dirty_subscriber_id & ~LP_ID_MSB; // Clear leftmost bit
 	
-	bool sub_is_local = lid_to_nid(subscriber_id)==nid && lid_to_rid[subscriber_id]==rid;
-	bool pub_is_local = lid_to_nid(publisher_id)==nid && lid_to_rid[publisher_id]==rid;
+	bool sub_is_local = lid_to_nid(subscriber_id)==nid && lid_to_rid(subscriber_id)==rid;
+	bool pub_is_local = lid_to_nid(publisher_id)==nid && lid_to_rid(publisher_id)==rid;
 	
 	if(pub_is_local){ // If the publisher is managed by local thread
 		add_subbed_node(subscriber_id, publisher_id);
@@ -597,14 +617,13 @@ void SubscribeAndHandle(lp_id_t subscriber_id, lp_id_t dirty_publisher_id, void*
 	// Acquire the lock
 	spin_lock(&(tableLocks[publisher_id]));
 	
-	// Ptr to dyn_array holding entries of threads subbed to pub_LP
+	// dyn_array holding entries for threads subbed to pub_LP
 	t_entry_arr *subbedThreads_p = &(subscribersTable[publisher_id]);
 	
 	int size = array_count(*subbedThreads_p);	
 	int pos = 0;
 	
 	if (!size){ // Uninitialized subscribersTable entry
-		// Init the dyn_array
 		array_init(*subbedThreads_p);
 		
 		// Push a new thread entry in the array in table[pub_id]
@@ -626,20 +645,15 @@ void SubscribeAndHandle(lp_id_t subscriber_id, lp_id_t dirty_publisher_id, void*
 			array_add_at(*subbedThreads_p, pos, new_thread_entry());
 			// pos is the correct index
 		}
-		// pos is the found index. Correct.
 	}
 	
-	// Now we know that the entry is there, at index pos
-	
-	bool justSub = dirty_publisher_id & LP_ID_MSB;
-	//New: bool justSub = dirty_subscriber_id & LP_ID_MSB;
-	
-	// Insert the new lp_entry into the thread entry's array
+	// Thread's entry is at index pos
+
+	// Insert lp_entry in the thread's array
 	array_push(
 		array_get_at(*subbedThreads_p, pos).lp_arr,
-		new_lp_entry(subscriber_id, data, justSub)
+		new_lp_entry(dirty_subscriber_id, data)
 	);
-	// (*subbedThreads_p)[pos] is the thread_entry of the current thread
 	
 	// Release the lock
 	spin_unlock(&(tableLocks[publisher_id]));
@@ -647,25 +661,22 @@ void SubscribeAndHandle(lp_id_t subscriber_id, lp_id_t dirty_publisher_id, void*
 	return;
 }
 
+//OK
 void Subscribe(lp_id_t subscriber_id, lp_id_t publisher_id){
-	// TODO: use MSB of subscriber_id and not publisher
-	// Set most significant bit to mean it is a normal Subscribe
+	// Set most significant bit of subscriber_id to indicate it is a normal Subscribe
 	SubscribeAndHandle(
-		subscriber_id,
-		publisher_id | LP_ID_MSB,
+		subscriber_id | LP_ID_MSB,
+		publisher_id,
 		NULL);
-	//~ New, using sub_id:
-	//~ SubscribeAndHandle(
-		//~ subscriber_id | LP_ID_MSB,
-		//~ publisher_id,
-		//~ NULL);
+
 	return;
 }
 
+// OK
 // Free a pubsub msg
 void pubsub_msg_free(struct lp_msg* msg){
 	
-	// children_ptr(msg) works for both node and thread-level
+	// Works for both node and thread-level
 	struct lp_msg **c_ptr = children_ptr(msg);
 	
 	if(c_ptr){
@@ -678,45 +689,49 @@ void pubsub_msg_free(struct lp_msg* msg){
 	return;
 }
 
+// OK
 // Insert a thread-level pubsub message in queue
 void pubsub_msg_queue_insert(struct lp_msg* msg){
 	
 	// msg->dest contains the thread id 
 	unsigned dest_rid = msg->dest;
-	struct queue_t *this_q = &mqueue(rid, dest_rid);
+	struct msg_queue *this_q = mqueue(rid, dest_rid);
 	spin_lock(&this_q->lck);
 	heap_insert(this_q->q, msg_is_before, msg);
 	spin_unlock(&this_q->lck);
 	
 }
 
-// Only use this after setting the msg ID
+#ifdef ROOTSIM_MPI
+// TODO: update this to reflect correct usage in ROOT-Sim
+// OK? Should work provided we use one message buffer per target
+/// Send a pubsub message to dest_nid via MPI, but also use mpi tags
 inline void mpi_pubsub_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
-	gvt_on_remote_msg_send(dest_nid);
+    gvt_remote_msg_send(msg, dest_nid);
 
 	mpi_lock();
 	MPI_Request req;
-	
 	MPI_Isend(msg, msg_bare_size(msg), MPI_BYTE,
-			dest_nid, 0, MPI_COMM_WORLD, &req);
-
+			dest_nid, MSG_PUBSUB, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 	mpi_unlock();
 }
 
-// Only use this after correctly setting the ID
+// OK? Should work provided we use one message buffer per target
+/// Antimessage a pubsub message to dest_nid via MPI, but also use mpi tags
 inline void mpi_pubsub_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
-	gvt_on_remote_msg_send(dest_nid);
+    gvt_remote_anti_msg_send(msg, dest_nid);
 
 	mpi_lock();
 	MPI_Request req;
-	MPI_Issend(&msg->msg_id, sizeof(msg->msg_id), MPI_BYTE,
-				dest_nid, 0, MPI_COMM_WORLD, &req);
+    MPI_Isend(msg, msg_anti_size(), MPI_BYTE,
+              dest_nid, MSG_PUBSUB, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 	mpi_unlock();
 }
+#endif
 
 
 #undef LP_ID_MSB

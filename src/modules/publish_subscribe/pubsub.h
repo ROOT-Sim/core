@@ -6,6 +6,11 @@
 #include <lib/lib_internal.h>
 #include <lib/lib.h>
 #include <core/intrinsics.h>
+#include <datatypes/bitmap.h>
+
+#ifdef ROOTSIM_MPI
+#include <distributed/mpi.h>
+#endif
 
 // Size of additional data needed by the pubsub messages delivered to threads
 #define size_of_pubsub_info	(sizeof(size_t) + sizeof(struct lp_msg*))
@@ -13,8 +18,11 @@
 extern void pubsub_lib_lp_init(void);
 extern void pubsub_lib_global_init(void);
 
+/// Send an Event to all the subscribed LPs.
 extern void PublishNewEvent(simtime_t timestamp, unsigned event_type, const void *event_content, unsigned event_size);
+/// Make LP subscriber_id receive a copy of each message published from LP publisher_id.
 extern void Subscribe(lp_id_t subscriber_id, lp_id_t publisher_id);
+/// Make LP subscriber_id receive a copy of each message published from LP publisher_id and unpack it with custom data.
 extern void SubscribeAndHandle(lp_id_t subscriber_id, lp_id_t publisher_id, void* data);
 
 /*
