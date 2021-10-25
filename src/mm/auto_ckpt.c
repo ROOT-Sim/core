@@ -28,7 +28,9 @@ static __thread struct {
 	double inv_sil_avg_cost;
 } ackpt;
 
-
+/**
+ * @brief Initialize the thread-local context for the auto checkpoint module
+ */
 void auto_ckpt_init(void)
 {
 	ackpt.ckpt_avg_cost = 4096.0;
@@ -36,10 +38,10 @@ void auto_ckpt_init(void)
 }
 
 /**
- * @brief Compute and set the optimal checkpoint interval for the current worker
+ * @brief Compute the thread-local metrics needed for the per-LP computations
  *
  * This function should be called only at the end of GVT reductions, because
- * the used statistics values are representative only in that moment
+ * the used statistics values are representative only in that moment.
  */
 void auto_ckpt_on_gvt(void)
 {
@@ -60,6 +62,10 @@ void auto_ckpt_on_gvt(void)
 				(double)ckpt_cost / (double)ckpt_count);
 }
 
+/**
+ * @brief Initialize the per-LP context for the auto checkpoint module
+ * @param auto_ckpt a pointer to the LP auto checkpoint context to initialize
+ */
 void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 {
 	memset(auto_ckpt, 0, sizeof(*auto_ckpt));
@@ -68,6 +74,13 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 	auto_ckpt->inv_bad_p = 64.0;
 }
 
+/**
+ * @brief Compute the optimal checkpoint interval of the current LP and set it
+ * @param auto_ckpt a pointer to the auto checkpoint context of the current LP
+ *
+ * This function should be called only at the end of GVT reductions, because
+ * the used statistics values are representative only in that moment.
+ */
 void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt)
 {
 	if (unlikely(!auto_ckpt->m_bad || global_config.ckpt_interval))

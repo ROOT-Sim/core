@@ -55,21 +55,38 @@ void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
 	}
 }
 
+
+/**
+ * @brief Initialize the global state of the simulation
+ *
+ * Setup the global state of the model by calling its MODEL_INIT handler
+ */
 void process_global_init(void)
 {
 	serial_model_init();
 }
 
+/**
+ * @brief Finalize the global state of the simulation
+ *
+ * Finalize the global state of the model by calling its MODEL_FINI handler
+ */
 void process_global_fini(void)
 {
 	ProcessEvent(0, 0, MODEL_FINI, NULL, 0, NULL);
 }
 
+/**
+ * @brief Initialize the thread-local processing data structures
+ */
 void process_init(void)
 {
 	array_init(early_antis);
 }
 
+/**
+ * @brief Finalize the thread-local processing data structures
+ */
 void process_fini(void)
 {
 	array_fini(early_antis);
@@ -291,6 +308,11 @@ static inline bool check_early_anti_messages(struct lp_msg *msg)
 	return false;
 }
 
+/**
+ * @brief extract and process a message, if available
+ *
+ * This function encloses most of the actual simulation logic.
+ */
 void process_msg(void)
 {
 	struct lp_msg *msg = msg_queue_extract();

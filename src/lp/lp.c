@@ -73,7 +73,7 @@ void lp_global_fini(void)
 }
 
 /**
- * @brief Initialize the data structures for the current LP
+ * @brief Initialize the data structures of the LPs hosted in the calling thread
  */
 void lp_init(void)
 {
@@ -97,7 +97,7 @@ void lp_init(void)
 }
 
 /**
- * @brief Finalize the data structures for the current LP
+ * @brief Finalize the data structures of the LPs hosted in the calling thread
  */
 void lp_fini(void)
 {

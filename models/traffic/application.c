@@ -84,7 +84,7 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, void *event, s
 			ScheduleNewEvent(me, /*LOOKAHEAD +*/ timestamp, KEEP_ALIVE, NULL, 0);
 
 			if(me == 0)
-				printf("STARTING TRAFFIC WITH END TIME: %u\n input rate: %f\n output prob: %f\n\n",EXECUTION_TIME, state->enter_prob, state->leave_prob);
+				printf("STARTING TRAFFIC WITH END TIME: %d\n input rate: %f\n output prob: %f\n\n", EXECUTION_TIME, state->enter_prob, state->leave_prob);
 
 			break;
 		}
@@ -177,7 +177,7 @@ void ProcessEvent(unsigned int me, simtime_t now, int event_type, void *event, s
 		}
 
       		default:
-			printf(" state simulation: error - inconsistent event (me = %d - event type = %d)\n",me,event_type);
+			printf(" state simulation: error - inconsistent event (me = %u - event type = %d)\n", me,event_type);
 			break;
 	}
 }

@@ -143,6 +143,26 @@ static bool gvt_thread_phase_run(void)
 	return false;
 }
 
+/**
+ * @fn gvt_phase_run(void)
+ * @brief Executes a step of the GVT algorithm
+ * @return the latest GVT value or 0.0 if the algorithm must still complete
+ *
+ * This function must be called several times by all the processing threads
+ * hosted in the nodes involved in the simulation before completing and
+ * returning a proper GVT value.
+ */
+
+
+/**
+ * @fn gvt_msg_drain(void)
+ * @brief Cleanup the distributed state of the GVT algorithm
+ *
+ * This function flushes the remaining remote messages, moreover it makes sure
+ * that all the nodes complete the potentially ongoing GVT algorithm so that
+ * MPI collectives are inactive.
+ */
+
 #ifdef ROOTSIM_MPI
 
 static bool gvt_node_phase_run(void)
@@ -161,7 +181,7 @@ static bool gvt_node_phase_run(void)
 		if (!gvt_thread_phase_run())
 			break;
 
-		gvt_phase = gvt_phase ^ !node_phase;
+		gvt_phase = gvt_phase ^ (!node_phase);
 		thread_phase = thread_phase_A;
 		++node_phase;
 		break;

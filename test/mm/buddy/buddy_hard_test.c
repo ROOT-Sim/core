@@ -40,10 +40,10 @@ __thread simtime_t current_gvt; // needed by the model allocator
 struct alc {
 	/// The pointer to the memory returned by the tested memory allocator
 	unsigned *ptr;
-	/// The data we expect to find in this allocation
-	unsigned data[MAX_ALLOC_E];
 	/// The size expressed in number of entries of @a data and @a ptr
 	unsigned c;
+	/// The data we expect to find in this allocation
+	unsigned data[MAX_ALLOC_E];
 };
 
 static void allocation_init(struct alc *alc)
