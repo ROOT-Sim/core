@@ -36,7 +36,7 @@ class RSStats:
             n_threads = glob_stats[0]
             n_stats = self._pattern_unpack("q")[0] // 16
             node_stats = []
-            for i in range(n_stats):
+            for _ in range(n_stats):
                 node_stats.append(self._pattern_unpack("dQ"))
 
             threads_stats = []
@@ -75,7 +75,7 @@ class RSStats:
 
         self.metric_names = []
         self._metric_names_load()
-        
+
         self.all_stats = []
         self._nodes_stats_load()
 
@@ -89,7 +89,7 @@ class RSStats:
         for metric_name in self.metric_names:
             self._metrics[metric_name] = []
 
-        for i, triple in enumerate(self.all_stats):
+        for triple in self.all_stats:
             glob_stats, node_stats, threads_stats = triple
             if len(self._gvts) == 0:
                 for gvt, crs_mem in node_stats:
