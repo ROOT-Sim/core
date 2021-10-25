@@ -36,7 +36,7 @@ static struct s_lp_ctx *s_lps;
 /// The context of the currently processed LP
 static struct s_lp_ctx *s_current_lp;
 /// The messages queue of the serial runtime
-static binary_heap(struct lp_msg *) queue;
+static heap_declare(struct lp_msg *) queue;
 #if LOG_DEBUG >= LOG_LEVEL
 /// Used for debugging possibly inconsistent models
 static simtime_t current_evt_time;
@@ -130,8 +130,6 @@ static void serial_simulation_run(void)
 		}
 #endif
 
-		stats_time_start(STATS_MSG_PROCESSED);
-
 		ProcessEvent(
 			cur_msg->dest,
 			cur_msg->dest_t,
@@ -140,8 +138,7 @@ static void serial_simulation_run(void)
 			cur_msg->pl_size,
 			s_current_lp->lib_ctx.state_s
 		);
-
-		stats_time_take(STATS_MSG_PROCESSED);
+		stats_take(STATS_MSG_PROCESSED, 1);
 
 		bool can_end = CanEnd(cur_msg->dest, s_current_lp->lib_ctx.state_s);
 

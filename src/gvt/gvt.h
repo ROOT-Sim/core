@@ -11,18 +11,17 @@
 #include <core/core.h>
 #include <lp/msg.h>
 
-#include <stdalign.h>
-
 extern void gvt_global_init(void);
 extern simtime_t gvt_phase_run(void);
 extern void gvt_on_msg_extraction(simtime_t msg_t);
 
 extern __thread _Bool gvt_phase;
-extern _Thread_local uint32_t remote_msg_seq[2][MAX_NODES];
-extern _Thread_local uint32_t remote_msg_received[2];
+extern __thread uint32_t remote_msg_seq[2][MAX_NODES];
+extern __thread uint32_t remote_msg_received[2];
 
 extern void gvt_start_processing(void);
 extern void gvt_on_done_ctrl_msg(void);
+extern void gvt_msg_drain(void);
 
 inline void gvt_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
@@ -49,4 +48,3 @@ inline void gvt_remote_anti_msg_receive(struct lp_msg *msg)
 	msg->raw_flags &= ~((uint32_t)3U);
 	msg->raw_flags |= MSG_FLAG_ANTI;
 }
-

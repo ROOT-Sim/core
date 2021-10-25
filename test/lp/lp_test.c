@@ -19,6 +19,7 @@ static int deinit_calls[N_LPS];
 static int mmem_calls[N_LPS];
 static int lib_calls[N_LPS];
 static int wrapm_calls[N_LPS];
+static int auto_ckpt_calls[N_LPS];
 
 void *malloc_mt(size_t siz)
 {
@@ -42,6 +43,22 @@ void model_allocator_lp_fini(void){ mmem_calls[current_lp - lps]--;}
 void lib_lp_init_pr(void){ lib_calls[current_lp - lps]++;}
 void lib_lp_fini_pr(void){ lib_calls[current_lp - lps]--;}
 
+void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
+{
+	auto_ckpt_calls[current_lp - lps] += auto_ckpt != NULL;
+}
+
+void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt)
+{
+	(void)auto_ckpt;
+}
+
+void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt)
+{
+	(void)lp;
+	(void)current_gvt;
+}
+
 static int lp_test_init(void)
 {
 	n_lps = N_LPS;
@@ -58,6 +75,7 @@ static int lp_test_fini(void)
 		ret += mmem_calls[i] != 0;
 		ret += lib_calls[i] != 0;
 		ret += trm_calls[i] != 1;
+		ret += auto_ckpt_calls[i] != 1;
 	}
 	lp_global_fini();
 	return ret;
@@ -75,6 +93,7 @@ static int lp_test(void)
 			ret += lib_calls[i] != 1;
 			ret += trm_calls[i] != 1;
 			ret += wrapm_calls[i] != 1;
+			ret += auto_ckpt_calls[i] != 1;
 		}
 	}
 	test_thread_barrier();

@@ -19,12 +19,14 @@ test_specs = {
   'fail_main': {'src' : ['self' / 'fail_main.c'], 'fail' : true, 'has_main' : true},
 
   'unit_init' : {'src' : ['core' / 'init_test.c', src_dir / 'core' / 'init.c', src_dir / 'core' / 'arg_parse.c'], 'has_main' : true},
+  'unit_bitmap' : {'src' : ['datatypes' / 'bitmap_test.c']},
   'unit_sync' : {'src' : ['core' / 'sync_test.c', src_dir / 'core' / 'sync.c']},
   'unit_msg_queue' : {'src' : ['datatypes' / 'msg_queue_test.c', src_dir / 'datatypes' / 'msg_queue.c']},
 # 'unit_gvt' : {'src' : ['gvt' / 'gvt_test.c', src_dir / 'gvt' / 'gvt.c']},
   'unit_msg_allocator' : {'src' : ['mm' / 'msg_allocator_test.c', src_dir / 'mm' / 'msg_allocator.c']},
   'unit_lp' : {'src' : ['lp' / 'lp_test.c', src_dir / 'lp' / 'lp.c']},
-  'unit_buddy_allocator' : {'src' : ['mm' / 'buddy' / 'buddy_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c']},
+  'unit_buddy_allocator' : {'src' : ['mm' / 'buddy' / 'buddy_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c', src_dir / 'mm' / 'buddy' / 'ckpt.c']},
+  'unit_buddy_allocator_hard' : {'src' : ['mm' / 'buddy' / 'buddy_hard_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c', src_dir / 'mm' / 'buddy' / 'ckpt.c']},
   'unit_compiler' : {'src' : ['compiler' / 'compiler_test.c', src_dir / 'compiler' / 'compiler.c'], 'has_main' : true, 'c_args' : compiler_c_args},
 
   'integration_serial': {
@@ -52,7 +54,7 @@ test_specs = {
   'model_phold': {
     'src' : [
       'models' / 'model_test.c',
-      models_dir / 'phold' / 'phold.c',
+      models_dir / 'phold' / 'phold.c'
     ],
     'rslib' : true
   }
@@ -86,11 +88,11 @@ foreach t_name, t_spec : test_specs
 
   test_executable = executable(t_full_name, t_srcs, dependencies : t_deps,
     include_directories : src_inc_dir, c_args : t_spec.get('c_args', []) +
-    ['-DROOTSIM_TEST_NAME="' + t_name + '"'], link_args : '-no-pie',
+    ['-DROOTSIM_TEST_NAME="' + t_name + '"'] + rootsim_c_args, link_args : '-no-pie',
     link_language : 'c')
 
   if mpi_dep.found() and t_spec.get('mpi', false)
-    test(t_full_name + '_mpi', mpiexec_cmd,
+    test(t_full_name + '_mpi', mpiexec_cmd, 
       args : ['-n', '2', test_executable.full_path()])
   endif
 

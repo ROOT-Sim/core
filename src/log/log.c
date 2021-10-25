@@ -48,6 +48,7 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 	char time_string[IO_TIME_BUFFER_LEN];
 	io_local_time_get(time_string);
 
+#if LOG_CAN_LOG_AT_BUILD(LOG_DEBUG)
 	if(log_colored) {
 		fprintf(
 			stderr,
@@ -68,6 +69,26 @@ void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
 			line
 		);
 	}
+#else
+	(void) file;
+	(void) line;
+	if(log_colored) {
+		fprintf(
+			stderr,
+			"%s %s%-5s\x1b[0m\x1b[0m ",
+			time_string,
+			levels[level].color,
+			levels[level].name
+		);
+	} else {
+		fprintf(
+			stderr,
+			"%s %-5s ",
+			time_string,
+			levels[level].name
+		);
+	}
+#endif
 
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);

@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 project('ROOT-Sim', ['c', 'cpp'], version : '3.0.0-alpha.3',
-  default_options : ['c_std=c11', 'cpp_std=c++14', 'buildtype=release',
-  'warning_level=3', 'unity=on', 'unity_size=10000', 'b_lto=true'])
+  meson_version : '>=0.55', default_options : ['c_std=c11', 'cpp_std=c++14',
+  'buildtype=release', 'warning_level=3', 'unity=on', 'unity_size=10000',
+  'b_lto=true', 'b_pie=false', 'b_staticpic=false'])
 
 # This is needed since our compiler uses a LLVM plugin
 assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
@@ -11,17 +12,21 @@ assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
   '\'-Db_lto=false\' to the meson command or prepend it with \'env CC=clang ' +
   'CXX=clang++\'')
 
-# This stuff would otherwise break our fragile linking process
-add_global_link_arguments(['-no-pie'], language : 'c')
-add_global_arguments(['-fno-pic'], language : 'c')
-if meson.get_compiler('c').get_id() != 'clang'
-  add_global_arguments(['-no-pie'], language : 'c')
-endif
-
 # Workaround to have reproducible unity builds
 if get_option('unity') == 'on'
-  add_global_arguments(['-ffile-prefix-map=' + meson.build_root() / '..=..'],
-    language : 'c')
+  if meson.get_compiler('c').has_argument('-ffile-prefix-map=.=.')
+    prefix_arg = '-ffile-prefix-map=' + meson.build_root() / '..=..'
+    add_global_arguments(prefix_arg, language : 'c')
+  endif
+endif
+
+# Used in some defines, the llvm plugin and the tests
+if get_option('buildtype') == 'release'
+  c_optimization_options = ['-Ofast', '-march=native', '-mtune=native']
+  add_global_arguments(c_optimization_options, language : 'c')
+  add_global_link_arguments(c_optimization_options, language : 'c')
+else
+  c_optimization_options = ['-O' + get_option('optimization')]
 endif
 
 # Include directory used explicitly in tests and LLVM plugin compilation
@@ -40,13 +45,6 @@ mpi_dep = dependency('mpi', language : 'c', required : get_option('mpi'))
 clang_compiler = find_program(llvm_dep.get_variable(configtool : 'bindir') /
   'clang')
 
-# Custom threads library dependency
-rs_thr_dep = declare_dependency(link_with :
-  static_library('rootsim-threads', 'src' / 'arch' / 'thread.c',
-    dependencies: dependency('threads'), include_directories : src_inc_dir))
-
-# Used in some defines, the llvm plugin and the tests
-c_optimization_options = ['-O' + get_option('optimization')]
 if get_option('debug')
   c_optimization_options += '-g'
 endif
@@ -56,6 +54,9 @@ endif
 if get_option('b_sanitize') == 'address'
   c_optimization_options += '-fsanitize=address'
 endif
+if llvm_dep.version().version_compare('>= 13')
+  c_optimization_options += '-flegacy-pass-manager'
+endif
 
 # Logging level define
 if get_option('debug')
@@ -64,7 +65,10 @@ else
   log_level_def = '-DLOG_LEVEL=LOG_INFO'
 endif
 
-rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
+# Custom threads library dependency
+rs_thr_dep = declare_dependency(link_with :
+  static_library('rootsim-threads', 'src' / 'arch' / 'thread.c',
+    dependencies: dependency('threads'), include_directories : src_inc_dir))
 
 # Used to build the LLVM plugin
 llvm_cfg_gen = find_program('scripts' / 'llvm_cfg_gen.py')

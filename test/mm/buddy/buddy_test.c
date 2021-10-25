@@ -16,6 +16,10 @@
 
 #include <stdlib.h>
 
+#ifndef ROOTSIM_INCREMENTAL
+#define __write_mem(x, y)
+#endif
+
 static __thread test_rng_state rng_state;
 
 __thread struct lp_ctx *current_lp; // needed by the model allocator
@@ -39,37 +43,40 @@ static int block_size_test(unsigned b_exp)
 
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			allocations[i][j] = lcg_random_u(rng_state);
+			__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
 
 	errs += malloc_mt(block_size) != NULL;
 
+	model_allocator_checkpoint_next_force_full();
 	model_allocator_checkpoint_take(0);
 	test_rng_state rng_snap_b = rng_state;
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			allocations[i][j] = lcg_random_u(rng_state);
+			__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
 
 	errs += malloc_mt(block_size) != NULL;
 
-	model_allocator_checkpoint_take(B_LOG_FREQUENCY);
+	model_allocator_checkpoint_take(1);
 
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
 			allocations[i][j] = lcg_random_u(rng_state);
+			__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
 
 	errs += malloc_mt(block_size) != NULL;
 
-	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2 - 1);
-	model_allocator_checkpoint_take(B_LOG_FREQUENCY * 2);
+	model_allocator_checkpoint_take(2);
 
-	model_allocator_checkpoint_restore(B_LOG_FREQUENCY);
+	model_allocator_checkpoint_restore(1);
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
@@ -96,6 +103,7 @@ static int block_size_test(unsigned b_exp)
 static int model_allocator_test(void)
 {
 	current_lp = malloc(sizeof(*current_lp));
+	model_allocator_init();
 	model_allocator_lp_init();
 	lcg_init(rng_state, (rid + 1) * 1713);
 
@@ -114,6 +122,7 @@ static int model_allocator_test(void)
 	free_mt(mem);
 
 	model_allocator_lp_fini();
+	model_allocator_fini();
 	free(current_lp);
 	return -(!!errs);
 }

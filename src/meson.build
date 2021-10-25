@@ -8,6 +8,7 @@ subdir('instr')
 # TODO integrate the plugin system
 subdir('lib')
 
+rootsim_version_def = '-DROOTSIM_VERSION="' + meson.project_version() + '"'
 rootsim_c_args = [rootsim_version_def, log_level_def]
 
 # ROOT-Sim library sources
@@ -20,6 +21,7 @@ rootsim_srcs = [
   'core' / 'init.c',
   'core' / 'sync.c',
   'datatypes' / 'msg_queue.c',
+  'distributed' / 'control_msg.c',
   'gvt' / 'fossil.c',
   'gvt' / 'gvt.c',
   'gvt' / 'termination.c',
@@ -28,6 +30,8 @@ rootsim_srcs = [
   'lp' / 'lp.c',
   'lp' / 'process.c',
   'mm' / 'buddy' / 'buddy.c',
+  'mm' / 'buddy' / 'ckpt.c',
+  'mm' / 'auto_ckpt.c',
   'mm' / 'mm.c',
   'mm' / 'msg_allocator.c',
   'parallel' / 'parallel.c',
@@ -40,6 +44,10 @@ if mpi_dep.found()
   rootsim_srcs += 'distributed' / 'mpi.c'
 else
   rootsim_srcs += 'distributed' / 'no_mpi.c'
+endif
+
+if get_option('iss').enabled()
+  rootsim_c_args += '-DROOTSIM_INCREMENTAL=1'
 endif
 
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,

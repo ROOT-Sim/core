@@ -56,6 +56,7 @@ extern double Random(void);
 extern uint64_t RandomU64(void);
 extern double Expent(double mean);
 extern double Normal(void);
+extern int RandomRange(int min, int max);
 
 enum _topology_geometry_t {
 	TOPOLOGY_HEXAGON = 1,	//!< hexagonal grid topology

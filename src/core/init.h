@@ -24,6 +24,8 @@ struct simulation_configuration {
 	unsigned gvt_period;
 	/// The log verbosity level
 	int verbosity;
+	/// The checkpointing interval
+	unsigned ckpt_interval;
 	/// The seed used to initialize the pseudo random numbers
 	uint64_t prng_seed;
 	/// If set, worker threads are bound to physical cores

@@ -11,6 +11,24 @@
  */
 #include <arch/mem.h>
 
+/**
+ * @fn mem_stat_setup(void)
+ * @brief Initialize the platform specific memory statistics facilities
+ * @return 0 if successful, -1 otherwise
+ */
+
+/**
+ * @fn mem_stat_rss_current_get(void)
+ * @brief Get the current size of the resident set
+ * @return the size in bytes of the current resident set, 0 if unsuccessful
+ */
+
+/**
+ * @fn mem_stat_rss_max_get(void)
+ * @brief Get the maximum size of the resident set since program beginning
+ * @return the size in bytes of the maximal resident set, 0 if unsuccessful
+ */
+
 #ifdef __POSIX
 
 #include <sys/resource.h>

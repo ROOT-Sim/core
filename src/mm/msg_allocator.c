@@ -15,27 +15,31 @@
 #include <gvt/gvt.h>
 
 static __thread dyn_array(struct lp_msg *) free_list = {0};
-static __thread dyn_array(struct lp_msg *) free_gvt_list = {0};
 
+/**
+ * @brief Initialize the message allocator thread-local data structures
+ */
 void msg_allocator_init(void)
 {
 	array_init(free_list);
-	array_init(free_gvt_list);
 }
 
+/**
+ * @brief Finalize the message allocator thread-local data structures
+ */
 void msg_allocator_fini(void)
 {
 	while (!array_is_empty(free_list)) {
 		mm_free(array_pop(free_list));
 	}
 	array_fini(free_list);
-
-	while (!array_is_empty(free_gvt_list)) {
-		mm_free(array_pop(free_gvt_list));
-	}
-	array_fini(free_gvt_list);
 }
 
+/**
+ * @brief Allocate a new message with given payload size
+ * @param payload_size the size in bytes of the requested message payload
+ * @return a new message with at least the requested amount of payload space
+ */
 struct lp_msg* msg_allocator_alloc(unsigned payload_size)
 {
 	struct lp_msg *ret;
@@ -55,6 +59,10 @@ struct lp_msg* msg_allocator_alloc(unsigned payload_size)
 	return array_pop(free_list);
 }
 
+/**
+ * @brief Free a message
+ * @param msg a pointer to the message to release
+ */
 void msg_allocator_free(struct lp_msg *msg)
 {
 	if(likely(msg->pl_size <= BASE_PAYLOAD_SIZE))
@@ -63,28 +71,14 @@ void msg_allocator_free(struct lp_msg *msg)
 		mm_free(msg);
 }
 
-void msg_allocator_free_at_gvt(struct lp_msg *msg)
-{
-	array_push(free_gvt_list, msg);
-}
-
-void msg_allocator_fossil_collect(simtime_t current_gvt)
-{
-	array_count_t j = 0;
-	for (array_count_t i = 0; i < array_count(free_gvt_list); ++i) {
-		struct lp_msg *msg = array_get_at(free_gvt_list, i);
-		// xxx this could need to check the actual sending time instead
-		// of the destination time in order to avoid a pseudo memory
-		// leak for LPs which send messages distant in logical time.
-		if (current_gvt > msg->dest_t) {
-			msg_allocator_free(msg);
-		} else {
-			array_get_at(free_gvt_list, j) = msg;
-			j++;
-		}
-	}
-	array_count(free_gvt_list) = j;
-}
-
+/**
+ * @brief Allocate a new message and populate it
+ * @param receiver the id of the LP which must receive this message
+ * @param timestamp the logical time at which this message must be processed
+ * @param event_type a field which can be used by the model to distinguish them
+ * @param payload the payload to copy into the message
+ * @param payload_size the size in bytes of the payload to copy into the message
+ * @return a new populated message
+ */
 extern struct lp_msg* msg_allocator_pack(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size);

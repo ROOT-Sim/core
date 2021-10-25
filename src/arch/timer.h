@@ -61,3 +61,32 @@ inline timer_uint timer_value(timer_uint start)
 
 #endif
 
+#if defined(__x86_64__) || defined(__i386__)
+#ifdef __WINDOWS
+#include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif
+
+__attribute__((__always_inline__))
+inline timer_uint timer_hr_new(void)
+{
+	return __rdtsc();
+}
+
+#else
+
+__attribute__((__always_inline__))
+inline timer_uint timer_hr_new(void)
+{
+	return timer_new();
+}
+
+#endif
+
+__attribute__((__always_inline__))
+inline timer_uint timer_hr_value(timer_uint start)
+{
+	return timer_hr_new() - start;
+}
+
