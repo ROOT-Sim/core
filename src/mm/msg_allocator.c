@@ -57,10 +57,16 @@ struct lp_msg* msg_allocator_alloc(unsigned payload_size)
 
 void msg_allocator_free(struct lp_msg *msg)
 {
-	if(likely(msg->pl_size <= BASE_PAYLOAD_SIZE))
+#ifdef PUBSUB
+	if(is_pubsub_msg(msg)){
+		pubsub_msg_free(msg);
+	} else
+#endif
+	if(likely(msg->pl_size <= BASE_PAYLOAD_SIZE)) {
 		array_push(free_list, msg);
-	else
+	} else {
 		mm_free(msg);
+	}
 }
 
 void msg_allocator_free_at_gvt(struct lp_msg *msg)
@@ -77,12 +83,6 @@ void msg_allocator_fossil_collect(simtime_t current_gvt)
 		// of the destination time in order to avoid a pseudo memory
 		// leak for LPs which send messages distant in logical time.
 		if (current_gvt > msg->dest_t) {
-#ifdef PUBSUB
-			if(is_pubsub_msg(msg)){
-				pubsub_msg_free(msg);
-				continue;
-			}
-#endif
 			msg_allocator_free(msg);
 		} else {
 			array_get_at(free_gvt_list, j) = msg;

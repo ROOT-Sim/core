@@ -12,11 +12,11 @@
 #include <distributed/mpi.h>
 #endif
 
-// Size of additional data needed by the pubsub messages delivered to threads
+// Size of additional data needed by pubsub messages published locally
 #define size_of_pubsub_info	(sizeof(size_t) + sizeof(struct lp_msg*))
 
-extern void pubsub_lib_lp_init(void);
-extern void pubsub_lib_global_init(void);
+extern void pubsub_module_lp_init(void);
+extern void pubsub_module_global_init(void);
 
 /// Send an Event to all the subscribed LPs.
 extern void PublishNewEvent(simtime_t timestamp, unsigned event_type, const void *event_content, unsigned event_size);
@@ -34,40 +34,18 @@ extern void SubscribeAndHandle(lp_id_t subscriber_id, lp_id_t publisher_id, void
  */
 extern void ProcessPublishedEvent(lp_id_t me, simtime_t msg_ts, unsigned int event, const void* msg_content, unsigned int size, const void* user_data);
 
-extern void node_handle_published_message(struct lp_msg* msg);
+extern void pub_node_handle_published_message(struct lp_msg* msg);
+extern void sub_node_handle_published_message(struct lp_msg* msg);
 extern void thread_handle_published_message(struct lp_msg* msg);
-extern void node_handle_published_antimessage(struct lp_msg* msg);
-extern void thread_handle_published_antimessage(struct lp_msg* msg);
+extern void pub_node_handle_published_antimessage(struct lp_msg* msg);
+extern void sub_node_handle_published_antimessage(struct lp_msg* msg);
+extern void thread_handle_published_antimessage(struct lp_msg* anti_msg);
 
 extern void pubsub_msg_free(struct lp_msg* msg);
 
 extern void pubsub_msg_queue_insert(struct lp_msg* msg);
 
-inline struct lp_msg* msg_allocator_realloc(struct lp_msg* msg, unsigned payload_size)
-{
-	struct lp_msg *ret;
-	if(payload_size > BASE_PAYLOAD_SIZE){
-		ret = mm_realloc( msg,
-			offsetof(struct lp_msg, extra_pl) +
-			(payload_size - BASE_PAYLOAD_SIZE)
-		);
-		ret->pl_size = payload_size;
-		return ret;
-	}
-	if(msg->pl_size <= BASE_PAYLOAD_SIZE){// && payload_size < BASE_PAYLOAD_SIZE){
-		// No need to reallocate, won't get any smaller
-		msg->pl_size = payload_size;
-		return msg;
-	}
-	
-	// msg->pl_size > BASE_PAYLOAD_SIZE && payload_size < BASE_PAYLOAD_SIZE
-	// This will probably just truncate the memory area
-	ret = mm_realloc(msg, sizeof(struct lp_msg));
-	ret->pl_size = payload_size;
-	return ret;
-}
-
 #define is_pubsub_msg(msg)						\
 __extension__({								\
-	msg->flags & MSG_FLAG_PUBSUB;					\
+	(msg)->flags & MSG_FLAG_PUBSUB;					\
 })

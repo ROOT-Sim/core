@@ -27,41 +27,41 @@ test_specs = {
   'unit_buddy_allocator' : {'src' : ['mm' / 'buddy' / 'buddy_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c']},
   'unit_compiler' : {'src' : ['compiler' / 'compiler_test.c', src_dir / 'compiler' / 'compiler.c'], 'has_main' : true, 'c_args' : compiler_c_args},
 
-  'integration_serial': {
-    'src' : ['integration' / 'integration_serial.c'] + test_model_srcs,
-    'run_plugin' : true,
-    'rslib' : true
-  },
-  'integration_single':  {
-    'src' : ['integration' / 'integration_parallel_single.c'] + test_model_srcs,
-    'run_plugin' : true,
-    'rslib' : true,
-    'mpi' : true
-  },
-  'integration_multi': {
-    'src' : ['integration' / 'integration_parallel_multi.c'] + test_model_srcs,
-    'run_plugin' : true,
-    'rslib' : true,
-    'mpi' : true
-  },
-
-  'model_pcs': {
-    'src' : [
-      'models' / 'model_test.c', 
-      models_dir / 'pcs' / 'application.c', 
-      models_dir / 'pcs' / 'functions_app.c'
-    ],
-    'run_plugin' : true,
-    'rslib' : true
-  },
-  'model_phold': {
-    'src' : [
-      'models' / 'model_test.c', 
-      models_dir / 'phold' / 'application.c', 
-    ],
-    'run_plugin' : true,
-    'rslib' : true
-  }
+#  'integration_serial': {
+#    'src' : ['integration' / 'integration_serial.c'] + test_model_srcs,
+#    'run_plugin' : true,
+#    'rslib' : true
+#  },
+#  'integration_single':  {
+#    'src' : ['integration' / 'integration_parallel_single.c'] + test_model_srcs,
+#    'run_plugin' : true,
+#    'rslib' : true,
+#    'mpi' : true
+#  },
+#  'integration_multi': {
+#    'src' : ['integration' / 'integration_parallel_multi.c'] + test_model_srcs,
+#    'run_plugin' : true,
+#    'rslib' : true,
+#    'mpi' : true
+#  },
+#
+#  'model_pcs': {
+#    'src' : [
+#      'models' / 'model_test.c', 
+#      models_dir / 'pcs' / 'application.c', 
+#      models_dir / 'pcs' / 'functions_app.c'
+#    ],
+#    'run_plugin' : true,
+#    'rslib' : true
+#  },
+#  'model_phold': {
+#    'src' : [
+#      'models' / 'model_test.c', 
+#      models_dir / 'phold' / 'application.c', 
+#    ],
+#    'run_plugin' : true,
+#    'rslib' : true
+#  }
 }
 
 # Needed for mpi integration tests

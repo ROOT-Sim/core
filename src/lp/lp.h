@@ -30,7 +30,7 @@ struct lp_ctx {
 	/// Bitmap for subbed nodes
 	struct block_bitmap* subnodes;
     /// Count of nodes subbed to this LP
-    size_t n_remote_sub_nodes;
+    int n_remote_sub_nodes;
 #endif
 
 	/// The memory allocator state of this LP

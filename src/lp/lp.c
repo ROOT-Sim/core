@@ -72,7 +72,7 @@ void lp_init(void)
 		lib_lp_init_pr();
 
 #ifdef PUBSUB
-		pubsub_lib_lp_init();
+		pubsub_module_lp_init();
 #endif
 		
 		

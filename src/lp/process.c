@@ -18,7 +18,7 @@
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 
-static _Thread_local bool silent_processing = false;
+_Thread_local bool silent_processing = false;
 static _Thread_local dyn_array(struct lp_msg *) early_antis;
 
 void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
@@ -161,7 +161,7 @@ static inline void send_anti_messages(struct process_data *proc_p,
 
         if (is_pubsub_msg(msg)){
             // a pubsub message sent from this LP
-            node_handle_published_antimessage(msg);
+            pub_node_handle_published_antimessage(msg);
             continue;
         }
 
@@ -308,7 +308,7 @@ void process_msg(void)
 			MSG_FLAG_PROCESSED, memory_order_relaxed);
 
 	if (unlikely(flags & MSG_FLAG_ANTI)) {
-		if (flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
+		if (flags >> MSG_FLAGS_BITS) {
 			handle_remote_anti_msg(proc_p, msg);
 			return;
 		}

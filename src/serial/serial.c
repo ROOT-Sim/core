@@ -65,7 +65,7 @@ static void serial_simulation_init(void)
 	lib_global_init();
 
     // TODO: check if this works
-    pubsub_lib_global_init();
+	pubsub_module_global_init();
 
 	serial_model_init();
 
@@ -77,7 +77,7 @@ static void serial_simulation_init(void)
 		lib_lp_init();
 
         // TODO: check if this works
-        pubsub_lib_lp_init();
+		pubsub_module_lp_init();
 
 #if LOG_DEBUG >= LOG_LEVEL
 		s_lps[i].last_evt_time = -1;
