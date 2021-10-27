@@ -53,10 +53,11 @@ t_entry_arr *subscribersTable;
 spinlock_t *tableLocks;
 
 inline void mpi_pubsub_remote_msg_send(struct lp_msg *msg, nid_t dest_nid);
-
 inline void mpi_pubsub_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 
 inline void thread_actually_antimessage(struct lp_msg *msg);
+
+inline void pubsub_insert_in_past(struct lp_msg *msg);
 
 // OK
 void pubsub_module_lp_init(){
@@ -306,7 +307,7 @@ void thread_handle_published_message(struct lp_msg* msg){
 			pubsub_msg_free(msg);
 		} else {
 			// Cannot just free because antimessaging could happen
-			array_push(past_pubsubs, msg);
+			pubsub_insert_in_past(msg);
 		}
 		return;
 	}
@@ -392,7 +393,7 @@ void thread_handle_published_message(struct lp_msg* msg){
 		return;
 	}
 
-	array_push(past_pubsubs, msg);
+	pubsub_insert_in_past(msg);
 }
 
 // ok
@@ -547,9 +548,7 @@ void thread_handle_published_antimessage(struct lp_msg *anti_msg){
 	// We did
 	msg_allocator_free(anti_msg);
 
-	struct lp_msg *msg = array_get_at(past_pubsubs, past_i);
-	array_get_at(past_pubsubs, past_i) = array_peek(past_pubsubs);
-	--array_count(past_pubsubs);
+	struct lp_msg *msg = array_remove_at(past_pubsubs, past_i);
 
 	thread_actually_antimessage(msg);
 }
@@ -747,6 +746,35 @@ void pubsub_msg_queue_insert(struct lp_msg* msg){
 	heap_insert(this_q->q, msg_is_before, msg);
 	spin_unlock(&this_q->lck);
 	
+}
+
+void pubsub_fossil_collect(simtime_t current_gvt){
+
+	// Free past_pubsubs
+	array_count_t ct = array_count(past_pubsubs);
+	array_count_t i;
+
+	for(i=0; i<ct; i++){
+		struct lp_msg *msg = array_get_at(past_pubsubs, i);
+		if(msg->dest_t >= current_gvt){
+			break;
+		}
+		pubsub_msg_free(msg);
+	}
+	array_truncate_first(past_pubsubs, i);
+
+}
+
+/// Adds to past_pubsubs maintaining ordering
+inline void pubsub_insert_in_past(struct lp_msg *msg){
+	array_count_t pos = array_count(past_pubsubs)-1;
+	simtime_t time = msg->dest_t;
+
+	while(time > array_get_at(past_pubsubs, pos)->dest_t && pos > 0){
+		pos--;
+	}
+
+	array_add_at(past_pubsubs, pos, msg);
 }
 
 #ifdef ROOTSIM_MPI

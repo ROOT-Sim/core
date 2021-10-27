@@ -17,6 +17,7 @@
 
 extern void pubsub_module_lp_init(void);
 extern void pubsub_module_global_init(void);
+extern void pubsub_fossil_collect(simtime_t current_gvt);
 
 /// Send an Event to all the subscribed LPs.
 extern void PublishNewEvent(simtime_t timestamp, unsigned event_type, const void *event_content, unsigned event_size);

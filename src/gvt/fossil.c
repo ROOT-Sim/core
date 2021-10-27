@@ -15,6 +15,10 @@
 #include <mm/model_allocator.h>
 #include <mm/msg_allocator.h>
 
+#ifdef PUBSUB
+#include <modules/publish_subscribe/pubsub.h>
+#endif
+
 #include <memory.h>
 
 #define cant_discard_ref_i(ref_i) \
@@ -53,6 +57,9 @@ void fossil_collect(simtime_t current_gvt)
 {
 #if defined(ROOTSIM_MPI) || defined(PUBSUB)
 	msg_allocator_fossil_collect(current_gvt);
+#endif
+#ifdef PUBSUB
+	pubsub_fossil_collect(current_gvt);
 #endif
 	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		current_lp = &lps[i];
