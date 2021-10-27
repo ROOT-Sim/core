@@ -26,7 +26,7 @@ enum msg_ctrl_tag {
 	/// Used in broadcast to signal that local LPs can terminate
 	MSG_CTRL_TERMINATION,
 #ifdef PUBSUB
-    MSG_PUBSUB
+	MSG_PUBSUB
 #endif
 };
 

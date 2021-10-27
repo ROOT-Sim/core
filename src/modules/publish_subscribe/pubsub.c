@@ -63,7 +63,7 @@ inline void pubsub_insert_in_past(struct lp_msg *msg);
 void pubsub_module_lp_init(){
 	current_lp->subnodes = mm_alloc(bitmap_required_size(n_nodes));
 	bitmap_initialize(current_lp->subnodes, n_nodes);
-    current_lp->n_remote_sub_nodes = 0;
+	current_lp->n_remote_sub_nodes = 0;
 }
 
 // OK
@@ -72,7 +72,7 @@ void pubsub_module_global_init(){
 	// Right now, the hashtable is simply an array[n_lps]
 	subscribersTable = mm_alloc(sizeof(t_entry_arr)*n_lps);
 	tableLocks = mm_alloc(sizeof(spinlock_t)*n_lps);
-	
+
 	for(lp_id_t i=0; i<n_lps; i++){
 		//~ subscribersTable[i].items = NULL;
 		array_count(subscribersTable[i])=0; // Unorthodox. Works
@@ -194,31 +194,31 @@ void pub_node_handle_published_message(struct lp_msg* msg){
 // Should be ok?
 /// Called when MPI extracts a pubsub message
 void sub_node_handle_published_message(struct lp_msg* msg){
-    // On receiver nodes, the original message is only used to create thread-level ones
+	// On receiver nodes, the original message is only used to create thread-level ones
 
-    t_entry_arr threads = subscribersTable[msg->dest];
+	t_entry_arr threads = subscribersTable[msg->dest];
 
 	// One message per thread
 	int n_ch_count = array_count(threads);
 
-    if(!n_ch_count){ // The entry of the publisher LP does not exist.
+	if(!n_ch_count){ // The entry of the publisher LP does not exist.
 		msg_allocator_free(msg);
-        return;
-    }
+		return;
+	}
 
-    size_t child_pl_size = 	n_stripped_payload_size(msg) +
-								size_of_thread_pubsub_info;
-    // Visualization of child's payload once populated:
-    // Offsets	:	v-0       		v-msg->pl_size
-    // Contents	:	[ 	*(msg->pl) 	| 	lp_arr* |	childCount	| lp_msg**	]
+	size_t child_pl_size = 	n_stripped_payload_size(msg) +
+							  size_of_thread_pubsub_info;
+	// Visualization of child's payload once populated:
+	// Offsets	:	v-0       		v-msg->pl_size
+	// Contents	:	[ 	*(msg->pl) 	| 	lp_arr* |	childCount	| lp_msg**	]
 
 	// Create and enqueue messages for each subscribed Thread
 	for(int c=0; c < n_ch_count; c++){
 
 		table_thread_entry_t *t_entry = &array_get_at(threads, c);
 
-        // Create child message
-        // Target holds the target thread's tid
+		// Create child message
+		// Target holds the target thread's tid
 		struct lp_msg *child_msg = msg_allocator_alloc(child_pl_size);
 		child_msg->dest = t_entry->tid;
 		child_msg->dest_t = msg->dest_t;
@@ -235,17 +235,17 @@ void sub_node_handle_published_message(struct lp_msg* msg){
 		// Contents	:		[ 	*(msg->pl) 	| 	lp_arr*	|	0	|	NULL	]
 		// The info for pubsub will be filled out by the thread handling the messages
 
-        atomic_store_explicit(&child_msg->flags, MSG_FLAG_PUBSUB, memory_order_relaxed);
+		atomic_store_explicit(&child_msg->flags, MSG_FLAG_PUBSUB, memory_order_relaxed);
 
-        // Push child message into target thread's incoming queue
-        pubsub_msg_queue_insert(child_msg);
+		// Push child message into target thread's incoming queue
+		pubsub_msg_queue_insert(child_msg);
 
-    }
+	}
 
-    /* This msg is only a blueprint: Free it right now */
-    msg_allocator_free(msg);
+	/* This msg is only a blueprint: Free it right now */
+	msg_allocator_free(msg);
 
-    return;
+	return;
 }
 
 static inline bool check_early_anti_pubsub_messages(struct lp_msg *msg)
@@ -285,7 +285,7 @@ void thread_handle_published_message(struct lp_msg* msg){
 	if (unlikely(check_early_anti_pubsub_messages(msg))){
 		return;
 	}
-	
+
 	/*
 	 * The parent message keeps track of its children by keeping
 	 * an array of pointers in the payload.
@@ -295,12 +295,12 @@ void thread_handle_published_message(struct lp_msg* msg){
 	 * Contents right now:
 	 * [ pl	| &lp_arr	| 	0	| NULL		]
 	 */
-	
+
 	lp_entry_arr lp_arr = *t_lp_arr(msg);
-	
+
 	// One message per subscription
 	t_children_count(msg) = array_count(lp_arr);
-	
+
 	if(!array_count(lp_arr)){
 		uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(flags & MSG_FLAG_ANTI){ // Can only happen with local pubsubs
@@ -311,17 +311,17 @@ void thread_handle_published_message(struct lp_msg* msg){
 		}
 		return;
 	}
-	
+
 	children_ptr(msg) = mm_alloc(sizeof(struct lp_msg*) * array_count(lp_arr));
 	// Contents msg->pl now:
 	// Byte offsets	:v-0    v-og_pl_size	v-(pl_size+sizeof(void*))	
 	// Contents	:[ pl	| &lp_arr	| childCount	| lp_msg**	]
-	
+
 	// Here create the payload for the messages LPs will receive
 	size_t original_pl_size = t_stripped_payload_size(msg);
-	
+
 	struct lp_msg* child_msg;
-	
+
 	// For each subscribed LP
 	for(array_count_t i=0; i < array_count(lp_arr); i++){
 		// Check that message has not been antimessaged
@@ -330,13 +330,13 @@ void thread_handle_published_message(struct lp_msg* msg){
 			t_children_count(msg) = i;
 			break;
 		}
-		
+
 		table_lp_entry_t c_lp_entry = array_get_at(lp_arr, i);
-		
+
 		lp_id_t target_lid = c_lp_entry.lid; // Still dirty
 		bool justSub = target_lid & LP_ID_MSB;
 		target_lid = target_lid & ~LP_ID_MSB; // Clear leftmost bit
-		
+
 		// Check: Subscribe or SubscribeAndHandle?
 		if(justSub){ // Regular subscribe
 			// Just enqueue a clone of the message!
@@ -346,22 +346,22 @@ void thread_handle_published_message(struct lp_msg* msg){
 					msg->m_type,
 					msg->pl,
 					original_pl_size
-				);
-			
+			);
+
 			atomic_store_explicit(&child_msg->flags, 0U, memory_order_relaxed);
 
 			msg_queue_insert(msg);
-			
+
 		} else { // SubscribeAndHandle
 			// Set the current LP to the target lp's id
 			struct lp_ctx* this_lp = &lps[target_lid];
 			current_lp = this_lp;
-			
+
 			struct process_data *proc_p = &current_lp->p;
-			
+
 			// Get user-provided data from entry
 			void *usr_data = c_lp_entry.data;
-			
+
 			// > Invoke the handler with correct data and lp_id
 			ProcessPublishedEvent_pr(
 				current_lid,
@@ -371,21 +371,21 @@ void thread_handle_published_message(struct lp_msg* msg){
 				original_pl_size,
 				usr_data
 			);
-			
+
 			// Flags and all initialized in ScheduleNewEvent
-			
+
 			// Pop the created message from sent_msgs
 			child_msg = array_pop(proc_p->sent_msgs);
-			
+
 		}
-		
+
 		// Keep track of the child message
 		t_children_ptr(msg)[i] = child_msg;
-		
+
 	}
 	// Done processing
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
-	
+
 	if (flags & MSG_FLAG_ANTI){
 		// If the message has been antimessaged in the meantime
 		// Take action
@@ -408,7 +408,7 @@ void PublishNewEvent(simtime_t timestamp, unsigned event_type, const void *paylo
 		return;
 
 	struct process_data *proc_p = &current_lp->p;
-	
+
 	// A node-level pubsub message is created.
 	struct lp_msg *msg = msg_allocator_alloc(payload_size + size_of_pubsub_info);
 	msg->dest = current_lid;
@@ -418,7 +418,7 @@ void PublishNewEvent(simtime_t timestamp, unsigned event_type, const void *paylo
 	if(payload_size){
 		memcpy(msg->pl, payload, payload_size);
 	}
-	
+
 	pub_node_handle_published_message(msg);
 
 	// Do this after making copies, or it will dirty MPI messages!
@@ -465,56 +465,56 @@ void sub_node_handle_published_antimessage(struct lp_msg *msg){
 // Ok?
 /// This carries out the antimessaging when the node is the one responsible for the publisher LP
 void pub_node_handle_published_antimessage(struct lp_msg *msg){
-    // Carry out the antimessaging
-    // the message originated from the local node. More precisely, it came from current_LP as this can only be called when rolling back
-    size_t child_count = n_children_count(msg);
+	// Carry out the antimessaging
+	// the message originated from the local node. More precisely, it came from current_LP as this can only be called when rolling back
+	size_t child_count = n_children_count(msg);
 
-    struct lp_msg** children = n_children_ptr(msg);
-    struct lp_msg* cmsg;
+	struct lp_msg** children = n_children_ptr(msg);
+	struct lp_msg* cmsg;
 
 #ifdef ROOTSIM_MPI
-    // Antimessage via MPI
-    if(current_lp->n_remote_sub_nodes){
-        size_t ct = current_lp->n_remote_sub_nodes;
+	// Antimessage via MPI
+	if(current_lp->n_remote_sub_nodes){
+		size_t ct = current_lp->n_remote_sub_nodes;
 
-        children += ct;
-        child_count -= ct;
+		children += ct;
+		child_count -= ct;
 
-        struct block_bitmap* subs = current_lp->subnodes;
+		struct block_bitmap* subs = current_lp->subnodes;
 
-        for (int dest_nid=0; ct>0; dest_nid++){
-            if (likely(dest_nid!=nid)) {
-                if (bitmap_check(subs, dest_nid)) {
+		for (int dest_nid=0; ct>0; dest_nid++){
+			if (likely(dest_nid!=nid)) {
+				if (bitmap_check(subs, dest_nid)) {
 
-                    cmsg = children[-ct];
-                    mpi_pubsub_remote_anti_msg_send(cmsg, dest_nid);
+					cmsg = children[-ct];
+					mpi_pubsub_remote_anti_msg_send(cmsg, dest_nid);
 
-                    ct--;
-                }
-            }
-        }
-    }
+					ct--;
+				}
+			}
+		}
+	}
 #endif
 
-    // The message generated no thread-level children
-    if(!child_count) {return;}
+	// The message generated no thread-level children
+	if(!child_count) {return;}
 
-    // Now antimessage every local child by setting flag + requeueing
-    for(long unsigned int i=0; i<child_count; i++){
-        cmsg = children[i];
+	// Now antimessage every local child by setting flag + requeueing
+	for(long unsigned int i=0; i<child_count; i++){
+		cmsg = children[i];
 
-        // Set anti flag
-        int cflags = atomic_fetch_add_explicit(
-                &cmsg->flags, MSG_FLAG_ANTI,
-                memory_order_relaxed);
+		// Set anti flag
+		int cflags = atomic_fetch_add_explicit(
+			&cmsg->flags, MSG_FLAG_ANTI,
+			memory_order_relaxed);
 
-        // Requeue if already processed
-        if (cflags & MSG_FLAG_PROCESSED) {
-            // cmsg->dest contains the tid of target thread
-            pubsub_msg_queue_insert(cmsg);
+		// Requeue if already processed
+		if (cflags & MSG_FLAG_PROCESSED) {
+			// cmsg->dest contains the tid of target thread
+			pubsub_msg_queue_insert(cmsg);
 
-        }
-    }
+		}
+	}
 }
 
 static inline array_count_t match_remote_pubsub_msg(const struct lp_msg *r_msg)
@@ -610,7 +610,7 @@ int seekInSortedArray(t_entry_arr arr, rid_t tid){
 	//~ int max = array_get_at(arr, size-1);
 	int min = 0;
 	int max = size-1;
-	
+
 	int next;
 	rid_t curr;
 	do {
@@ -634,66 +634,66 @@ extern void add_subbed_node(lp_id_t sub_id, lp_id_t pub_id);
 inline void add_subbed_node(lp_id_t sub_id, lp_id_t pub_id){
 	nid_t sub_node_id = lid_to_nid(sub_id);
 
-    if (!bitmap_check(lps[pub_id].subnodes, sub_node_id)) {
-        bitmap_set(lps[pub_id].subnodes, sub_node_id);
+	if (!bitmap_check(lps[pub_id].subnodes, sub_node_id)) {
+		bitmap_set(lps[pub_id].subnodes, sub_node_id);
 
-        // Newly subbed node is remote
-        if (sub_node_id != nid) {
-            lps[pub_id].n_remote_sub_nodes++;
-            // Can also do this with bitmap_count_set after initialization
-        }
-    }
+		// Newly subbed node is remote
+		if (sub_node_id != nid) {
+			lps[pub_id].n_remote_sub_nodes++;
+			// Can also do this with bitmap_count_set after initialization
+		}
+	}
 }
 
 // OK
 // Subscribe LP subscriber_id to LP publisher_id
 void SubscribeAndHandle(lp_id_t dirty_subscriber_id, lp_id_t publisher_id, void* data){
 	lp_id_t subscriber_id = dirty_subscriber_id & ~LP_ID_MSB; // Clear leftmost bit
-	
+
 	bool sub_is_local = lid_to_nid(subscriber_id)==nid && lid_to_rid(subscriber_id)==rid;
 	bool pub_is_local = lid_to_nid(publisher_id)==nid && lid_to_rid(publisher_id)==rid;
-	
+
 	if(pub_is_local){ // If the publisher is managed by local thread
 		add_subbed_node(subscriber_id, publisher_id);
 	}
-	
+
 	if (!sub_is_local){ // Nothing else left to do
 		return;
 	}
-	
+
 	// Acquire the lock
 	spin_lock(&(tableLocks[publisher_id]));
-	
+
 	// dyn_array holding entries for threads subbed to pub_LP
 	t_entry_arr *subbedThreads_p = &(subscribersTable[publisher_id]);
-	
-	int size = array_count(*subbedThreads_p);	
+
+	int size = array_count(*subbedThreads_p);
 	int pos = 0;
-	
+
 	if (!size){ // Uninitialized subscribersTable entry
 		array_init(*subbedThreads_p);
-		
+
 		// Push a new thread entry in the array in table[pub_id]
 		array_push(*subbedThreads_p, new_thread_entry());
-		
+
 		// pos is 0. Correct.
-		
+
 	} else { // Array has at least one thread entry
 		// Is there an entry for the current thread?
 		pos = seekInSortedArray(*subbedThreads_p, rid);
-		
+
 		if (pos == size){ // No entry - add at end of array
 			// Add a new thread entry at the end of table[pub_id]
 			array_push(*subbedThreads_p, new_thread_entry());
 			// pos is size. Correct
-			
+
 		} else if (array_get_at(*subbedThreads_p, pos).tid!=rid){ // No entry - add in middle of array
 			// Add a new thread entry at index pos of table[pub_id]
 			array_add_at(*subbedThreads_p, pos, new_thread_entry());
 			// pos is the correct index
 		}
 	}
-	
+
 	// Thread's entry is at index pos
 
 	// Insert lp_entry in the thread's array
@@ -701,10 +701,10 @@ void SubscribeAndHandle(lp_id_t dirty_subscriber_id, lp_id_t publisher_id, void*
 		array_get_at(*subbedThreads_p, pos).lp_arr,
 		new_lp_entry(dirty_subscriber_id, data)
 	);
-	
+
 	// Release the lock
 	spin_unlock(&(tableLocks[publisher_id]));
-	
+
 	return;
 }
 
@@ -722,10 +722,10 @@ void Subscribe(lp_id_t subscriber_id, lp_id_t publisher_id){
 // OK
 // Free a pubsub msg
 void pubsub_msg_free(struct lp_msg* msg){
-	
+
 	// Works for both node and thread-level
 	struct lp_msg **c_ptr = children_ptr(msg);
-	
+
 	if(c_ptr){
 		// Free the array pointing to children
 		// The children will be freed independently
@@ -738,14 +738,14 @@ void pubsub_msg_free(struct lp_msg* msg){
 // OK
 // Insert a thread-level pubsub message in queue
 void pubsub_msg_queue_insert(struct lp_msg* msg){
-	
+
 	// msg->dest contains the thread id 
 	unsigned dest_rid = msg->dest;
 	struct msg_queue *this_q = mqueue(rid, dest_rid);
 	spin_lock(&this_q->lck);
 	heap_insert(this_q->q, msg_is_before, msg);
 	spin_unlock(&this_q->lck);
-	
+
 }
 
 void pubsub_fossil_collect(simtime_t current_gvt){
@@ -783,7 +783,7 @@ inline void pubsub_insert_in_past(struct lp_msg *msg){
 /// Send a pubsub message to dest_nid via MPI, but also use mpi tags
 inline void mpi_pubsub_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
-    gvt_remote_msg_send(msg, dest_nid);
+	gvt_remote_msg_send(msg, dest_nid);
 
 	mpi_lock();
 	MPI_Request req;
@@ -798,12 +798,12 @@ inline void mpi_pubsub_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 // FIXME: need to fix the flags?
 inline void mpi_pubsub_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
-    gvt_remote_anti_msg_send(msg, dest_nid);
+	gvt_remote_anti_msg_send(msg, dest_nid);
 
 	mpi_lock();
 	MPI_Request req;
-    MPI_Isend(msg, msg_anti_size(), MPI_BYTE,
-              dest_nid, MSG_PUBSUB, MPI_COMM_WORLD, &req);
+	MPI_Isend(msg, msg_anti_size(), MPI_BYTE,
+		dest_nid, MSG_PUBSUB, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 	mpi_unlock();
 }

@@ -64,7 +64,7 @@ static void serial_simulation_init(void)
 	heap_init(queue);
 	lib_global_init();
 
-    // TODO: check if this works
+	// TODO: check if this works
 	pubsub_module_global_init();
 
 	serial_model_init();
@@ -76,7 +76,7 @@ static void serial_simulation_init(void)
 		s_current_lp = &s_lps[i];
 		lib_lp_init();
 
-        // TODO: check if this works
+		// TODO: check if this works
 		pubsub_module_lp_init();
 
 #if LOG_DEBUG >= LOG_LEVEL

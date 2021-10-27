@@ -74,8 +74,7 @@ void lp_init(void)
 #ifdef PUBSUB
 		pubsub_module_lp_init();
 #endif
-		
-		
+
 		process_lp_init();
 		termination_lp_init();
 	}

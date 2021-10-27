@@ -159,11 +159,11 @@ static inline void send_anti_messages(struct process_data *proc_p,
 			continue;
 		}
 
-        if (is_pubsub_msg(msg)){
-            // a pubsub message sent from this LP
-            pub_node_handle_published_antimessage(msg);
-            continue;
-        }
+		if (is_pubsub_msg(msg)){
+			// a pubsub message sent from this LP
+			pub_node_handle_published_antimessage(msg);
+			continue;
+		}
 
 		nid_t dest_nid = lid_to_nid(msg->dest);
 		if (dest_nid != nid) {
@@ -287,15 +287,15 @@ void process_msg(void)
 	}
 
 #ifdef PUBSUB
-    if(is_pubsub_msg(msg)){
-        // A pubsub message that needs to be unpacked
-        if(unlikely(msg->flags & MSG_FLAG_ANTI)){
-            thread_handle_published_antimessage(msg);
-        } else {
-            thread_handle_published_message(msg);
-        }
-        return;
-    }
+	if(is_pubsub_msg(msg)){
+		// A pubsub message that needs to be unpacked
+		if(unlikely(msg->flags & MSG_FLAG_ANTI)){
+			thread_handle_published_antimessage(msg);
+		} else {
+			thread_handle_published_message(msg);
+		}
+		return;
+	}
 #endif
 
 	struct lp_ctx *this_lp = &lps[msg->dest];
