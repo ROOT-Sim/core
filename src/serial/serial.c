@@ -1,7 +1,7 @@
 /**
  * @file serial/serial.c
  *
- * @brief Sequential simlation engine
+ * @brief Sequential simulation engine
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -36,7 +36,7 @@ static struct s_lp_ctx *s_lps;
 /// The context of the currently processed LP
 static struct s_lp_ctx *s_current_lp;
 /// The messages queue of the serial runtime
-static binary_heap(struct lp_msg *) queue;
+static heap_declare(struct lp_msg *) queue;
 #if LOG_DEBUG >= LOG_LEVEL
 /// Used for debugging possibly inconsistent models
 static simtime_t current_evt_time;
@@ -134,11 +134,9 @@ static void serial_simulation_run(void)
 					cur_msg->dest_t
 				);
 			s_current_lp->last_evt_time = cur_msg->dest_t;
+			current_evt_time = cur_msg->dest_t;
 		}
-		current_evt_time = cur_msg->dest_t;
 #endif
-
-		stats_time_start(STATS_MSG_PROCESSED);
 
 		ProcessEvent(
 			cur_msg->dest,
@@ -148,8 +146,7 @@ static void serial_simulation_run(void)
 			cur_msg->pl_size,
 			s_current_lp->lib_ctx.state_s
 		);
-
-		stats_time_take(STATS_MSG_PROCESSED);
+		stats_take(STATS_MSG_PROCESSED, 1);
 
 		bool can_end = CanEnd(cur_msg->dest, s_current_lp->lib_ctx.state_s);
 
@@ -171,7 +168,7 @@ static void serial_simulation_run(void)
 			last_vt = timer_new();
 		}
 
-		msg_allocator_free(heap_extract(queue, msg_is_before));
+		msg_allocator_free(heap_extract(queue, msg_is_before_serial));
 	}
 
 	stats_dump();
@@ -187,7 +184,8 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 
 	struct lp_msg *msg = msg_allocator_pack(
 		receiver, timestamp, event_type, payload, payload_size);
-	heap_insert(queue, msg_is_before, msg);
+
+	heap_insert(queue, msg_is_before_serial, msg);
 }
 
 /**

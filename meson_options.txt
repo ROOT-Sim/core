@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: CC0-1.0
-option('incremental_state_saving', type : 'feature', value : 'disabled', description : '')
+option('iss', type : 'feature', value : 'disabled', description : '')
 option('mpi', type : 'feature', value : 'auto', description : '')
 option('pubsub_msg', type : 'feature', value : 'enabled', description : 
   'allows to use publish/subscribe for event dissemination')

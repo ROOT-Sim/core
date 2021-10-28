@@ -28,28 +28,28 @@ struct simulation_configuration global_config;
 
 /// This is the list of arg_parse.h mnemonics for command line arguments
 enum option_key {
-	OPT_NPRC,
-	OPT_LOG,
-	OPT_CLOG,
-	OPT_SIMT,
+	OPT_CKPT,
 	OPT_GVT,
-	OPT_NP,
+	OPT_LOG,
+	OPT_NPRC,
 	OPT_BIND,
-	OPT_SERIAL,
 	OPT_SEED,
-	OPT_LAST
+	OPT_SERIAL,
+	OPT_SIMT,
+	OPT_NP
 };
 
 /// The array of ROOT-Sim supported command line options
 static struct ap_option ap_options[] = {
+	{"ckpt-interval", OPT_CKPT, "VALUE", "Number of events between a checkpoint and the next one"},
+	{"gvt-period", 	OPT_GVT,  "VALUE", "Time between two GVT reductions in milliseconds"},
+	{"log-level", 	OPT_LOG,  "VALUE", "Logging level, from 1 to 6, the least verbose level"},
 	{"lp", 		OPT_NPRC, "VALUE", "Total number of Logical Processes being launched at simulation startup"},
-	{"log-level", 	OPT_LOG,  "VALUE", "Logging level"},
-	{"time", 	OPT_SIMT, "VALUE", "Logical time at which the simulation will be considered completed"},
-	{"gvt-period", 	OPT_GVT,  "VALUE", "Time between two GVT reductions (in milliseconds)"},
-	{"serial", 	OPT_SERIAL, NULL,  "Runs a simulation with the serial runtime"},
-	{"wt",		OPT_NP,   "VALUE", "Number of total cores being used by the simulation"},
-	{"no-bind",	OPT_BIND, NULL,    "Disables thread to core binding"},
+	{"no-bind",	OPT_BIND, NULL,    "Disable thread to core binding"},
 	{"seed",	OPT_SEED, "VALUE", "The seed value for the PRNG"},
+	{"serial", 	OPT_SERIAL, NULL,  "Run a simulation with the serial runtime"},
+	{"time", 	OPT_SIMT, "VALUE", "Logical time at which the simulation will be considered completed"},
+	{"wt",		OPT_NP,   "VALUE", "Number of total cores being used by the parallel runtime"},
 	{0}
 };
 
@@ -58,7 +58,45 @@ static struct ap_option ap_options[] = {
  */
 static void print_config(void)
 {
-	// TODO
+	if (log_colored)
+		fprintf(stderr, "\x1b[32m");
+	fprintf(stderr, "ROOT-Sim configuration:\n");
+	if (log_colored)
+		fprintf(stderr, "\x1b[90m");
+
+	fprintf(stderr, "Logical processes: %" PRIu64 "\n", n_lps);
+	fprintf(stderr, "Termination time: ");
+	if (global_config.termination_time == SIMTIME_MAX)
+		fprintf(stderr, "not set\n");
+	else
+		fprintf(stderr, "%lf\n", global_config.termination_time);
+
+	if (global_config.is_serial) {
+		fprintf(stderr, "Parallelism: sequential simulation\n");
+	} else {
+		if (n_nodes > 1)
+			fprintf(stderr, "Parallelism: %d MPI processes\n", n_nodes);
+		else
+			fprintf(stderr, "Parallelism: %u threads\n", n_threads);
+	}
+	fprintf(stderr, "Thread-to-core binding: %s\n",
+			global_config.core_binding ? "enabled" : "disabled");
+
+	fprintf(stderr, "GVT period: %u ms\n", global_config.gvt_period / 1000);
+
+	if (global_config.ckpt_interval) {
+		fprintf(stderr, "Checkpoint interval: %u events\n",
+				global_config.ckpt_interval);
+	} else {
+		if (!global_config.is_serial)
+			fprintf(stderr, "Checkpoint interval: auto\n");
+	}
+
+	if (log_colored)
+		fprintf(stderr, "\x1b[39m");
+
+	fprintf(stderr, "\n");
+	fflush(stderr);
 }
 
 /**
@@ -111,6 +149,11 @@ static void parse_opt(int key, const char *arg)
 		n_lps = parse_ullong_limits(arg, 1, UINT_MAX, &parse_err);
 		break;
 
+	case OPT_CKPT:
+		global_config.ckpt_interval = parse_ullong_limits(arg, 1,
+				UINT_MAX, &parse_err);
+		break;
+
 	case OPT_LOG:
 		log_level = parse_ullong_limits(arg, 0, 6, &parse_err);
 		break;
@@ -146,14 +189,19 @@ static void parse_opt(int key, const char *arg)
 		n_lps = 0;
 		n_threads = 0;
 		global_config.termination_time = SIMTIME_MAX;
-		global_config.gvt_period = 200000;
+		global_config.gvt_period = 250000;
+		global_config.prng_seed = 0;
 		global_config.verbosity = 0;
+		global_config.ckpt_interval = 0;
 		global_config.is_serial = false;
 		global_config.core_binding = true;
 		log_colored = io_terminal_can_colorize();
 		break;
 
 	case AP_KEY_FINI:
+		if(n_lps == 0)
+			arg_parse_error("number of LPs was not provided \"--lp\"");
+
 		// if the threads count has not been supplied, the other checks
 		// are superfluous: the serial runtime simply will ignore the
 		// field while the parallel one will use the set count of cores
@@ -172,11 +220,10 @@ static void parse_opt(int key, const char *arg)
 					n_threads, thread_cores_count());
 		}
 
-		if(n_lps == 0)
-			arg_parse_error("number of LPs was not provided \"--lp\"");
-
-		log_logo_print();
-		print_config();
+		if (nid == 0) {
+			log_logo_print();
+			print_config();
+		}
 	}
 
 	if (unlikely(parse_err)) {
@@ -203,7 +250,7 @@ struct ap_section ap_sects[] = {
 
 /// The struct ap_settings with the ROOT-Sim command line parsing configuration
 struct ap_settings ap_sets = {
-	"ROOT-Sim",	// TODO properly fill these fields
+	"ROOT-Sim",
 	ROOTSIM_VERSION,
 	"rootsim@googlegroups.com",
 	ap_sects

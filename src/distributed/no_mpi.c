@@ -42,19 +42,7 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 
 void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl)
 {
-	switch (ctrl) {
-	case MSG_CTRL_GVT_START:
-		gvt_start_processing();
-		break;
-	case MSG_CTRL_GVT_DONE:
-		gvt_on_done_ctrl_msg();
-		break;
-	case MSG_CTRL_TERMINATION:
-		termination_on_ctrl_msg();
-		break;
-	default:
-		__builtin_unreachable();
-	}
+	control_msg_process(ctrl);
 }
 
 void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest)
@@ -69,7 +57,11 @@ void mpi_remote_msg_handle(void)
 {
 }
 
-void mpi_reduce_sum_scatter(const unsigned values[n_nodes], unsigned *result)
+void mpi_remote_msg_drain(void)
+{
+}
+
+void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], unsigned *result)
 {
 	*result = values[0];
 }

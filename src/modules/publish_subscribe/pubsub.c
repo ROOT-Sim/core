@@ -32,8 +32,15 @@
 
 #define current_lid (current_lp - lps)
 
-_Thread_local dyn_array(struct lp_msg *) past_pubsubs;
-_Thread_local dyn_array(struct lp_msg *) early_pubsub_antis;
+#define mark_as_thread_lv(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 1U))
+#define is_thread_lv(msg_p) (((uintptr_t)(msg_p)) & 1U)
+#define unmark_msg(msg_p) \
+	((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
+
+__thread dyn_array(struct lp_msg *) past_pubsubs;
+__thread dyn_array(struct lp_msg *) early_pubsub_antis;
+__thread dyn_array(struct lp_msg *) free_on_gvt_pubsubs;
+
 
 typedef struct table_lp_entry_t{
 	lp_id_t lid;
@@ -58,6 +65,7 @@ inline void mpi_pubsub_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 inline void thread_actually_antimessage(struct lp_msg *msg);
 
 inline void pubsub_insert_in_past(struct lp_msg *msg);
+inline void pubsub_free_at_gvt(struct lp_msg *msg);
 
 // OK
 void pubsub_module_lp_init(){
@@ -80,6 +88,8 @@ void pubsub_module_global_init(){
 	}
 
 	array_init(past_pubsubs);
+	array_init(early_pubsub_antis);
+	array_init(free_on_gvt_pubsubs);
 }
 
 // Should be ok?
@@ -133,7 +143,6 @@ void pub_node_handle_published_message(struct lp_msg* msg){
 
 				children_ptr(msg)[it] = mpi_msg;
 				++it;
-				msg_allocator_free_at_gvt(mpi_msg);
 
 				mpi_pubsub_remote_msg_send(mpi_msg, dest_nid);
 			}
@@ -272,16 +281,13 @@ static inline bool check_early_anti_pubsub_messages(struct lp_msg *msg)
 /* In ProcessPublishedEvent the user creates the message resulting from
  * the published one. The message is created using ScheduleNewEvent.
  * This will schedule the generated event and will push a pointer to it
- * in past_msgs.
- * We pop that pointer from past_msgs (it does not belong there) and add
+ * in sent_msgs.
+ * We pop that pointer from sent_msgs (it does not belong there) and add
  * it to the children of the msg we are unpacking here.
  * */
 // This function is called when a thread extracts a pubsub message from its queue
-// TODO: push pubsub msgs into past_pubsubs!
-// FIXME: properly port to ROOT-Sim 3
 void thread_handle_published_message(struct lp_msg* msg){
 
-	// FIXME TODO: match pubsub early antis
 	if (unlikely(check_early_anti_pubsub_messages(msg))){
 		return;
 	}
@@ -304,7 +310,7 @@ void thread_handle_published_message(struct lp_msg* msg){
 	if(!array_count(lp_arr)){
 		uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(flags & MSG_FLAG_ANTI){ // Can only happen with local pubsubs
-			pubsub_msg_free(msg);
+			pubsub_msg_free(mark_as_thread_lv(msg));
 		} else {
 			// Cannot just free because antimessaging could happen
 			pubsub_insert_in_past(msg);
@@ -375,7 +381,7 @@ void thread_handle_published_message(struct lp_msg* msg){
 			// Flags and all initialized in ScheduleNewEvent
 
 			// Pop the created message from sent_msgs
-			child_msg = array_pop(proc_p->sent_msgs);
+			child_msg = unmark_msg(array_pop(proc_p->p_msgs));
 
 		}
 
@@ -424,7 +430,7 @@ void PublishNewEvent(simtime_t timestamp, unsigned event_type, const void *paylo
 	// Do this after making copies, or it will dirty MPI messages!
 	atomic_store_explicit(&msg->flags, MSG_FLAG_PUBSUB, memory_order_relaxed);
 
-	array_push(proc_p->sent_msgs, msg);
+	array_push(proc_p->p_msgs, mark_msg_sent(msg));
 }
 
 // Ok?
@@ -466,7 +472,8 @@ void sub_node_handle_published_antimessage(struct lp_msg *msg){
 /// This carries out the antimessaging when the node is the one responsible for the publisher LP
 void pub_node_handle_published_antimessage(struct lp_msg *msg){
 	// Carry out the antimessaging
-	// the message originated from the local node. More precisely, it came from current_LP as this can only be called when rolling back
+	// the message originated from the local node. More precisely, it came from
+	// current_LP as this can only be called when rolling back
 	size_t child_count = n_children_count(msg);
 
 	struct lp_msg** children = n_children_ptr(msg);
@@ -512,7 +519,6 @@ void pub_node_handle_published_antimessage(struct lp_msg *msg){
 		if (cflags & MSG_FLAG_PROCESSED) {
 			// cmsg->dest contains the tid of target thread
 			pubsub_msg_queue_insert(cmsg);
-
 		}
 	}
 }
@@ -536,6 +542,17 @@ static inline array_count_t match_remote_pubsub_msg(const struct lp_msg *r_msg)
 // This is called when a pubsub message with ANTI flag set is extracted
 void thread_handle_published_antimessage(struct lp_msg *anti_msg){
 
+	// Check whether it comes from publisher local to node
+	if (!anti_msg->flags >> MSG_FLAGS_BITS) {
+		if (anti_msg->flags & MSG_FLAG_PROCESSED){
+			thread_actually_antimessage(anti_msg);
+		} else {
+			// Was still not put in past_pubsubs
+			pubsub_msg_free(mark_as_thread_lv(anti_msg));
+		}
+		return;
+	}
+
 	// Did we process the positive copy of this message already?
 	array_count_t past_i = match_remote_pubsub_msg(anti_msg);
 	if (unlikely(!past_i)) {
@@ -548,12 +565,14 @@ void thread_handle_published_antimessage(struct lp_msg *anti_msg){
 	// We did
 	msg_allocator_free(anti_msg);
 
+	// Prevents double free
 	struct lp_msg *msg = array_remove_at(past_pubsubs, past_i);
 
 	thread_actually_antimessage(msg);
+	pubsub_msg_free(mark_as_thread_lv(msg));
 }
 
-// This is called when a pubsub message with ANTI flag set is extracted
+/// Carries out antimessaging of thread-level pubsub message
 inline void thread_actually_antimessage(struct lp_msg *msg){
 	// Antimessage the children
 	int child_count = t_children_count(msg);
@@ -573,7 +592,6 @@ inline void thread_actually_antimessage(struct lp_msg *msg){
 			msg_queue_insert(cmsg);
 		}
 	}
-	pubsub_msg_free(msg);
 }
 
 // OK
@@ -721,15 +739,27 @@ void Subscribe(lp_id_t subscriber_id, lp_id_t publisher_id){
 
 // OK
 // Free a pubsub msg
-void pubsub_msg_free(struct lp_msg* msg){
+inline void pubsub_msg_free(struct lp_msg* p_msg){
 
+	struct lp_msg *msg = unmark_msg(p_msg);
 	// Works for both node and thread-level
 	struct lp_msg **c_ptr = children_ptr(msg);
+	// No race conditions: either GVT>dest_t, or already antimsgd
+	msg->flags &= (~MSG_FLAG_PUBSUB);
 
 	if(c_ptr){
+		// If Node-level, free the MPI children
+		if(!is_thread_lv(p_msg)){
+			int ct = current_lp->n_remote_sub_nodes - 1;
+			for(int i = 0; i < ct; i++){
+				msg_allocator_free(c_ptr[i]);
+			}
+		}
 		// Free the array pointing to children
-		// The children will be freed independently
+		// The local children will be freed independently
 		mm_free(c_ptr);
+		// TODO-maybe: make it so that local children get freed here? To avoid
+		//  putting them in past_pubsubs, keeping only remote ones there
 	}
 
 	msg_allocator_free(msg);
@@ -741,16 +771,18 @@ void pubsub_msg_queue_insert(struct lp_msg* msg){
 
 	// msg->dest contains the thread id 
 	unsigned dest_rid = msg->dest;
-	struct msg_queue *this_q = mqueue(rid, dest_rid);
-	spin_lock(&this_q->lck);
-	heap_insert(this_q->q, msg_is_before, msg);
-	spin_unlock(&this_q->lck);
+	struct msg_queue *mq = &queues[dest_rid];
+	struct q_elem qe = {.t = msg->dest_t, .m = msg};
+
+	spin_lock(&mq->q_lock);
+	array_push(mq->b, qe);
+	spin_unlock(&mq->q_lock);
 
 }
 
-void pubsub_fossil_collect(simtime_t current_gvt){
+void pubsub_on_gvt(simtime_t current_gvt){
 
-	// Free past_pubsubs
+	// Garbage collect past_pubsubs
 	array_count_t ct = array_count(past_pubsubs);
 	array_count_t i;
 
@@ -778,7 +810,6 @@ inline void pubsub_insert_in_past(struct lp_msg *msg){
 }
 
 #ifdef ROOTSIM_MPI
-// TODO: need to fix flags?
 // OK? Should work provided we use one message buffer per target
 /// Send a pubsub message to dest_nid via MPI, but also use mpi tags
 inline void mpi_pubsub_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
@@ -793,9 +824,8 @@ inline void mpi_pubsub_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	mpi_unlock();
 }
 
-// OK? Should work provided we use one message buffer per target
+// OK? Should work as we use one message buffer per target
 /// Antimessage a pubsub message to dest_nid via MPI, but also use mpi tags
-// FIXME: need to fix the flags?
 inline void mpi_pubsub_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	gvt_remote_anti_msg_send(msg, dest_nid);

@@ -18,7 +18,7 @@
  */
 bool sync_thread_barrier(void)
 {
-	static _Thread_local unsigned phase;
+	static __thread unsigned phase;
 	static atomic_uint cs[2];
 	atomic_uint *c = cs + (phase & 1U);
 

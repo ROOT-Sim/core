@@ -10,6 +10,7 @@
 
 #include <arch/timer.h>
 #include <core/init.h>
+#include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
 #include <log/stats.h>
@@ -38,19 +39,19 @@ enum node_phase {
 	node_done
 };
 
-static _Thread_local enum thread_phase thread_phase = thread_phase_idle;
+static __thread enum thread_phase thread_phase = thread_phase_idle;
 
 static timer_uint gvt_timer;
 static simtime_t reducing_p[MAX_THREADS];
-static _Thread_local simtime_t current_gvt;
+static __thread simtime_t current_gvt;
 static _Atomic(rid_t) c_a = 0;
 static _Atomic(rid_t) c_b = 0;
 
 static _Atomic(nid_t) gvt_nodes;
 
-_Thread_local _Bool gvt_phase;
-_Thread_local uint32_t remote_msg_seq[2][MAX_NODES];
-_Thread_local uint32_t remote_msg_received[2];
+__thread _Bool gvt_phase;
+__thread uint32_t remote_msg_seq[2][MAX_NODES];
+__thread uint32_t remote_msg_received[2];
 
 /**
  * @brief Initializes the gvt module in the node
@@ -68,7 +69,6 @@ void gvt_global_init(void)
  */
 void gvt_start_processing(void)
 {
-	stats_time_start(STATS_GVT);
 	current_gvt = SIMTIME_MAX;
 	thread_phase = thread_phase_A;
 }
@@ -83,6 +83,13 @@ void gvt_on_done_ctrl_msg(void)
 	atomic_fetch_sub_explicit(&gvt_nodes, 1U, memory_order_relaxed);
 }
 
+/**
+ * @brief Informs the GVT subsystem that a new message is being processed
+ * @param msg_t the timestamp of the message being processed
+ *
+ * Called by the process layer when processing a new message; used in the actual
+ * GVT calculation
+ */
 void gvt_on_msg_extraction(simtime_t msg_t)
 {
 	if (unlikely(thread_phase && current_gvt > msg_t))
@@ -136,12 +143,32 @@ static bool gvt_thread_phase_run(void)
 	return false;
 }
 
+/**
+ * @fn gvt_phase_run(void)
+ * @brief Executes a step of the GVT algorithm
+ * @return the latest GVT value or 0.0 if the algorithm must still complete
+ *
+ * This function must be called several times by all the processing threads
+ * hosted in the nodes involved in the simulation before completing and
+ * returning a proper GVT value.
+ */
+
+
+/**
+ * @fn gvt_msg_drain(void)
+ * @brief Cleanup the distributed state of the GVT algorithm
+ *
+ * This function flushes the remaining remote messages, moreover it makes sure
+ * that all the nodes complete the potentially ongoing GVT algorithm so that
+ * MPI collectives are inactive.
+ */
+
 #ifdef ROOTSIM_MPI
 
 static bool gvt_node_phase_run(void)
 {
-	static _Thread_local enum node_phase node_phase = node_phase_redux_first;
-	static _Thread_local uint32_t last_seq[2][MAX_NODES];
+	static __thread enum node_phase node_phase = node_phase_redux_first;
+	static __thread uint32_t last_seq[2][MAX_NODES];
 	static _Atomic(uint32_t) total_sent[MAX_NODES];
 	static _Atomic(int32_t) total_msg_received;
 	static uint32_t remote_msg_to_receive;
@@ -154,7 +181,7 @@ static bool gvt_node_phase_run(void)
 		if (!gvt_thread_phase_run())
 			break;
 
-		gvt_phase = gvt_phase ^ !node_phase;
+		gvt_phase = gvt_phase ^ (!node_phase);
 		thread_phase = thread_phase_A;
 		++node_phase;
 		break;
@@ -241,9 +268,8 @@ simtime_t gvt_phase_run(void)
 	if (unlikely(thread_phase)) {
 		if (!gvt_node_phase_run())
 			return 0.0;
-		if (!rid && !nid)
+		if (!rid)
 			gvt_timer = timer_new();
-		stats_time_take(STATS_GVT);
 		return *reducing_p;
 	}
 
@@ -257,7 +283,23 @@ simtime_t gvt_phase_run(void)
 		mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 	}
 
-	return 0;
+	return 0.0;
+}
+
+void gvt_msg_drain(void)
+{
+	while (thread_phase != thread_phase_idle) // flush partial gvt algorithm
+		gvt_phase_run();
+
+	if (sync_thread_barrier())
+		mpi_node_barrier();
+	sync_thread_barrier();
+
+	for (int i = 0; i < 2; ++i) { // flush both gvt phases
+		gvt_timer = 0; // this satisfies the timer condition
+		while (!gvt_phase_run())
+			mpi_remote_msg_drain();
+	}
 }
 
 #else
@@ -269,7 +311,6 @@ simtime_t gvt_phase_run(void)
 			return 0.0;
 		if (!rid)
 			gvt_timer = timer_new();
-		stats_time_take(STATS_GVT);
 		return gvt_node_reduce();
 	}
 
@@ -279,7 +320,11 @@ simtime_t gvt_phase_run(void)
 	if (unlikely(!rid && global_config.gvt_period < timer_value(gvt_timer)))
 		mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 
-	return 0;
+	return 0.0;
+}
+
+void gvt_msg_drain(void)
+{
 }
 
 #endif

@@ -15,20 +15,8 @@
  */
 #pragma once
 
+#include <distributed/control_msg.h>
 #include <lp/msg.h>
-
-/// A control message MPI tag value
-enum msg_ctrl_tag {
-	/// Used by the master to start a new gvt reduction operation
-	MSG_CTRL_GVT_START = 1,
-	/// Used by slaves to signal their completion of the gvt protocol
-	MSG_CTRL_GVT_DONE,
-	/// Used in broadcast to signal that local LPs can terminate
-	MSG_CTRL_TERMINATION,
-#ifdef PUBSUB
-	MSG_PUBSUB
-#endif
-};
 
 extern void mpi_global_init(int *argc_p, char ***argv_p);
 extern void mpi_global_fini(void);
@@ -39,6 +27,7 @@ extern void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 extern void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl);
 extern void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest);
 extern void mpi_remote_msg_handle(void);
+extern void mpi_remote_msg_drain(void);
 
 extern void mpi_reduce_sum_scatter(const unsigned values[n_nodes],
 		unsigned *result);

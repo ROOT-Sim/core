@@ -18,20 +18,21 @@
 #define ALLOC_PROBABILITY 0.2
 #define DEALLOC_PROBABILITY 0.2
 #define DOUBLING_PROBABILITY 0.5
-#define COMPLETE_EVENTS 10000
+#define NULLING_PROBABILITY 0.3
+#define COMPLETE_EVENTS 15000
 
 enum {
 	LOOP,
 	RECEIVE
 };
 
-typedef struct _buffer {
+typedef struct lp_buffer {
 	unsigned count;
-	struct _buffer *next;
+	struct lp_buffer *next;
 	uint64_t data[];
 } buffer;
 
-typedef struct _lp_state {
+typedef struct {
 	unsigned events;
 	unsigned buffer_count;
 	uint32_t total_checksum;
