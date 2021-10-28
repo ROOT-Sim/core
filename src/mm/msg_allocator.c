@@ -14,6 +14,10 @@
 #include <datatypes/array.h>
 #include <gvt/gvt.h>
 
+#ifdef PUBSUB
+#include <modules/publish_subscribe/pubsub.h>
+#endif
+
 static __thread dyn_array(struct lp_msg *) free_list = {0};
 
 /**

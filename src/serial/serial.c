@@ -19,6 +19,10 @@
 
 #include <stdlib.h>
 
+#ifdef PUBSUB
+#include <modules/publish_subscribe/pubsub.h>
+#endif
+
 /// The LP context for the serial runtime
 struct s_lp_ctx {
 	/// The context for the model development libraries
@@ -64,8 +68,10 @@ static void serial_simulation_init(void)
 	heap_init(queue);
 	lib_global_init();
 
+#ifdef PUBSUB
 	// TODO: check if this works
 	pubsub_module_global_init();
+#endif
 
 	serial_model_init();
 
@@ -76,8 +82,10 @@ static void serial_simulation_init(void)
 		s_current_lp = &s_lps[i];
 		lib_lp_init();
 
+#ifdef PUBSUB
 		// TODO: check if this works
 		pubsub_module_lp_init();
+#endif
 
 #if LOG_DEBUG >= LOG_LEVEL
 		s_lps[i].last_evt_time = -1;

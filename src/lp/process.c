@@ -111,6 +111,7 @@ void process_lp_init(void)
 	array_init(proc_p->p_msgs);
 
 	struct lp_msg *msg = msg_allocator_pack(lp - lps, 0, LP_INIT, NULL, 0U);
+	msg->flags = 0;
 
 	proc_p->last_t = 0;
 

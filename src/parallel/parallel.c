@@ -24,6 +24,10 @@
 #include <mm/model_allocator.h>
 #include <mm/msg_allocator.h>
 
+#ifdef PUBSUB
+#include <modules/publish_subscribe/pubsub.h>
+#endif
+
 static void worker_thread_init(rid_t this_rid)
 {
 	rid = this_rid;
@@ -100,8 +104,10 @@ static void parallel_global_init(void)
 	stats_global_init();
 	lib_global_init();
 
+#ifdef PUBSUB
 	// TODO: check it's correct here. Otherwise after lp_global_init()
 	pubsub_module_global_init();
+#endif
 
 	process_global_init();
 	lp_global_init();

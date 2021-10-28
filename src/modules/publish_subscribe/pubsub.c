@@ -61,11 +61,13 @@ spinlock_t *tableLocks;
 
 inline void mpi_pubsub_remote_msg_send(struct lp_msg *msg, nid_t dest_nid);
 inline void mpi_pubsub_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
+extern void mpi_pubsub_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 
 inline void thread_actually_antimessage(struct lp_msg *msg);
+extern void thread_actually_antimessage(struct lp_msg *msg);
 
 inline void pubsub_insert_in_past(struct lp_msg *msg);
-inline void pubsub_free_at_gvt(struct lp_msg *msg);
+extern void pubsub_insert_in_past(struct lp_msg *msg);
 
 // OK
 void pubsub_module_lp_init(){
@@ -750,7 +752,7 @@ inline void pubsub_msg_free(struct lp_msg* p_msg){
 	if(c_ptr){
 		// If Node-level, free the MPI children
 		if(!is_thread_lv(p_msg)){
-			int ct = current_lp->n_remote_sub_nodes - 1;
+			int ct = current_lp->n_remote_sub_nodes;
 			for(int i = 0; i < ct; i++){
 				msg_allocator_free(c_ptr[i]);
 			}
