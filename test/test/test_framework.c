@@ -1,5 +1,5 @@
 /**
- * @file test/test.c
+ * @file test/test_framework.c
  *
  * @brief Test framework source
  *
@@ -23,25 +23,7 @@
 #define ROOTSIM_TEST_NAME "rs_test"
 #endif
 
-#ifdef ROOTSIM_MPI
-__attribute__((weak)) nid_t nid;
-__attribute__((weak)) nid_t n_nodes = 1;
-#endif
-__attribute__((weak)) lp_id_t n_lps;
-__attribute__((weak)) rid_t n_threads;
-__attribute__((weak)) __thread rid_t rid;
-__attribute__((weak)) int log_level;
-
 static char **test_argv;
-
-__attribute__((weak))
-void _log_log(int level, const char *file, unsigned line, const char *fmt, ...)
-{
-	(void) level;
-	(void) file;
-	(void) line;
-	(void) fmt;
-}
 
 int main(int argc, char **argv);
 
@@ -97,6 +79,7 @@ void main_wrapper(void)
 
 	puts("Starting " ROOTSIM_TEST_NAME " test");
 
+	extern rid_t n_threads;
 	n_threads = test_config.threads_count;
 
 	atexit(test_atexit);

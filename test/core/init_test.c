@@ -11,8 +11,6 @@
 #include <core/arg_parse.h>
 #include <core/init.h>
 
-void log_logo_print(void) {}
-
 bool io_terminal_can_colorize(void)
 {
 	return false;
