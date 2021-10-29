@@ -9,11 +9,9 @@
 #include <gvt/gvt.h>
 
 #include <arch/timer.h>
-#include <core/init.h>
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
-#include <log/stats.h>
 
 #include <memory.h>
 #include <stdatomic.h>
@@ -163,7 +161,6 @@ static bool gvt_thread_phase_run(void)
  * MPI collectives are inactive.
  */
 
-#ifdef ROOTSIM_MPI
 
 static bool gvt_node_phase_run(void)
 {
@@ -302,32 +299,6 @@ void gvt_msg_drain(void)
 	}
 }
 
-#else
-
-simtime_t gvt_phase_run(void)
-{
-	if (unlikely(thread_phase)) {
-		if (!gvt_thread_phase_run())
-			return 0.0;
-		if (!rid)
-			gvt_timer = timer_new();
-		return gvt_node_reduce();
-	}
-
-	if (unlikely(atomic_load_explicit(&c_b, memory_order_relaxed)))
-		gvt_start_processing();
-
-	if (unlikely(!rid && global_config.gvt_period < timer_value(gvt_timer)))
-		mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
-
-	return 0.0;
-}
-
-void gvt_msg_drain(void)
-{
-}
-
-#endif
 
 extern void gvt_remote_msg_send(struct lp_msg *msg, nid_t dest_nid);
 extern void gvt_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);

@@ -10,9 +10,10 @@
  */
 #pragma once
 
+#include <stdbool.h>
+
 #include <lib/random/random.h>
 #include <lib/state/state.h>
-#include <lib/topology/topology.h>
 
 struct lib_ctx {
 	// random library
@@ -31,4 +32,3 @@ extern void lib_lp_fini(void);
 
 extern void lib_lp_init_pr(void);
 extern void lib_lp_fini_pr(void);
-

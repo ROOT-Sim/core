@@ -10,11 +10,9 @@
 
 #include <arch/thread.h>
 #include <core/core.h>
-#include <core/init.h>
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
-#include <gvt/fossil.h>
 #include <gvt/gvt.h>
 #include <gvt/termination.h>
 #include <lib/lib.h>
@@ -36,10 +34,9 @@ static void worker_thread_init(rid_t this_rid)
 	lp_init();
 	process_init();
 
-#ifdef ROOTSIM_MPI
 	if (sync_thread_barrier())
 		mpi_node_barrier();
-#endif
+
 	if (sync_thread_barrier()) {
 		log_log(LOG_INFO, "Starting simulation");
 		stats_global_time_take(STATS_GLOBAL_EVENTS_START);
@@ -112,7 +109,7 @@ static void parallel_global_fini(void)
 	stats_global_fini();
 }
 
-void parallel_simulation(void)
+int parallel_simulation(void)
 {
 	log_log(LOG_INFO, "Initializing parallel simulation");
 	parallel_global_init();
@@ -137,4 +134,6 @@ void parallel_simulation(void)
 
 	stats_global_time_take(STATS_GLOBAL_FINI_START);
 	parallel_global_fini();
+
+	return 0;
 }

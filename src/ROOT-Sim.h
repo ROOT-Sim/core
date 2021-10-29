@@ -20,32 +20,42 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+typedef double simtime_t;
+typedef uint64_t lp_id_t;
+
+typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st);
+typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
+
+/// A set of configurable values used by other modules
+struct simulation_configuration {
+	/// The number of LPs to be used in the simulation
+	lp_id_t lps;
+	/// The target termination logical time
+	simtime_t termination_time;
+	/// The gvt period expressed in microseconds
+	unsigned gvt_period;
+	/// The log verbosity level
+	int verbose;
+	/// The checkpointing interval
+	unsigned ckpt_interval;
+	/// The seed used to initialize the pseudo random numbers, 0 for self-seeding
+	uint64_t prng_seed;
+	/// If set, worker threads are bound to physical cores
+	bool core_binding;
+	/// If set, the simulation will run on the serial runtime
+	bool is_serial;
+	/// Function pointer to the dispatching function
+	ProcessEvent_t	dispatcher;
+	/// Function pointer to the termination detection function
+	CanEnd_t	committed;
+};
+
 enum rootsim_event {
 	MODEL_INIT = 65532,
 	LP_INIT,
 	LP_FINI,
 	MODEL_FINI
 };
-
-typedef double simtime_t;
-typedef uint64_t lp_id_t;
-
-struct ap_option {
-	const char *name;
-	int key;
-	const char *arg;
-	const char *doc;
-};
-
-enum ap_event_key {
-	AP_KEY_INIT = 1 << 14,
-	AP_KEY_FINI
-};
-
-__attribute((weak)) extern struct ap_option model_options[];
-__attribute((weak)) extern void model_parse(int key, const char *arg);
-
-extern lp_id_t n_lps;
 
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *event_content, unsigned event_size);
@@ -89,3 +99,6 @@ extern unsigned long long RegionsCount(const struct topology_t *topology);
 extern unsigned long long DirectionsCount(const struct topology_t *topology);
 extern lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direction_t direction);
 extern lp_id_t FindReceiver(const struct topology_t *topology);
+
+extern int RootsimInit(struct simulation_configuration *conf);
+extern int RootsimRun(void);

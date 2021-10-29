@@ -14,7 +14,6 @@
 #include <arch/io.h>
 #include <arch/mem.h>
 #include <arch/timer.h>
-#include <core/arg_parse.h>
 #include <core/core.h>
 #include <distributed/mpi.h>
 
@@ -260,7 +259,7 @@ void stats_global_fini(void)
 		return;
 	}
 
-	FILE *o = file_open("w", "%s_stats.bin", arg_parse_program_name());
+	FILE *o = file_open("w", "%s_stats.bin", "TODO"); // TODO: get back the name of the executable
 	if (o == NULL) {
 		log_log(LOG_WARN, "Unavailable stats file: stats will be dumped on stdout");
 		o = stdout;

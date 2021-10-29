@@ -8,14 +8,13 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <lib/topology/topology.h>
+#include <math.h>
+#include <memory.h>
 
 #include <core/intrinsics.h>
 #include <lib/lib_internal.h>
 #include <mm/mm.h>
-
-#include <math.h>
-#include <memory.h>
+#include <ROOT-Sim.h>
 
 /// this is used to store the common characteristics of the topology
 struct topology_t {

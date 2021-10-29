@@ -8,7 +8,6 @@
  */
 #include <gvt/termination.h>
 
-#include <core/init.h>
 #include <distributed/mpi.h>
 #include <gvt/gvt.h>
 #include <lp/lp.h>
@@ -27,7 +26,7 @@ void termination_global_init(void)
 void termination_lp_init(void)
 {
 	struct lp_ctx *this_lp = current_lp;
-	bool term = CanEnd(this_lp - lps, current_lp->lib_ctx_p->state_s);
+	bool term = global_config.committed(this_lp - lps, current_lp->lib_ctx_p->state_s);
 	lps_to_end += !term;
 	this_lp->t_d = term * SIMTIME_MAX;
 }
@@ -37,7 +36,7 @@ void termination_on_msg_process(simtime_t msg_time)
 	struct lp_ctx *this_lp = current_lp;
 	if (this_lp->t_d) return;
 
-	bool term = CanEnd(this_lp - lps, this_lp->lib_ctx_p->state_s);
+	bool term = global_config.committed(this_lp - lps, this_lp->lib_ctx_p->state_s);
 	max_t = term ? max(msg_time, max_t) : max_t;
 	this_lp->t_d = term * msg_time;
 	lps_to_end -= term;

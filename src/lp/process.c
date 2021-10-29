@@ -11,7 +11,6 @@
 #include <lp/process.h>
 
 #include <arch/timer.h>
-#include <core/init.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
 #include <gvt/gvt.h>
@@ -73,7 +72,7 @@ void process_global_init(void)
  */
 void process_global_fini(void)
 {
-	ProcessEvent(0, 0, MODEL_FINI, NULL, 0, NULL);
+	global_config.dispatcher(0, 0, MODEL_FINI, NULL, 0, NULL);
 }
 
 /**
@@ -114,7 +113,7 @@ void process_lp_init(void)
 
 	proc_p->last_t = 0;
 
-	ProcessEvent_pr(lp - lps, 0, LP_INIT, NULL, 0, NULL);
+	global_config.dispatcher(lp - lps, 0, LP_INIT, NULL, 0, NULL);
 	stats_take(STATS_MSG_PROCESSED, 1);
 
 	array_push(proc_p->p_msgs, msg);
@@ -128,7 +127,7 @@ void process_lp_init(void)
 void process_lp_deinit(void)
 {
 	struct lp_ctx *this_lp = current_lp;
-	ProcessEvent_pr(this_lp - lps, 0, LP_FINI, NULL, 0,
+	global_config.dispatcher(this_lp - lps, 0, LP_FINI, NULL, 0,
 			   this_lp->lib_ctx_p->state_s);
 }
 
@@ -166,7 +165,7 @@ static inline void silent_execution(const struct process_data *proc_p,
 		while (is_msg_sent(msg))
 			msg = array_get_at(proc_p->p_msgs, ++last_i);
 
-		ProcessEvent_pr(
+		global_config.dispatcher(
 			msg->dest,
 			msg->dest_t,
 			msg->m_type,
@@ -359,7 +358,7 @@ void process_msg(void)
 
 	proc_p->last_t = msg->dest_t;
 
-	ProcessEvent_pr(
+	global_config.dispatcher(
 		msg->dest,
 		msg->dest_t,
 		msg->m_type,

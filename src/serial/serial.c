@@ -10,7 +10,6 @@
 
 #include <arch/timer.h>
 #include <core/core.h>
-#include <core/init.h>
 #include <datatypes/heap.h>
 #include <lib/lib.h>
 #include <log/stats.h>
@@ -49,7 +48,7 @@ void serial_model_init(void)
 	s_lps = s_current_lp - n_lps;
 
 	lib_lp_init();
-	ProcessEvent(0, 0, MODEL_INIT, NULL, 0, NULL);
+	global_config.dispatcher(0, 0, MODEL_INIT, NULL, 0, NULL);
 	lib_lp_fini();
 }
 
@@ -74,7 +73,7 @@ static void serial_simulation_init(void)
 #if LOG_DEBUG >= LOG_LEVEL
 		s_lps[i].last_evt_time = -1;
 #endif
-		ProcessEvent(i, 0, LP_INIT, NULL, 0, s_lps[i].lib_ctx.state_s);
+		global_config.dispatcher(i, 0, LP_INIT, NULL, 0, s_lps[i].lib_ctx.state_s);
 	}
 }
 
@@ -85,11 +84,11 @@ static void serial_simulation_fini(void)
 {
 	for (uint64_t i = 0; i < n_lps; ++i) {
 		s_current_lp = &s_lps[i];
-		ProcessEvent(i, 0, LP_FINI, NULL, 0, s_lps[i].lib_ctx.state_s);
+		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, s_lps[i].lib_ctx.state_s);
 		lib_lp_fini();
 	}
 
-	ProcessEvent(0, 0, MODEL_FINI, NULL, 0, NULL);
+	global_config.dispatcher(0, 0, MODEL_FINI, NULL, 0, NULL);
 
 	for (array_count_t i = 0; i < array_count(queue); ++i) {
 		msg_allocator_free(array_get_at(queue, i));
@@ -106,7 +105,7 @@ static void serial_simulation_fini(void)
 /**
  * @brief Runs the serial simulation
  */
-static void serial_simulation_run(void)
+static int serial_simulation_run(void)
 {
 	timer_uint last_vt = timer_new();
 	uint64_t to_terminate = n_lps;
@@ -130,7 +129,7 @@ static void serial_simulation_run(void)
 		}
 #endif
 
-		ProcessEvent(
+		global_config.dispatcher(
 			cur_msg->dest,
 			cur_msg->dest_t,
 			cur_msg->m_type,
@@ -140,7 +139,7 @@ static void serial_simulation_run(void)
 		);
 		stats_take(STATS_MSG_PROCESSED, 1);
 
-		bool can_end = CanEnd(cur_msg->dest, s_current_lp->lib_ctx.state_s);
+		bool can_end = global_config.committed(cur_msg->dest, s_current_lp->lib_ctx.state_s);
 
 		if (can_end != s_current_lp->terminating) {
 			s_current_lp->terminating = can_end;
@@ -164,6 +163,8 @@ static void serial_simulation_run(void)
 	}
 
 	stats_dump();
+
+	return 0;
 }
 
 void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
@@ -183,20 +184,24 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 /**
  * @brief Handles a full serial simulation runs
  */
-void serial_simulation(void)
+int serial_simulation(void)
 {
+	int ret;
+
 	log_log(LOG_INFO, "Initializing serial simulation");
 	serial_simulation_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
 	stats_global_time_take(STATS_GLOBAL_EVENTS_START);
 	log_log(LOG_INFO, "Starting simulation");
-	serial_simulation_run();
+	ret = serial_simulation_run();
 	stats_global_time_take(STATS_GLOBAL_EVENTS_END);
 
 	stats_global_time_take(STATS_GLOBAL_FINI_START);
 	log_log(LOG_INFO, "Finalizing simulation");
 	serial_simulation_fini();
+
+	return ret;
 }
 
 lp_id_t lp_id_get(void)

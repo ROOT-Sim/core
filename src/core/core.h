@@ -10,13 +10,14 @@
  */
 #pragma once
 
-#include <log/log.h>
-#include <mm/mm.h>
-
 #include <float.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#include <log/log.h>
+#include <mm/mm.h>
+#include <ROOT-Sim.h>
 
 #ifdef max
 #undef max
@@ -43,15 +44,6 @@ __extension__({				\
 /** Used to align some data structures in order to avoid false sharing */
 #define CACHE_LINE_SIZE 128
 #endif
-
-// this definition is shared with ROOT-Sim.h
-// TODO: generate ROOT-Sim.h at build time
-enum rootsim_event {
-	MODEL_INIT = 65532,
-	LP_INIT,
-	LP_FINI,
-	MODEL_FINI
-};
 
 /// Optimize the branch as likely taken
 #define likely(exp) __builtin_expect(!!(exp), 1)
@@ -87,19 +79,9 @@ extern rid_t n_threads;
 /// The identifier of the thread
 extern __thread rid_t rid;
 
-#ifdef ROOTSIM_MPI
-
 /// The total number of MPI nodes in the simulation
 extern nid_t n_nodes;
 /// The node identifier of the node
 extern nid_t nid;
 
-#else
-enum {nid = 0, n_nodes = 1};
-#endif
-
-extern void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type,
-	const void *content, unsigned size, void *state);
-extern void ProcessEvent_pr(lp_id_t me, simtime_t now, unsigned event_type,
-	const void *content, unsigned size, void *state);
-extern bool CanEnd(lp_id_t me, const void *state);
+struct simulation_configuration global_config;

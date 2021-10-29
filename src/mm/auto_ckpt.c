@@ -10,7 +10,6 @@
  */
 #include <mm/auto_ckpt.h>
 
-#include <core/init.h>
 #include <log/stats.h>
 #include <lp/process.h>
 
