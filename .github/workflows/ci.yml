@@ -76,10 +76,10 @@ jobs:
     - name: Install Meson and Ninja
       run: pip install meson ninja
     - name: Set up build folder
-      run: meson setup builddir/ -Db_lto=false --native-file macos-native.ini
-      env:
-        CC: clang
-        CXX: clang++
+      run: meson setup builddir/ --native-file macos-native.ini
+    - name: Dump meson log
+      if: ${{ failure() }}
+      run: cat builddir/meson-logs/meson-log.txt
     - name: Run tests
       run: meson test -C builddir/ -v
 

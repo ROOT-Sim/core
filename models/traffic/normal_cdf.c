@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Christian Borgelt
+// SPDX-License-Identifier: MIT
 #include <float.h>
 #include <assert.h>
 #include <math.h>
@@ -96,7 +98,7 @@ double contourcdf(double min, double max, double mean, double var) {
 
 	minCDF = normcdf(min, mean, var);
 	maxCDF = normcdf(max, mean, var);
-	
+
 	//printf("[%f,%f]",minCDF, maxCDF);
 
 	return (maxCDF - minCDF);

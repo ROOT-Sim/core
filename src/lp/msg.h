@@ -54,6 +54,11 @@ struct lp_msg {
 	unsigned char extra_pl[];
 };
 
+struct lp_msg_remote_match {
+	uint32_t raw_flags;
+	uint32_t m_seq;
+};
+
 enum msg_flag {
 	MSG_FLAG_ANTI 		= 1,
 	MSG_FLAG_PROCESSED	= 2

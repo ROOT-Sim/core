@@ -20,6 +20,7 @@ struct lib_ctx {
 	// random library
 	uint64_t rng_s[4];
 	double unif;
+	bool has_normal;
 	// todo remove
 	void *state_s;
 };

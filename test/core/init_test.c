@@ -11,6 +11,8 @@
 #include <core/arg_parse.h>
 #include <core/init.h>
 
+#include <memory.h>
+
 bool io_terminal_can_colorize(void)
 {
 	return false;
@@ -83,94 +85,67 @@ char *args_seed[] = {
 	NULL
 };
 
-#define TEST_INIT(args_arr, cond) 					\
+char *args_ckpt[] = {
+	"init_test",
+	"--lp",
+	"326",
+	"--ckpt-interval",
+	"95",
+	NULL
+};
+
+#define TEST_INIT(args_arr, lps, threads) 				\
 __extension__({								\
 	init_args_parse(sizeof(args_arr) / sizeof(*(args_arr)) - 1,	\
 		(args_arr));						\
-	if (!(cond)) return -1;						\
+	if (n_lps != lps || n_threads != threads || 			\
+		memcmp(&cmp_conf, &global_config, sizeof(cmp_conf)))	\
+		abort();						\
+	memcpy(&cmp_conf, &default_conf, sizeof(cmp_conf));		\
 })
+
+static const struct simulation_configuration default_conf = {
+	.is_serial = false,
+	.core_binding = true,
+	.gvt_period = 250000,
+	.verbosity = 0,
+	.prng_seed = 0,
+	.termination_time = SIMTIME_MAX,
+	.ckpt_interval = 0
+};
+static struct simulation_configuration cmp_conf;
 
 int main(int argc, char **argv)
 {
 	(void) argc;
 	(void) argv;
+	memcpy(&cmp_conf, &default_conf, sizeof(cmp_conf));
 
 	mocked_threads = 81;
-
-	TEST_INIT(args_lp,
-		  n_lps == 64 &&
-		  n_threads == 81 &&
-		  !global_config.is_serial &&
-		  global_config.core_binding &&
-		  global_config.gvt_period == 200000 &&
-		  global_config.prng_seed == 0 &&
-		  global_config.termination_time == SIMTIME_MAX);
+	TEST_INIT(args_lp, 64, 81);
 
 	mocked_threads = 1024;
+	TEST_INIT(args_wt, 800, 400);
 
-	TEST_INIT(args_lp,
-		  n_lps == 64 &&
-		  n_threads == 1024 &&
-		  !global_config.is_serial &&
-		  global_config.core_binding &&
-		  global_config.gvt_period == 200000 &&
-		  global_config.prng_seed == 0 &&
-		  global_config.termination_time == SIMTIME_MAX);
+	cmp_conf.is_serial = true;
+	TEST_INIT(args_serial, 128, 1);
 
-	TEST_INIT(args_wt,
-		  n_lps == 800 &&
-		  n_threads == 400 &&
-		  !global_config.is_serial &&
-		  global_config.core_binding &&
-		  global_config.gvt_period == 200000 &&
-		  global_config.prng_seed == 0 &&
-		  global_config.termination_time == SIMTIME_MAX);
+	cmp_conf.core_binding = false;
+	TEST_INIT(args_no_bind, 256, 1024);
 
-	TEST_INIT(args_serial,
-		  n_lps == 128 &&
-		  n_threads == 1 &&
-		  global_config.is_serial &&
-		  global_config.core_binding &&
-		  global_config.gvt_period == 200000 &&
-		  global_config.prng_seed == 0 &&
-		  global_config.termination_time == SIMTIME_MAX);
+	cmp_conf.gvt_period = 500000;
+	TEST_INIT(args_gvt, 25, 1024);
 
-	TEST_INIT(args_no_bind,
-		  n_lps == 256 &&
-		  n_threads == 1024 &&
-		  !global_config.is_serial &&
-		  !global_config.core_binding &&
-		  global_config.gvt_period == 200000 &&
-		  global_config.prng_seed == 0 &&
-		  global_config.termination_time == SIMTIME_MAX);
+	cmp_conf.termination_time = 1437.23;
+	TEST_INIT(args_termination, 16, 1024);
 
-	TEST_INIT(args_gvt,
-		  n_lps == 25 &&
-		  n_threads == 1024 &&
-		  !global_config.is_serial &&
-		  global_config.core_binding &&
-		  global_config.gvt_period == 500000 &&
-		  global_config.prng_seed == 0 &&
-		  global_config.termination_time == SIMTIME_MAX);
+	cmp_conf.prng_seed = 23491;
+	TEST_INIT(args_seed, 16, 1024);
 
-	TEST_INIT(args_termination,
-		  n_lps == 16 &&
-		  n_threads == 1024 &&
-		  !global_config.is_serial &&
-		  global_config.core_binding &&
-		  global_config.gvt_period == 200000 &&
-		  global_config.prng_seed == 0 &&
-		  global_config.termination_time == 1437.23);
+	cmp_conf.ckpt_interval = 95;
+	TEST_INIT(args_ckpt, 326, 1024);
 
-	TEST_INIT(args_seed,
-		  n_lps == 16 &&
-		  n_threads == 1024 &&
-		  !global_config.is_serial &&
-		  global_config.core_binding &&
-		  global_config.gvt_period == 200000 &&
-		  global_config.prng_seed == 23491 &&
-		  global_config.termination_time == SIMTIME_MAX);
-
+	TEST_INIT(args_lp, 64, 1024);
 	return 0;
 }
 

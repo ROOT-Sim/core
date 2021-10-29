@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
 # Questo file permette di configurare la topologia
 # delle strade da simulare. Il grafo viene gestito
 # come una serie di nodi intersezione e una serie di

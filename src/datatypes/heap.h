@@ -12,7 +12,7 @@
 
 #include <datatypes/array.h>
 
-#define binary_heap(type) dyn_array(type)
+#define heap_declare(type) dyn_array(type)
 
 #define heap_items(self) array_items(self)
 #define heap_count(self) array_count(self)
@@ -32,7 +32,7 @@
 #define heap_fini(self)	array_fini(self)
 
 #define heap_is_empty(self) array_is_empty(self)
-#define heap_min(self) ((__typeof(*array_items(self)) const)(array_items(self)[0]))
+#define heap_min(self) (*(__typeof(*array_items(self)) *const)array_items(self))
 
 /**
  * @brief Inserts an element into the heap
@@ -46,18 +46,40 @@
  */
 #define heap_insert(self, cmp_f, elem)					\
 __extension__({								\
-	__typeof(array_count(self)) __i_h = array_count(self);		\
-	array_push(self, elem);						\
-	while(								\
-		__i_h && 						\
-		cmp_f(elem, array_items(self)[(__i_h - 1U) / 2U])	\
-	){								\
-		array_items(self)[__i_h] = 				\
-			array_items(self)[(__i_h - 1U) / 2U];		\
-		__i_h = (__i_h - 1U) / 2U;				\
+	array_reserve(self, 1);						\
+	__typeof(array_count(self)) i = array_count(self)++;		\
+	__typeof__(array_items(self)) items = array_items(self);	\
+	while (i && cmp_f(elem, items[(i - 1U) / 2U])) {		\
+		items[i] = items[(i - 1U) / 2U];			\
+		i = (i - 1U) / 2U;					\
 	}								\
-	array_items(self)[__i_h] = elem;				\
-	__i_h;								\
+	items[i] = elem;						\
+	i;								\
+})
+
+/**
+ * @brief Inserts an element into the heap
+ * @param self the heap target of the insertion
+ * @param cmp_f a comparing function f(a, b) which returns true iff a < b
+ * @param elem the element to insert
+ * @returns the position of the inserted element in the underlying array
+ *
+ * For correct operation of the heap you need to always pass the same @a cmp_f,
+ * both for insertion and extraction
+ */
+#define heap_insert_n(self, cmp_f, ins, n)				\
+__extension__({								\
+	array_reserve(self, n);						\
+	__typeof(array_count(self)) j = n;				\
+	__typeof__(array_items(self)) items = array_items(self);	\
+	while (j--) {							\
+		__typeof(array_count(self)) i = array_count(self)++;	\
+		while (i && cmp_f(ins[j], items[(i - 1U) / 2U])) {	\
+			items[i] = items[(i - 1U) / 2U];		\
+			i = (i - 1U) / 2U;				\
+		}							\
+		items[i] = ins[j];					\
+	}								\
 })
 
 /**
@@ -71,22 +93,21 @@ __extension__({								\
  */
 #define heap_extract(self, cmp_f)					\
 __extension__({								\
-	__typeof(*array_items(self)) __ret_h = array_items(self)[0];	\
-	__typeof(*array_items(self)) __last_h = array_pop(self);	\
-	__typeof(array_count(self)) __i_h = 1U;				\
-	while (__i_h < array_count(self)) {				\
-		__i_h += __i_h + 1 < array_count(self) &&		\
-			cmp_f(						\
-				array_items(self)[__i_h + 1U],		\
-				array_items(self)[__i_h]		\
-			);						\
-		if (!cmp_f(array_items(self)[__i_h], __last_h)) {	\
+	__typeof__(array_items(self)) items = array_items(self);	\
+	__typeof(*array_items(self)) ret = array_items(self)[0];	\
+	__typeof(*array_items(self)) last = array_pop(self);		\
+	__typeof(array_count(self)) cnt = array_count(self);		\
+	__typeof(array_count(self)) i = 1U;				\
+	__typeof(array_count(self)) j = 0U;				\
+	while (i < cnt) {						\
+		i += i + 1 < cnt && cmp_f(items[i + 1U], items[i]);	\
+		if (!cmp_f(items[i], last))				\
 			break;						\
-		}							\
-		array_items(self)[(__i_h - 1U) / 2U] =			\
-			array_items(self)[__i_h];			\
-		__i_h = __i_h * 2U + 1U;				\
+		items[j] = items[i];					\
+		j = i;							\
+		i = i * 2U + 1U;					\
 	}								\
-	array_items(self)[(__i_h - 1U) / 2U] = __last_h;		\
-	__ret_h;							\
+	items[j] = last;						\
+	ret;								\
 })
+

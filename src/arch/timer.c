@@ -30,3 +30,20 @@ extern timer_uint timer_new(void);
  * @return a timer_uint value, the count of microseconds of the time interval
  */
 extern timer_uint timer_value(timer_uint start);
+
+
+/**
+ * @brief Starts a high resolution, CPU dependent time interval measure
+ * @return a timer_uint value, a not meaningful value by itself
+ *
+ * The returned value can be used in conjunction with timer_hr_value() to
+ * measure a time interval with unspecified resolution
+ */
+extern timer_uint timer_hr_new(void);
+
+/**
+ * @brief Computes a time interval measure using a previous timer_uint value
+ * @param start a timer_uint value obtained from a previous timer_hr_new() call
+ * @return a timer_uint value, a measure of the time interval
+ */
+extern timer_uint timer_hr_value(timer_uint start);
