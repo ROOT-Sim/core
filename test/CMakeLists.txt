@@ -7,4 +7,5 @@ function(test_program name)
     set_tests_properties(test_${name} PROPERTIES TIMEOUT 50)
 endfunction()
 
-test_program(dummy load.c)
+test_program(load core/load.c)
+test_program(numerical lib/numerical.c)

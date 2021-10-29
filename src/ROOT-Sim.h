@@ -67,6 +67,10 @@ extern uint64_t RandomU64(void);
 extern double Expent(double mean);
 extern double Normal(void);
 extern int RandomRange(int min, int max);
+extern int RandomRangeNonUniform(int x, int min, int max);
+extern double Gamma(unsigned ia);
+extern double Poisson(void);
+extern unsigned Zipf(double skew, unsigned limit);
 
 enum _topology_geometry_t {
 	TOPOLOGY_HEXAGON = 1,	//!< hexagonal grid topology

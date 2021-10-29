@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.3)
+cmake_minimum_required(VERSION 3.21.3)
 project("ROOT-Sim core" C)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -36,7 +36,7 @@ set(srcs
         src/serial/serial.c
         )
 
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 #set(CMAKE_UNITY_BUILD ON)
 #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)

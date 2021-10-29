@@ -34,6 +34,7 @@ struct s_lp_ctx {
 static struct s_lp_ctx *s_lps;
 /// The context of the currently processed LP
 static struct s_lp_ctx *s_current_lp;
+
 /// The messages queue of the serial runtime
 static heap_declare(struct lp_msg *) queue;
 #if LOG_DEBUG >= LOG_LEVEL
