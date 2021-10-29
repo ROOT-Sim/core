@@ -340,9 +340,6 @@ static void *load_json_array(unsigned arr_type, const jsmntok_t *tokens, const j
 		case AUTOCONF_ARRAY_DOUBLE:
 			memb_size = sizeof(double);
 			break;
-		case AUTOCONF_ARRAY_BOOL:
-			memb_size = sizeof(bool);
-			break;
 		case AUTOCONF_ARRAY_STRING:
 			memb_size = sizeof(char *);
 			break;
@@ -370,15 +367,6 @@ static void *load_json_array(unsigned arr_type, const jsmntok_t *tokens, const j
 				break;
 			case AUTOCONF_ARRAY_DOUBLE:
 				parse_double_token(json_string, t_aux, element);
-				break;
-			case AUTOCONF_ARRAY_BOOL:
-				if(!strcmp_token(json_string, t_aux, "false")) {
-					*(bool *) element = false;
-				} else if(!strcmp_token(json_string, t_aux, "true")) {
-					*(bool *) element = true;
-				} else {
-					abort();
-				}
 				break;
 			case AUTOCONF_ARRAY_STRING:
 				*(char **) element = json_substr(&json_string[t_aux->start], t_aux->end - t_aux->start);
@@ -511,7 +499,6 @@ static int load_json_object(void *struct_ptr, const char *struct_name, c_jsmntok
 
 			case AUTOCONF_ARRAY_UNSIGNED:
 			case AUTOCONF_ARRAY_DOUBLE:
-			case AUTOCONF_ARRAY_BOOL:
 			case AUTOCONF_ARRAY_STRING:
 				t = get_value_token_by_key(tokens, json_string, obj, curr->member);
 				*(void **) (base_address + curr->offset) = load_json_array(curr->type, tokens, t,

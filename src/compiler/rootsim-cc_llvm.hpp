@@ -1,10 +1,9 @@
 /**
  * @file instr/instr_llvm.hpp
  *
- * @brief LLVM plugin to instrument memory writes
+ * @brief LLVM compiler plugin support for rootsim-cc
  *
- * This is the header of the LLVM plugin which instruments memory allocations so
- * as to enable transparent rollbacks of application code state.
+ * This is the header of the LLVM plugin used to manipulate model's code.
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only

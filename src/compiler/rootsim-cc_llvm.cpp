@@ -1,10 +1,9 @@
 /**
  * @file instr/instr_llvm.cpp
  *
- * @brief LLVM plugin to instrument memory writes
+ * @brief LLVM compiler plugin support for rootsim-cc
  *
- * This is the LLVM plugin which instruments memory allocations so as to enable
- * transparent rollbacks of application code state.
+ * This is the header of the LLVM plugin used to manipulate model's code.
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -13,6 +12,7 @@
 
 extern "C" {
 #include <log/log.h>
+#include <lib/config/reflect.h>
 }
 
 #include <set>
@@ -89,7 +89,7 @@ namespace {
 		for(const Argument &I : F.args()) {
 			VMap.erase(&I);
 		}
-		// XXX: solves a LLVM bug but removes debug info from clones
+		// XXX: solves an LLVM bug but removes debug info from clones
 		NewF->setSubprogram(nullptr);
 	}
 
@@ -103,6 +103,12 @@ namespace {
 			return false;
 		}
 
+		bool doFinalization(Module &M) override
+		{
+			generateStructMetadata();
+			return false;
+		}
+
 		void getAnalysisUsage(AnalysisUsage &AU) const override
 		{
 			AU.addRequired<TargetLibraryInfoWrapperPass>();
@@ -110,24 +116,6 @@ namespace {
 
 		bool runOnModule(Module &M) override
 		{
-//#if LOG_LEVEL <= LOG_DEBUG
-//			errs() << "Analyzing structs in module " << raw_ostream::CYAN << M.getName() << "\n";
-//			errs().resetColor();
-//#endif
-//			std::vector<StructType *> structs = M.getIdentifiedStructTypes();
-//			for(const auto &S: structs) {
-//#if LOG_LEVEL <= LOG_DEBUG
-//				if(S->hasName()) {
-//					errs() << "Identified struct " << S->getName() << "\n";
-//				}
-//#endif
-//
-//				for(unsigned i = 0; i < S->getNumElements(); i++) {
-//
-//				}
-//
-//			}
-
 #if LOG_LEVEL <= LOG_DEBUG
 			errs() << "Instrumenting module " << raw_ostream::CYAN << M.getName() << "\n";
 			errs().resetColor();
@@ -186,65 +174,159 @@ namespace {
 		std::set<StructType *> annotStructs;
 		unsigned stats[INSTRUMENTATION_STATS_COUNT] = {0};
 
-		static void printStructBody(StructType *STy) {
-			if (STy->getNumElements() == 0) {
-				errs() << "{}";
-			} else {
-				StructType::element_iterator I = STy->element_begin();
-				errs() << "{ ";
-				TypePrint(*I++);
-				for (StructType::element_iterator E = STy->element_end(); I != E; ++I) {
-					errs() << ", ";
-					TypePrint(*I);
-				}
+		// TODO: probably this function might be significantly refactored
+		void getMemberMetadata(Type *Ty)
+		{
+			struct autoconf_type_map member = {nullptr, 0, AUTOCONF_INVALID, nullptr, 0};
 
-				errs() << " }";
-			}
-		}
+			switch(Ty->getTypeID()) {
+				case Type::DoubleTyID:
+					member.type = AUTOCONF_DOUBLE;
+					break;
 
-		static void TypePrint(Type *Ty) {
-			switch (Ty->getTypeID()) {
-				case Type::VoidTyID:      errs() << "void"; return;
-				case Type::HalfTyID:      errs() << "half"; return;
-				case Type::BFloatTyID:    errs() << "bfloat"; return;
-				case Type::FloatTyID:     errs() << "float"; return;
-				case Type::DoubleTyID:    errs() << "double"; return;
-				case Type::X86_FP80TyID:  errs() << "x86_fp80"; return;
-				case Type::FP128TyID:     errs() << "fp128"; return;
-				case Type::PPC_FP128TyID: errs() << "ppc_fp128"; return;
-				case Type::LabelTyID:     errs() << "label"; return;
-				case Type::MetadataTyID:  errs() << "metadata"; return;
-				case Type::X86_MMXTyID:   errs() << "x86_mmx"; return;
-				case Type::TokenTyID:     errs() << "token"; return;
-				case Type::IntegerTyID:
-					errs() << 'i' << cast<IntegerType>(Ty)->getBitWidth();
-					return;
-
-				case Type::StructTyID: {
-					auto *STy = cast<StructType>(Ty);
-					return printStructBody(STy);
+				case Type::IntegerTyID: {
+					unsigned width = cast<IntegerType>(Ty)->getBitWidth();
+					if(width == 8) {
+						member.type = AUTOCONF_BOOL;
+					}
+					if(width == 32) {
+						member.type = AUTOCONF_UNSIGNED;
+					}
+					break;
 				}
 
 				case Type::PointerTyID: {
 					auto *PTy = cast<PointerType>(Ty);
-					TypePrint(PTy->getElementType());
-					errs() << '*';
-					return;
+					Type *dereferenced = PTy->getElementType();
+					switch(dereferenced->getTypeID()) {
+						case Type::IntegerTyID:
+							if(cast<IntegerType>(dereferenced)->getBitWidth() == 8) {
+								member.type = AUTOCONF_STRING;
+							}
+							if(cast<IntegerType>(dereferenced)->getBitWidth() == 32) {
+								member.type = AUTOCONF_ARRAY_UNSIGNED;
+							}
+							break;
+
+						case Type::StructTyID: {
+							member.type = AUTOCONF_OBJECT;
+//							auto *STy = cast<StructType>(Ty); // TODO: use this to fill other members of the metadata struct
+							break;
+						}
+
+						case Type::DoubleTyID:
+							member.type = AUTOCONF_ARRAY_DOUBLE;
+							break;
+
+						case Type::PointerTyID: {
+							auto *PTy2 = cast<PointerType>(dereferenced);
+							Type *dereferenced2 = PTy2->getElementType();
+
+							switch(dereferenced2->getTypeID()) {
+								case Type::IntegerTyID:
+									if(cast<IntegerType>(dereferenced)->getBitWidth() == 8) {
+										member.type = AUTOCONF_ARRAY_STRING;
+									}
+									break;
+
+								case Type::StructTyID: {
+									member.type = AUTOCONF_ARRAY_OBJECT;
+//									auto *STy = cast<StructType>(Ty); // TODO: use this to fill other members of the metadata struct
+									break;
+								}
+
+								default:
+									break;
+							}
+							break;
+						}
+
+						default:
+							break;
+					}
+					break;
 				}
+
+				case Type::FloatTyID: // TODO: we can easily support also floats
 				default:
-					abort();
+					break;
 			}
-			llvm_unreachable("Invalid TypeID");
+
+			if(member.type == AUTOCONF_INVALID) {
+				report_fatal_error("Found an unsupported type while analyzing structs for reflection.",false);
+			}
+
+			// TODO: do something with the struct which we just populated
 		}
 
-		static void analyzeStructMembers(Value *V)
+/*
+		AUTOCONF_ARRAY_STRING, ///< The corresponding struct member is char **
+		AUTOCONF_ARRAY_OBJECT ///< The corresponding struct member is struct **
+*/
+		void generateStructMetadata(StructType *STy)
 		{
-			const GlobalValue *GV = dyn_cast<GlobalValue>(V);
-			ModuleSlotTracker MST(GV->getParent(), false);
-			TypePrint(GV->getValueType());
+			struct autoconf_name_map str = {nullptr /*getStructName(STy)*/, nullptr};
+
+			if (STy->getNumElements() > 0) {
+				((Type *)STy)->print(errs());
+
+				StructType::element_iterator I = STy->element_begin();
+				getMemberMetadata(*I++);
+				for (StructType::element_iterator E = STy->element_end(); I != E; ++I) {
+					getMemberMetadata(*I); // TODO: pack into an array!
+				}
+				// TODO: add final element into array
+				// TODO: reference array into str.members
+			}
 		}
 
-		static void getAnnotatedStructs(Module *M)
+		void generateStructMetadata()
+		{
+#if LOG_LEVEL <= LOG_DEBUG
+			errs() << "Analysing all structs involved in autoconfiguration\n";
+#endif
+
+			for(StructType *str: annotStructs) {
+#if LOG_LEVEL <= LOG_DEBUG
+				errs() << raw_ostream::CYAN << getStructName(str) << "\n";
+				errs().resetColor();
+#endif
+
+				generateStructMetadata(str);
+			}
+		}
+
+		void findReferencedStructs(Type *Ty)
+		{
+			if(Ty->getTypeID() == Type::StructTyID) {
+				auto *STy = cast<StructType>(Ty);
+				annotStructs.insert(STy);
+
+				// Look for nested structs
+				if (STy->getNumElements() > 0) {
+					StructType::element_iterator I = STy->element_begin();
+					findReferencedStructs(*I++);
+					for (StructType::element_iterator E = STy->element_end(); I != E; ++I) {
+						findReferencedStructs(*I);
+					}
+				}
+			}
+
+			// Check for pointers to structs
+			if(Ty->getTypeID() == Type::PointerTyID) {
+				auto *PTy = cast<PointerType>(Ty);
+				findReferencedStructs(PTy->getElementType());
+			}
+		}
+
+		std::string getStructName(StructType *STy)
+		{
+			std::string name = STy->getName().str();
+			std::replace(name.begin(), name.end(), '.', ' ');
+			return name;
+		}
+
+		void getAnnotatedStructs(Module *M)
 		{
 			for(Module::global_iterator I = M->global_begin(), E = M->global_end(); I != E; ++I) {
 				if(I->getName() == "llvm.global.annotations") {
@@ -252,14 +334,19 @@ namespace {
 					for(auto OI = CA->op_begin(); OI != CA->op_end(); ++OI) {
 						auto *CS = dyn_cast<ConstantStruct>(OI->get());
 						auto *value = CS->getOperand(0)->getOperand(0);
-//						auto *valueType = CS->getOperand(0)->getOperand(0)->getType();
 						auto *AnnotationGL = dyn_cast<GlobalVariable>(CS->getOperand(1)->getOperand(0));
 						StringRef annotation = dyn_cast<ConstantDataArray>(AnnotationGL->getInitializer())->getAsCString();
 						if(annotation.compare("reflect") == 0) {
+							const GlobalValue *GV = dyn_cast<GlobalValue>(value);
+							Type *Ty = GV->getValueType();
+							if(Ty->getTypeID() != Type::StructTyID) {
+								report_fatal_error("Found an _autoconf annotation in something not a struct.", false);
+							}
+							findReferencedStructs(Ty);
 #if LOG_LEVEL <= LOG_DEBUG
-							errs() << "Found annotated struct\n";
-							analyzeStructMembers(value);
-							errs() << "\n";
+							auto *STy = cast<StructType>(Ty);
+							errs() << "Found annotated struct " << raw_ostream::CYAN << getStructName(STy) << "\n";
+							errs().resetColor();
 #endif
 						}
 					}
@@ -278,7 +365,7 @@ namespace {
 #endif
 		}
 
-		// TODO: this code has been refactored and improved but it is unused
+		// TODO: this code has been refactored and improved but it is currently unused
 		static FunctionCallee InitMemtraceFunction(Module &M, const char *memtrace_name)
 		{
 			Type *MemtraceArgs[] = {PointerType::getUnqual(Type::getVoidTy(M.getContext())),

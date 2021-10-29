@@ -20,7 +20,7 @@ struct event_content {
 
 struct foo {
 	unsigned bar;
-	unsigned long long foo;
+//	unsigned long long foo;
 	char **vettore;
 	char *stringa;
 };
