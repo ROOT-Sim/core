@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21.3)
+cmake_minimum_required(VERSION 3.13.3)
 project("ROOT-Sim core" C)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -40,13 +40,18 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 #set(CMAKE_UNITY_BUILD ON)
 #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+
+find_package(MPI REQUIRED)
 add_compile_options(${TARGET_NAME} -Wall -Wextra -Wpedantic ${MPI_C_COMPILE_FLAGS})
-link_libraries(${MPI_C_LIBRARIES} ${MPI_C_LINK_FLAGS})
+#add_link_options(${TARGET_NAME} ${MPI_C_LINK_FLAGS})
+link_libraries(${MPI_C_LIBRARIES} pthread)
+include_directories(SYSTEM ${MPI_C_INCLUDE_PATH})
+
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DLOG_LEVEL=LOG_TRACE")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DLOG_LEVEL=LOG_INFO")
 
-find_package(MPI REQUIRED)
 include_directories(src)
-include_directories(${MPI_INCLUDE_PATH})
-
 add_library(core STATIC ${srcs})
+
+enable_testing()
+add_subdirectory (test)

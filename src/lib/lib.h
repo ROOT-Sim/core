@@ -29,6 +29,3 @@ extern void lib_global_fini(void);
 
 extern void lib_lp_init(void);
 extern void lib_lp_fini(void);
-
-extern void lib_lp_init_pr(void);
-extern void lib_lp_fini_pr(void);

@@ -43,7 +43,7 @@ struct simulation_configuration {
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
 	/// If set, the simulation will run on the serial runtime
-	bool is_serial;
+	bool serial;
 	/// Function pointer to the dispatching function
 	ProcessEvent_t	dispatcher;
 	/// Function pointer to the termination detection function

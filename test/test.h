@@ -1,49 +1,82 @@
-/**
- * @file test/test.h
- *
- * @brief Test framework header
- *
- * The header of the minimal test framework used in the code base tests
- *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
- * SPDX-License-Identifier: GPL-3.0-only
- */
 #pragma once
-
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
+#include <setjmp.h>
 
-/// The exit code of tests when something fails horribly
-/** Triggers an unconditional failure, even for expected-failure tests */
-#define TEST_BAD_FAIL_EXIT_CODE 99
+static struct {
+	jmp_buf fail_buffer;
+	int ret;
+	unsigned total;
+	unsigned passed;
+	unsigned failed;
+	unsigned xfailed;
+	unsigned uxpassed;
+	unsigned should_pass;
+	unsigned should_fail;
+} test_unit;
 
-/// A complete test configuration
-struct test_config {
-	/// The test initialization function
-	/** The return value is used as failure exit code if it is non-zero */
-	int (*test_init_fnc)(void);
-	/// The test finalization function
-	/** The return value is used as failure exit code if it is non-zero */
-	int (*test_fini_fnc)(void);
-	/// The core test function
-	/** The return value is used as failure exit code if it is non-zero. */
-	int (*test_fnc)(void);
-	/// @a test_fnc is executed with that many cores
-	unsigned threads_count;
-	/// The command line arguments passed to the wrapped main function
-	const char **test_arguments;
-};
 
-/// The test configuration object, must be defined by the test sources
-extern const struct test_config test_config;
-extern bool test_thread_barrier(void);
+#define assert(condition) do {                                           \
+        if(!(condition)) {                                               \
+                fprintf(stderr, "assertion failed: " #condition " at %s:%d\n", __FILE__, __LINE__);   \
+                test_unit.ret = -1;                                       \
+        }                                                                \
+} while(0)
 
-// core.h typedefs
-typedef uint64_t lp_id_t;
-typedef unsigned rid_t;
-typedef int nid_t;
+#define init() do {                              \
+        if(setjmp(test_unit.fail_buffer)) {      \
+                test_unit.ret = -1;              \
+                finish();                        \
+        }                                        \
+} while(0)
 
-extern rid_t n_threads;
-extern __thread rid_t rid;
+#define check_passed_asserts() do {      \
+	int ret = test_unit.ret; \
+	test_unit.ret = 0;       \
+	return ret;              \
+} while(0)
+
+#define finish() do { \
+        int d1 = snprintf(NULL, 0, "PASSED.............: %u / %u\n", test_unit.passed, test_unit.should_pass); \
+        int d2 = snprintf(NULL, 0, "EXPECTED FAIL......: %u / %u\n", test_unit.xfailed, test_unit.should_fail);\
+        int d3 = snprintf(NULL, 0, "FAILED.............: %u\n", test_unit.failed);                             \
+        int d4 = snprintf(NULL, 0, "UNEXPECTED PASSED..: %u\n", test_unit.uxpassed);                           \
+        int d = ((d1 > d2 && d1 > d3 && d1 > d4) ? d1: ((d2 > d3 && d2 > d4) ? d2 : (d3 > d4 ? d3 : d4)));     \
+        printf("%.*s\n", d, "============================================================================");   \
+        printf("PASSED.............: %u / %u\n", test_unit.passed, test_unit.should_pass);                     \
+	printf("EXPECTED FAIL......: %u / %u\n", test_unit.xfailed, test_unit.should_fail);                    \
+        printf("FAILED.............: %u\n", test_unit.failed);                                                 \
+	printf("UNEXPECTED PASSED..: %u\n", test_unit.uxpassed);                                               \
+	printf("%.*s\n", d, "============================================================================");   \
+	return test_unit.ret;                                                                                  \
+} while(0)
+
+#define fail() do {                                \
+        fprintf(stderr, "Failing explicitly\n");   \
+        longjmp(test_unit.fail_buffer, 1);         \
+} while(0)
+
+#define test(desc, function, ...) do {            \
+	test_unit.should_pass++;                  \
+        printf(desc "... ");                      \
+        if(function(__VA_ARGS__) != 0) {          \
+                test_unit.ret = -1;               \
+                test_unit.failed++;               \
+                printf("FAIL.\n");                \
+        } else {                                  \
+                test_unit.passed++;               \
+                printf("passed.\n");              \
+        }                                         \
+} while(0)
+
+#define test_xf(desc, function, ...) do {         \
+        test_unit.should_fail++;                  \
+        printf(desc "... ");                      \
+        if(function(__VA_ARGS__) == 0) {          \
+                test_unit.ret = -1;               \
+                test_unit.uxpassed++;             \
+                printf("UNEXPECTED PASS.\n");     \
+        } else {                                  \
+                test_unit.xfailed++;              \
+                printf("expected fail.\n");       \
+        }                                         \
+} while(0)

@@ -84,4 +84,4 @@ extern nid_t n_nodes;
 /// The node identifier of the node
 extern nid_t nid;
 
-struct simulation_configuration global_config;
+extern struct simulation_configuration global_config;

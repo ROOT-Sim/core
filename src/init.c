@@ -40,7 +40,7 @@ static void print_config(void)
 	else
 		fprintf(stderr, "%lf\n", global_config.termination_time);
 
-	if (global_config.is_serial) {
+	if (global_config.serial) {
 		fprintf(stderr, "Parallelism: sequential simulation\n");
 	} else {
 		if (n_nodes > 1)
@@ -57,7 +57,7 @@ static void print_config(void)
 		fprintf(stderr, "Checkpoint interval: %u events\n",
 				global_config.ckpt_interval);
 	} else {
-		if (!global_config.is_serial)
+		if (!global_config.serial)
 			fprintf(stderr, "Checkpoint interval: auto\n");
 	}
 
@@ -98,7 +98,7 @@ int RootsimRun(void)
 	stats_global_time_start();
 	mpi_global_init(NULL, NULL);
 
-	if (global_config.is_serial) {
+	if (global_config.serial) {
 		ret = serial_simulation();
 	} else {
 		ret = parallel_simulation();

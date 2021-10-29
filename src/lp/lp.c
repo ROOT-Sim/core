@@ -89,7 +89,7 @@ void lp_init(void)
 		model_allocator_lp_init();
 		lp->lib_ctx_p = malloc_mt(sizeof(*current_lp->lib_ctx_p));
 
-		lib_lp_init_pr();
+		lib_lp_init();
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init();
 		termination_lp_init();
@@ -114,7 +114,7 @@ void lp_fini(void)
 		current_lp = &lps[i];
 
 		process_lp_fini();
-		lib_lp_fini_pr();
+		lib_lp_fini();
 		model_allocator_lp_fini();
 	}
 
