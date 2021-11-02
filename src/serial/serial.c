@@ -116,19 +116,15 @@ static int serial_simulation_run(void)
 		struct s_lp_ctx *this_lp = &s_lps[cur_msg->dest];
 		s_current_lp = this_lp;
 
-#if LOG_DEBUG >= LOG_LEVEL
-		if (log_can_log(LOG_DEBUG)) {
-			if(cur_msg->dest_t == s_current_lp->last_evt_time)
-				log_log(
-					LOG_DEBUG,
-					"LP %u got two consecutive events with same timestamp %lf",
-					cur_msg->dest,
-					cur_msg->dest_t
-				);
-			s_current_lp->last_evt_time = cur_msg->dest_t;
-			current_evt_time = cur_msg->dest_t;
-		}
-#endif
+		if(cur_msg->dest_t == s_current_lp->last_evt_time)
+			logger(
+				LOG_DEBUG,
+				"LP %u got two consecutive events with same timestamp %lf",
+				cur_msg->dest,
+				cur_msg->dest_t
+			);
+		s_current_lp->last_evt_time = cur_msg->dest_t;
+		current_evt_time = cur_msg->dest_t;
 
 		global_config.dispatcher(
 			cur_msg->dest,
@@ -171,10 +167,8 @@ static int serial_simulation_run(void)
 void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *payload, unsigned payload_size)
 {
-#if LOG_DEBUG >= LOG_LEVEL
-	if (log_can_log(LOG_DEBUG) && current_evt_time > timestamp)
-		log_log(LOG_DEBUG, "Sending a message in the PAST!");
-#endif
+	if (current_evt_time > timestamp)
+		logger(LOG_DEBUG, "Sending a message in the PAST!");
 
 	struct lp_msg *msg = msg_allocator_pack(
 		receiver, timestamp, event_type, payload, payload_size);
@@ -189,17 +183,17 @@ int serial_simulation(void)
 {
 	int ret;
 
-	log_log(LOG_INFO, "Initializing serial simulation");
+	logger(LOG_INFO, "Initializing serial simulation");
 	serial_simulation_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
 	stats_global_time_take(STATS_GLOBAL_EVENTS_START);
-	log_log(LOG_INFO, "Starting simulation");
+	logger(LOG_INFO, "Starting simulation");
 	ret = serial_simulation_run();
 	stats_global_time_take(STATS_GLOBAL_EVENTS_END);
 
 	stats_global_time_take(STATS_GLOBAL_FINI_START);
-	log_log(LOG_INFO, "Finalizing simulation");
+	logger(LOG_INFO, "Finalizing simulation");
 	serial_simulation_fini();
 
 	return ret;

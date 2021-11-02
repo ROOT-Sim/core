@@ -19,36 +19,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 typedef double simtime_t;
 typedef uint64_t lp_id_t;
 
 typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st);
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
-
-/// A set of configurable values used by other modules
-struct simulation_configuration {
-	/// The number of LPs to be used in the simulation
-	lp_id_t lps;
-	/// The target termination logical time
-	simtime_t termination_time;
-	/// The gvt period expressed in microseconds
-	unsigned gvt_period;
-	/// The log verbosity level
-	int verbose;
-	/// The checkpointing interval
-	unsigned ckpt_interval;
-	/// The seed used to initialize the pseudo random numbers, 0 for self-seeding
-	uint64_t prng_seed;
-	/// If set, worker threads are bound to physical cores
-	bool core_binding;
-	/// If set, the simulation will run on the serial runtime
-	bool serial;
-	/// Function pointer to the dispatching function
-	ProcessEvent_t	dispatcher;
-	/// Function pointer to the termination detection function
-	CanEnd_t	committed;
-};
 
 enum rootsim_event {
 	MODEL_INIT = 65532,
@@ -71,6 +48,17 @@ extern int RandomRangeNonUniform(int x, int min, int max);
 extern double Gamma(unsigned ia);
 extern double Poisson(void);
 extern unsigned Zipf(double skew, unsigned limit);
+
+
+enum log_level {
+	LOG_SILENT, //!< Emit no message during the simulation
+	LOG_TRACE, //!< The logging level reserved to very low priority messages
+	LOG_DEBUG, //!< The logging level reserved to useful debug messages
+	LOG_INFO, //!< The logging level reserved to useful runtime messages
+	LOG_WARN, //!< The logging level reserved to unexpected, non deal breaking conditions
+	LOG_ERROR, //!< The logging level reserved to unexpected, problematic conditions
+	LOG_FATAL //!< The logging level reserved to unexpected, fatal conditions
+};
 
 enum _topology_geometry_t {
 	TOPOLOGY_HEXAGON = 1,	//!< hexagonal grid topology
@@ -103,6 +91,33 @@ extern unsigned long long RegionsCount(const struct topology_t *topology);
 extern unsigned long long DirectionsCount(const struct topology_t *topology);
 extern lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direction_t direction);
 extern lp_id_t FindReceiver(const struct topology_t *topology);
+
+
+/// A set of configurable values used by other modules
+struct simulation_configuration {
+	/// The number of LPs to be used in the simulation
+	lp_id_t lps;
+	/// The target termination logical time
+	simtime_t termination_time;
+	/// The gvt period expressed in microseconds
+	unsigned gvt_period;
+	/// The logger verbosity level
+	enum log_level log_level;
+	/// Logfile: if not NULL, output is redirected to this file
+	FILE *logfile;
+	/// The checkpointing interval
+	unsigned ckpt_interval;
+	/// The seed used to initialize the pseudo random numbers, 0 for self-seeding
+	uint64_t prng_seed;
+	/// If set, worker threads are bound to physical cores
+	bool core_binding;
+	/// If set, the simulation will run on the serial runtime
+	bool serial;
+	/// Function pointer to the dispatching function
+	ProcessEvent_t	dispatcher;
+	/// Function pointer to the termination detection function
+	CanEnd_t	committed;
+};
 
 extern int RootsimInit(struct simulation_configuration *conf);
 extern int RootsimRun(void);

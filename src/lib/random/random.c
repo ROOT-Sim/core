@@ -61,7 +61,7 @@ uint64_t RandomU64(void)
 double Expent(double mean)
 {
 	if (unlikely(mean < 0)) {
-		log_log(LOG_WARN, "Passed a negative mean into Expent()");
+		logger(LOG_WARN, "Passed a negative mean into Expent()");
 	}
 	return -mean * log(1 - Random());
 }
@@ -119,7 +119,7 @@ int RandomRangeNonUniform(int x, int min, int max)
 double Gamma(unsigned ia)
 {
 	if (unlikely(ia < 1)) {
-		log_log(LOG_WARN, "Gamma distribution must have a ia "
+		logger(LOG_WARN, "Gamma distribution must have a ia "
 				"value >= 1. Defaulting to 1...");
 		ia = 1;
 	}
@@ -182,5 +182,5 @@ unsigned Zipf(double skew, unsigned limit)
 		x = floor(pow(Random(), -1. / skew - 1.));
 		t = pow(1. + 1. / x, skew - 1.);
 	} while (x > limit || Random() * x * (t - 1.) * b > t * (b - 1.));
-	return x;
+	return (unsigned)x;
 }

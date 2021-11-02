@@ -27,11 +27,9 @@ struct simulation_configuration global_config;
  */
 static void print_config(void)
 {
-	if (log_colored)
-		fprintf(stderr, "\x1b[32m");
+	fprintf(stderr, "\x1b[32m");
 	fprintf(stderr, "ROOT-Sim configuration:\n");
-	if (log_colored)
-		fprintf(stderr, "\x1b[90m");
+	fprintf(stderr, "\x1b[90m");
 
 	fprintf(stderr, "Logical processes: %" PRIu64 "\n", n_lps);
 	fprintf(stderr, "Termination time: ");
@@ -61,8 +59,7 @@ static void print_config(void)
 			fprintf(stderr, "Checkpoint interval: auto\n");
 	}
 
-	if (log_colored)
-		fprintf(stderr, "\x1b[39m");
+	fprintf(stderr, "\x1b[39m");
 
 	fprintf(stderr, "\n");
 	fflush(stderr);
@@ -85,6 +82,9 @@ int RootsimInit(struct simulation_configuration *conf)
 		return -1;
 	}
 
+	// Configure the logger
+	log_init(global_config.logfile);
+
 	return 0;
 }
 
@@ -92,7 +92,7 @@ int RootsimRun(void)
 {
 	int ret;
 
-	if(global_config.verbose > 0)
+	if(global_config.log_level > LOG_SILENT)
 		print_config();
 
 	stats_global_time_start();

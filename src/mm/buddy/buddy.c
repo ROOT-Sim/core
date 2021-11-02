@@ -54,7 +54,7 @@ void *malloc_mt(size_t req_size)
 
 	if (unlikely(self->longest[0] < req_blks)) {
 		errno = ENOMEM;
-		log_log(LOG_WARN, "LP %p is out of memory!", current_lp);
+		logger(LOG_WARN, "LP %p is out of memory!", current_lp);
 		return NULL;
 	}
 

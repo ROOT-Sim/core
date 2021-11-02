@@ -9,3 +9,4 @@ endfunction()
 
 test_program(load core/load.c)
 test_program(numerical lib/numerical.c)
+test_program(correctness integration/integration.c integration/model/application.c integration/model/functions.c integration/model/output_256.c)

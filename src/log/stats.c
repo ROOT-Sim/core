@@ -1,5 +1,5 @@
 /**
- * @file log/stats.c
+ * @file logger/stats.c
  *
  * @brief Statistics module
  *
@@ -79,7 +79,7 @@ static __thread struct stats_thread stats_cur;
 static void file_write_chunk(FILE *f, const void *data, size_t data_size)
 {
 	if (unlikely(fwrite(data, data_size, 1, f) != 1))
-		log_log(LOG_ERROR, "Error during disk write!");
+		logger(LOG_ERROR, "Error during disk write!");
 }
 
 static void *file_memory_load(FILE *f, int64_t *f_size_p)
@@ -118,8 +118,7 @@ static FILE *file_open(const char *open_type, const char *fmt, ...)
 
 	FILE *ret = fopen(f_name, open_type);
 	if (ret == NULL)
-		log_log(LOG_ERROR, "Unable to open \"%s\" in %s mode", f_name,
-			open_type);
+		logger(LOG_ERROR, "Unable to open \"%s\" in %s mode", f_name, open_type);
 
 	mm_free(f_name);
 	return ret;
@@ -149,7 +148,7 @@ void stats_global_init(void)
 	stats_glob_cur.timestamps[STATS_GLOBAL_START] = timer_value(sim_start_ts);
 	stats_glob_cur.threads_count = n_threads;
 	if (mem_stat_setup() < 0)
-		log_log(LOG_ERROR, "Unable to extract memory statistics!");
+		logger(LOG_ERROR, "Unable to extract memory statistics!");
 
 	stats_node_tmp = io_file_tmp_get();
 	setvbuf(stats_node_tmp, NULL, _IOFBF,
@@ -261,7 +260,7 @@ void stats_global_fini(void)
 
 	FILE *o = file_open("w", "%s_stats.bin", "TODO"); // TODO: get back the name of the executable
 	if (o == NULL) {
-		log_log(LOG_WARN, "Unavailable stats file: stats will be dumped on stdout");
+		logger(LOG_WARN, "Unavailable stats file: stats will be dumped on stdout");
 		o = stdout;
 	}
 

@@ -1,5 +1,5 @@
 /**
- * @file log/stats.h
+ * @file logger/stats.h
  *
  * @brief Statistics module
  *

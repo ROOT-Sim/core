@@ -57,7 +57,7 @@ void lp_global_init(void)
 	lps -= lid_node_first;
 
 	if (n_lps_node < n_threads) {
-		log_log(LOG_WARN, "The simulation will run with %u threads instead of the available %u",
+		logger(LOG_WARN, "The simulation will run with %u threads instead of the available %u",
 				n_lps_node, n_threads);
 		n_threads = n_lps_node;
 	}

@@ -1,5 +1,5 @@
 /**
- * @file log/log.h
+ * @file log/logger.h
  *
  * @brief Logging library
  *
@@ -11,62 +11,18 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdio.h>
 
-#ifndef LOG_LEVEL
-/// The minimum logging level supported at compile time
-/** Compiler optimizations remove log calls with lower level than this one */
-#define LOG_LEVEL LOG_TRACE
-#endif
+#include <ROOT-Sim.h>
 
-#define LOG_CAN_LOG_AT_BUILD(l) (l >= LOG_LEVEL)
-
-extern int log_level;
-extern bool log_colored;
-
-/// The logging level reserved to very low priority messages
-#define LOG_TRACE 	0
-/// The logging level reserved to useful debug messages
-#define LOG_DEBUG 	1
-/// The logging level reserved to useful runtime messages
-#define LOG_INFO 	2
-/// The logging level reserved to unexpected, non deal breaking conditions
-#define LOG_WARN 	3
-/// The logging level reserved to unexpected, problematic conditions
-#define LOG_ERROR 	4
-/// The logging level reserved to unexpected, fatal conditions
-#define LOG_FATAL 	5
+void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...);
 
 /**
- * @brief Checks if a logging level is being processed
- * @param lvl the logging level to check
- * @return true if @a level is being process, false otherwise
- */
-#define log_can_log(lvl) ((lvl) >= LOG_LEVEL && (lvl) >= log_level)
-
-/**
- * @fn log_log(lvl, ...)
- * @brief Produces a log
+ * @fn logger(lvl, fmt, ...)
+ * @brief Produces a logger
  * @param lvl the logging level associated to the message
  * @param ... a printf-style format string followed by its arguments if needed
  */
+#define logger(level, fmt, ...) vlogger(level, __FILE__, __LINE__, fmt __VA_OPT__(,) __VA_ARGS__)
 
-#if LOG_CAN_LOG_AT_BUILD(LOG_DEBUG)
-
-#define log_log(lvl, ...)						\
-	do {								\
-		if(log_can_log(lvl))					\
-			_log_log(lvl, __FILE__, __LINE__, __VA_ARGS__);	\
-	} while(0)
-#else
-
-#define log_log(lvl, ...)						\
-	do {								\
-		if(log_can_log(lvl))					\
-			_log_log(lvl, NULL, 0, __VA_ARGS__);		\
-	} while(0)
-
-#endif
-
-void _log_log(int level, const char *file, unsigned line, const char *fmt, ...);
-
-void log_logo_print(void);
+extern void log_init(FILE *file);

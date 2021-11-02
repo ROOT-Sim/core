@@ -37,12 +37,12 @@
 static void comm_error_handler(MPI_Comm *comm, int *err_code_p, ...)
 {
 	(void) comm;
-	log_log(LOG_FATAL, "MPI error with code %d!", *err_code_p);
+	logger(LOG_FATAL, "MPI error with code %d!", *err_code_p);
 
 	int err_len;
 	char err_str[MPI_MAX_ERROR_STRING];
 	MPI_Error_string(*err_code_p, err_str, &err_len);
-	log_log(LOG_FATAL, "MPI error msg is %s ", err_str);
+	logger(LOG_FATAL, "MPI error msg is %s ", err_str);
 
 	exit(-1);
 }
@@ -59,11 +59,11 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 
 	if (thread_lvl < MPI_THREAD_MULTIPLE) {
 		if (thread_lvl < MPI_THREAD_SERIALIZED) {
-			log_log(LOG_FATAL,
+			logger(LOG_FATAL,
 				"This MPI implementation does not support threaded access");
 			abort();
 		} else {
-			log_log(LOG_FATAL,
+			logger(LOG_FATAL,
 				"This MPI implementation only supports serialized calls: "
 				"you need to build ROOT-Sim with -Dserialized_mpi=true");
 			abort();
@@ -72,7 +72,7 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 
 	MPI_Errhandler err_handler;
 	if (MPI_Comm_create_errhandler(comm_error_handler, &err_handler)) {
-		log_log(LOG_FATAL, "Unable to create MPI error handler");
+		logger(LOG_FATAL, "Unable to create MPI error handler");
 		abort();
 	}
 

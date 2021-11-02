@@ -38,7 +38,7 @@ static void worker_thread_init(rid_t this_rid)
 		mpi_node_barrier();
 
 	if (sync_thread_barrier()) {
-		log_log(LOG_INFO, "Starting simulation");
+		logger(LOG_INFO, "Starting simulation");
 		stats_global_time_take(STATS_GLOBAL_EVENTS_START);
 	}
 }
@@ -50,7 +50,7 @@ static void worker_thread_fini(void)
 	if (sync_thread_barrier()) {
 		stats_dump();
 		stats_global_time_take(STATS_GLOBAL_EVENTS_END);
-		log_log(LOG_INFO, "Finalizing simulation");
+		logger(LOG_INFO, "Finalizing simulation");
 
 		mpi_node_barrier();
 	}
@@ -111,7 +111,7 @@ static void parallel_global_fini(void)
 
 int parallel_simulation(void)
 {
-	log_log(LOG_INFO, "Initializing parallel simulation");
+	logger(LOG_INFO, "Initializing parallel simulation");
 	parallel_global_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
@@ -119,11 +119,11 @@ int parallel_simulation(void)
 	rid_t i = n_threads;
 	while (i--) {
 		if (thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
-			log_log(LOG_FATAL, "Unable to create a thread!");
+			logger(LOG_FATAL, "Unable to create threads!");
 			abort();
 		}
 		if (global_config.core_binding && thread_affinity_set(thrs[i], i)) {
-			log_log(LOG_FATAL, "Unable to set a thread affinity!");
+			logger(LOG_FATAL, "Unable to set thread affinity!");
 			abort();
 		}
 	}

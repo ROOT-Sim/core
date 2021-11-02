@@ -133,7 +133,7 @@ The `--no-ff` flag causes the merge to always create a new commit object, even
 
 ![Merging Feature Branches](img/branching-model-feature-merge.png  "Merging Feature Branches")
 
-In the latter case, it is impossible to see from Git history which of the commit objects together have implemented a feature (you would have to manually read all the log messages). Reverting a whole feature (i.e. a group of commits), is a true headache in the latter situation, whereas it is easily done if the `--no-ff` flag was used.
+In the latter case, it is impossible to see from Git history which of the commit objects together have implemented a feature (you would have to manually read all the logger messages). Reverting a whole feature (i.e. a group of commits), is a true headache in the latter situation, whereas it is easily done if the `--no-ff` flag was used.
 Yes, it will create a few more (empty) commit objects, but the gain is much bigger that that cost.
 
 erging into `develop` is sometimes referred to as "merge window". Once a new release branch is created (see below), new features are automatically directed towards the next release.
@@ -190,8 +190,8 @@ Once the Pull Request is merged (again creating a no-fast-foward commit), the ch
 
 We then have to create a tag to identify the new release in `master`. By definition, all tags must be signed. This should be done by using git’s integration with PGP, so a key to identify the signer must be publicly available. At least, for easiness of retrieval, the public key of the person creating the tag should be published here:
 
-* http://pgp.mit.edu/[http://pgp.mit.edu/](http://pgp.mit.edu/) 
-* [http://keyserver.pgp.com/ ](http://keyserver.pgp.com/) 
+* http://pgp.mit.edu/[http://pgp.mit.edu/](http://pgp.mit.edu/)
+* [http://keyserver.pgp.com/ ](http://keyserver.pgp.com/)
 
 To set up git for using your private key to sign tags:
 
@@ -294,9 +294,9 @@ $ git commit
 #### Finishing a hotfix branch
 When finished, the bugfix needs to be merged back into `master`, but also needs to be merged back into `develop`, in order to safeguard that the bugfix is included in the next release as well. This is completely similar to how release branches are finished.
 
-The one exception to the rule here is that, when a release branch currently exists, the hotfix changes need to be merged into that release branch, instead of `develop`. 
+The one exception to the rule here is that, when a release branch currently exists, the hotfix changes need to be merged into that release branch, instead of `develop`.
 
-Back-merging the bugfix into the release branch will eventually result in the bugfix being merged into `develop` too, when the release branch is finished. 
+Back-merging the bugfix into the release branch will eventually result in the bugfix being merged into `develop` too, when the release branch is finished.
 
 (If work in develop immediately requires this bugfix and cannot wait for the release branch to be finished, you may safely merge the bugfix into `develop` now already as well.)
 
@@ -320,7 +320,7 @@ aking good commits is a form of art. A good way to decide whether a commit is se
 Commit messages should be meaningful. A one-line commit message like "I’m developing foo" will not allow other developers to understand what that commit is for. A minimal commit message would be of the format:
 
 ```
-  Short log
+  Short logger
 
   (Optional pointers to external resources, such as defect tracking)
 
@@ -329,7 +329,7 @@ Commit messages should be meaningful. A one-line commit message like "I’m deve
   (Optional, if it's not clear from above) how your change resolves the
   issues in the first part.
 
-  Tag line(s) at the end.	
+  Tag line(s) at the end.
 ```
 
 This is an example of a good commit message:
@@ -340,31 +340,31 @@ This is an example of a good commit message:
   When using foobar on systems with less than a gigabyte of RAM common
   usage patterns often result in an Out-of-memory condition causing
   slowdowns and unexpected application termination.
- 
+
   Low-memory systems should continue to function without running into
   memory-starvation conditions with minimal cost to systems with more
   available memory.  High-memory systems will be less able to use the
   full extent of the system, a dynamically tunable option may be best,
   long-term.
-  
+
   The foo setting in bar was decreased from X to X-50% in order to
   ensure we don't exhaust all system memory with foobar threads.
-  
+
   Signed-off-by: Joe Developer <joe.developer@example.com>
 ```
 
 Several things should be noted here. The minimal commit message is good for new code development and simple changes. An empty line must always come after it, otherwise post processing software might not be able to distinguish it from the rest of the commit text.
 
-The single short log message indicates what needed to be changed. It should begin with an indicator as to the primary item changed by this work, followed by a short summary of the change. In the above case we're indicating that we've changed the "foobar" item, by "adjusting the foo setting in bar".
+The single short logger message indicates what needed to be changed. It should begin with an indicator as to the primary item changed by this work, followed by a short summary of the change. In the above case we're indicating that we've changed the "foobar" item, by "adjusting the foo setting in bar".
 
-The single short log message is analogous to the git "commit summary". While no maximum line length is specified by this policy, it is suggested that it remains under 50 characters wherever possible. Think of it as the subject of an email: you should never write too much text in it, otherwise receivers will not understand easily what the email is about.
+The single short logger message is analogous to the git "commit summary". While no maximum line length is specified by this policy, it is suggested that it remains under 50 characters wherever possible. Think of it as the subject of an email: you should never write too much text in it, otherwise receivers will not understand easily what the email is about.
 
 Optionally, you may include pointers to defects this change corrects. Unless the defect format is specified by the component you are modifying, it is suggested that you use a full URL to specify the reference to the defect information. Generally, these pointers will precede any long description, but as an optional item it may be after the long description. This could be a good way, for example, to refer to open issues in a bug tracker.
 You must then have a full description of the change. Specifying the intent of your change and if necessary how the change resolves the issue.
 
 Finally, one or more tag lines should exist. Each developer responsible for working on the patch is responsible for adding a `Signed-off-by:` tag line. This tag line should be added by people writing the patch, and additional tag lines should be added by people, for example, merging the patch into different branches. This allows to easily track the updates to the code base, and determine who did what.
 
-It is not acceptable to have an empty or non-existent header, or just a single line message. The summary and description is required for all changes. 
+It is not acceptable to have an empty or non-existent header, or just a single line message. The summary and description is required for all changes.
 
 The commit messages should be manually indented. Usually, each line of the message, should not be longer than 78 characters. Note that in order to do this easily, is always better to avoid using the `-m` switch when committing: in fact, simply issuing:
 
@@ -422,7 +422,7 @@ ROOT-Sim documentation is organised into three different parts, some of which ar
 
 ### Change Log
 
-The `ChangeLog` file in the master folder is an important living document which should be updated any time that a new feature is added, or something is changed in the code. Therefore, before committing to any branch, take some time to understand whether you should put some note on what you are doing in that file. This simplifies a lot the release of a new version, as this reduces the time required to navigate back the git log.
+The `ChangeLog` file in the master folder is an important living document which should be updated any time that a new feature is added, or something is changed in the code. Therefore, before committing to any branch, take some time to understand whether you should put some note on what you are doing in that file. This simplifies a lot the release of a new version, as this reduces the time required to navigate back the git logger.
 
 Changes in the `ChangeLog` file should go in the `[Unreleased]` section which is at the top of the file. This also helps users at understanding what changes are expected to come in the next releases.
 
@@ -575,7 +575,7 @@ Inserting blank before/after a chunk of code can be useful for indicating a conc
 
 Examples:
 
-``` 
+```
 func(a, b);
 
 if(var) {
@@ -687,4 +687,3 @@ Also, never ever do this:
 Often, fixes made to one piece of code will be missed in the other, and the two pieces of code may drift apart, introduced or unfixed bugs unnoticed for years.
 
 If you do have to use `#ifdef` for something, absolutely try to minimize the amount of code within it. Make the remaining code as generic and portable as possible.
-

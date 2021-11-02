@@ -42,7 +42,7 @@ set(CMAKE_C_VISIBILITY_PRESET hidden)
 #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
 find_package(MPI REQUIRED)
-add_compile_options(${TARGET_NAME} -Wall -Wextra -Wpedantic ${MPI_C_COMPILE_FLAGS})
+add_compile_options(${TARGET_NAME} -Wall -Wextra -Wpedantic ${MPI_C_COMPILE_FLAGS} -Wno-gnu-zero-variadic-macro-arguments)
 #add_link_options(${TARGET_NAME} ${MPI_C_LINK_FLAGS})
 link_libraries(${MPI_C_LIBRARIES} pthread)
 include_directories(SYSTEM ${MPI_C_INCLUDE_PATH})
