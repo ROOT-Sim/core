@@ -1,85 +1,41 @@
-name: ROOT-Sim core CI
+name: Continuous Integration
 
 on:
   push:
-  pull_request:
-    branches:
-      - master
-      - develop
   schedule:
     - cron: "0 2 * * 1"
 
 jobs:
-  linux:
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Fetch ROOT-Sim repository
-      uses: actions/checkout@v2
-    - name: Set up Python 3
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-    - name: Install Meson and Ninja
-      run: pip install meson ninja
-    - name: Install OpenMPI
-      run: |
-        sudo apt-get update
-        sudo apt-get install openmpi-bin libopenmpi-dev
-    - name: Set up build folder
-      run: meson setup builddir/ -Db_coverage=true -Db_lto=false
-      env:
-        CC: gcc
-        CXX: g++
-    - name: Run tests
-      run: meson test -C builddir/ -v
-    - name: Generate and upload coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        fail_ci_if_error: true
-
-  windows:
+  prepare:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
     steps:
-    - name: Fetch ROOT-Sim repository
-      uses: actions/checkout@v2
-    - name: Set up MSYS2 with Meson and LLVM
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: UCRT64
-        release: true
-        install: >-
-          mingw-w64-ucrt-x86_64-llvm
-          mingw-w64-ucrt-x86_64-clang
-          mingw-w64-ucrt-x86_64-meson
-    - name: Set up build folder
-      run: meson setup builddir/ -Db_lto=false
-      env:
-        CC: clang
-        CXX: clang++
-    - name: Run tests
-      run: meson test -C builddir/ -v
+      - name: Setup MSVC compiler
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Set up MinGW
+        uses: egor-tensin/setup-mingw@v2
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1
 
-  macos:
-    runs-on: macos-latest
+  build_and_test:
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        compiler: [ clang, gcc ]
+        include:
+          - os: windows-latest
+            compiler: msvc
     steps:
-    - name: Fetch ROOT-Sim repository
-      uses: actions/checkout@v2
-    - name: Set up Python 3
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-    - name: Download and install LLVM
-      run: brew install llvm
-    - name: Install Meson and Ninja
-      run: pip install meson ninja
-    - name: Set up build folder
-      run: meson setup builddir/ --native-file macos-native.ini
-    - name: Dump meson log
-      if: ${{ failure() }}
-      run: cat builddir/meson-logs/meson-log.txt
-    - name: Run tests
-      run: meson test -C builddir/ -v
-
+      - name: Fetch ROOT-Sim repository
+        uses: actions/checkout@v2
+      - name: Install MPI
+        uses: mpi4py/setup-mpi@v1
+      - name: Build & Test
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ runner.workspace }}/build
+          cc: ${{ matrix.compiler }}
+          build-type: Debug
+          run-test: true

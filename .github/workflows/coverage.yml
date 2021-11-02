@@ -1,0 +1,25 @@
+name: Code Coverage
+
+on:
+  push
+
+jobs:
+  code_coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch ROOT-Sim repository
+        uses: actions/checkout@v2
+      - name: Install MPI
+        uses: mpi4py/setup-mpi@v1
+      - name: Build & Test
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ runner.workspace }}/build
+          cc: ${{ matrix.compiler }}
+          build-type: Debug
+          configure-options: -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage
+          run-test: true
+      - name: Generate and upload coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          fail_ci_if_error: true

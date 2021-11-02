@@ -1,6 +1,8 @@
 #pragma once
+
 #include <stdio.h>
 #include <setjmp.h>
+#include <arch/thread.h>
 
 static struct {
 	jmp_buf fail_buffer;
@@ -56,15 +58,17 @@ static struct {
 } while(0)
 
 #define test(desc, function, ...) do {            \
-	test_unit.should_pass++;                  \
+        test_unit.should_pass++;                  \
         printf(desc "... ");                      \
         if(function(__VA_ARGS__) != 0) {          \
                 test_unit.ret = -1;               \
                 test_unit.failed++;               \
                 printf("FAIL.\n");                \
+                fflush(stdout);                   \
         } else {                                  \
                 test_unit.passed++;               \
                 printf("passed.\n");              \
+                fflush(stdout);                   \
         }                                         \
 } while(0)
 
@@ -79,4 +83,34 @@ static struct {
                 test_unit.xfailed++;              \
                 printf("expected fail.\n");       \
         }                                         \
+} while(0)
+
+
+#define parallel_test(desc, n_th, function) do {                                         \
+        thr_id_t thrs[n_th];                                                             \
+        unsigned i = (n_th)-1;                                                           \
+        unsigned failed_thr = 0;                                                         \
+        test_unit.should_pass++;                                                         \
+        printf(desc "... ");                                                             \
+        while (i--) {                                                                    \
+                if (thread_start(&thrs[i], function, NULL)) {                            \
+                        fprintf(stderr, "Unable to create thread %u/%d", i, N_THREADS);  \
+                        fail();                                                          \
+                }                                                                        \
+        }                                                                                \
+        i = (n_th) - 1;                                                                  \
+        while (i--) {                                                                    \
+                thr_ret_t ret;                                                           \
+                thread_wait(thrs[i], &ret);                                              \
+                if(ret != 0)                                                             \
+                        failed_thr++;                                                    \
+        }                                                                                \
+        if(failed_thr == 0) {                                                            \
+                test_unit.ret = -1;                                                      \
+                test_unit.uxpassed++;                                                    \
+                printf("UNEXPECTED PASS.\n");                                            \
+        } else {                                                                         \
+                test_unit.xfailed++;                                                     \
+                printf("expected fail.\n");                                              \
+        }                                                                                \
 } while(0)

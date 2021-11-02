@@ -1,5 +1,5 @@
 /**
- * @file test/core/sync_test.c
+ * @file test/core/synchronize.c
  *
  * @brief Test: synchronization primitives test
  * @todo test the spinlock as well
@@ -14,6 +14,8 @@
 
 #include <stdatomic.h>
 
+
+#define N_THREADS 16
 #define REPS_COUNT 100000
 
 static atomic_uint counter;
@@ -24,34 +26,29 @@ static unsigned d = 0;
 
 _Static_assert(REPS_COUNT % 5 == 0, "Spinlock test is not correct");
 
-static int sync_init(void)
+static thr_ret_t THREAD_CALL_CONV sync_test(void *null)
 {
-	mrswlock_init(&rw_lock, n_threads);
-	return 0;
-}
-
-static int sync_test(void)
-{
-	int ret = 0;
-	unsigned i = REPS_COUNT;
-	while (i--) {
+	(void)null;
+	unsigned long long ret = 0;
+	unsigned j = REPS_COUNT;
+	while (j--) {
 		atomic_fetch_add_explicit(&counter, 1U, memory_order_relaxed);
 		sync_thread_barrier();
 		unsigned val = atomic_load_explicit(&counter, memory_order_relaxed);
 		sync_thread_barrier();
-		ret -= val % n_threads;
+		ret -= (int)(val % N_THREADS);
 	}
 
-	test_thread_barrier();
+	sync_thread_barrier();
 
-	i = REPS_COUNT;
-	while (i--) {
+	j = REPS_COUNT;
+	while (j--) {
 		spin_lock(&spin);
 		switch (k % 5) {
 		case 0:
 		case 2:
 			k += 1;
-			/* fallthrough */
+			__attribute__((fallthrough));
 		case 4:
 			k += 1;
 			break;
@@ -65,13 +62,13 @@ static int sync_test(void)
 		spin_unlock(&spin);
 	}
 
-	test_thread_barrier();
-	ret -= k != ((REPS_COUNT * 5 * n_threads + 2) / 3);
-	test_thread_barrier();
+	sync_thread_barrier();
+	ret -= k != ((REPS_COUNT * 5 * N_THREADS + 2) / 3);
+	sync_thread_barrier();
 
-	i = REPS_COUNT;
-	while (i--) {
-		mrswlock_wlock(&rw_lock, (int)n_threads);
+	j = REPS_COUNT;
+	while (j--) {
+		mrswlock_wlock(&rw_lock, (int)N_THREADS);
 		switch (d % 5) {
 		case 0:
 		case 2:
@@ -87,39 +84,56 @@ static int sync_test(void)
 		default:
 			__builtin_unreachable();
 		}
-		mrswlock_wunlock(&rw_lock, n_threads);
+		mrswlock_wunlock(&rw_lock, N_THREADS);
 	}
 
-	test_thread_barrier();
+	sync_thread_barrier();
 	ret -= d != k;
-	test_thread_barrier();
+	sync_thread_barrier();
 	d = 0;
 	k = 0;
-	test_thread_barrier();
+	sync_thread_barrier();
 
-	i = REPS_COUNT;
+	j = REPS_COUNT;
 	if (rid) {
-		while (i--) {
+		while (j--) {
 			mrswlock_rlock(&rw_lock);
 			ret -= d != k;
 			mrswlock_runlock(&rw_lock);
 		}
 	} else {
-		while (i--) {
-			mrswlock_wlock(&rw_lock, n_threads);
+		while (j--) {
+			mrswlock_wlock(&rw_lock, N_THREADS);
 			d += 3;
 			k += 2;
 			k += d % 5;
 			d += 2;
-			mrswlock_wunlock(&rw_lock, n_threads);
+			mrswlock_wunlock(&rw_lock, N_THREADS);
 		}
 	}
 
-	test_thread_barrier();
-	return ret;
+	sync_thread_barrier();
+	return (thr_ret_t)ret;
 }
 
-const struct test_config test_config = {
-	.test_init_fnc = sync_init,
-	.test_fnc = sync_test,
+void foo() {}
+
+struct simulation_configuration conf = {
+    .lps = 16,
+    .n_threads = N_THREADS,
+    .dispatcher = (ProcessEvent_t)foo,
+    .committed = (CanEnd_t)foo,
 };
+
+
+int main(void)
+{
+	init();
+
+	RootsimInit(&conf);
+	mrswlock_init(&rw_lock, N_THREADS);
+
+	parallel_test("Testing synchronization barrier", N_THREADS, sync_test);
+
+	finish();
+}
