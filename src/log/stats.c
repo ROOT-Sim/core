@@ -27,7 +27,6 @@
 
 #define STATS_BUFFER_ENTRIES (1024)
 #define STATS_MAX_STRLEN 32U
-#define STATS_REAL_TIME STATS_COUNT
 
 /// A container for statistics in a logical time period
 struct stats_thread {
@@ -54,12 +53,12 @@ struct stats_global {
 static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT &&
 	      sizeof(struct stats_node) == 16 &&
 	      sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
-	      "structs aren't naturally packed, parsing may be difficult");
+	      "structs aren't properly packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the header of the final csv
 const char * const s_names[] = {
 	[STATS_ROLLBACK] = "rollbacks",
-	[STATS_MSG_ROLLBACK] = "rollbacked messages",
+	[STATS_MSG_ROLLBACK] = "rolled back messages",
 	[STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
 	[STATS_MSG_SILENT] = "silent messages",
 	[STATS_CKPT] = "checkpoints",
@@ -146,7 +145,7 @@ void stats_global_time_take(enum stats_global_type this_stat)
 void stats_global_init(void)
 {
 	stats_glob_cur.timestamps[STATS_GLOBAL_START] = timer_value(sim_start_ts);
-	stats_glob_cur.threads_count = n_threads;
+	stats_glob_cur.threads_count = global_config.n_threads;
 	if (mem_stat_setup() < 0)
 		logger(LOG_ERROR, "Unable to extract memory statistics!");
 
@@ -154,7 +153,7 @@ void stats_global_init(void)
 	setvbuf(stats_node_tmp, NULL, _IOFBF,
 		STATS_BUFFER_ENTRIES * sizeof(struct stats_node));
 
-	stats_tmps = mm_alloc(n_threads * sizeof(*stats_tmps));
+	stats_tmps = mm_alloc(global_config.n_threads * sizeof(*stats_tmps));
 }
 
 /**
@@ -198,7 +197,7 @@ static void stats_files_send(void)
 	mpi_blocking_data_send(f_buf, f_size, 0);
 	mm_free(f_buf);
 
-	for (rid_t i = 0; i < n_threads; ++i) {
+	for (rid_t i = 0; i < global_config.n_threads; ++i) {
 		f_buf = file_memory_load(stats_tmps[i], &f_size);
 		f_size = min(INT_MAX, f_size);
 		mpi_blocking_data_send(f_buf, f_size, 0);
@@ -235,7 +234,7 @@ static void stats_file_final_write(FILE *o)
 	file_write_chunk(o, buf, buf_size);
 	mm_free(buf);
 
-	for (rid_t i = 0; i < n_threads; ++i) {
+	for (rid_t i = 0; i < global_config.n_threads; ++i) {
 		buf = file_memory_load(stats_tmps[i], &buf_size);
 		file_write_chunk(o, &buf_size, sizeof(buf_size));
 		file_write_chunk(o, buf, buf_size);
@@ -253,15 +252,18 @@ static void stats_file_final_write(FILE *o)
  */
 void stats_global_fini(void)
 {
+	if(global_config.stats_file == NULL)
+		return;
+
 	if (nid) {
 		stats_files_send();
 		return;
 	}
 
-	FILE *o = file_open("w", "%s_stats.bin", "TODO"); // TODO: get back the name of the executable
+	FILE *o = file_open("w", "%s.bin", global_config.stats_file);
 	if (o == NULL) {
-		logger(LOG_WARN, "Unavailable stats file: stats will be dumped on stdout");
-		o = stdout;
+		logger(LOG_WARN, "Unable to open statistics file for writing, statistics will now be collected.");
+		return;
 	}
 
 	stats_file_final_write(o);
@@ -271,7 +273,7 @@ void stats_global_fini(void)
 	if (o != stdout)
 		fclose(o);
 
-	for (rid_t i = 0; i < n_threads; ++i)
+	for (rid_t i = 0; i < global_config.n_threads; ++i)
 		fclose(stats_tmps[i]);
 
 	mm_free(stats_tmps);
@@ -301,15 +303,17 @@ void stats_on_gvt(simtime_t gvt)
 	if (nid != 0)
 		return;
 
-	printf("\rVirtual time: %lf", gvt);
-	fflush(stdout);
+	if(global_config.log_level != LOG_SILENT) {
+		printf("\rVirtual time: %lf", gvt);
+		fflush(stdout);
+	}
 }
 
 void stats_dump(void)
 {
 	if (nid == 0) {
 		double t = timer_value(sim_start_ts) / 1000000.0;
-		printf("\nSimulation completed in %.3lf seconds\n", t);
+		logger(LOG_INFO, "\nSimulation completed in %.3lf seconds\n", t);
 		fflush(stdout);
 	}
 }

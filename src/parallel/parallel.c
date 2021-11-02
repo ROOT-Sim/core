@@ -98,6 +98,8 @@ static void parallel_global_init(void)
 	msg_queue_global_init();
 	termination_global_init();
 	gvt_global_init();
+
+	ScheduleNewEvent = ScheduleNewEvent_parallel;
 }
 
 static void parallel_global_fini(void)
@@ -115,8 +117,8 @@ int parallel_simulation(void)
 	parallel_global_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
-	thr_id_t thrs[n_threads];
-	rid_t i = n_threads;
+	thr_id_t thrs[global_config.n_threads];
+	rid_t i = global_config.n_threads;
 	while (i--) {
 		if (thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
 			logger(LOG_FATAL, "Unable to create threads!");
@@ -128,7 +130,7 @@ int parallel_simulation(void)
 		}
 	}
 
-	i = n_threads;
+	i = global_config.n_threads;
 	while (i--)
 		thread_wait(thrs[i], NULL);
 

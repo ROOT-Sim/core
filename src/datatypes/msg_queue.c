@@ -54,8 +54,7 @@ static __thread struct {
  */
 void msg_queue_global_init(void)
 {
-	queues = mm_aligned_alloc(CACHE_LINE_SIZE, n_threads *
-			sizeof(*queues));
+	queues = mm_aligned_alloc(CACHE_LINE_SIZE, global_config.n_threads * sizeof(*queues));
 }
 
 /**

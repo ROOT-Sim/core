@@ -22,7 +22,7 @@ struct lp_ctx *lps;
 lp_id_t n_lps_node;
 
 /**
- * @brief Compute a the first index of a partition in a linear space of indexes
+ * @brief Compute the first index of a partition in a linear space of indexes
  * @param part_id the id of the requested partition
  * @param part_cnt the number of requested partitions
  * @param part_fnc the function which computes the partition id from an index
@@ -49,17 +49,17 @@ __extension__({								\
  */
 void lp_global_init(void)
 {
-	lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, n_lps);
-	n_lps_node = partition_start(nid + 1, n_nodes, lid_to_nid, 0, n_lps)
+	lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, global_config.lps);
+	n_lps_node = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps)
 			- lid_node_first;
 
 	lps = mm_alloc(sizeof(*lps) * n_lps_node);
 	lps -= lid_node_first;
 
-	if (n_lps_node < n_threads) {
-		logger(LOG_WARN, "The simulation will run with %u threads instead of the available %u",
-				n_lps_node, n_threads);
-		n_threads = n_lps_node;
+	if (n_lps_node < global_config.n_threads) {
+		logger(LOG_WARN, "The simulation will run with %u threads instead of the requested %u",
+				n_lps_node, global_config.n_threads);
+		global_config.n_threads = n_lps_node;
 	}
 }
 
@@ -77,9 +77,9 @@ void lp_global_fini(void)
  */
 void lp_init(void)
 {
-	lid_thread_first = partition_start(rid, n_threads, lid_to_rid,
+	lid_thread_first = partition_start(rid, global_config.n_threads, lid_to_rid,
 			lid_node_first, n_lps_node);
-	lid_thread_end = partition_start(rid + 1, n_threads, lid_to_rid,
+	lid_thread_end = partition_start(rid + 1, global_config.n_threads, lid_to_rid,
 			lid_node_first, n_lps_node);
 
 	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
@@ -87,7 +87,7 @@ void lp_init(void)
 		current_lp = lp;
 
 		model_allocator_lp_init();
-		lp->lib_ctx_p = malloc_mt(sizeof(*current_lp->lib_ctx_p));
+		lp->lib_ctx = rs_malloc(sizeof(*current_lp->lib_ctx));
 
 		lib_lp_init();
 		auto_ckpt_lp_init(&lp->auto_ckpt);
@@ -134,7 +134,7 @@ void lp_on_gvt(simtime_t gvt)
  * @brief Compute the id of the currently processed LP
  * @return the id of the current LP
  */
-lp_id_t lp_id_get_mt(void)
+lp_id_t lp_id_get(void)
 {
 	return current_lp - lps;
 }
@@ -143,7 +143,7 @@ lp_id_t lp_id_get_mt(void)
  * @brief Retrieve the user libraries dynamic state of the current LP
  * @return a pointer to the user libraries dynamic state of the current LP
  */
-struct lib_ctx *lib_ctx_get_mt(void)
+struct lib_ctx *lib_ctx_get(void)
 {
-	return current_lp->lib_ctx_p;
+	return current_lp->lib_ctx;
 }

@@ -29,7 +29,7 @@ uint32_t read_buffer(buffer *head, unsigned i, uint32_t old_crc)
 
 buffer* allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
 {
-	buffer *new = malloc(sizeof(buffer) + count * sizeof(uint64_t));
+	buffer *new = rs_malloc(sizeof(buffer) + count * sizeof(uint64_t));
 	new->next = state->head;
 	new->count = count;
 
@@ -54,12 +54,12 @@ buffer* deallocate_buffer(buffer *head, unsigned i)
 
 	if (prev != NULL) {
 		prev->next = to_free->next;
-		free(to_free);
+		rs_free(to_free);
 		return head;
 	}
 
 	prev = head->next;
-	free(head);
+	rs_free(head);
 	return prev;
 }
 

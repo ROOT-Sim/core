@@ -31,7 +31,7 @@ bool sync_thread_barrier(void)
 		} while (r);
 	} else {
 		l = !atomic_fetch_add_explicit(c, 1, memory_order_acq_rel);
-		rid_t thr_cnt = n_threads;
+		rid_t thr_cnt = global_config.n_threads;
 		do {
 			r = atomic_load_explicit(c, memory_order_relaxed);
 		} while (r != thr_cnt);

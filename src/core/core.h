@@ -70,12 +70,8 @@ typedef unsigned rid_t;
 /// Used to identify MPI nodes in a distributed environment
 typedef int nid_t;
 
-/// The total number of LPs in the simulation
-extern lp_id_t n_lps;
 /// The total number of LPs hosted in the node
 extern lp_id_t n_lps_node;
-/// The total number of threads running in the node
-extern rid_t n_threads;
 /// The identifier of the thread
 extern __thread rid_t rid;
 

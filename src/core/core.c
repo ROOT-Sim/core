@@ -9,6 +9,7 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <core/core.h>
+#include <ROOT-Sim.h>
 
 lp_id_t n_lps;
 rid_t n_threads;
@@ -16,3 +17,5 @@ __thread rid_t rid;
 nid_t n_nodes = 1;
 rid_t n_threads;
 nid_t nid;
+
+void (*ScheduleNewEvent)(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload, unsigned payload_size);

@@ -19,14 +19,14 @@ static __thread simtime_t max_t;
 
 void termination_global_init(void)
 {
-	atomic_store_explicit(&thr_to_end, n_threads, memory_order_relaxed);
+	atomic_store_explicit(&thr_to_end, global_config.n_threads, memory_order_relaxed);
 	atomic_store_explicit(&nodes_to_end, n_nodes, memory_order_relaxed);
 }
 
 void termination_lp_init(void)
 {
 	struct lp_ctx *this_lp = current_lp;
-	bool term = global_config.committed(this_lp - lps, current_lp->lib_ctx_p->state_s);
+	bool term = global_config.committed(this_lp - lps, current_lp->lib_ctx->state_s);
 	lps_to_end += !term;
 	this_lp->t_d = term * SIMTIME_MAX;
 }
@@ -36,7 +36,7 @@ void termination_on_msg_process(simtime_t msg_time)
 	struct lp_ctx *this_lp = current_lp;
 	if (this_lp->t_d) return;
 
-	bool term = global_config.committed(this_lp - lps, this_lp->lib_ctx_p->state_s);
+	bool term = global_config.committed(this_lp - lps, this_lp->lib_ctx->state_s);
 	max_t = term ? max(msg_time, max_t) : max_t;
 	this_lp->t_d = term * msg_time;
 	lps_to_end -= term;

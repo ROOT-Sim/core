@@ -47,7 +47,7 @@ void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...)
 	char time_string[IO_TIME_BUFFER_LEN];
 
 	// Check if this invocation should be skipped
-	if(level < global_config.log_level)
+	if(level >= global_config.log_level)
 		return;
 
 	io_local_time_get(time_string);
@@ -72,7 +72,7 @@ void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...)
 /**
  * @brief Prints a fancy ROOT-Sim logo
  */
-void log_logo_print(void)
+static void print_logo(void)
 {
 	fprintf(stderr, "\x1b[94m   __ \x1b[90m __   _______   \x1b[94m  _ \x1b[90m       \n");
 	fprintf(stderr, "\x1b[94m  /__)\x1b[90m/  ) /  ) /  __ \x1b[94m ( `\x1b[90m . ___ \n");
@@ -89,5 +89,8 @@ void log_init(FILE *file)
 {
 	logfile = file;
 	if(logfile == NULL)
-		file = stdout;
+		logfile = stdout;
+
+	if(global_config.log_level != LOG_SILENT)
+		print_logo();
 }

@@ -6,8 +6,9 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <serial/serial.h>
+#include <stdlib.h>
 
+#include <serial/serial.h>
 #include <arch/timer.h>
 #include <core/core.h>
 #include <datatypes/heap.h>
@@ -15,25 +16,9 @@
 #include <log/stats.h>
 #include <lp/msg.h>
 #include <mm/msg_allocator.h>
+#include <lp/process.h>
+#include <lp/lp.h>
 
-#include <stdlib.h>
-
-/// The LP context for the serial runtime
-struct s_lp_ctx {
-	/// The context for the model development libraries
-	struct lib_ctx lib_ctx;
-#if LOG_DEBUG >= LOG_LEVEL
-	/// The logical time of the last processed event by this LP
-	simtime_t last_evt_time;
-#endif
-	/// The last evaluation of the termination predicate for this LP
-	bool terminating;
-};
-
-/// The array of all the simulation LP contexts
-static struct s_lp_ctx *s_lps;
-/// The context of the currently processed LP
-static struct s_lp_ctx *s_current_lp;
 
 /// The messages queue of the serial runtime
 static heap_declare(struct lp_msg *) queue;
@@ -42,15 +27,11 @@ static heap_declare(struct lp_msg *) queue;
 static simtime_t current_evt_time;
 #endif
 
+void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload, unsigned payload_size);
+
 void serial_model_init(void)
 {
-	struct s_lp_ctx tmp_lp = {0};
-	s_current_lp = &tmp_lp;
-	s_lps = s_current_lp - n_lps;
-
-	lib_lp_init();
 	global_config.dispatcher(0, 0, MODEL_INIT, NULL, 0, NULL);
-	lib_lp_fini();
 }
 
 /**
@@ -65,16 +46,18 @@ static void serial_simulation_init(void)
 	lib_global_init();
 	serial_model_init();
 
-	s_lps = mm_alloc(sizeof(*s_lps) * n_lps);
-	memset(s_lps, 0, sizeof(*s_lps) * n_lps);
+	ScheduleNewEvent = ScheduleNewEvent_serial;
 
-	for (uint64_t i = 0; i < n_lps; ++i) {
-		s_current_lp = &s_lps[i];
+	lps = mm_alloc(sizeof(*lps) * global_config.lps);
+	memset(lps, 0, sizeof(*lps) * global_config.lps);
+
+	for (uint64_t i = 0; i < global_config.lps; ++i) {
+		current_lp = &lps[i];
+		model_allocator_lp_init();
+		current_lp->lib_ctx = rs_malloc(sizeof(*current_lp->lib_ctx));
 		lib_lp_init();
-#if LOG_DEBUG >= LOG_LEVEL
-		s_lps[i].last_evt_time = -1;
-#endif
-		global_config.dispatcher(i, 0, LP_INIT, NULL, 0, s_lps[i].lib_ctx.state_s);
+		lps[i].last_evt_time = -1;
+		global_config.dispatcher(i, 0, LP_INIT, NULL, 0, lps[i].lib_ctx->state_s);
 	}
 }
 
@@ -83,9 +66,9 @@ static void serial_simulation_init(void)
  */
 static void serial_simulation_fini(void)
 {
-	for (uint64_t i = 0; i < n_lps; ++i) {
-		s_current_lp = &s_lps[i];
-		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, s_lps[i].lib_ctx.state_s);
+	for (uint64_t i = 0; i < global_config.lps; ++i) {
+		current_lp = &lps[i];
+		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lps[i].lib_ctx->state_s);
 		lib_lp_fini();
 	}
 
@@ -94,8 +77,6 @@ static void serial_simulation_fini(void)
 	for (array_count_t i = 0; i < array_count(queue); ++i) {
 		msg_allocator_free(array_get_at(queue, i));
 	}
-
-	mm_free(s_lps);
 
 	lib_global_fini();
 	heap_fini(queue);
@@ -109,21 +90,21 @@ static void serial_simulation_fini(void)
 static int serial_simulation_run(void)
 {
 	timer_uint last_vt = timer_new();
-	uint64_t to_terminate = n_lps;
+	uint64_t to_terminate = global_config.lps;
 
 	while (likely(!heap_is_empty(queue))) {
 		const struct lp_msg *cur_msg = heap_min(queue);
-		struct s_lp_ctx *this_lp = &s_lps[cur_msg->dest];
-		s_current_lp = this_lp;
+		struct lp_ctx *this_lp = &lps[cur_msg->dest];
+		current_lp = this_lp;
 
-		if(cur_msg->dest_t == s_current_lp->last_evt_time)
+		if(cur_msg->dest_t == current_lp->last_evt_time)
 			logger(
 				LOG_DEBUG,
 				"LP %u got two consecutive events with same timestamp %lf",
 				cur_msg->dest,
 				cur_msg->dest_t
 			);
-		s_current_lp->last_evt_time = cur_msg->dest_t;
+		current_lp->last_evt_time = cur_msg->dest_t;
 		current_evt_time = cur_msg->dest_t;
 
 		global_config.dispatcher(
@@ -132,14 +113,14 @@ static int serial_simulation_run(void)
 			cur_msg->m_type,
 			cur_msg->pl,
 			cur_msg->pl_size,
-			s_current_lp->lib_ctx.state_s
+			current_lp->lib_ctx->state_s
 		);
 		stats_take(STATS_MSG_PROCESSED, 1);
 
-		bool can_end = global_config.committed(cur_msg->dest, s_current_lp->lib_ctx.state_s);
+		bool can_end = global_config.committed(cur_msg->dest, current_lp->lib_ctx->state_s);
 
-		if (can_end != s_current_lp->terminating) {
-			s_current_lp->terminating = can_end;
+		if (can_end != current_lp->terminating) {
+			current_lp->terminating = can_end;
 			to_terminate += 1 - ((int)can_end * 2);
 
 			if (unlikely(!to_terminate)) {
@@ -164,14 +145,12 @@ static int serial_simulation_run(void)
 	return 0;
 }
 
-void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
-	unsigned event_type, const void *payload, unsigned payload_size)
+void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload, unsigned payload_size)
 {
 	if (current_evt_time > timestamp)
-		logger(LOG_DEBUG, "Sending a message in the PAST!");
+		logger(LOG_WARN, "Sending a message in the PAST!");
 
-	struct lp_msg *msg = msg_allocator_pack(
-		receiver, timestamp, event_type, payload, payload_size);
+	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
 	heap_insert(queue, msg_is_before_serial, msg);
 }
@@ -197,14 +176,4 @@ int serial_simulation(void)
 	serial_simulation_fini();
 
 	return ret;
-}
-
-lp_id_t lp_id_get(void)
-{
-	return s_current_lp - s_lps;
-}
-
-struct lib_ctx *lib_ctx_get(void)
-{
-	return &s_current_lp->lib_ctx;
 }

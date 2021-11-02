@@ -28,7 +28,7 @@ static __thread dyn_array(struct lp_msg_remote_match) early_antis;
 #define unmark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) - 2U))
 #define unmark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) - 1U))
 
-void ScheduleNewEvent_pr(lp_id_t receiver, simtime_t timestamp,
+void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp,
 		unsigned event_type, const void *payload, unsigned payload_size)
 {
 	if (unlikely(silent_processing))
@@ -128,7 +128,7 @@ void process_lp_deinit(void)
 {
 	struct lp_ctx *this_lp = current_lp;
 	global_config.dispatcher(this_lp - lps, 0, LP_FINI, NULL, 0,
-			   this_lp->lib_ctx_p->state_s);
+			   this_lp->lib_ctx->state_s);
 }
 
 /**
@@ -159,7 +159,7 @@ static inline void silent_execution(const struct process_data *proc_p,
 	timer_uint t = timer_hr_new();
 	silent_processing = true;
 
-	void *state_p = current_lp->lib_ctx_p->state_s;
+	void *state_p = current_lp->lib_ctx->state_s;
 	do {
 		const struct lp_msg *msg = array_get_at(proc_p->p_msgs, last_i);
 		while (is_msg_sent(msg))
@@ -364,7 +364,7 @@ void process_msg(void)
 		msg->m_type,
 		msg->pl,
 		msg->pl_size,
-		this_lp->lib_ctx_p->state_s
+		this_lp->lib_ctx->state_s
 	);
 	stats_take(STATS_MSG_PROCESSED, 1);
 	array_push(proc_p->p_msgs, msg);

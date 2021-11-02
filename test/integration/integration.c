@@ -12,13 +12,15 @@
 
 struct simulation_configuration conf = {
     .lps = N_LPS,
+    .n_threads = 4,
     .termination_time = 0.0,
     .gvt_period = 1000,
-    .log_level = 0,
+    .log_level = LOG_SILENT,
+    .stats_file = NULL,
     .ckpt_interval = 10,
     .prng_seed = 0,
     .core_binding = 0,
-    .serial = false,
+    .serial = true,
     .dispatcher = ProcessEvent,
     .committed = CanEnd,
 };
@@ -28,7 +30,11 @@ int main(void)
 	init();
 
 	RootsimInit(&conf);
-	test("Correctness test", RootsimRun);
+	test("Correctness test (serial)", RootsimRun);
+
+	conf.serial = false;
+	RootsimInit(&conf);
+	test("Correctness test (parallel)", RootsimRun);
 
 	finish();
 }

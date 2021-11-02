@@ -27,14 +27,14 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 			}
 			while(state->head)
 				state->head = deallocate_buffer(state->head, 0);
-			free(state);
+			rs_free(state);
 		}
 		return;
 	}
 
 	if (!state && event_type != LP_INIT && event_type != MODEL_INIT &&
 			event_type != MODEL_FINI) {
-		puts("[ERROR] Requested to process an weird event!");
+		puts("[ERROR] Requested to process a weird event!");
 		abort();
 	}
 	switch (event_type) {
@@ -43,7 +43,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		break;
 
 	case LP_INIT:
-		state = malloc(sizeof(lp_state));
+		state = rs_malloc(sizeof(lp_state));
 		if (state == NULL)
 			exit(-1);
 

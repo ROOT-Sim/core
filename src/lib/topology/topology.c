@@ -38,12 +38,12 @@ struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int
 	topology->geometry = geometry;
 
 	// set default values
-	if (unlikely(out_of_topology >= n_lps)) {
-		log_log(LOG_FATAL, "Invalid number of regions for this topology geometry (out_of_topology too large)");
+	if (unlikely(out_of_topology >= global_config.lps)) {
+		logger(LOG_FATAL, "Invalid number of regions for this topology geometry (out_of_topology too large)");
 		exit(-1);
 	}
 
-	const lp_id_t regions_cnt = n_lps - out_of_topology;
+	const lp_id_t regions_cnt = global_config.lps - out_of_topology;
 	topology->regions_cnt = regions_cnt;
 
 	// compute the edge value for topologies it makes sense for
@@ -55,7 +55,7 @@ struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int
 			edge = sqrt(regions_cnt);
 			// we make sure there are no "lonely" LPs
 			if (edge * edge != regions_cnt) {
-				log_log(LOG_FATAL,
+				logger(LOG_FATAL,
 					"Invalid number of regions for this topology geometry (must be a square number)");
 				exit(-1);
 			}
@@ -68,7 +68,7 @@ struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int
 			edge = 0;
 			break;
 		default:
-			log_log(LOG_FATAL, "Invalid topology geometry");
+			logger(LOG_FATAL, "Invalid topology geometry");
 			exit(-1);
 	}
 	// set the edge value

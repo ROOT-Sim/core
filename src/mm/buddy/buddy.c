@@ -6,15 +6,16 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <mm/buddy/buddy.h>
+#include <errno.h>
+#include <stdlib.h>
 
+#include <mm/buddy/buddy.h>
 #include <core/core.h>
 #include <core/intrinsics.h>
 #include <lp/lp.h>
 #include <mm/buddy/ckpt.h>
+#include <ROOT-Sim.h>
 
-#include <errno.h>
-#include <stdlib.h>
 
 #define is_power_of_2(i) (!((i) & ((i) - 1)))
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
@@ -44,7 +45,7 @@ void model_allocator_lp_fini(void)
 	array_fini(self->logs);
 }
 
-void *malloc_mt(size_t req_size)
+void *rs_malloc(size_t req_size)
 {
 	if(unlikely(!req_size))
 		return NULL;
@@ -86,10 +87,10 @@ void *malloc_mt(size_t req_size)
 	return ((char *)self->base_mem) + offset;
 }
 
-void *calloc_mt(size_t nmemb, size_t size)
+void *rs_calloc(size_t nmemb, size_t size)
 {
 	size_t tot = nmemb * size;
-	void *ret = malloc_mt(tot);
+	void *ret = rs_malloc(tot);
 
 	if (likely(ret))
 		memset(ret, 0, tot);
@@ -97,7 +98,7 @@ void *calloc_mt(size_t nmemb, size_t size)
 	return ret;
 }
 
-void free_mt(void *ptr)
+void rs_free(void *ptr)
 {
 	if (unlikely(!ptr))
 		return;
@@ -129,14 +130,14 @@ void free_mt(void *ptr)
 	}
 }
 
-void *realloc_mt(void *ptr, size_t req_size)
+void *rs_realloc(void *ptr, size_t req_size)
 {
 	if (!req_size) {
-		free_mt(ptr);
+		rs_free(ptr);
 		return NULL;
 	}
 	if (!ptr) {
-		return malloc_mt(req_size);
+		return rs_malloc(req_size);
 	}
 
 	abort();

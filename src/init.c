@@ -31,7 +31,7 @@ static void print_config(void)
 	fprintf(stderr, "ROOT-Sim configuration:\n");
 	fprintf(stderr, "\x1b[90m");
 
-	fprintf(stderr, "Logical processes: %" PRIu64 "\n", n_lps);
+	fprintf(stderr, "Logical processes: %" PRIu64 "\n", global_config.lps);
 	fprintf(stderr, "Termination time: ");
 	if (global_config.termination_time == SIMTIME_MAX)
 		fprintf(stderr, "not set\n");
@@ -44,7 +44,7 @@ static void print_config(void)
 		if (n_nodes > 1)
 			fprintf(stderr, "Parallelism: %d MPI processes\n", n_nodes);
 		else
-			fprintf(stderr, "Parallelism: %u threads\n", n_threads);
+			fprintf(stderr, "Parallelism: %u threads\n", global_config.n_threads);
 	}
 	fprintf(stderr, "Thread-to-core binding: %s\n",
 			global_config.core_binding ? "enabled" : "disabled");
@@ -68,7 +68,6 @@ static void print_config(void)
 int RootsimInit(struct simulation_configuration *conf)
 {
 	memcpy(&global_config, conf, sizeof(struct simulation_configuration));
-	n_lps = global_config.lps;
 
 	// Sanity check on the number of LPs
 	if (unlikely(global_config.lps == 0)) {
@@ -85,6 +84,10 @@ int RootsimInit(struct simulation_configuration *conf)
 	// Configure the logger
 	log_init(global_config.logfile);
 
+	// Set termination time to infinity if required
+	if(global_config.termination_time == 0)
+		global_config.termination_time = SIMTIME_MAX;
+
 	return 0;
 }
 
@@ -96,15 +99,14 @@ int RootsimRun(void)
 		print_config();
 
 	stats_global_time_start();
-	mpi_global_init(NULL, NULL);
 
 	if (global_config.serial) {
 		ret = serial_simulation();
 	} else {
+		mpi_global_init(NULL, NULL);
 		ret = parallel_simulation();
+		mpi_global_fini();
 	}
-
-	mpi_global_fini();
 
 	return ret;
 }

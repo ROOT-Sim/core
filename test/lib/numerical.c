@@ -7,6 +7,7 @@
 #include "test.h"
 #include <ROOT-Sim.h>
 #include <lib/lib.h>
+#include <lp/lp.h>
 
 
 enum distribution {
@@ -128,27 +129,19 @@ static int test_random_range(void) {
 	return passed;
 }
 
-// The following two are here just to support the current state of the code, will eventually go away
-
-// Mocked LP structure
-struct s_lp_ctx {
-	struct lib_ctx lib_ctx;
-};
-
-// Mocked current struct, but it's of course broken
-struct s_lp_ctx *s_current_lp;
 
 int main(void)
 {
 	init();
 
 	// Mock a fake LP
-	struct s_lp_ctx lp = {0};
-	lp.lib_ctx.rng_s[0] = 7319936632422683443ULL;
-	lp.lib_ctx.rng_s[1] = 7319936632422683443ULL;
-	lp.lib_ctx.rng_s[2] = 7319936632422683443ULL;
-	lp.lib_ctx.rng_s[3] = 7319936632422683443ULL;
-	s_current_lp = &lp;
+	struct lp_ctx lp = {0};
+	lp.lib_ctx = malloc(sizeof(*current_lp->lib_ctx));
+	lp.lib_ctx->rng_s[0] = 7319936632422683443ULL;
+	lp.lib_ctx->rng_s[1] = 7319936632422683443ULL;
+	lp.lib_ctx->rng_s[2] = 7319936632422683443ULL;
+	lp.lib_ctx->rng_s[3] = 7319936632422683443ULL;
+	current_lp = &lp;
 
 	test("Kolmogorov-Smirnov test on Random()", aux_ks_test, RANDOM);
 	test("Functional test on RandomRange()", test_random_range);

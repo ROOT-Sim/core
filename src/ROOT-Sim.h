@@ -34,10 +34,13 @@ enum rootsim_event {
 	MODEL_FINI
 };
 
-extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
-	unsigned event_type, const void *event_content, unsigned event_size);
-
+extern void (*ScheduleNewEvent)(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content, unsigned event_size);
 extern void SetState(void *new_state);
+
+extern void *rs_malloc(size_t req_size);
+extern void *rs_calloc(size_t nmemb, size_t size);
+extern void rs_free(void *ptr);
+extern void *rs_realloc(void *ptr, size_t req_size);
 
 extern double Random(void);
 extern uint64_t RandomU64(void);
@@ -97,14 +100,18 @@ extern lp_id_t FindReceiver(const struct topology_t *topology);
 struct simulation_configuration {
 	/// The number of LPs to be used in the simulation
 	lp_id_t lps;
-	/// The target termination logical time
+	/// The number of threads to be used in the simulation
+	unsigned n_threads;
+	/// The target termination logical time. Setting this value to zero means that LVT-based termination is disabled
 	simtime_t termination_time;
 	/// The gvt period expressed in microseconds
 	unsigned gvt_period;
 	/// The logger verbosity level
 	enum log_level log_level;
-	/// Logfile: if not NULL, output is redirected to this file
+	/// File where to write logged information: if not NULL, output is redirected to this file
 	FILE *logfile;
+	/// Path to the statistics file. If NULL, no statistics are produced.
+	const char *stats_file;
 	/// The checkpointing interval
 	unsigned ckpt_interval;
 	/// The seed used to initialize the pseudo random numbers, 0 for self-seeding
