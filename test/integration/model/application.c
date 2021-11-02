@@ -14,8 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct ap_option model_options[] = {{0}};
-
 #define do_random() (lcg_random(state->rng_state))
 
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st)
@@ -70,7 +68,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 			return;
 		state->events++;
 		ScheduleNewEvent(me, now + do_random() * 10, LOOP, NULL, 0);
-		lp_id_t dest = do_random() * n_lps;
+		lp_id_t dest = do_random() * N_LPS;
 		if(do_random() < DOUBLING_PROBABILITY && dest != me)
 			ScheduleNewEvent(dest, now + do_random() * 10, LOOP, NULL, 0);
 
@@ -92,7 +90,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 			unsigned i = do_random() * state->buffer_count;
 			buffer *to_send = get_buffer(state->head, i);
 
-			dest = do_random() * n_lps;
+			dest = do_random() * N_LPS;
 			ScheduleNewEvent(dest, now + do_random() * 10, RECEIVE, to_send->data, to_send->count * sizeof(uint64_t));
 
 			state->head = deallocate_buffer(state->head, i);

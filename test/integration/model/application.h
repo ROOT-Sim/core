@@ -9,9 +9,9 @@
 #pragma once
 
 #include <ROOT-Sim.h>
+#include "test_rng.h"
 
-#include <test_rng.h>
-
+#define N_LPS 256
 #define MAX_BUFFERS 256
 #define MAX_BUFFER_SIZE 512
 #define SEND_PROBABILITY 0.05
@@ -47,3 +47,6 @@ buffer* deallocate_buffer(buffer *head, unsigned i);
 void crc_table_init(void);
 
 extern const uint32_t model_expected_output[];
+
+extern void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st);
+extern bool CanEnd(lp_id_t me, const void *snapshot);
