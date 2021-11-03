@@ -36,8 +36,8 @@ typedef pthread_t thr_id_t;
 #undef WIN32_LEAN_AND_MEAN
 
 #define THREAD_CALL_CONV WINAPI
-typedef DWORD arch_thr_ret_t;
-typedef HANDLE arch_thr_t;
+typedef DWORD thr_ret_t;
+typedef HANDLE thr_id_t;
 
 #define THREAD_RET_FAILURE (1)
 #define THREAD_RET_SUCCESS (0)

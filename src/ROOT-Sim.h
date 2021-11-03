@@ -44,17 +44,17 @@ enum ap_event_key {
 
 __attribute((weak)) extern struct ap_option model_options[];
 __attribute((weak)) extern void model_parse(int key, const char *arg);
-extern void arg_parse_error(const char *fmt, ...);
 
 extern lp_id_t n_lps;
 
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
 	unsigned event_type, const void *event_content, unsigned event_size);
 
+// TODO: readd guards
 // For retractable events
 extern void ScheduleRetractableEvent(simtime_t timestamp, unsigned event_type);
 extern void DescheduleRetractableEvent();
-
+// </readd guards>
 
 extern void SetState(void *new_state);
 
@@ -62,6 +62,7 @@ extern double Random(void);
 extern uint64_t RandomU64(void);
 extern double Expent(double mean);
 extern double Normal(void);
+extern int RandomRange(int min, int max);
 
 enum _topology_geometry_t {
 	TOPOLOGY_HEXAGON = 1,	//!< hexagonal grid topology
@@ -87,15 +88,13 @@ enum _direction_t {
 	DIRECTION_INVALID = INT_MAX	//!< A generic invalid direction
 };
 
-extern struct topology_settings_t {
-	enum _topology_geometry_t default_geometry;
-	lp_id_t out_of_topology;
-} topology_settings;
+struct topology_t;
 
-extern __attribute__ ((pure)) lp_id_t RegionsCount(void);
-extern __attribute__ ((pure)) lp_id_t DirectionsCount(void);
-extern __attribute__ ((pure)) lp_id_t GetReceiver(lp_id_t from, enum _direction_t direction);
-extern lp_id_t FindReceiver(void);
+extern struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int out_of_topology);
+extern unsigned long long RegionsCount(const struct topology_t *topology);
+extern unsigned long long DirectionsCount(const struct topology_t *topology);
+extern lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direction_t direction);
+extern lp_id_t FindReceiver(const struct topology_t *topology);
 
 /// A set of configurable values used by other modules
 struct simulation_configuration {
@@ -113,8 +112,4 @@ struct simulation_configuration {
 	bool is_serial;
 };
 
-/// The configuration filled in by init_args_parse()
 extern struct simulation_configuration global_config;
-
-// INTERFACES for neural_model_interface
-typedef lp_id_t neuron_id_t;

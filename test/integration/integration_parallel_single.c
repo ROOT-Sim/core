@@ -15,7 +15,6 @@ static const char *test_arguments[] = {
 	"256",
 	"--wt",
 	"1",
-	"--no-bind",
 	NULL
 };
 

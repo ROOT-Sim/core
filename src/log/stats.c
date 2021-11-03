@@ -27,15 +27,13 @@
 #include <stdio.h>
 
 #define STATS_BUFFER_ENTRIES (1024)
-#define STD_DEV_POWER_2_EXP 5
 #define STATS_MAX_STRLEN 32U
+#define STATS_REAL_TIME STATS_COUNT
 
 /// A container for statistics in a logical time period
 struct stats_thread {
-	/// Real elapsed time in microseconds from simulation beginning
-	uint64_t rt;
 	/// The array of statistics taken in the period
-	struct stats_measure s[STATS_COUNT];
+	uint64_t s[STATS_COUNT];
 };
 
 struct stats_node {
@@ -45,41 +43,39 @@ struct stats_node {
 	uint64_t rss;
 };
 
-struct stats_glob {
+struct stats_global {
 	/// The number of threads in this node
 	uint64_t threads_count;
 	/// The maximum size in bytes of the resident set
 	uint64_t max_rss;
-	/// When stats global init has been called
-	uint64_t glob_init_rt;
-	/// The latest ts before having to aggregate stats
-	uint64_t glob_fini_rt;
 	/// The timestamps of the relevant simulation life-cycle events
 	uint64_t timestamps[STATS_GLOBAL_COUNT];
 };
 
-static_assert(sizeof(struct stats_measure) == 24 &&
-	      sizeof(struct stats_thread) == 8 + 24 * STATS_COUNT &&
+static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT &&
 	      sizeof(struct stats_node) == 16 &&
-	      sizeof(struct stats_glob) == 32 + 8 * (STATS_GLOBAL_COUNT),
+	      sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
 	      "structs aren't naturally packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the header of the final csv
 const char * const s_names[] = {
 	[STATS_ROLLBACK] = "rollbacks",
-	[STATS_GVT] = "gvt",
+	[STATS_MSG_ROLLBACK] = "rollbacked messages",
+	[STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
 	[STATS_MSG_SILENT] = "silent messages",
-	[STATS_MSG_PROCESSED] = "processed messages"
+	[STATS_CKPT] = "checkpoints",
+	[STATS_CKPT_TIME] = "checkpoints time",
+	[STATS_MSG_SILENT_TIME] = "silent messages time",
+	[STATS_MSG_PROCESSED] = "processed messages",
+	[STATS_REAL_TIME_GVT] = "gvt real time"
 };
 
 static timer_uint sim_start_ts;
-static struct stats_glob stats_glob_cur;
+static struct stats_global stats_glob_cur;
 
 static FILE *stats_node_tmp;
 static FILE **stats_tmps;
 static __thread struct stats_thread stats_cur;
-
-static __thread timer_uint last_ts[STATS_COUNT];
 
 static void file_write_chunk(FILE *f, const void *data, size_t data_size)
 {
@@ -141,7 +137,7 @@ void stats_global_time_start(void)
 /**
  * @brief Initializes the internal timer used to take accurate measurements
  */
-void stats_global_time_take(enum stats_global_time this_stat)
+void stats_global_time_take(enum stats_global_type this_stat)
 {
 	stats_glob_cur.timestamps[this_stat] = timer_value(sim_start_ts);
 }
@@ -151,7 +147,7 @@ void stats_global_time_take(enum stats_global_time this_stat)
  */
 void stats_global_init(void)
 {
-	stats_glob_cur.glob_init_rt = timer_value(sim_start_ts);
+	stats_glob_cur.timestamps[STATS_GLOBAL_START] = timer_value(sim_start_ts);
 	stats_glob_cur.threads_count = n_threads;
 	if (mem_stat_setup() < 0)
 		log_log(LOG_ERROR, "Unable to extract memory statistics!");
@@ -177,7 +173,7 @@ static void stats_files_receive(FILE *o)
 {
 	for (nid_t j = 1; j < n_nodes; ++j) {
 		int buf_size;
-		struct stats_glob *sg_p = mpi_blocking_data_rcv(&buf_size, j);
+		struct stats_global *sg_p = mpi_blocking_data_rcv(&buf_size, j);
 		file_write_chunk(o, sg_p, buf_size);
 		uint64_t iters = sg_p->threads_count + 1; // +1 for node stats
 		mm_free(sg_p);
@@ -195,7 +191,7 @@ static void stats_files_receive(FILE *o)
 static void stats_files_send(void)
 {
 	stats_glob_cur.max_rss = mem_stat_rss_max_get();
-	stats_glob_cur.glob_fini_rt = timer_value(sim_start_ts);
+	stats_glob_cur.timestamps[STATS_GLOBAL_END] = timer_value(sim_start_ts);
 	mpi_blocking_data_send(&stats_glob_cur, sizeof(stats_glob_cur), 0);
 
 	int64_t f_size;
@@ -212,6 +208,7 @@ static void stats_files_send(void)
 	}
 }
 
+// TODO add other statistics, for example ROOT-Sim config, machine hardware etc
 static void stats_file_final_write(FILE *o)
 {
 	uint16_t endian_check = 61455U; // 0xFOOF
@@ -231,7 +228,7 @@ static void stats_file_final_write(FILE *o)
 	file_write_chunk(o, &n, sizeof(n));
 
 	stats_glob_cur.max_rss = mem_stat_rss_max_get();
-	stats_glob_cur.glob_fini_rt = timer_value(sim_start_ts);
+	stats_glob_cur.timestamps[STATS_GLOBAL_END] = timer_value(sim_start_ts);
 	file_write_chunk(o, &stats_glob_cur, sizeof(stats_glob_cur));
 
 	int64_t buf_size;
@@ -258,7 +255,6 @@ static void stats_file_final_write(FILE *o)
  */
 void stats_global_fini(void)
 {
-	mpi_node_barrier();
 	if (nid) {
 		stats_files_send();
 		return;
@@ -284,29 +280,14 @@ void stats_global_fini(void)
 	fclose(stats_node_tmp);
 }
 
-void stats_time_start(enum stats_time this_stat)
+void stats_take(enum stats_thread_type this_stat, unsigned c)
 {
-	last_ts[this_stat] = timer_new();
-}
-
-void stats_time_take(enum stats_time this_stat)
-{
-	struct stats_measure *s_mes = &stats_cur.s[this_stat];
-	const uint64_t t = timer_value(last_ts[this_stat]);
-
-	if (likely(s_mes->count)) {
-		const int64_t num = (t * s_mes->count - s_mes->sum_t);
-		s_mes->var_t += ((num * num) << (2 * STD_DEV_POWER_2_EXP)) /
-			(s_mes->count * (s_mes->count + 1));
-	}
-
-	s_mes->sum_t += t;
-	s_mes->count++;
+	stats_cur.s[this_stat] += c;
 }
 
 void stats_on_gvt(simtime_t gvt)
 {
-	stats_cur.rt = timer_value(sim_start_ts);
+	stats_cur.s[STATS_REAL_TIME_GVT] = timer_value(sim_start_ts);
 
 	file_write_chunk(stats_tmps[rid], &stats_cur, sizeof(stats_cur));
 	memset(&stats_cur, 0, sizeof(stats_cur));
@@ -319,17 +300,23 @@ void stats_on_gvt(simtime_t gvt)
 	file_write_chunk(stats_node_tmp, &stats_node_cur, sizeof(stats_node_cur));
 	memset(&stats_node_cur, 0, sizeof(stats_node_cur));
 
+	if (nid != 0)
+		return;
+
 	printf("\rVirtual time: %lf", gvt);
 	fflush(stdout);
 }
 
 void stats_dump(void)
 {
-	puts("");
-	fflush(stdout);
+	if (nid == 0) {
+		double t = timer_value(sim_start_ts) / 1000000.0;
+		printf("\nSimulation completed in %.3lf seconds\n", t);
+		fflush(stdout);
+	}
 }
 
-const struct stats_measure *stats_time_query(enum stats_time this_stat)
+uint64_t stats_retrieve(enum stats_thread_type this_stat)
 {
-	return &stats_cur.s[this_stat];
+	return stats_cur.s[this_stat];
 }

@@ -14,16 +14,13 @@
 #include <lib/state/state.h>
 #include <lib/topology/topology.h>
 
-//~ #ifdef RETRACTABILITY
-//~ #include <lib/retractable/retractable.h>
-//~ #endif
-
 struct lib_ctx {
 	// random library
 	uint64_t rng_s[4];
 	double unif;
+	bool has_normal;
 
-	//FIXME: readd ifdefs
+	// TODO: readd guards
 	// retractability library
 	simtime_t r_ts; // Timestamp of retractable msg
 	uint32_t r_e_type; // Event type

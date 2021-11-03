@@ -12,8 +12,8 @@
 
 #include <mm/mm.h>
 
-#include <memory.h>
 #include <stdint.h>
+#include <string.h>
 
 /// The initial size of dynamic arrays expressed in the number of elements
 #define INIT_SIZE_ARRAY 8U
@@ -84,11 +84,8 @@ __extension__({								\
 
 #define array_pop(self)							\
 __extension__({								\
-	__typeof__(*array_items(self)) __popval;			\
 	array_count(self)--;						\
-	__popval = array_items(self)[array_count(self)];		\
-	array_shrink(self);						\
-	__popval;							\
+	array_items(self)[array_count(self)];				\
 })
 
 #define array_add_at(self, i, elem)					\
@@ -136,6 +133,21 @@ __extension__({ 							\
 			sizeof(*array_items(self))			\
 		);							\
 	} 								\
+})
+
+#define array_reserve(self, n) 						\
+__extension__({ 							\
+	__typeof__(array_count(self)) tcnt = array_count(self) + n;	\
+	if (unlikely(tcnt >= array_capacity(self))) {			\
+		do {							\
+			array_capacity(self) *= 2; 			\
+		} while(unlikely(tcnt >= array_capacity(self)));	\
+		array_items(self) = mm_realloc(				\
+			array_items(self), 				\
+			array_capacity(self) * 				\
+			sizeof(*array_items(self))			\
+		);				 			\
+	}								\
 })
 
 #define array_expand(self) 						\

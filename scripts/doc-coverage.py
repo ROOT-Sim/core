@@ -58,4 +58,3 @@ else:
     print(summary_content)
     print(f"Documentation coverage is {acceptable_str}acceptable "
           f"(target: {coverage_target}%)")
-

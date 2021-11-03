@@ -21,6 +21,7 @@ rootsim_srcs = [
   'core' / 'init.c',
   'core' / 'sync.c',
   'datatypes' / 'msg_queue.c',
+  'distributed' / 'control_msg.c',
   'gvt' / 'fossil.c',
   'gvt' / 'gvt.c',
   'gvt' / 'termination.c',
@@ -29,6 +30,8 @@ rootsim_srcs = [
   'lp' / 'lp.c',
   'lp' / 'process.c',
   'mm' / 'buddy' / 'buddy.c',
+  'mm' / 'buddy' / 'ckpt.c',
+  'mm' / 'auto_ckpt.c',
   'mm' / 'mm.c',
   'mm' / 'msg_allocator.c',
   'parallel' / 'parallel.c',
@@ -53,6 +56,10 @@ if get_option('retractable_msg').enabled()
   endif
 endif
 
+if get_option('iss').enabled()
+  rootsim_c_args += '-DROOTSIM_INCREMENTAL=1'
+endif
+
 rootsim_lib = static_library('rootsim', rootsim_srcs, c_args : rootsim_c_args,
   dependencies : [mpi_dep, m_dep, rs_thr_dep], install : true)
 
@@ -63,14 +70,15 @@ compiler_c_args = [
   '-DROOTSIM_OPTIMIZATION_OPTIONS="' + ' '.join(c_optimization_options) + '"'
 ]
 
+clang_path = clang_compiler.full_path()
 if mpi_dep.found()
-  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_compiler.full_path() + ' MPICH_CC=' + clang_compiler.full_path() + ' mpicc"'
+  compiler_c_args += '-DROOTSIM_CC="env OMPI_CC=' + clang_path + ' MPICH_CC=' + clang_path + ' mpicc"'
 else
-  compiler_c_args += '-DROOTSIM_CC="' + clang_compiler.full_path() + '"'
+  compiler_c_args += '-DROOTSIM_CC="' + clang_path + '"'
 endif
 
 # ROOT-Sim compiler
-rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c', 
+rootsim_cc = executable('rootsim-cc', sources : 'compiler' / 'compiler.c',
   c_args : compiler_c_args, install : true)
 
 # Install headers

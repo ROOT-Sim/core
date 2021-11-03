@@ -66,6 +66,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		break;
 
 	case LOOP:
+		if(do_random() < NULLING_PROBABILITY)
+			return;
 		state->events++;
 		ScheduleNewEvent(me, now + do_random() * 10, LOOP, NULL, 0);
 		lp_id_t dest = do_random() * n_lps;
@@ -99,6 +101,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		break;
 
 	case RECEIVE:
+		if(do_random() < NULLING_PROBABILITY)
+			return;
 		if(state->buffer_count >= MAX_BUFFERS)
 			break;
 		state->head = allocate_buffer(state, event_content, event_size / sizeof(uint64_t));

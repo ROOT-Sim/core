@@ -44,15 +44,28 @@ extern bool log_colored;
 #define log_can_log(lvl) ((lvl) >= LOG_LEVEL && (lvl) >= log_level)
 
 /**
+ * @fn log_log(lvl, ...)
  * @brief Produces a log
  * @param lvl the logging level associated to the message
  * @param ... a printf-style format string followed by its arguments if needed
  */
+
+#if LOG_CAN_LOG_AT_BUILD(LOG_DEBUG)
+
 #define log_log(lvl, ...)						\
 	do {								\
 		if(log_can_log(lvl))					\
 			_log_log(lvl, __FILE__, __LINE__, __VA_ARGS__);	\
 	} while(0)
+#else
+
+#define log_log(lvl, ...)						\
+	do {								\
+		if(log_can_log(lvl))					\
+			_log_log(lvl, NULL, 0, __VA_ARGS__);		\
+	} while(0)
+
+#endif
 
 void _log_log(int level, const char *file, unsigned line, const char *fmt, ...);
 

@@ -14,7 +14,7 @@
 
 void lib_global_init(void)
 {
-	topology_global_init();
+
 }
 
 void lib_global_fini(void)

@@ -150,7 +150,8 @@ void model_parse (int key, const char *arg){
 		case OPT_PROTOCOL:
 		{
 			if(sscanf(arg, "%u", &protocol) != 1) {
-				arg_parse_error("Could not parse protocol option");
+				printf("Could not parse protocol option\n");
+				abort();
 			}
 			switch(protocol){
 				case 0:
@@ -158,7 +159,8 @@ void model_parse (int key, const char *arg){
 					bg_type = 0;
 					stim = 0;
 					//TODO: fix poissonInput to make stim=0 viable
-					arg_parse_error("Protocol 0 not supported");
+					printf("Protocol 0 not supported\n");
+					abort();
 					break;
 				}
 				case 1:
@@ -176,7 +178,8 @@ void model_parse (int key, const char *arg){
 				}
 				default:
 				{
-					arg_parse_error("Protocol not recognized");
+					printf("Protocol not recognized\n");
+					abort();
 				}
 			}
 			
@@ -185,7 +188,8 @@ void model_parse (int key, const char *arg){
 		}
 		default:
 		{
-			arg_parse_error("Argument not recognized");;
+			printf("Argument not recognized\n");
+			abort();
 		}
 	}
 }

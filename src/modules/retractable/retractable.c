@@ -27,28 +27,25 @@ void msg_queue_insert_retractable()
 	if(current_lp->lib_ctx_p->r_ts < 0) // The message is not to be scheduled
 		return;
 	
-	// The message is to be scheduled	
+	// The message is to be scheduled
 	struct lp_msg* msg = current_lp->r_msg;
-	
-	unsigned cur_rid = lid_to_rid(current_lid);
-	
-	//~ struct queue_t *this_q = &mqueue(cur_rid, cur_rid);
-	struct msg_queue *this_q = mqueue(cur_rid, cur_rid);
-	
+	struct q_elem q_el;
+
 	if(msg==NULL){ // Need to create a new retractable msg
 		msg = msg_allocator_pack(current_lid, current_lp->lib_ctx_p->r_ts,
 			current_lp->lib_ctx_p->r_e_type, NULL, 0);
-			
+
 		msg->flags = MSG_FLAG_RETRACTABLE;
 		current_lp->r_msg = msg;
-		
-		heap_insert(this_q->q, msg_is_before, msg);
-		
+
+		q_el = (struct q_elem){.t = msg->dest_t, .m=msg};
+		heap_insert(mqp.q, q_elem_is_before, q_el);
+
 		return;
 	}
 	
 	// Msg already exists
-	
+
 	// Is the message already in the incoming queue?
 	// Second part of the check is not needed because of how messages are handled when extracted
 	bool already_in_Q = (msg->dest_t >= 0);// && !(msg->flags & MSG_FLAG_PROCESSED);
@@ -56,18 +53,19 @@ void msg_queue_insert_retractable()
 	// Set the correct values for the message
 	msg->dest_t = current_lp->lib_ctx_p->r_ts;
 	msg->m_type = current_lp->lib_ctx_p->r_e_type;
-		
+
 	// Schedule the message
 	if(already_in_Q){
-		heap_priority_changed(this_q->q, msg, msg_is_before);
+		q_el = array_get_at(mqp.q, msg->pos);
+		heap_priority_changed(mqp.q, q_el, q_elem_is_before);
 	} else {
-		heap_insert(this_q->q, msg_is_before, msg);
+		q_el = (struct q_elem){.t=msg->dest_t, .m=msg};
+		heap_insert(mqp.q, q_elem_is_before, q_el);
 	}
 }
 
 void retractable_rollback_handle(){
 	msg_queue_insert_retractable();
-	return;
 }
 
 void retractable_msg_schedule(simtime_t timestamp, unsigned event_type)//, const void *payload, unsigned payload_size)
@@ -91,4 +89,4 @@ void retractable_msg_schedule(simtime_t timestamp, unsigned event_type)//, const
 extern void ScheduleRetractableEvent(simtime_t timestamp, unsigned event_type);
 extern void ScheduleRetractableEvent_pr(simtime_t timestamp, unsigned event_type);
 
-#undef current_lp
+#undef current_lid

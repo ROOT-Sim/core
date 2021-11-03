@@ -15,8 +15,6 @@
 #include <limits.h>
 #include <stdint.h>
 
-extern void topology_global_init(void);
-
 enum _topology_geometry_t {
 	TOPOLOGY_HEXAGON = 1,	//!< hexagonal grid topology
 	TOPOLOGY_SQUARE,	//!< square grid topology
@@ -37,19 +35,13 @@ enum _direction_t {
 	DIRECTION_NW,	//!< North-west direction
 	DIRECTION_SE,	//!< South-east direction
 
-	// FIXME this is bad if the n_lps is more than INT_MAX - 1
 	DIRECTION_INVALID = INT_MAX	//!< A generic invalid direction
 };
 
-/// This is declared by the model to setup the topology module
-extern struct topology_settings_t {
-	/// The default geometry to use when nothing else is specified
-	enum _topology_geometry_t default_geometry;
-	/// The minimum number of LPs needed for out of the topology logic
-	lp_id_t out_of_topology;
-} topology_settings;
+struct topology_t;
 
-extern __attribute__ ((pure)) lp_id_t RegionsCount(void);
-extern __attribute__ ((pure)) lp_id_t DirectionsCount(void);
-extern __attribute__ ((pure)) lp_id_t GetReceiver(lp_id_t from, enum _direction_t direction);
-extern lp_id_t FindReceiver(void);
+extern struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int out_of_topology);
+extern unsigned long long RegionsCount(const struct topology_t *topology);
+extern unsigned long long DirectionsCount(const struct topology_t *topology);
+extern lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direction_t direction);
+extern lp_id_t FindReceiver(const struct topology_t *topology);

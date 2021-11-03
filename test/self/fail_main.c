@@ -1,5 +1,5 @@
 /**
- * @file test/test/fail_main.c
+ * @file test/self/fail_main.c
  *
  * @brief Test: expected failure, main() failure
  *
