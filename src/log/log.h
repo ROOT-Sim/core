@@ -23,6 +23,6 @@ void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...);
  * @param lvl the logging level associated to the message
  * @param ... a printf-style format string followed by its arguments if needed
  */
-#define logger(level, fmt, ...) vlogger(level, __FILE__, __LINE__, fmt __VA_OPT__(,) __VA_ARGS__)
+#define logger(level, fmt, ...) vlogger(level, __FILE__, __LINE__, fmt, #__VA_ARGS__)
 
 extern void log_init(FILE *file);
