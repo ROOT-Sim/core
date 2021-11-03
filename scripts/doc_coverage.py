@@ -44,17 +44,16 @@ acceptable = float(doc_cov_match[0]) >= coverage_target
 if args.github:
     icon = ":+1" if acceptable else ":exclamation:"
     acceptable_val = 1 if acceptable else 0
-    message = "MESSAGE<<EOF\n"
+    message = "COMMENT="
     message += f"\"Documentation coverage is **{doc_cov_match[0]}%** {icon}\\n"
     message += "```\\n"
     message += summary_content.replace("\n", "\\n")
     message += "```\\n\"\n"
-    message += "EOF\n"
     message += f"acceptable={acceptable_val}\n"
     with open(os.environ['GITHUB_ENV'], "w") as f:
         f.write(message)
-else:
-    acceptable_str = "" if acceptable else "not "
-    print(summary_content)
-    print(f"Documentation coverage is {acceptable_str}acceptable "
-          f"(target: {coverage_target}%)")
+
+acceptable_str = "" if acceptable else "not "
+print(summary_content)
+print(f"Documentation coverage is {acceptable_str}acceptable "
+      f"(target: {coverage_target}%)")

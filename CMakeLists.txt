@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.21.3)
-project("ROOT-Sim core" C)
+project("ROOT-Sim core" LANGUAGES C)
+set(PROJECT_VERSION 3.0.0-alpha.3)
+set(PROJECT_DESCRIPTION "A General-Purpose Multithreaded Parallel/Distributed Simulation Library")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_definitions(-DROOTSIM_VERSION="3.0.0-alpha.3")
+add_definitions(-DROOTSIM_VERSION=${PROJECT_VERSION})
 
 set(srcs
         src/arch/io.c
@@ -50,8 +52,13 @@ include_directories(SYSTEM ${MPI_C_INCLUDE_PATH})
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DLOG_LEVEL=LOG_TRACE")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DLOG_LEVEL=LOG_INFO")
 
+# Build the core library
 include_directories(src)
 add_library(core STATIC ${srcs})
 
+# Run the tests
 enable_testing()
-add_subdirectory (test)
+add_subdirectory(test)
+
+# Generate and inspect documentation
+add_subdirectory(docs)

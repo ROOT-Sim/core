@@ -1,0 +1,52 @@
+name: Documentation Coverage
+
+on:
+  pull_request:
+
+jobs:
+  doc_coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - uses: BSFishy/pip-action@v1
+        with:
+          packages:
+            coverxygen
+      - name: Install MPI
+        uses: mpi4py/setup-mpi@v1
+      - name: Get Doxygen
+        run: sudo apt-get install -y doxygen
+      - name: Generate Documentation
+        uses: ashutoshvarma/action-cmake-build@master
+        with:
+          build-dir: ${{ runner.workspace }}/build
+          target: doc
+          build-type: Debug
+          run-test: false
+
+      - name: Inspect Documentation
+        run: ./scripts/doc_coverage.py -b ${{ runner.workspace }}/build -g
+
+      - name: See generated messages
+        run: |
+          echo ${{env.COMMENT}}
+          echo ${{env.acceptable}}
+
+      - name: Comment PR
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: ${{env.COMMENT}}
+            })
+
+      - name: Determine success
+        run: |
+          if [ ${{env.acceptable}} -eq 0 ]; then exit 1; fi
+          exit 0;
