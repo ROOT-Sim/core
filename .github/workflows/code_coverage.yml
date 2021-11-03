@@ -15,11 +15,14 @@ jobs:
         uses: ashutoshvarma/action-cmake-build@master
         with:
           build-dir: ${{ runner.workspace }}/build
-          cc: ${{ matrix.compiler }}
+          cc: gcc
           build-type: Debug
-          configure-options: -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_C_FLAGS=--coverage
+          configure-options: -DCMAKE_C_FLAGS=--coverage
           run-test: true
-      - name: Generate and upload coverage report
-        uses: codecov/codecov-action@v1
+      - name: Generate coverage report
+        run: find ${{ runner.workspace }}/build/ -name "*.gcda" -exec gcov -abcfu {} \;
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v2
         with:
           fail_ci_if_error: true
+          verbose: true

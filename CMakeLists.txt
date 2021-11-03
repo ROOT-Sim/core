@@ -38,9 +38,8 @@ set(srcs
         src/serial/serial.c
         )
 
-set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
-#set(CMAKE_UNITY_BUILD ON)
 #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
 find_package(MPI REQUIRED)
