@@ -42,8 +42,8 @@ meson_build_path = os.path.join(root_path, "CMakeLists.txt")
 with open(meson_build_path, "r") as f:
     meson_build = f.read()
 
-meson_build, sub_cnt = re.subn(r"-DROOTSIM_VERSION=\".*\"",
-                               f"-DROOTSIM_VERSION=\"{major}.{minor}.{hotfix}\"",
+meson_build, sub_cnt = re.subn(r"PROJECT_VERSION .*\)",
+                               f"PROJECT_VERSION {major}.{minor}.{hotfix})",
                                meson_build, count=1)
 
 if sub_cnt != 1:
