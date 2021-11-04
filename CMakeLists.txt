@@ -53,7 +53,7 @@ set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DLOG_LEVEL=LOG_INFO")
 
 # Build the core library
 include_directories(src)
-add_library(core STATIC ${srcs})
+add_library(rscore STATIC ${srcs})
 
 # Run the tests
 enable_testing()
