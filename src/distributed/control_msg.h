@@ -20,7 +20,11 @@ enum msg_ctrl_tag {
 	/// Used by slaves to signal their completion of the gvt protocol
 	MSG_CTRL_GVT_DONE,
 	/// Used in broadcast to signal that local LPs can terminate
-	MSG_CTRL_TERMINATION
+	MSG_CTRL_TERMINATION,
+#ifdef PUBSUB
+	/// Used to send PubSub messages from publisher to subscriber node
+	MSG_PUBSUB
+#endif
 };
 
 inline void control_msg_process(enum msg_ctrl_tag ctrl)

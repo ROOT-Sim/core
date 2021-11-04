@@ -13,6 +13,10 @@
 #include <core/sync.h>
 #include <gvt/fossil.h>
 
+#ifdef PUBSUB
+#include <modules/publish_subscribe/pubsub.h>
+#endif
+
 uint64_t lid_node_first;
 __thread uint64_t lid_thread_first;
 __thread uint64_t lid_thread_end;
@@ -91,6 +95,11 @@ void lp_init(void)
 
 		lib_lp_init_pr();
 		auto_ckpt_lp_init(&lp->auto_ckpt);
+
+#ifdef PUBSUB
+		pubsub_module_lp_init();
+#endif
+
 		process_lp_init();
 		termination_lp_init();
 	}

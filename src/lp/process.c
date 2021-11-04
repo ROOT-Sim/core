@@ -21,7 +21,7 @@
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 
-static __thread bool silent_processing = false;
+__thread bool silent_processing = false;
 static __thread dyn_array(struct lp_msg_remote_match) early_antis;
 
 #define mark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))
@@ -111,6 +111,7 @@ void process_lp_init(void)
 	array_init(proc_p->p_msgs);
 
 	struct lp_msg *msg = msg_allocator_pack(lp - lps, 0, LP_INIT, NULL, 0U);
+	msg->flags = 0;
 
 	proc_p->last_t = 0;
 
@@ -163,8 +164,9 @@ static inline void silent_execution(const struct process_data *proc_p,
 	void *state_p = current_lp->lib_ctx_p->state_s;
 	do {
 		const struct lp_msg *msg = array_get_at(proc_p->p_msgs, last_i);
-		while (is_msg_sent(msg))
+		while (is_msg_sent(msg)) {
 			msg = array_get_at(proc_p->p_msgs, ++last_i);
+		}
 
 		ProcessEvent_pr(
 			msg->dest,
@@ -189,6 +191,12 @@ static inline void send_anti_messages(struct process_data *proc_p,
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
 
 		while (is_msg_sent(msg)) {
+#ifdef PUBSUB
+			if (is_pubsub_msg(unmark_msg(msg))){
+				// a pubsub message sent from this LP
+				pub_node_handle_published_antimessage(unmark_msg(msg));
+			} else
+#endif
 			if (is_msg_remote(msg)) {
 				msg = unmark_msg_remote(msg);
 				nid_t dest_nid = lid_to_nid(msg->dest);
@@ -250,8 +258,9 @@ static inline array_count_t match_anti_msg(
 		while (is_msg_sent(msg))
 			msg = array_get_at(proc_p->p_msgs, ++j);
 
-		if (msg == a_msg)
+		if (msg == a_msg) {
 			return past_i;
+		}
 
 		past_i = j + 1;
 	} while(1);
@@ -260,7 +269,7 @@ static inline array_count_t match_anti_msg(
 static inline void handle_remote_anti_msg(struct process_data *proc_p,
 		const struct lp_msg *msg)
 {
-	uint32_t m_id = msg->raw_flags >> 2, m_seq = msg->m_seq;
+	uint32_t m_id = msg->raw_flags >> MSG_FLAGS_BITS, m_seq = msg->m_seq;
 	array_count_t p_cnt = array_count(proc_p->p_msgs), past_i = 0;
 	while (likely(past_i < p_cnt)) {
 		array_count_t j = past_i;
@@ -268,7 +277,7 @@ static inline void handle_remote_anti_msg(struct process_data *proc_p,
 		while (is_msg_sent(amsg))
 			amsg = array_get_at(proc_p->p_msgs, ++j);
 
-		if (amsg->raw_flags >> 2 == m_id && amsg->m_seq == m_seq) {
+		if (amsg->raw_flags >> MSG_FLAGS_BITS == m_id && amsg->m_seq == m_seq) {
 			// suppresses the re-insertion in the processing queue
 			amsg->raw_flags |= MSG_FLAG_ANTI;
 			do_rollback(proc_p, past_i);
@@ -292,7 +301,7 @@ static inline void handle_remote_anti_msg(struct process_data *proc_p,
 static inline bool check_early_anti_messages(struct lp_msg *msg)
 {
 	uint32_t m_id;
-	if (likely(!array_count(early_antis) || !(m_id = msg->raw_flags >> 2)))
+	if (likely(!array_count(early_antis) || !(m_id = msg->raw_flags >> MSG_FLAGS_BITS)))
 		return false;
 
 	uint32_t m_seq = msg->m_seq;
@@ -321,6 +330,18 @@ void process_msg(void)
 		return;
 	}
 
+#ifdef PUBSUB
+	if(is_pubsub_msg(msg)){
+		// A pubsub message that needs to be unpacked
+		if(unlikely(msg->flags & MSG_FLAG_ANTI)){
+			thread_handle_published_antimessage(msg);
+		} else {
+			thread_handle_published_message(msg);
+		}
+		return;
+	}
+#endif
+
 	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *this_lp = &lps[msg->dest];
@@ -331,7 +352,7 @@ void process_msg(void)
 			MSG_FLAG_PROCESSED, memory_order_relaxed);
 
 	if (unlikely(flags & MSG_FLAG_ANTI)) {
-		if (flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
+		if (flags >> MSG_FLAGS_BITS) {
 			handle_remote_anti_msg(proc_p, msg);
 			auto_ckpt_register_bad(&this_lp->auto_ckpt);
 		} else if (flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
@@ -376,3 +397,4 @@ void process_msg(void)
 
 	termination_on_msg_process(msg->dest_t);
 }
+

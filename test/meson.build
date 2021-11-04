@@ -24,40 +24,40 @@ test_specs = {
   'unit_msg_queue' : {'src' : ['datatypes' / 'msg_queue_test.c', src_dir / 'datatypes' / 'msg_queue.c']},
 # 'unit_gvt' : {'src' : ['gvt' / 'gvt_test.c', src_dir / 'gvt' / 'gvt.c']},
   'unit_msg_allocator' : {'src' : ['mm' / 'msg_allocator_test.c', src_dir / 'mm' / 'msg_allocator.c']},
-  'unit_lp' : {'src' : ['lp' / 'lp_test.c', src_dir / 'lp' / 'lp.c']},
+# 'unit_lp' : {'src' : ['lp' / 'lp_test.c', src_dir / 'lp' / 'lp.c']},
   'unit_buddy_allocator' : {'src' : ['mm' / 'buddy' / 'buddy_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c', src_dir / 'mm' / 'buddy' / 'ckpt.c']},
   'unit_buddy_allocator_hard' : {'src' : ['mm' / 'buddy' / 'buddy_hard_test.c', src_dir / 'mm' / 'buddy' / 'buddy.c', src_dir / 'mm' / 'buddy' / 'ckpt.c']},
   'unit_compiler' : {'src' : ['compiler' / 'compiler_test.c', src_dir / 'compiler' / 'compiler.c'], 'has_main' : true, 'c_args' : compiler_c_args},
 
-  'integration_serial': {
-    'src' : ['integration' / 'integration_serial.c'] + test_model_srcs,
-    'rslib' : true
-  },
-  'integration_single':  {
-    'src' : ['integration' / 'integration_parallel_single.c'] + test_model_srcs,
-    'rslib' : true,
-    'mpi' : true
-  },
-  'integration_multi': {
-    'src' : ['integration' / 'integration_parallel_multi.c'] + test_model_srcs,
-    'rslib' : true,
-    'mpi' : true
-  },
-
-  'model_pcs': {
-    'src' : [
-      'models' / 'model_test.c',
-      models_dir / 'pcs' / 'pcs.c'
-    ],
-    'rslib' : true
-  },
-  'model_phold': {
-    'src' : [
-      'models' / 'model_test.c',
-      models_dir / 'phold' / 'phold.c'
-    ],
-    'rslib' : true
-  }
+#  'integration_serial': {
+#    'src' : ['integration' / 'integration_serial.c'] + test_model_srcs,
+#    'rslib' : true
+#  },
+#  'integration_single':  {
+#    'src' : ['integration' / 'integration_parallel_single.c'] + test_model_srcs,
+#    'rslib' : true,
+#    'mpi' : true
+#  },
+#  'integration_multi': {
+#    'src' : ['integration' / 'integration_parallel_multi.c'] + test_model_srcs,
+#    'rslib' : true,
+#    'mpi' : true
+#  },
+#
+#  'model_pcs': {
+#    'src' : [
+#      'models' / 'model_test.c',
+#      models_dir / 'pcs' / 'pcs.c'
+#    ],
+#    'rslib' : true
+#  },
+#  'model_phold': {
+#    'src' : [
+#      'models' / 'model_test.c',
+#      models_dir / 'phold' / 'phold.c'
+#    ],
+#    'rslib' : true
+#  }
 }
 
 # Needed for mpi integration tests

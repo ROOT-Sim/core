@@ -24,6 +24,10 @@
 #include <mm/model_allocator.h>
 #include <mm/msg_allocator.h>
 
+#ifdef PUBSUB
+#include <modules/publish_subscribe/pubsub.h>
+#endif
+
 static void worker_thread_init(rid_t this_rid)
 {
 	rid = this_rid;
@@ -83,6 +87,9 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
 			lp_on_gvt(current_gvt);
+#ifdef PUBSUB
+			pubsub_on_gvt(current_gvt);
+#endif
 			stats_on_gvt(current_gvt);
 		}
 	}
@@ -96,6 +103,12 @@ static void parallel_global_init(void)
 {
 	stats_global_init();
 	lib_global_init();
+
+#ifdef PUBSUB
+	// TODO: check it's correct here. Otherwise after lp_global_init()
+	pubsub_module_global_init();
+#endif
+
 	process_global_init();
 	lp_global_init();
 	msg_queue_global_init();

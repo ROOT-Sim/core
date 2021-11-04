@@ -46,6 +46,11 @@ else
   rootsim_srcs += 'distributed' / 'no_mpi.c'
 endif
 
+if get_option('pubsub_msg').enabled()
+  rootsim_c_args += '-DPUBSUB=1'
+  rootsim_srcs += 'modules' / 'publish_subscribe' / 'pubsub.c'
+endif
+
 if get_option('iss').enabled()
   rootsim_c_args += '-DROOTSIM_INCREMENTAL=1'
 endif

@@ -28,6 +28,14 @@ struct lp_ctx {
 	struct auto_ckpt auto_ckpt;
 	/// The message processing context of this LP
 	struct process_data p;
+
+#ifdef PUBSUB
+	/// Bitmap for subbed nodes
+	struct block_bitmap* subnodes;
+	/// Count of nodes subbed to this LP
+	int n_remote_sub_nodes;
+#endif
+
 	/// The memory allocator state of this LP
 	struct mm_state mm_state;
 };

@@ -225,6 +225,35 @@ void mpi_remote_msg_handle(void)
 			return;
 		}
 
+#ifdef PUBSUB
+		// TODO: add handling for PubSub messages!!
+		if(status.MPI_TAG == MSG_PUBSUB){
+			int size;
+			MPI_Get_count(&status, MPI_BYTE, &size);
+			struct lp_msg *msg;
+			if (unlikely(size == msg_anti_size())) {
+				msg = msg_allocator_alloc(0);
+				MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,
+						  MPI_STATUS_IGNORE);
+				mpi_unlock();
+
+				gvt_remote_anti_msg_receive(msg);
+				sub_node_handle_published_antimessage(msg);
+			} else {
+				msg = msg_allocator_alloc(size -
+										  offsetof(struct lp_msg, pl));
+				MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,
+						  MPI_STATUS_IGNORE);
+				mpi_unlock();
+
+				gvt_remote_msg_receive(msg);
+				sub_node_handle_published_message(msg);
+			}
+
+			continue;
+		}
+#endif
+
 		if (unlikely(status.MPI_TAG)) {
 			MPI_Mrecv(NULL, 0, MPI_BYTE, &mpi_msg,
 					MPI_STATUS_IGNORE);

@@ -46,7 +46,7 @@ struct lp_msg {
 	uint32_t m_seq;
 	/// The message type, a user controlled field
 	uint32_t m_type;
-	 /// The message payload size
+	/// The message payload size
 	uint32_t pl_size;
 	/// The initial part of the payload
 	unsigned char pl[BASE_PAYLOAD_SIZE];
@@ -61,8 +61,9 @@ struct lp_msg_remote_match {
 
 enum msg_flag {
 	MSG_FLAG_ANTI 		= 1,
-	MSG_FLAG_PROCESSED	= 2
+	MSG_FLAG_PROCESSED	= 2,
+	MSG_FLAG_PUBSUB	= 4
 };
 
-
+#define MSG_FLAGS_BITS 3
 
