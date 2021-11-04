@@ -46,7 +46,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 	(void)size;
 	__neuron_s* state = (__neuron_s*) lp_state;
 	const event_t* content = (const event_t*) evt_content;
-	
+
 	will_spike = 0;
 
 	switch(event) {
@@ -337,16 +337,18 @@ void snn_module_lp_init(){// Init the neuron memory here (memory manager is up a
 	// Save
 	uint64_t prev_rng_s[4];
 	double prev_unif;
-	
+	bool prev_has_normal;
 	struct lib_ctx *ctx = current_lp->lib_ctx_p;
 	
 	memcpy(prev_rng_s, ctx->rng_s, sizeof(uint64_t)*4);
 	prev_unif = ctx->unif;
+	prev_has_normal = ctx->has_normal;
 	
 	// Init RNG with a fixed seed
 	//~ random_init(current_lp->lib_ctx_p->rng_s, 0, 42);
 	random_init(ctx->rng_s, 0, 42);
 	ctx->unif=NAN;
+	ctx->has_normal=false;
 	
 	SNNInitTopology_pr(n_lps);
 	//set the flag? Smth like: neuron_topology_init_already_done = 1;
@@ -354,7 +356,8 @@ void snn_module_lp_init(){// Init the neuron memory here (memory manager is up a
 	// Restore the RNG state to the previous one
 	memcpy(ctx->rng_s, prev_rng_s, sizeof(uint64_t)*4);
 	ctx->unif = prev_unif;
-	
+	ctx->has_normal = prev_has_normal;
+
 	//~ // Prune doubled synapses
 	//~ prune_all_synapses();
 	
