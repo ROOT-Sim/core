@@ -59,7 +59,6 @@ __extension__({								\
 	i;								\
 })
 
-// TODO: update this!!
 /**
  * @brief Inserts an element into the heap
  * @param self the heap target of the insertion
@@ -130,17 +129,15 @@ __extension__({								\
 #define heap_priority_changed(self, elem, cmp_f)			\
 __extension__({								\
 	__typeof(array_count(self)) i = elem.m->pos;			\
-	__typeof(array_count(self)) j = (i - 1U) / 2U;			\
 	__typeof__(array_items(self)) items = array_items(self);	\
 	__typeof(array_count(self)) cnt = array_count(self);		\
-        			                                        \
-	if(i && cmp_f(elem, items[j])) {				\
 									\
-	while(i && cmp_f(elem, items[j])){				\
-		items[i] = items[j];					\
+	if(i && cmp_f(elem, items[(i - 1U) / 2U])) {			\
+									\
+	while(i && cmp_f(elem, items[(i - 1U) / 2U])){			\
+		items[i] = items[(i - 1U) / 2U];			\
 		items[i].m->pos = i;					\
-		i = j;							\
-		j = (i - 1U) / 2U;					\
+		i = (i - 1U) / 2U;					\
 	}								\
 	items[i] = elem;						\
 	items[i].m->pos = i;						\
@@ -148,19 +145,17 @@ __extension__({								\
 	} else {							\
 									\
 	i = i * 2U + 1U;						\
-	j = (i - 1U) / 2U;						\
 	while (i < cnt) {						\
-		i += (i + 1) < cnt && cmp_f(items[i + 1U], items[i]);	\
+		i += i + 1 < cnt && cmp_f(items[i + 1U], items[i]);	\
 		if (!cmp_f(items[i], elem)) {				\
 			break;						\
 		}							\
-		j = (i - 1U) / 2U;					\
-		items[j] = items[i];					\
-		items[j].m->pos = j;					\
+		items[(i - 1U) / 2U] = items[i];			\
+		items[(i - 1U) / 2U].m->pos = (i - 1U) / 2U;		\
 		i = i * 2U + 1U;					\
 	}								\
-	items[j] = elem;						\
-	items[j].m->pos = j;						\
+	items[(i - 1U) / 2U] = elem;					\
+	items[(i - 1U) / 2U].m->pos = (i - 1U) / 2U;			\
 									\
 	}								\
 })

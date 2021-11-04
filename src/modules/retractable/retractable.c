@@ -56,6 +56,7 @@ void msg_queue_insert_retractable()
 
 	// Schedule the message
 	if(already_in_Q){
+		array_get_at(mqp.q, msg->pos).t = msg->dest_t;
 		q_el = array_get_at(mqp.q, msg->pos);
 		heap_priority_changed(mqp.q, q_el, q_elem_is_before);
 	} else {
