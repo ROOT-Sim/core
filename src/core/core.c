@@ -11,7 +11,6 @@
 #include <core/core.h>
 #include <ROOT-Sim.h>
 
-lp_id_t n_lps;
 rid_t n_threads;
 __thread rid_t rid;
 nid_t n_nodes = 1;

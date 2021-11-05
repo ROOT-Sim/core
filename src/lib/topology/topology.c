@@ -19,8 +19,8 @@
 /// this is used to store the common characteristics of the topology
 struct topology_t {
 	enum _topology_geometry_t geometry; /**< The geometry associated with this configuration */
-	uint64_t regions_cnt;      /**< the number of LPs involved in the topology */
-	uint32_t edge;             /**< the pre-computed edge length (if it makes sense for the current topology geometry) */
+	uint64_t regions_cnt;               /**< the number of LPs involved in the topology */
+	uint32_t edge; /**< the pre-computed edge length (if it makes sense for the current topology geometry) */
 };
 
 /**
@@ -38,7 +38,7 @@ struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int
 	topology->geometry = geometry;
 
 	// set default values
-	if (unlikely(out_of_topology >= global_config.lps)) {
+	if(unlikely(out_of_topology >= global_config.lps)) {
 		logger(LOG_FATAL, "Invalid number of regions for this topology geometry (out_of_topology too large)");
 		exit(-1);
 	}
@@ -48,15 +48,15 @@ struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int
 
 	// compute the edge value for topologies it makes sense for
 	unsigned edge;
-	switch (topology->geometry) {
+	switch(topology->geometry) {
 		case TOPOLOGY_SQUARE:
 		case TOPOLOGY_HEXAGON:
 		case TOPOLOGY_TORUS:
 			edge = sqrt(regions_cnt);
 			// we make sure there are no "lonely" LPs
-			if (edge * edge != regions_cnt) {
+			if(edge * edge != regions_cnt) {
 				logger(LOG_FATAL,
-					"Invalid number of regions for this topology geometry (must be a square number)");
+				    "Invalid number of regions for this topology geometry (must be a square number)");
 				exit(-1);
 			}
 			break;
@@ -84,7 +84,7 @@ unsigned long long RegionsCount(const struct topology_t *topology)
 
 unsigned long long DirectionsCount(const struct topology_t *topology)
 {
-	switch (topology->geometry) {
+	switch(topology->geometry) {
 		case TOPOLOGY_MESH:
 			return topology->regions_cnt;
 		case TOPOLOGY_HEXAGON:
@@ -109,16 +109,15 @@ lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direc
 	const uint64_t regions_cnt = topology->regions_cnt;
 	unsigned x, y;
 
-	if (unlikely(from >= regions_cnt))
+	if(unlikely(from >= regions_cnt))
 		return DIRECTION_INVALID;
 
-	switch (topology->geometry) {
-
+	switch(topology->geometry) {
 		case TOPOLOGY_HEXAGON:
 			y = sender / edge;
 			x = sender - y * edge;
 
-			switch (direction) {
+			switch(direction) {
 				case DIRECTION_NW:
 					x += (y & 1U) - 1;
 					y -= 1;
@@ -150,7 +149,7 @@ lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direc
 			y = sender / edge;
 			x = sender - y * edge;
 
-			switch (direction) {
+			switch(direction) {
 				case DIRECTION_N:
 					y -= 1;
 					break;
@@ -172,7 +171,7 @@ lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direc
 			y = sender / edge;
 			x = sender - y * edge;
 
-			switch (direction) {
+			switch(direction) {
 				case DIRECTION_N:
 					y += edge - 1;
 					y %= edge;
@@ -195,10 +194,10 @@ lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direc
 			return y * edge + x;
 
 		case TOPOLOGY_MESH:
-			return likely((lp_id_t) direction < regions_cnt) ? direction : DIRECTION_INVALID;
+			return likely((lp_id_t)direction < regions_cnt) ? direction : DIRECTION_INVALID;
 
 		case TOPOLOGY_BIDRING:
-			switch (direction) {
+			switch(direction) {
 				case DIRECTION_N:
 					return (sender + 1) % regions_cnt;
 				case DIRECTION_S:
@@ -210,13 +209,13 @@ lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direc
 			return (sender + 1) % regions_cnt;
 
 		case TOPOLOGY_STAR:
-			if (sender)
+			if(sender)
 				return 0;
 
 			uint64_t dest;
 			do {
 				dest = Random() * regions_cnt;
-			} while (dest != sender);
+			} while(dest != sender);
 			return dest;
 	}
 	return DIRECTION_INVALID;
@@ -225,7 +224,7 @@ lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direc
 lp_id_t FindReceiver(const struct topology_t *topology)
 {
 	// Consider the degenerate case of a run with one single LP
-	if (unlikely(topology->regions_cnt == 1))
+	if(unlikely(topology->regions_cnt == 1))
 		return 0;
 
 	const lp_id_t dir_cnt = DirectionsCount(topology);
@@ -234,14 +233,14 @@ lp_id_t FindReceiver(const struct topology_t *topology)
 	unsigned i = 64;
 	do {
 		lp_id_t dir = rnd & ((UINT64_C(1) << bits) - 1);
-		if (dir < dir_cnt) {
+		if(dir < dir_cnt) {
 			dir += 2 * (topology->geometry == TOPOLOGY_HEXAGON);
 			const lp_id_t ret = GetReceiver(topology, lp_id_get(), dir);
-			if (ret != DIRECTION_INVALID)
+			if(ret != DIRECTION_INVALID)
 				return ret;
 		}
 
-		if (likely((i -= bits) >= bits)) {
+		if(likely((i -= bits) >= bits)) {
 			rnd >>= bits;
 		} else {
 			rnd = RandomU64();

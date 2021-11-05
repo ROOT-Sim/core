@@ -30,7 +30,7 @@ inline void *mm_aligned_alloc(size_t alignment, size_t mem_size)
 {
 	void *ret = mem_aligned_alloc(alignment, mem_size);
 
-	if (__builtin_expect(mem_size && !ret, 0)) {
+	if(__builtin_expect(mem_size && !ret, 0)) {
 		logger(LOG_FATAL, "%s", "Out of memory!");
 		abort(); // TODO: this can be criticized as xmalloc() in gcc. We shall dump partial stats before.
 	}
@@ -62,7 +62,7 @@ inline void *mm_alloc(size_t mem_size)
 {
 	void *ret = malloc(mem_size);
 
-	if (__builtin_expect(mem_size && !ret, 0)) {
+	if(__builtin_expect(mem_size && !ret, 0)) {
 		logger(LOG_FATAL, "Out of memory!");
 		abort(); // TODO: this can be criticized as xmalloc() in gcc. We shall dump partial stats before.
 	}

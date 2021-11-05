@@ -39,8 +39,8 @@ struct lp_ctx {
 	bool terminating;
 };
 
-#define lid_to_nid(lp_id) ((nid_t)((lp_id) * n_nodes / global_config.lps))
-#define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
+#define lid_to_nid(lp_id) ((nid_t)((lp_id)*n_nodes / global_config.lps))
+#define lid_to_rid(lp_id) ((rid_t)(((lp_id)-lid_node_first) * global_config.n_threads / n_lps_node))
 
 extern uint64_t lid_node_first;
 extern __thread uint64_t lid_thread_first;
@@ -57,5 +57,5 @@ extern void lp_fini(void);
 
 extern void lp_on_gvt(simtime_t gvt);
 
-__attribute__ ((pure)) extern lp_id_t lp_id_get(void);
-__attribute__ ((pure)) extern struct lib_ctx *lib_ctx_get(void);
+__attribute__((pure)) extern lp_id_t lp_id_get(void);
+__attribute__((pure)) extern struct lib_ctx *lib_ctx_get(void);

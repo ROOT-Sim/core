@@ -24,8 +24,7 @@
 #include <stdalign.h>
 #include <stdatomic.h>
 
-#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || 		\
-	((ma).t == (mb).t && (ma).m->raw_flags > (mb).m->raw_flags))
+#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && (ma).m->raw_flags > (mb).m->raw_flags))
 
 struct q_elem {
 	simtime_t t;
@@ -78,14 +77,14 @@ void msg_queue_init(void)
  */
 void msg_queue_fini(void)
 {
-	for (array_count_t i = 0; i < heap_count(mqp.q); ++i)
+	for(array_count_t i = 0; i < heap_count(mqp.q); ++i)
 		msg_allocator_free(heap_items(mqp.q)[i].m);
 
 	heap_fini(mqp.q);
 	mm_free(mqp.alt_items);
 
 	struct msg_queue *mq = &queues[rid];
-	for (array_count_t i = 0; i < array_count(mq->b); ++i)
+	for(array_count_t i = 0; i < array_count(mq->b); ++i)
 		msg_allocator_free(array_get_at(mq->b, i).m);
 
 	array_fini(mq->b);
@@ -132,8 +131,7 @@ static inline void msg_queue_insert_queued(void)
 struct lp_msg *msg_queue_extract(void)
 {
 	msg_queue_insert_queued();
-	return likely(heap_count(mqp.q)) ?
-			heap_extract(mqp.q, q_elem_is_before).m : NULL;
+	return likely(heap_count(mqp.q)) ? heap_extract(mqp.q, q_elem_is_before).m : NULL;
 }
 
 /**

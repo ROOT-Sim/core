@@ -7,9 +7,9 @@
 void foo() {}
 
 struct simulation_configuration conf = {
-	.lps = 0,
-	.dispatcher = NULL,
-	.committed = NULL,
+    .lps = 0,
+    .dispatcher = NULL,
+    .committed = NULL,
 };
 
 int main(void)

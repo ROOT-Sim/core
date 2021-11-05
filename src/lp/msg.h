@@ -20,8 +20,8 @@
 
 #define msg_is_before_serial(ma, mb) ((ma)->dest_t < (mb)->dest_t)
 
-#define msg_is_before(ma, mb) (msg_is_before_serial(ma, mb) || 		\
-	((ma)->dest_t == (mb)->dest_t && (ma)->raw_flags > (mb)->raw_flags))
+#define msg_is_before(ma, mb)                                                                                          \
+	(msg_is_before_serial(ma, mb) || ((ma)->dest_t == (mb)->dest_t && (ma)->raw_flags > (mb)->raw_flags))
 
 #define msg_bare_size(msg) (offsetof(struct lp_msg, pl) + (msg)->pl_size)
 #define msg_anti_size() (offsetof(struct lp_msg, m_seq) + sizeof(uint32_t))
@@ -46,7 +46,7 @@ struct lp_msg {
 	uint32_t m_seq;
 	/// The message type, a user controlled field
 	uint32_t m_type;
-	 /// The message payload size
+	/// The message payload size
 	uint32_t pl_size;
 	/// The initial part of the payload
 	unsigned char pl[BASE_PAYLOAD_SIZE];
@@ -59,10 +59,4 @@ struct lp_msg_remote_match {
 	uint32_t m_seq;
 };
 
-enum msg_flag {
-	MSG_FLAG_ANTI 		= 1,
-	MSG_FLAG_PROCESSED	= 2
-};
-
-
-
+enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };

@@ -22,22 +22,22 @@
 #ifdef max
 #undef max
 #endif
-#define max(a, b) 			\
-__extension__({				\
-	__typeof__ (a) _a = (a);	\
-	__typeof__ (b) _b = (b);	\
-	_a > _b ? _a : _b;		\
-})
+#define max(a, b)                                                                                                      \
+	__extension__({                                                                                                \
+		__typeof__(a) _a = (a);                                                                                \
+		__typeof__(b) _b = (b);                                                                                \
+		_a > _b ? _a : _b;                                                                                     \
+	})
 
 #ifdef min
 #undef min
 #endif
-#define min(a, b) 			\
-__extension__({				\
-	__typeof__ (a) _a = (a);	\
-	__typeof__ (b) _b = (b);	\
-	_a < _b ? _a : _b;		\
-})
+#define min(a, b)                                                                                                      \
+	__extension__({                                                                                                \
+		__typeof__(a) _a = (a);                                                                                \
+		__typeof__(b) _b = (b);                                                                                \
+		_a < _b ? _a : _b;                                                                                     \
+	})
 
 #ifndef CACHE_LINE_SIZE // TODO: calculate and inject at build time
 /// The size of a cpu cache line

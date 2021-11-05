@@ -147,5 +147,7 @@ int main(void)
 	test("Functional test on RandomRange()", test_random_range);
 	test("Functional test on RandomRangeNonUniform()", test_random_range_nonuniform);
 
+	free(lp.lib_ctx);
+
 	finish();
 }

@@ -34,10 +34,10 @@ static void worker_thread_init(rid_t this_rid)
 	lp_init();
 	process_init();
 
-	if (sync_thread_barrier())
+	if(sync_thread_barrier())
 		mpi_node_barrier();
 
-	if (sync_thread_barrier()) {
+	if(sync_thread_barrier()) {
 		logger(LOG_INFO, "Starting simulation");
 		stats_global_time_take(STATS_GLOBAL_EVENTS_START);
 	}
@@ -47,7 +47,7 @@ static void worker_thread_fini(void)
 {
 	gvt_msg_drain();
 
-	if (sync_thread_barrier()) {
+	if(sync_thread_barrier()) {
 		stats_dump();
 		stats_global_time_take(STATS_GLOBAL_EVENTS_END);
 		logger(LOG_INFO, "Finalizing simulation");
@@ -65,18 +65,18 @@ static void worker_thread_fini(void)
 
 static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
-	worker_thread_init((uintptr_t) rid_arg);
+	worker_thread_init((uintptr_t)rid_arg);
 
-	while (likely(termination_cant_end())) {
+	while(likely(termination_cant_end())) {
 		mpi_remote_msg_handle();
 
 		unsigned i = 64;
-		while (i--) {
+		while(i--) {
 			process_msg();
 		}
 
 		simtime_t current_gvt;
-		if (unlikely(current_gvt = gvt_phase_run())) {
+		if(unlikely(current_gvt = gvt_phase_run())) {
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
 			lp_on_gvt(current_gvt);
@@ -119,19 +119,19 @@ int parallel_simulation(void)
 
 	thr_id_t thrs[global_config.n_threads];
 	rid_t i = global_config.n_threads;
-	while (i--) {
-		if (thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
+	while(i--) {
+		if(thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
 			logger(LOG_FATAL, "Unable to create threads!");
 			abort();
 		}
-		if (global_config.core_binding && thread_affinity_set(thrs[i], i)) {
+		if(global_config.core_binding && thread_affinity_set(thrs[i], i)) {
 			logger(LOG_FATAL, "Unable to set thread affinity!");
 			abort();
 		}
 	}
 
 	i = global_config.n_threads;
-	while (i--)
+	while(i--)
 		thread_wait(thrs[i], NULL);
 
 	stats_global_time_take(STATS_GLOBAL_FINI_START);

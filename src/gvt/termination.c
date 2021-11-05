@@ -34,7 +34,8 @@ void termination_lp_init(void)
 void termination_on_msg_process(simtime_t msg_time)
 {
 	struct lp_ctx *this_lp = current_lp;
-	if (this_lp->t_d) return;
+	if(this_lp->t_d)
+		return;
 
 	bool term = global_config.committed(this_lp - lps, this_lp->lib_ctx->state_s);
 	max_t = term ? max(msg_time, max_t) : max_t;
@@ -49,20 +50,18 @@ void termination_on_ctrl_msg(void)
 
 void termination_on_gvt(simtime_t current_gvt)
 {
-	if (likely((lps_to_end || max_t >= current_gvt) &&
-			current_gvt < global_config.termination_time))
+	if(likely((lps_to_end || max_t >= current_gvt) && current_gvt < global_config.termination_time))
 		return;
 	max_t = SIMTIME_MAX;
-	unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U,
-			memory_order_relaxed);
-	if (t == 1)
+	unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U, memory_order_relaxed);
+	if(t == 1)
 		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
 }
 
 void termination_force(void)
 {
 	nid_t i = atomic_load_explicit(&nodes_to_end, memory_order_relaxed);
-	while (i--)
+	while(i--)
 		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
 }
 

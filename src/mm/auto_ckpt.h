@@ -22,13 +22,13 @@ struct auto_ckpt {
 #define auto_ckpt_register_good(auto_ckpt) ((auto_ckpt)->m_good++)
 #define auto_ckpt_interval_get(auto_ckpt) ((auto_ckpt)->ckpt_interval)
 
-#define auto_ckpt_is_needed(auto_ckpt)					\
-__extension__({								\
-	_Bool r = ++(auto_ckpt)->ckpt_rem >= (auto_ckpt)->ckpt_interval;\
-	if (r)								\
-		(auto_ckpt)->ckpt_rem = 0;				\
-	r;								\
-})
+#define auto_ckpt_is_needed(auto_ckpt)                                                                                 \
+	__extension__({                                                                                                \
+		_Bool r = ++(auto_ckpt)->ckpt_rem >= (auto_ckpt)->ckpt_interval;                                       \
+		if(r)                                                                                                  \
+			(auto_ckpt)->ckpt_rem = 0;                                                                     \
+		r;                                                                                                     \
+	})
 
 extern void auto_ckpt_init(void);
 extern void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt);

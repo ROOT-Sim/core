@@ -62,8 +62,7 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 {
 	thread_affinity_policy_data_t policy = {core};
 	thread_port_t mach_thread = pthread_mach_thread_np(thr);
-	kern_return_t ret = thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY,
-					      (thread_policy_t) &policy, 1);
+	kern_return_t ret = thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
 	return -(ret != KERN_SUCCESS);
 }
 
@@ -75,15 +74,14 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 	cpu_set_t cpuset;
 	sched_getaffinity(0, sizeof(cpuset), &cpuset);
 
-	for (unsigned i = 0; i < CPU_SETSIZE; ++i) {
-		if (!CPU_ISSET(i, &cpuset))
+	for(unsigned i = 0; i < CPU_SETSIZE; ++i) {
+		if(!CPU_ISSET(i, &cpuset))
 			continue;
 
-		if (core == 0) {
+		if(core == 0) {
 			CPU_ZERO(&cpuset);
 			CPU_SET(i, &cpuset);
-			return -(pthread_setaffinity_np(thr, sizeof(cpuset),
-					&cpuset) != 0);
+			return -(pthread_setaffinity_np(thr, sizeof(cpuset), &cpuset) != 0);
 		}
 		--core;
 	}
@@ -137,10 +135,10 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 
 int thread_wait(thr_id_t thr, thr_ret_t *ret)
 {
-	if (WaitForSingleObject(thr, INFINITE) == WAIT_FAILED)
+	if(WaitForSingleObject(thr, INFINITE) == WAIT_FAILED)
 		return -1;
 
-	if (ret)
+	if(ret)
 		return -(GetExitCodeThread(thr, ret) == 0);
 
 	return 0;

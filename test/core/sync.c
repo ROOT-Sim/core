@@ -31,7 +31,7 @@ static thr_ret_t THREAD_CALL_CONV sync_test(void *null)
 	(void)null;
 	unsigned long long ret = 0;
 	unsigned j = REPS_COUNT;
-	while (j--) {
+	while(j--) {
 		atomic_fetch_add_explicit(&counter, 1U, memory_order_relaxed);
 		sync_thread_barrier();
 		unsigned val = atomic_load_explicit(&counter, memory_order_relaxed);
@@ -42,22 +42,22 @@ static thr_ret_t THREAD_CALL_CONV sync_test(void *null)
 	sync_thread_barrier();
 
 	j = REPS_COUNT;
-	while (j--) {
+	while(j--) {
 		spin_lock(&spin);
-		switch (k % 5) {
-		case 0:
-		case 2:
-			k += 1;
-			__attribute__((fallthrough));
-		case 4:
-			k += 1;
-			break;
-		case 3:
-		case 1:
-			k += 5;
-			break;
-		default:
-			__builtin_unreachable();
+		switch(k % 5) {
+			case 0:
+			case 2:
+				k += 1;
+				__attribute__((fallthrough));
+			case 4:
+				k += 1;
+				break;
+			case 3:
+			case 1:
+				k += 5;
+				break;
+			default:
+				__builtin_unreachable();
 		}
 		spin_unlock(&spin);
 	}
@@ -67,22 +67,22 @@ static thr_ret_t THREAD_CALL_CONV sync_test(void *null)
 	sync_thread_barrier();
 
 	j = REPS_COUNT;
-	while (j--) {
+	while(j--) {
 		mrswlock_wlock(&rw_lock, (int)N_THREADS);
-		switch (d % 5) {
-		case 0:
-		case 2:
-			d += 1;
-			/* fallthrough */
-		case 4:
-			d += 1;
-			break;
-		case 3:
-		case 1:
-			d += 5;
-			break;
-		default:
-			__builtin_unreachable();
+		switch(d % 5) {
+			case 0:
+			case 2:
+				d += 1;
+				/* fallthrough */
+			case 4:
+				d += 1;
+				break;
+			case 3:
+			case 1:
+				d += 5;
+				break;
+			default:
+				__builtin_unreachable();
 		}
 		mrswlock_wunlock(&rw_lock, N_THREADS);
 	}
@@ -95,14 +95,14 @@ static thr_ret_t THREAD_CALL_CONV sync_test(void *null)
 	sync_thread_barrier();
 
 	j = REPS_COUNT;
-	if (rid) {
-		while (j--) {
+	if(rid) {
+		while(j--) {
 			mrswlock_rlock(&rw_lock);
 			ret -= d != k;
 			mrswlock_runlock(&rw_lock);
 		}
 	} else {
-		while (j--) {
+		while(j--) {
 			mrswlock_wlock(&rw_lock, N_THREADS);
 			d += 3;
 			k += 2;

@@ -22,9 +22,7 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 	(void)argv_p;
 }
 
-void mpi_global_fini(void)
-{
-}
+void mpi_global_fini(void) {}
 
 void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
@@ -47,19 +45,15 @@ void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl)
 
 void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest)
 {
-	if (dest)
+	if(dest)
 		__builtin_unreachable();
 
 	mpi_control_msg_broadcast(ctrl);
 }
 
-void mpi_remote_msg_handle(void)
-{
-}
+void mpi_remote_msg_handle(void) {}
 
-void mpi_remote_msg_drain(void)
-{
-}
+void mpi_remote_msg_drain(void) {}
 
 void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], unsigned *result)
 {
@@ -81,9 +75,7 @@ bool mpi_reduce_min_done(void)
 	return true;
 }
 
-void mpi_node_barrier(void)
-{
-}
+void mpi_node_barrier(void) {}
 
 void mpi_blocking_data_send(const void *data, int data_size, nid_t dest)
 {

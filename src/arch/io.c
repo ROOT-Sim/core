@@ -70,11 +70,11 @@ FILE *io_file_tmp_get(void)
 bool io_terminal_can_colorize(void)
 {
 	HANDLE term = GetStdHandle(STD_ERROR_HANDLE);
-	if (term == NULL || term == INVALID_HANDLE_VALUE)
+	if(term == NULL || term == INVALID_HANDLE_VALUE)
 		return false;
 
 	DWORD cmode;
-	if (!GetConsoleMode(term, &cmode))
+	if(!GetConsoleMode(term, &cmode))
 		return false;
 
 	return SetConsoleMode(term, cmode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -93,24 +93,22 @@ void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 FILE *io_file_tmp_get(void)
 {
 	TCHAR tmp_folder_path[MAX_PATH + 1];
-	if (!GetTempPath(MAX_PATH + 1, tmp_folder_path))
+	if(!GetTempPath(MAX_PATH + 1, tmp_folder_path))
 		return NULL;
 
 	TCHAR tmp_path[MAX_PATH];
-	if (!GetTempFileName(tmp_folder_path, TEXT("ROOTSIM"), 0, tmp_path))
+	if(!GetTempFileName(tmp_folder_path, TEXT("ROOTSIM"), 0, tmp_path))
 		return NULL;
 
 	SECURITY_ATTRIBUTES tmp_sa = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
-	HANDLE file_handle = CreateFile(
-			tmp_path, GENERIC_READ | GENERIC_WRITE,
-			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-			&tmp_sa, CREATE_ALWAYS,
-			FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
-	if (file_handle == INVALID_HANDLE_VALUE)
+	HANDLE file_handle =
+	    CreateFile(tmp_path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		&tmp_sa, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+	if(file_handle == INVALID_HANDLE_VALUE)
 		return NULL;
 
 	int fd = _open_osfhandle((intptr_t)file_handle, _O_RDWR);
-	if (fd == -1)
+	if(fd == -1)
 		return NULL;
 
 	return _fdopen(fd, "rb+");

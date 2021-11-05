@@ -12,15 +12,9 @@
 
 #include <lib/lib_internal.h>
 
-void lib_global_init(void)
-{
+void lib_global_init(void) {}
 
-}
-
-void lib_global_fini(void)
-{
-
-}
+void lib_global_fini(void) {}
 
 void lib_lp_init(void)
 {
@@ -28,7 +22,4 @@ void lib_lp_init(void)
 	state_lib_lp_init();
 }
 
-void lib_lp_fini(void)
-{
-
-}
+void lib_lp_fini(void) {}

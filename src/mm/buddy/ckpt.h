@@ -16,5 +16,4 @@ struct mm_checkpoint { // todo only log longest[] if changed, or incrementally
 
 extern struct mm_checkpoint *checkpoint_full_take(const struct mm_state *self);
 extern void checkpoint_full_free(struct mm_checkpoint *ckp);
-extern void checkpoint_full_restore(struct mm_state *self,
-		const struct mm_checkpoint *ckp);
+extern void checkpoint_full_restore(struct mm_state *self, const struct mm_checkpoint *ckp);

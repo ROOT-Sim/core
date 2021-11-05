@@ -25,17 +25,17 @@ enum msg_ctrl_tag {
 
 inline void control_msg_process(enum msg_ctrl_tag ctrl)
 {
-	switch (ctrl) {
-	case MSG_CTRL_GVT_START:
-		gvt_start_processing();
-		break;
-	case MSG_CTRL_GVT_DONE:
-		gvt_on_done_ctrl_msg();
-		break;
-	case MSG_CTRL_TERMINATION:
-		termination_on_ctrl_msg();
-		break;
-	default:
-		__builtin_unreachable();
+	switch(ctrl) {
+		case MSG_CTRL_GVT_START:
+			gvt_start_processing();
+			break;
+		case MSG_CTRL_GVT_DONE:
+			gvt_on_done_ctrl_msg();
+			break;
+		case MSG_CTRL_TERMINATION:
+			termination_on_ctrl_msg();
+			break;
+		default:
+			__builtin_unreachable();
 	}
 }

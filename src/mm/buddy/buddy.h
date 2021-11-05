@@ -27,14 +27,13 @@
 struct mm_state {
 	/// The array of checkpoints
 	dyn_array(
-		/// Binds a checkpoint together with a reference index
-		struct mm_log {
-			/// The reference index, used to identify this checkpoint
-			array_count_t ref_i;
-			/// A pointer to the actual checkpoint
-			struct mm_checkpoint *c;
-		}
-	) logs;
+	    /// Binds a checkpoint together with a reference index
+	    struct mm_log {
+		    /// The reference index, used to identify this checkpoint
+		    array_count_t ref_i;
+		    /// A pointer to the actual checkpoint
+		    struct mm_checkpoint *c;
+	    }) logs;
 	/// The count of allocated bytes
 	uint_fast32_t used_mem;
 	/// The checkpointed binary tree representing the buddy system

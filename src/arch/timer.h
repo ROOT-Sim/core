@@ -26,7 +26,7 @@ inline timer_uint timer_new(void)
 {
 	struct timeval tmptv;
 	gettimeofday(&tmptv, NULL);
-	return (timer_uint) tmptv.tv_sec * 1000000U + tmptv.tv_usec;
+	return (timer_uint)tmptv.tv_sec * 1000000U + tmptv.tv_usec;
 }
 
 inline timer_uint timer_value(timer_uint start)
@@ -51,7 +51,7 @@ inline timer_uint timer_new(void)
 
 inline timer_uint timer_value(timer_uint start)
 {
-	if (unlikely(timer_perf_freq == 0)) {
+	if(unlikely(timer_perf_freq == 0)) {
 		LARGE_INTEGER perf;
 		QueryPerformanceFrequency(&perf);
 		timer_perf_freq = perf.QuadPart;
@@ -89,4 +89,3 @@ inline timer_uint timer_hr_value(timer_uint start)
 {
 	return timer_hr_new() - start;
 }
-

@@ -24,17 +24,14 @@
 typedef double simtime_t;
 typedef uint64_t lp_id_t;
 
-typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st);
+typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content,
+    unsigned event_size, void *st);
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
-enum rootsim_event {
-	MODEL_INIT = 65532,
-	LP_INIT,
-	LP_FINI,
-	MODEL_FINI
-};
+enum rootsim_event { MODEL_INIT = 65532, LP_INIT, LP_FINI, MODEL_FINI };
 
-extern void (*ScheduleNewEvent)(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content, unsigned event_size);
+extern void (*ScheduleNewEvent)(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
+    unsigned event_size);
 extern void SetState(void *new_state);
 
 extern void *rs_malloc(size_t req_size);
@@ -55,36 +52,36 @@ extern unsigned Zipf(double skew, unsigned limit);
 
 enum log_level {
 	LOG_SILENT, //!< Emit no message during the simulation
-	LOG_TRACE, //!< The logging level reserved to very low priority messages
-	LOG_DEBUG, //!< The logging level reserved to useful debug messages
-	LOG_INFO, //!< The logging level reserved to useful runtime messages
-	LOG_WARN, //!< The logging level reserved to unexpected, non deal breaking conditions
-	LOG_ERROR, //!< The logging level reserved to unexpected, problematic conditions
-	LOG_FATAL //!< The logging level reserved to unexpected, fatal conditions
+	LOG_TRACE,  //!< The logging level reserved to very low priority messages
+	LOG_DEBUG,  //!< The logging level reserved to useful debug messages
+	LOG_INFO,   //!< The logging level reserved to useful runtime messages
+	LOG_WARN,   //!< The logging level reserved to unexpected, non deal breaking conditions
+	LOG_ERROR,  //!< The logging level reserved to unexpected, problematic conditions
+	LOG_FATAL   //!< The logging level reserved to unexpected, fatal conditions
 };
 
 enum _topology_geometry_t {
-	TOPOLOGY_HEXAGON = 1,	//!< hexagonal grid topology
-	TOPOLOGY_SQUARE,	//!< square grid topology
-	TOPOLOGY_RING,		//!< a ring shaped topology walkable in a single direction
-	TOPOLOGY_BIDRING,	//!< a ring shaped topology
-	TOPOLOGY_TORUS,		//!< a torus shaped grid topology (a wrapping around square topology)
-	TOPOLOGY_STAR,		//!< a star shaped topology
-	TOPOLOGY_MESH,		//!< an arbitrary shaped topology
+	TOPOLOGY_HEXAGON = 1, //!< hexagonal grid topology
+	TOPOLOGY_SQUARE,      //!< square grid topology
+	TOPOLOGY_RING,        //!< a ring shaped topology walkable in a single direction
+	TOPOLOGY_BIDRING,     //!< a ring shaped topology
+	TOPOLOGY_TORUS,       //!< a torus shaped grid topology (a wrapping around square topology)
+	TOPOLOGY_STAR,        //!< a star shaped topology
+	TOPOLOGY_MESH,        //!< an arbitrary shaped topology
 };
 
 enum _direction_t {
-	DIRECTION_N,	//!< North direction
-	DIRECTION_S,	//!< South direction
-	DIRECTION_E,	//!< East direction
-	DIRECTION_W,	//!< West direction
-	DIRECTION_NE,	//!< North-east direction
-	DIRECTION_SW,	//!< South-west direction
-	DIRECTION_NW,	//!< North-west direction
-	DIRECTION_SE,	//!< South-east direction
+	DIRECTION_N,  //!< North direction
+	DIRECTION_S,  //!< South direction
+	DIRECTION_E,  //!< East direction
+	DIRECTION_W,  //!< West direction
+	DIRECTION_NE, //!< North-east direction
+	DIRECTION_SW, //!< South-west direction
+	DIRECTION_NW, //!< North-west direction
+	DIRECTION_SE, //!< South-east direction
 
 	// FIXME this is bad if the n_lps is more than INT_MAX - 1
-	DIRECTION_INVALID = INT_MAX	//!< A generic invalid direction
+	DIRECTION_INVALID = INT_MAX //!< A generic invalid direction
 };
 
 struct topology_t;
@@ -121,9 +118,9 @@ struct simulation_configuration {
 	/// If set, the simulation will run on the serial runtime
 	bool serial;
 	/// Function pointer to the dispatching function
-	ProcessEvent_t	dispatcher;
+	ProcessEvent_t dispatcher;
 	/// Function pointer to the termination detection function
-	CanEnd_t	committed;
+	CanEnd_t committed;
 };
 
 extern int RootsimInit(struct simulation_configuration *conf);

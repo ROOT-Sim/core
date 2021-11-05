@@ -21,10 +21,7 @@
 #define NULLING_PROBABILITY 0.3
 #define COMPLETE_EVENTS 15000
 
-enum {
-	LOOP,
-	RECEIVE
-};
+enum { LOOP, RECEIVE };
 
 typedef struct lp_buffer {
 	unsigned count;
@@ -40,10 +37,10 @@ typedef struct {
 	buffer *head;
 } lp_state;
 
-buffer* get_buffer(buffer *head, unsigned i);
+buffer *get_buffer(buffer *head, unsigned i);
 uint32_t read_buffer(buffer *head, unsigned i, uint32_t old_crc);
-buffer* allocate_buffer(lp_state *state, const unsigned *data, unsigned count);
-buffer* deallocate_buffer(buffer *head, unsigned i);
+buffer *allocate_buffer(lp_state *state, const unsigned *data, unsigned count);
+buffer *deallocate_buffer(buffer *head, unsigned i);
 void crc_table_init(void);
 
 extern const uint32_t model_expected_output[];

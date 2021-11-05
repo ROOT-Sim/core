@@ -34,15 +34,15 @@ lp_id_t n_lps_node;
  * or less the same number of LPs assigned to it; this macro computes the first
  * index of the LP to assign to a node/processing unit.
  */
-#define partition_start(part_id, part_cnt, part_fnc, start_i, tot_i)	\
-__extension__({								\
-	lp_id_t _g = (part_id) * (tot_i) / (part_cnt) + start_i;	\
-	while (_g > start_i && part_fnc(_g) >= (part_id))		\
-		--_g;							\
-	while (part_fnc(_g) < (part_id))				\
-		++_g;							\
-	_g;								\
-})
+#define partition_start(part_id, part_cnt, part_fnc, start_i, tot_i)                                                   \
+	__extension__({                                                                                                \
+		lp_id_t _g = (part_id) * (tot_i) / (part_cnt) + start_i;                                               \
+		while(_g > start_i && part_fnc(_g) >= (part_id))                                                       \
+			--_g;                                                                                          \
+		while(part_fnc(_g) < (part_id))                                                                        \
+			++_g;                                                                                          \
+		_g;                                                                                                    \
+	})
 
 /**
  * @brief Initialize the global data structures for the LPs
@@ -50,15 +50,14 @@ __extension__({								\
 void lp_global_init(void)
 {
 	lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, global_config.lps);
-	n_lps_node = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps)
-			- lid_node_first;
+	n_lps_node = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps) - lid_node_first;
 
 	lps = mm_alloc(sizeof(*lps) * n_lps_node);
 	lps -= lid_node_first;
 
-	if (n_lps_node < global_config.n_threads) {
-		logger(LOG_WARN, "The simulation will run with %u threads instead of the requested %u",
-				n_lps_node, global_config.n_threads);
+	if(n_lps_node < global_config.n_threads) {
+		logger(LOG_WARN, "The simulation will run with %u threads instead of the requested %u", n_lps_node,
+		    global_config.n_threads);
 		global_config.n_threads = n_lps_node;
 	}
 }
@@ -77,12 +76,10 @@ void lp_global_fini(void)
  */
 void lp_init(void)
 {
-	lid_thread_first = partition_start(rid, global_config.n_threads, lid_to_rid,
-			lid_node_first, n_lps_node);
-	lid_thread_end = partition_start(rid + 1, global_config.n_threads, lid_to_rid,
-			lid_node_first, n_lps_node);
+	lid_thread_first = partition_start(rid, global_config.n_threads, lid_to_rid, lid_node_first, n_lps_node);
+	lid_thread_end = partition_start(rid + 1, global_config.n_threads, lid_to_rid, lid_node_first, n_lps_node);
 
-	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
+	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
 		current_lp = lp;
 
@@ -101,8 +98,8 @@ void lp_init(void)
  */
 void lp_fini(void)
 {
-	if (sync_thread_barrier()) {
-		for (uint64_t i = 0; i < n_lps_node ; ++i) {
+	if(sync_thread_barrier()) {
+		for(uint64_t i = 0; i < n_lps_node; ++i) {
 			current_lp = &lps[i + lid_node_first];
 			process_lp_deinit();
 		}
@@ -110,7 +107,7 @@ void lp_fini(void)
 
 	sync_thread_barrier();
 
-	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
+	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		current_lp = &lps[i];
 
 		process_lp_fini();
@@ -123,7 +120,7 @@ void lp_fini(void)
 
 void lp_on_gvt(simtime_t gvt)
 {
-	for (uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
+	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
 		fossil_lp_on_gvt(lp, gvt);
 		auto_ckpt_lp_on_gvt(&lp->auto_ckpt);

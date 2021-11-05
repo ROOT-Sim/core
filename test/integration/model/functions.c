@@ -13,9 +13,9 @@
 
 uint32_t crc_update(const uint64_t *buf, size_t n, uint32_t crc);
 
-buffer* get_buffer(buffer *head, unsigned i)
+buffer *get_buffer(buffer *head, unsigned i)
 {
-	while (i--)
+	while(i--)
 		head = head->next;
 
 	return head;
@@ -27,13 +27,13 @@ uint32_t read_buffer(buffer *head, unsigned i, uint32_t old_crc)
 	return crc_update(head->data, head->count, old_crc);
 }
 
-buffer* allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
+buffer *allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
 {
 	buffer *new = rs_malloc(sizeof(buffer) + count * sizeof(uint64_t));
 	new->next = state->head;
 	new->count = count;
 
-	if (data != NULL)
+	if(data != NULL)
 		memcpy(new->data, data, count * sizeof(uint64_t));
 	else
 		for(unsigned i = 0; i < count; i++)
@@ -42,17 +42,17 @@ buffer* allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
 	return new;
 }
 
-buffer* deallocate_buffer(buffer *head, unsigned i)
+buffer *deallocate_buffer(buffer *head, unsigned i)
 {
 	buffer *prev = NULL;
 	buffer *to_free = head;
 
-	for (unsigned j = 0; j < i; j++) {
+	for(unsigned j = 0; j < i; j++) {
 		prev = to_free;
 		to_free = to_free->next;
 	}
 
-	if (prev != NULL) {
+	if(prev != NULL) {
 		prev->next = to_free->next;
 		rs_free(to_free);
 		return head;
@@ -68,11 +68,11 @@ static uint32_t crc_table[256];
 void crc_table_init(void)
 {
 	uint32_t n = 256;
-	while (n--) {
+	while(n--) {
 		uint32_t c = n;
 		int k = 8;
 		while(k--) {
-			if (c & 1) {
+			if(c & 1) {
 				c = 0xedb88320UL ^ (c >> 1);
 			} else {
 				c = c >> 1;
@@ -85,7 +85,7 @@ void crc_table_init(void)
 uint32_t crc_update(const uint64_t *buf, size_t n, uint32_t crc)
 {
 	uint32_t c = crc ^ 0xffffffffUL;
-	while (n--) {
+	while(n--) {
 		unsigned k = 64;
 		do {
 			k -= 8;

@@ -23,11 +23,11 @@
 #include <pthread.h>
 
 #define THREAD_CALL_CONV
-typedef void * thr_ret_t;
+typedef void *thr_ret_t;
 typedef pthread_t thr_id_t;
 
-#define THREAD_RET_FAILURE ((void *) 1)
-#define THREAD_RET_SUCCESS ((void *) 0)
+#define THREAD_RET_FAILURE ((void *)1)
+#define THREAD_RET_SUCCESS ((void *)0)
 
 #elif defined(__WINDOWS)
 

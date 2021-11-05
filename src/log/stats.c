@@ -50,22 +50,21 @@ struct stats_global {
 	uint64_t timestamps[STATS_GLOBAL_COUNT];
 };
 
-static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT &&
-	      sizeof(struct stats_node) == 16 &&
-	      sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
-	      "structs aren't properly packed, parsing may be difficult");
+static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct stats_node) == 16 &&
+		  sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
+    "structs aren't properly packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the header of the final csv
-const char * const s_names[] = {
-	[STATS_ROLLBACK] = "rollbacks",
-	[STATS_MSG_ROLLBACK] = "rolled back messages",
-	[STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
-	[STATS_MSG_SILENT] = "silent messages",
-	[STATS_CKPT] = "checkpoints",
-	[STATS_CKPT_TIME] = "checkpoints time",
-	[STATS_MSG_SILENT_TIME] = "silent messages time",
-	[STATS_MSG_PROCESSED] = "processed messages",
-	[STATS_REAL_TIME_GVT] = "gvt real time"
+const char *const s_names[] = {
+    [STATS_ROLLBACK] = "rollbacks",
+    [STATS_MSG_ROLLBACK] = "rolled back messages",
+    [STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
+    [STATS_MSG_SILENT] = "silent messages",
+    [STATS_CKPT] = "checkpoints",
+    [STATS_CKPT_TIME] = "checkpoints time",
+    [STATS_MSG_SILENT_TIME] = "silent messages time",
+    [STATS_MSG_PROCESSED] = "processed messages",
+    [STATS_REAL_TIME_GVT] = "gvt real time"
 };
 
 static timer_uint sim_start_ts;
@@ -77,7 +76,7 @@ static __thread struct stats_thread stats_cur;
 
 static void file_write_chunk(FILE *f, const void *data, size_t data_size)
 {
-	if (unlikely(fwrite(data, data_size, 1, f) != 1))
+	if(unlikely(fwrite(data, data_size, 1, f) != 1))
 		logger(LOG_ERROR, "Error during disk write!");
 }
 
@@ -87,7 +86,7 @@ static void *file_memory_load(FILE *f, int64_t *f_size_p)
 	long f_size = ftell(f); // Fails horribly for files bigger than 2 GB
 	fseek(f, 0, SEEK_SET);
 	void *ret = mm_alloc(f_size);
-	if (fread(ret, f_size, 1, f) != 1) {
+	if(fread(ret, f_size, 1, f) != 1) {
 		mm_free(ret);
 		*f_size_p = 0;
 		return NULL;
@@ -116,7 +115,7 @@ static FILE *file_open(const char *open_type, const char *fmt, ...)
 	va_end(args);
 
 	FILE *ret = fopen(f_name, open_type);
-	if (ret == NULL)
+	if(ret == NULL)
 		logger(LOG_ERROR, "Unable to open \"%s\" in %s mode", f_name, open_type);
 
 	mm_free(f_name);
@@ -146,12 +145,11 @@ void stats_global_init(void)
 {
 	stats_glob_cur.timestamps[STATS_GLOBAL_START] = timer_value(sim_start_ts);
 	stats_glob_cur.threads_count = global_config.n_threads;
-	if (mem_stat_setup() < 0)
+	if(mem_stat_setup() < 0)
 		logger(LOG_ERROR, "Unable to extract memory statistics!");
 
 	stats_node_tmp = io_file_tmp_get();
-	setvbuf(stats_node_tmp, NULL, _IOFBF,
-		STATS_BUFFER_ENTRIES * sizeof(struct stats_node));
+	setvbuf(stats_node_tmp, NULL, _IOFBF, STATS_BUFFER_ENTRIES * sizeof(struct stats_node));
 
 	stats_tmps = mm_alloc(global_config.n_threads * sizeof(*stats_tmps));
 }
@@ -162,20 +160,19 @@ void stats_global_init(void)
 void stats_init(void)
 {
 	stats_tmps[rid] = io_file_tmp_get();
-	setvbuf(stats_tmps[rid], NULL, _IOFBF,
-		STATS_BUFFER_ENTRIES * sizeof(stats_cur));
+	setvbuf(stats_tmps[rid], NULL, _IOFBF, STATS_BUFFER_ENTRIES * sizeof(stats_cur));
 }
 
 static void stats_files_receive(FILE *o)
 {
-	for (nid_t j = 1; j < n_nodes; ++j) {
+	for(nid_t j = 1; j < n_nodes; ++j) {
 		int buf_size;
 		struct stats_global *sg_p = mpi_blocking_data_rcv(&buf_size, j);
 		file_write_chunk(o, sg_p, buf_size);
 		uint64_t iters = sg_p->threads_count + 1; // +1 for node stats
 		mm_free(sg_p);
 
-		for (uint64_t i = 0; i < iters; ++i) {
+		for(uint64_t i = 0; i < iters; ++i) {
 			void *buf = mpi_blocking_data_rcv(&buf_size, j);
 			int64_t f_size = buf_size;
 			file_write_chunk(o, &f_size, sizeof(f_size));
@@ -197,7 +194,7 @@ static void stats_files_send(void)
 	mpi_blocking_data_send(f_buf, f_size, 0);
 	mm_free(f_buf);
 
-	for (rid_t i = 0; i < global_config.n_threads; ++i) {
+	for(rid_t i = 0; i < global_config.n_threads; ++i) {
 		f_buf = file_memory_load(stats_tmps[i], &f_size);
 		f_size = min(INT_MAX, f_size);
 		mpi_blocking_data_send(f_buf, f_size, 0);
@@ -213,11 +210,11 @@ static void stats_file_final_write(FILE *o)
 
 	int64_t n = STATS_COUNT;
 	file_write_chunk(o, &n, sizeof(n));
-	for (int i = 0; i < STATS_COUNT; ++i) {
+	for(int i = 0; i < STATS_COUNT; ++i) {
 		size_t l = min(strlen(s_names[i]), STATS_MAX_STRLEN);
 		file_write_chunk(o, s_names[i], l);
 		unsigned char nul = 0;
-		for (; l < STATS_MAX_STRLEN; ++l)
+		for(; l < STATS_MAX_STRLEN; ++l)
 			file_write_chunk(o, &nul, 1);
 	}
 
@@ -234,7 +231,7 @@ static void stats_file_final_write(FILE *o)
 	file_write_chunk(o, buf, buf_size);
 	mm_free(buf);
 
-	for (rid_t i = 0; i < global_config.n_threads; ++i) {
+	for(rid_t i = 0; i < global_config.n_threads; ++i) {
 		buf = file_memory_load(stats_tmps[i], &buf_size);
 		file_write_chunk(o, &buf_size, sizeof(buf_size));
 		file_write_chunk(o, buf, buf_size);
@@ -255,13 +252,13 @@ void stats_global_fini(void)
 	if(global_config.stats_file == NULL)
 		return;
 
-	if (nid) {
+	if(nid) {
 		stats_files_send();
 		return;
 	}
 
 	FILE *o = file_open("w", "%s.bin", global_config.stats_file);
-	if (o == NULL) {
+	if(o == NULL) {
 		logger(LOG_WARN, "Unable to open statistics file for writing, statistics will now be collected.");
 		return;
 	}
@@ -270,10 +267,10 @@ void stats_global_fini(void)
 	stats_files_receive(o);
 
 	fflush(o);
-	if (o != stdout)
+	if(o != stdout)
 		fclose(o);
 
-	for (rid_t i = 0; i < global_config.n_threads; ++i)
+	for(rid_t i = 0; i < global_config.n_threads; ++i)
 		fclose(stats_tmps[i]);
 
 	mm_free(stats_tmps);
@@ -292,15 +289,14 @@ void stats_on_gvt(simtime_t gvt)
 	file_write_chunk(stats_tmps[rid], &stats_cur, sizeof(stats_cur));
 	memset(&stats_cur, 0, sizeof(stats_cur));
 
-	if (rid != 0)
+	if(rid != 0)
 		return;
 
-	struct stats_node stats_node_cur =
-			{.gvt = gvt, .rss = mem_stat_rss_current_get()};
+	struct stats_node stats_node_cur = {.gvt = gvt, .rss = mem_stat_rss_current_get()};
 	file_write_chunk(stats_node_tmp, &stats_node_cur, sizeof(stats_node_cur));
 	memset(&stats_node_cur, 0, sizeof(stats_node_cur));
 
-	if (nid != 0)
+	if(nid != 0)
 		return;
 
 	if(global_config.log_level != LOG_SILENT) {
@@ -311,7 +307,7 @@ void stats_on_gvt(simtime_t gvt)
 
 void stats_dump(void)
 {
-	if (nid == 0) {
+	if(nid == 0) {
 		double t = timer_value(sim_start_ts) / 1000000.0;
 		logger(LOG_INFO, "\nSimulation completed in %.3lf seconds\n", t);
 		fflush(stdout);

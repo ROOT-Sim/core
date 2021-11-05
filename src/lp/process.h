@@ -24,11 +24,10 @@ struct process_data {
 #define is_msg_remote(msg_p) (((uintptr_t)(msg_p)) & 2U)
 #define is_msg_local_sent(msg_p) (((uintptr_t)(msg_p)) & 1U)
 #define is_msg_past(msg_p) (!(((uintptr_t)(msg_p)) & 3U))
-#define unmark_msg(msg_p) \
-	((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
+#define unmark_msg(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
 
-extern void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp,
-    unsigned event_type, const void *payload, unsigned payload_size);
+extern void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
+    unsigned payload_size);
 
 extern void process_global_init(void);
 extern void process_global_fini(void);
