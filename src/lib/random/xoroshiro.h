@@ -32,10 +32,10 @@
 // FIXME: this is a very poor way to seed the generator
 #define random_init(rng_s, llid, seed)                                                                                 \
 	__extension__({                                                                                                \
-		(rng_s)[0] = (llid + 1) * UINT64_C(16232384076195101791) ^ seed;                                       \
-		(rng_s)[1] = (llid + 1) * UINT64_C(13983006573105492179) ^ seed;                                       \
-		(rng_s)[2] = (llid + 1) * UINT64_C(10204677566545858177) ^ seed;                                       \
-		(rng_s)[3] = (llid + 1) * UINT64_C(14539058011249359317) ^ seed;                                       \
+		(rng_s)[0] = ((llid) + 1) * UINT64_C(16232384076195101791) ^ seed;                                       \
+		(rng_s)[1] = ((llid) + 1) * UINT64_C(13983006573105492179) ^ seed;                                       \
+		(rng_s)[2] = ((llid) + 1) * UINT64_C(10204677566545858177) ^ seed;                                       \
+		(rng_s)[3] = ((llid) + 1) * UINT64_C(14539058011249359317) ^ seed;                                       \
 		unsigned __i = 1024;                                                                                   \
 		while(__i--)                                                                                           \
 			random_u64((rng_s));                                                                           \

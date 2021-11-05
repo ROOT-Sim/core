@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <distributed/mpi.h>
+#include <mm/mm.h>
 
 #include <core/core.h>
 #include <core/sync.h>
-#include <datatypes/array.h>
 #include <datatypes/msg_queue.h>
 #include <mm/msg_allocator.h>
 

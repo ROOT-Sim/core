@@ -10,7 +10,6 @@ set(srcs
         src/arch/io.c
         src/arch/mem.c
         src/arch/thread.c
-        src/arch/timer.c
         src/core/core.c
         src/init.c
         src/core/sync.c
@@ -32,7 +31,6 @@ set(srcs
         src/mm/auto_ckpt.c
         src/mm/buddy/buddy.c
         src/mm/buddy/ckpt.c
-        src/mm/mm.c
         src/mm/msg_allocator.c
         src/parallel/parallel.c
         src/serial/serial.c

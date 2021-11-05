@@ -113,7 +113,6 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		default:
 			puts("[ERROR] Requested to process an unknown event!");
 			abort();
-			break;
 	}
 }
 

@@ -9,7 +9,6 @@
 #include <gvt/termination.h>
 
 #include <distributed/mpi.h>
-#include <gvt/gvt.h>
 #include <lp/lp.h>
 
 _Atomic(nid_t) nodes_to_end;

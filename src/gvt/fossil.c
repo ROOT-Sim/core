@@ -15,8 +15,6 @@
 #include <mm/model_allocator.h>
 #include <mm/msg_allocator.h>
 
-#include <memory.h>
-
 void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt)
 {
 	struct process_data *proc_p = &lp->p;

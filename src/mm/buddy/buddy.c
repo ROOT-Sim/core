@@ -135,7 +135,6 @@ void *rs_realloc(void *ptr, size_t req_size)
 		return rs_malloc(req_size);
 	}
 
-	abort();
 	return NULL;
 }
 

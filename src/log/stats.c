@@ -16,12 +16,11 @@
 #include <arch/timer.h>
 #include <core/core.h>
 #include <distributed/mpi.h>
+#include <mm/mm.h>
 
 #include <assert.h>
-#include <inttypes.h>
 #include <memory.h>
 #include <stdarg.h>
-#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 

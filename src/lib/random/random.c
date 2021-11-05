@@ -15,7 +15,6 @@
 #include <lib/random/xoroshiro.h>
 
 #include <math.h>
-#include <memory.h>
 
 void random_lib_lp_init(void)
 {

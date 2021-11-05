@@ -16,7 +16,6 @@
 #include <log/stats.h>
 #include <lp/msg.h>
 #include <mm/msg_allocator.h>
-#include <lp/process.h>
 #include <lp/lp.h>
 
 

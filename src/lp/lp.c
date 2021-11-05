@@ -9,6 +9,7 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <lp/lp.h>
+#include <mm/mm.h>
 
 #include <core/sync.h>
 #include <gvt/fossil.h>
@@ -36,8 +37,8 @@ lp_id_t n_lps_node;
  */
 #define partition_start(part_id, part_cnt, part_fnc, start_i, tot_i)                                                   \
 	__extension__({                                                                                                \
-		lp_id_t _g = (part_id) * (tot_i) / (part_cnt) + start_i;                                               \
-		while(_g > start_i && part_fnc(_g) >= (part_id))                                                       \
+		lp_id_t _g = (part_id) * (tot_i) / (part_cnt) + (start_i);                                               \
+		while(_g > (start_i) && part_fnc(_g) >= (part_id))                                                       \
 			--_g;                                                                                          \
 		while(part_fnc(_g) < (part_id))                                                                        \
 			++_g;                                                                                          \

@@ -10,7 +10,6 @@
  */
 #include <lib/lib.h>
 
-#include <lib/lib_internal.h>
 
 void lib_global_init(void) {}
 

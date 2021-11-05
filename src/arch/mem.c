@@ -32,7 +32,6 @@
 #ifdef __POSIX
 
 #include <sys/resource.h>
-#include <sys/time.h>
 
 #if defined(__MACOS)
 

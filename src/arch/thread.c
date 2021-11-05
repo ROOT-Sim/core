@@ -52,7 +52,6 @@
 
 #ifdef __POSIX
 #include <sched.h>
-#include <signal.h>
 #include <unistd.h>
 
 #ifdef __MACOS

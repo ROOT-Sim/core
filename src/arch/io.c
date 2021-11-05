@@ -31,9 +31,6 @@
  * @return a temporary file, an opaque object to be used in this module
  */
 
-#include <core/core.h>
-
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 

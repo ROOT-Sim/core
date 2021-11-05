@@ -21,10 +21,3 @@ extern void model_allocator_checkpoint_take(array_count_t ref_i);
 extern void model_allocator_checkpoint_next_force_full(void);
 extern array_count_t model_allocator_checkpoint_restore(array_count_t ref_i);
 extern array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_count_t tgt_ref_i);
-
-extern void __write_mem(const void *ptr, size_t siz);
-
-extern void *rs_malloc(size_t req_size);
-extern void *rs_calloc(size_t nmemb, size_t size);
-extern void rs_free(void *ptr);
-extern void *rs_realloc(void *ptr, size_t req_size);

@@ -1,3 +1,11 @@
+/**
+* @file mm/buddy/ckpt.c
+*
+* @brief Checkpointing capabilities
+*
+* SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-License-Identifier: GPL-3.0-only
+*/
 #include <mm/buddy/ckpt.h>
 
 #include <core/core.h>
@@ -23,7 +31,7 @@ void model_allocator_fini(void)
 
 static struct mm_checkpoint *ckpt_alloc(uint_fast32_t used_mem)
 {
-	used_mem_avg = 0.95 * used_mem_avg + 0.05 * (1.0 + MAX_WASTED_SPACE) * used_mem;
+	used_mem_avg = 0.95 * used_mem_avg + 0.05 * (1.0 + MAX_WASTED_SPACE) * (double)used_mem;
 
 	struct mm_checkpoint *ret;
 	if(unlikely(used_mem > used_mem_avg)) {
@@ -40,7 +48,7 @@ static struct mm_checkpoint *ckpt_alloc(uint_fast32_t used_mem)
 	}
 
 	ret = mm_alloc(offsetof(struct mm_checkpoint, base_mem) + used_mem_avg);
-	ret->ckpt_size = used_mem_avg;
+	ret->ckpt_size = (uint_fast32_t) used_mem_avg;
 
 	return ret;
 }
@@ -61,7 +69,7 @@ void checkpoint_full_free(struct mm_checkpoint *ckpt)
 		uint_fast8_t __l = B_TOTAL_EXP;                                                                        \
 		uint_fast32_t __i = 0;                                                                                 \
 		while(1) {                                                                                             \
-			uint_fast8_t __lon = longest[__i];                                                             \
+			uint_fast8_t __lon = (longest)[__i];                                                             \
 			if(!__lon) {                                                                                   \
 				uint_fast32_t __len = 1U << __l;                                                       \
 				uint_fast32_t __o = ((__i + 1) << __l) - (1 << B_TOTAL_EXP);                           \

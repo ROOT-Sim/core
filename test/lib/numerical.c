@@ -1,5 +1,14 @@
+/**
+ * @file test/lib/numerical.c
+ *
+ * @brief Test: rollbackable RNG
+ * @todo test all distributions
+ * @todo check rollback capabilities
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+*/
 #include <stdlib.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
 #include <limits.h>
@@ -138,9 +147,9 @@ int main(void)
 	struct lp_ctx lp = {0};
 	lp.lib_ctx = malloc(sizeof(*current_lp->lib_ctx));
 	lp.lib_ctx->rng_s[0] = 7319936632422683443ULL;
-	lp.lib_ctx->rng_s[1] = 7319936632422683443ULL;
-	lp.lib_ctx->rng_s[2] = 7319936632422683443ULL;
-	lp.lib_ctx->rng_s[3] = 7319936632422683443ULL;
+	lp.lib_ctx->rng_s[1] = 2268344373199366324ULL;
+	lp.lib_ctx->rng_s[2] = 3443862242366399137ULL;
+	lp.lib_ctx->rng_s[3] = 2366399137344386224ULL;
 	current_lp = &lp;
 
 	test("Kolmogorov-Smirnov test on Random()", aux_ks_test, RANDOM);

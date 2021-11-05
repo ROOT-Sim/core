@@ -19,7 +19,7 @@
 	__extension__({                                                                                                \
 		double s = (sample);                                                                                   \
 		double o = (old_v);                                                                                    \
-		o *((f - 1.0) / f) + s *(1.0 / f);                                                                     \
+		o *(((f) - 1.0) / (f)) + s *(1.0 / (f));                                                                     \
 	})
 
 static __thread struct {

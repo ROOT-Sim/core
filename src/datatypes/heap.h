@@ -74,11 +74,11 @@
 		__typeof__(array_items(self)) items = array_items(self);                                               \
 		while(j--) {                                                                                           \
 			__typeof(array_count(self)) i = array_count(self)++;                                           \
-			while(i && cmp_f(ins[j], items[(i - 1U) / 2U])) {                                              \
+			while(i && cmp_f((ins)[j], items[(i - 1U) / 2U])) {                                              \
 				items[i] = items[(i - 1U) / 2U];                                                       \
 				i = (i - 1U) / 2U;                                                                     \
 			}                                                                                              \
-			items[i] = ins[j];                                                                             \
+			items[i] = (ins)[j];                                                                             \
 		}                                                                                                      \
 	})
 
