@@ -22,6 +22,7 @@
 #ifdef max
 #undef max
 #endif
+/// Statement expression to compute the max between two values with no double evaluation side effect
 #define max(a, b)                                                                                                      \
 	__extension__({                                                                                                \
 		__typeof__(a) _a = (a);                                                                                \
@@ -32,6 +33,7 @@
 #ifdef min
 #undef min
 #endif
+/// Statement expression to compute the min between two values with no double evaluation side effect
 #define min(a, b)                                                                                                      \
 	__extension__({                                                                                                \
 		__typeof__(a) _a = (a);                                                                                \
@@ -40,8 +42,7 @@
 	})
 
 #ifndef CACHE_LINE_SIZE // TODO: calculate and inject at build time
-/// The size of a cpu cache line
-/** Used to align some data structures in order to avoid false sharing */
+/// The size of a cpu cache line used to align some data structures in order to avoid false sharing
 #define CACHE_LINE_SIZE 128
 #endif
 
@@ -61,6 +62,7 @@ typedef double simtime_t;
 /// The maximum number of supported threads
 /** FIXME: this is used very limitedly. Consider its removal */
 #define MAX_THREADS_EXP 12
+/// Maximum number of threads that can be supported
 #define MAX_THREADS (1 << MAX_THREADS_EXP)
 
 /// Used to uniquely identify LPs in the simulation

@@ -21,7 +21,9 @@
 #define mem_aligned_free(mem) _aligned_free(mem)
 #else
 #include <stdlib.h>
+/// An OS-dependent function to allocate aligned memory
 #define mem_aligned_alloc(align, mem_size) aligned_alloc(align, mem_size)
+/// An OS-dependent function to free aligned memory
 #define mem_aligned_free(mem) free(mem)
 #endif
 

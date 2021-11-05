@@ -1,5 +1,5 @@
 /**
- * @file logger/stats.c
+ * @file log/stats.c
  *
  * @brief Statistics module
  *
@@ -33,6 +33,7 @@ struct stats_thread {
 	uint64_t s[STATS_COUNT];
 };
 
+/// A container for statistics in a logical time period
 struct stats_node {
 	/// The gvt value
 	simtime_t gvt;
@@ -40,6 +41,7 @@ struct stats_node {
 	uint64_t rss;
 };
 
+/// A container for statistics in a logical time period
 struct stats_global {
 	/// The number of threads in this node
 	uint64_t threads_count;
@@ -49,8 +51,9 @@ struct stats_global {
 	uint64_t timestamps[STATS_GLOBAL_COUNT];
 };
 
-static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct stats_node) == 16 &&
-		  sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
+static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT
+		  && sizeof(struct stats_node) == 16
+		  && sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
     "structs aren't properly packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the header of the final csv

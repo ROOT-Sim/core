@@ -22,23 +22,33 @@
 typedef unsigned char block_bitmap;
 
 /* macros for internal use */
+
+/// The primitive type used to build a bitmap
 #define B_BLOCK_TYPE uint_fast32_t
+/// The size of the primitive type to build a bitmap
 #define B_BLOCK_SIZE ((unsigned)sizeof(B_BLOCK_TYPE))
+/// Number of bits in a primitive type to build a bitmap
 #define B_BITS_PER_BLOCK (B_BLOCK_SIZE * CHAR_BIT)
+/// Mask used to fiddle single bits
 #define B_MASK ((B_BLOCK_TYPE)1U)
+/// Union cast to access the bitmap
 #define B_UNION_CAST(bitmap) ((B_BLOCK_TYPE *)(bitmap))
 
-// B_BITS_PER_BLOCK is a power of 2 in any real architecture
+/// B_BITS_PER_BLOCK is a power of 2 in any real architecture
 #define B_MOD_OF_BPB(n) (((unsigned)(n)) & ((unsigned)(B_BITS_PER_BLOCK - 1)))
 
+/// Macro to set a bit in a primitive block composing a bitmap
 #define B_SET_BIT_AT(B, K) ((B) |= (B_MASK << (K)))
+/// Macro to clear a bit in a primitive block composing a bitmap
 #define B_RESET_BIT_AT(B, K) ((B) &= ~(B_MASK << (K)))
+/// Macro to check if a bit is set in a primitive block composing a bitmap
 #define B_CHECK_BIT_AT(B, K) ((B) & (B_MASK << (K)))
 
+/// Macro to set a bit in a bitmap
 #define B_SET_BIT(A, I) B_SET_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
-
+/// Macro to clear a bit in a bitmap
 #define B_RESET_BIT(A, I) B_RESET_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
-
+/// Macro to check if a bit is set in a bitmap
 #define B_CHECK_BIT(A, I) B_CHECK_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
 
 /**

@@ -11,8 +11,8 @@
 #include <distributed/mpi.h>
 #include <lp/lp.h>
 
-_Atomic(nid_t) nodes_to_end;
-static _Atomic(rid_t) thr_to_end;
+_Atomic nid_t nodes_to_end;
+static _Atomic rid_t thr_to_end;
 static __thread uint64_t lps_to_end;
 static __thread simtime_t max_t;
 

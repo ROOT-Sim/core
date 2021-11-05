@@ -15,6 +15,7 @@
 #include <lib/random/random.h>
 #include <lib/state/state.h>
 
+/// Per-LP structure for core libraries
 struct lib_ctx {
 	// random library
 	uint64_t rng_s[4];

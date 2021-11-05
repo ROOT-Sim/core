@@ -259,7 +259,7 @@ static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
 
 /**
  * @brief Computes the sum-reduction-scatter operation across all nodes.
- * @param node_vals a pointer to the addendum vector from the calling node.
+ * @param values a flexible array implementing the addendum vector from the calling node.
  * @param result a pointer where the nid-th component of the sum will be stored.
  *
  * Each node supplies a n_nodes components vector. The sum of all these vector

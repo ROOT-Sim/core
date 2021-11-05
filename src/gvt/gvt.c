@@ -3,6 +3,13 @@
  *
  * @brief Global Virtual Time
  *
+ * For a detailed explanantion of the algorithm, see:
+ *
+ * T. Tocci, A. Pellegrini, F. Quaglia, J. Casanovas-García, and T. Suzumura
+ * “ORCHESTRA: An Asynchronous Wait-Free Distributed GVT Algorithm”
+ * in Proceedings of the 21st IEEE/ACM International Symposium on Distributed
+ * Simulation and Real Time Applications, 2017, pp. 51–58
+ *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
@@ -19,6 +26,7 @@
 /// A thread phase during the gvt algorithm computation
 enum thread_phase { thread_phase_idle = 0, thread_phase_A, thread_phase_B, thread_phase_C, thread_phase_D };
 
+/// Node phases of the non-blocking GVT algorithm
 enum node_phase {
 	node_phase_redux_first = 0,
 	node_sent_reduce,

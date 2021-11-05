@@ -34,7 +34,7 @@ struct lp_msg {
 	simtime_t dest_t;
 	union {
 		/// The flags to handle local anti messages
-		_Atomic(uint32_t) flags;
+		_Atomic uint32_t flags;
 		/// The message unique id, used for inter-node anti messages
 		uint32_t raw_flags;
 	};

@@ -1,5 +1,5 @@
 /**
- * @file log/logger.h
+ * @file log/log.h
  *
  * @brief Logging library
  *
