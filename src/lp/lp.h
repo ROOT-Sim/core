@@ -10,6 +10,7 @@
  */
 #pragma once
 
+#include <arch/platform.h>
 #include <core/core.h>
 #include <gvt/termination.h>
 #include <lib/lib.h>
@@ -57,5 +58,5 @@ extern void lp_fini(void);
 
 extern void lp_on_gvt(simtime_t gvt);
 
-__attribute__((pure)) extern lp_id_t lp_id_get(void);
-__attribute__((pure)) extern struct lib_ctx *lib_ctx_get(void);
+_pure extern lp_id_t lp_id_get(void);
+_pure extern struct lib_ctx *lib_ctx_get(void);

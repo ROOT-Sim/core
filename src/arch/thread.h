@@ -42,10 +42,13 @@ typedef HANDLE thr_id_t;
 #define THREAD_RET_FAILURE (1)
 #define THREAD_RET_SUCCESS (0)
 
+#ifdef _MSC_VER
+#define __thread __declspec(thread)
+#endif
 #endif
 
 /// The function type of a new thread entry point
-typedef thr_ret_t THREAD_CALL_CONV (*thr_run_fnc)(void *);
+typedef thr_ret_t(*thr_run_fnc)(void *);
 
 extern int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);
 extern int thread_affinity_set(thr_id_t thr, unsigned core);

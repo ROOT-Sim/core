@@ -2,7 +2,7 @@ include_directories(.)
 
 function(test_program name)
     add_executable(test_${name} ${ARGN})
-    target_link_libraries(test_${name} rscore m)
+    target_link_libraries(test_${name} rscore)
     add_test(NAME test_${name} COMMAND test_${name})
     set_tests_properties(test_${name} PROPERTIES TIMEOUT 50)
 endfunction()

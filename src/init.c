@@ -15,6 +15,7 @@
 #include <ROOT-Sim.h>
 #include <string.h>
 #include <log/stats.h>
+#include <log/log.h>
 #include <distributed/mpi.h>
 #include <serial/serial.h>
 #include <parallel/parallel.h>

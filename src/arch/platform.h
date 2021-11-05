@@ -15,8 +15,10 @@
 
 #if defined(_WIN32)
 #define __WINDOWS
+#define _pure 
 #elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
 #define __POSIX
+#define _pure __attribute__((pure)) 
 
 #if defined(__linux__)
 #define __LINUX

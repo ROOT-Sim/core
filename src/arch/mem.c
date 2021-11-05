@@ -120,8 +120,8 @@ size_t mem_stat_rss_max_get(void)
 
 #ifdef __WINDOWS
 
-#include <psapi.h>
 #include <windows.h>
+#include <psapi.h>
 
 int mem_stat_setup(void)
 {

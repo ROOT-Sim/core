@@ -13,6 +13,7 @@
 #include <log/log.h>
 
 #include <arch/mem.h>
+#include <core/core.h>
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -30,7 +31,7 @@ static inline void *mm_aligned_alloc(size_t alignment, size_t mem_size)
 {
 	void *ret = mem_aligned_alloc(alignment, mem_size);
 
-	if(__builtin_expect(mem_size && !ret, 0)) {
+	if(unlikely(mem_size && ret == NULL)) {
 		logger(LOG_FATAL, "%s", "Out of memory!");
 		abort(); // TODO: this can be criticized as xmalloc() in gcc. We shall dump partial stats before.
 	}

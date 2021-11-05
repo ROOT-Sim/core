@@ -15,8 +15,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <log/log.h>
-#include <mm/mm.h>
+#include <arch/thread.h>
 #include <ROOT-Sim.h>
 
 #ifdef max
@@ -46,10 +45,16 @@
 #define CACHE_LINE_SIZE 128
 #endif
 
+#ifndef _MSC_VER
 /// Optimize the branch as likely taken
 #define likely(exp) __builtin_expect(!!(exp), 1)
 /// Optimize the branch as likely not taken
 #define unlikely(exp) __builtin_expect((exp), 0)
+#else
+#define likely(exp) (exp)
+#define unlikely(exp) (exp)
+#endif
+
 
 /// The type used to represent logical time in the simulation
 typedef double simtime_t;
@@ -77,7 +82,7 @@ extern lp_id_t n_lps_node;
 /// The identifier of the thread
 extern __thread rid_t rid;
 
-/// The total number of MPI nodes in the simulation
+/// The total __de of MPI nodes in the simulation
 extern nid_t n_nodes;
 /// The node identifier of the node
 extern nid_t nid;
