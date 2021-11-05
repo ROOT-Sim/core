@@ -3,7 +3,7 @@
 #include <mm/buddy/buddy.h>
 
 /// A restorable checkpoint of the memory context assigned to a single LP
-struct mm_checkpoint { // todo only logger longest[] if changed, or incrementally
+struct mm_checkpoint { // todo only log longest[] if changed, or incrementally
 	/// The size in bytes of this checkpoint
 	uint_fast32_t ckpt_size;
 	/// The used memory in bytes when this checkpoint was taken
