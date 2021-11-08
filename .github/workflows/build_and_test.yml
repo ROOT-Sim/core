@@ -22,6 +22,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         compiler: [ clang, gcc ]
+        type: [ Debug, Release ]
     steps:
       - name: Fetch ROOT-Sim repository
         uses: actions/checkout@v2
@@ -32,5 +33,5 @@ jobs:
         with:
           build-dir: ${{ runner.workspace }}/build
           cc: ${{ matrix.compiler }}
-          build-type: Debug
+          build-type: ${{ matrix.type }}
           run-test: true
