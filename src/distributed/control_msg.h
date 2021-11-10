@@ -23,7 +23,7 @@ enum msg_ctrl_tag {
 	MSG_CTRL_TERMINATION
 };
 
-inline void control_msg_process(enum msg_ctrl_tag ctrl)
+static inline void control_msg_process(enum msg_ctrl_tag ctrl)
 {
 	switch(ctrl) {
 		case MSG_CTRL_GVT_START:
