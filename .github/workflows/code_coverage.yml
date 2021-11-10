@@ -17,7 +17,6 @@ jobs:
           build-dir: ${{ runner.workspace }}/build
           cc: gcc
           build-type: Debug
-          target: rscore
           cflags: --coverage
           run-test: true
       - name: Generate coverage report
