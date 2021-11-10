@@ -38,7 +38,7 @@ set(srcs
         src/serial/serial.c
         )
 
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
@@ -49,7 +49,7 @@ if(MSVC)
     message(FATAL_ERROR "You are using MSVC compiler, that does not properly implement C11. Please consider switching to clang")
 endif()
 add_compile_options(${TARGET_NAME} ${MPI_C_COMPILE_FLAGS})
-link_libraries(${MPI_C_LIBRARIES} Threads::Threads)
+link_libraries(${MPI_C_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 if(NOT WIN32)
   link_libraries(m)
 endif()

@@ -39,7 +39,7 @@ void model_allocator_lp_fini(void)
 	struct mm_state *self = &current_lp->mm_state;
 	array_count_t i = array_count(self->logs);
 	while(i--)
-		checkpoint_full_free(array_get_at(self->logs, i).c);
+		checkpoint_free(array_get_at(self->logs, i).c);
 
 	array_fini(self->logs);
 }
@@ -72,12 +72,19 @@ void *rs_malloc(size_t req_size)
 	/* update the *longest* value back */
 	self->longest[i] = 0;
 	self->used_mem += 1 << node_size;
+#ifdef ROOTSIM_INCREMENTAL
+	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
+#endif
 
 	uint_fast32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
 
 	while(i) {
 		i = buddy_parent(i);
 		self->longest[i] = max(self->longest[buddy_left_child(i)], self->longest[buddy_right_child(i)]);
+#ifdef ROOTSIM_INCREMENTAL
+		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
+#endif
+
 	}
 
 	return ((char *)self->base_mem) + offset;
@@ -101,14 +108,25 @@ void rs_free(void *ptr)
 
 	struct mm_state *self = &current_lp->mm_state;
 	uint_fast8_t node_size = B_BLOCK_EXP;
-	uint_fast32_t i =
-	    (((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP) + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
+	uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
+	uint_fast32_t i = o + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
 	for(; self->longest[i]; i = buddy_parent(i))
 		++node_size;
 
 	self->longest[i] = node_size;
 	self->used_mem -= 1 << node_size;
+#ifdef ROOTSIM_INCREMENTAL
+	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
+
+	uint_fast32_t b = (1 << (node_size - B_BLOCK_EXP)) - 1;
+	o += (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
+	// need to track freed blocks content because full checkpoints don't
+	do {
+		bitmap_set(self->dirty, o + b);
+	} while(b--);
+
+#endif
 
 	while(i) {
 		i = buddy_parent(i);
@@ -121,6 +139,9 @@ void rs_free(void *ptr)
 		} else {
 			self->longest[i] = max(left_long, right_long);
 		}
+#ifdef ROOTSIM_INCREMENTAL
+		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
+#endif
 		++node_size;
 	}
 }
@@ -134,18 +155,64 @@ void *rs_realloc(void *ptr, size_t req_size)
 	if(!ptr) {
 		return rs_malloc(req_size);
 	}
-
+	// TODO!
 	return NULL;
+}
+
+void __write_mem(const void *ptr, size_t siz)
+{
+	if (!siz)
+		return;
+
+	struct mm_state *self = &current_lp->mm_state;
+	uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->base_mem;
+	if (diff >= (1 << B_TOTAL_EXP))
+		return;
+
+	uint_fast32_t i = (diff >> B_BLOCK_EXP) +
+		(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
+
+	self->dirty_mem += siz;
+
+	siz += diff & ((1 << B_BLOCK_EXP) - 1);
+	--siz;
+	siz >>= B_BLOCK_EXP;
+
+	do {
+		bitmap_set(self->dirty, i + siz);
+	} while(siz--);
 }
 
 void model_allocator_checkpoint_take(array_count_t ref_i)
 {
 	struct mm_state *self = &current_lp->mm_state;
-	struct mm_log mm_log = {.ref_i = ref_i, .c = checkpoint_full_take(self)};
+	struct mm_checkpoint *ckp;
+
+#ifdef ROOTSIM_INCREMENTAL
+	if (self->dirty_mem < self->used_mem * B_LOG_INCREMENTAL_THRESHOLD) {
+		ckp = checkpoint_incremental_take(self);
+	} else {
+#endif
+		ckp = checkpoint_full_take(self);
+#ifdef ROOTSIM_INCREMENTAL
+	}
+	memset(self->dirty, 0, sizeof(self->dirty));
+#endif
+
+	struct mm_log mm_log = {
+		.ref_i = ref_i,
+		.c = ckp
+	};
 	array_push(self->logs, mm_log);
 }
 
-void model_allocator_checkpoint_next_force_full(void) {}
+void model_allocator_checkpoint_next_force_full(void)
+{
+#ifdef ROOTSIM_INCREMENTAL
+	struct mm_state *self = &current_lp->mm_state;
+	self->dirty_mem = UINT32_MAX;
+#endif
+}
 
 array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 {
@@ -155,11 +222,20 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 		i--;
 
 	const struct mm_checkpoint *ckp = array_get_at(self->logs, i).c;
-
-	checkpoint_full_restore(self, ckp);
+#ifdef ROOTSIM_INCREMENTAL
+	if (ckp->is_incremental) {
+		checkpoint_incremental_restore(self, ckp);
+	} else {
+#endif
+		checkpoint_full_restore(self, ckp);
+#ifdef ROOTSIM_INCREMENTAL
+	}
+	memset(self->dirty, 0, sizeof(self->dirty));
+	self->dirty_mem = 0;
+#endif
 
 	for(array_count_t j = array_count(self->logs) - 1; j > i; --j)
-		checkpoint_full_free(array_get_at(self->logs, j).c);
+		checkpoint_free(array_get_at(self->logs, j).c);
 
 	array_count(self->logs) = i + 1;
 	return array_get_at(self->logs, i).ref_i;
@@ -174,13 +250,19 @@ array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_cou
 		ref_i = array_get_at(self->logs, log_i).ref_i;
 	}
 
+	while (array_get_at(self->logs, log_i).c->is_incremental) {
+		--log_i;
+		ref_i = array_get_at(self->logs, log_i).ref_i;
+	}
+
 	array_count_t j = array_count(self->logs);
 	while(j > log_i) {
 		--j;
 		array_get_at(self->logs, j).ref_i -= ref_i;
 	}
+
 	while(j--)
-		checkpoint_full_free(array_get_at(self->logs, j).c);
+		checkpoint_free(array_get_at(self->logs, j).c);
 
 	array_truncate_first(self->logs, log_i);
 	return ref_i;

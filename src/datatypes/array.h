@@ -106,7 +106,7 @@ typedef uint_fast32_t array_count_t;
 
 #define array_truncate_first(self, n)                                                                                  \
 	__extension__({                                                                                                \
-		array_count(self) -= (n);                                                                                \
+		array_count(self) -= (n);                                                                              \
 		memmove(array_items(self), &(array_items(self)[n]), sizeof(*array_items(self)) * (array_count(self))); \
 	})
 
@@ -121,7 +121,7 @@ typedef uint_fast32_t array_count_t;
 
 #define array_reserve(self, n)                                                                                         \
 	__extension__({                                                                                                \
-		__typeof__(array_count(self)) tcnt = array_count(self) + (n);                                            \
+		__typeof__(array_count(self)) tcnt = array_count(self) + (n);                                          \
 		if(unlikely(tcnt >= array_capacity(self))) {                                                           \
 			do {                                                                                           \
 				array_capacity(self) *= 2;                                                             \

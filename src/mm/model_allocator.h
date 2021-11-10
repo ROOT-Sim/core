@@ -13,8 +13,6 @@
 #include <datatypes/array.h>
 #include <mm/buddy/buddy.h>
 
-extern void model_allocator_init(void);
-extern void model_allocator_fini(void);
 extern void model_allocator_lp_init(void);
 extern void model_allocator_lp_fini(void);
 extern void model_allocator_checkpoint_take(array_count_t ref_i);
