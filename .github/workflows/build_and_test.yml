@@ -17,8 +17,6 @@ jobs:
     steps:
       - name: Checkpout repository
         uses: actions/checkout@v2
-      - name: REUSE check
-        uses: ROOT-Sim/ci-actions/reuse-check@master
       - name: Initialize Environment
         uses: ROOT-Sim/ci-actions/init@master
       - name: Build & Test
