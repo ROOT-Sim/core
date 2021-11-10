@@ -9,23 +9,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
-      - uses: BSFishy/pip-action@v1
-        with:
-          packages:
-            coverxygen
-      - name: Install MPI
-        uses: mpi4py/setup-mpi@v1
-      - name: Get Doxygen
-        run: sudo apt-get install -y doxygen
+      - name: Initialize Environment
+        uses: ROOT-Sim/ci-actions/init@master
       - name: Generate Documentation
-        uses: ashutoshvarma/action-cmake-build@master
-        with:
-          build-dir: ${{ runner.workspace }}/build
-          target: doc
-          build-type: Debug
-          run-test: false
-      - name: Inspect Documentation
-        run: ./scripts/doc_coverage.py -b ${{ runner.workspace }}/build -g
+        uses: ROOT-Sim/ci-actions/docs@master
       - name: Comment PR
         uses: actions/github-script@v3
         with:
