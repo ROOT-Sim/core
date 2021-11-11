@@ -12,56 +12,6 @@
 #include <datatypes/array.h>
 #include <mm/mm.h>
 
-#define MAX_WASTED_SPACE 0.2
-
-static __thread double used_mem_avg;
-static __thread dyn_array(struct mm_checkpoint *) avail_ckpts;
-
-void model_allocator_init(void)
-{
-	array_init(avail_ckpts);
-}
-
-void model_allocator_fini(void)
-{
-	while(array_count(avail_ckpts))
-		mm_free(array_pop(avail_ckpts));
-	array_fini(avail_ckpts);
-}
-
-static struct mm_checkpoint *ckpt_alloc(uint_fast32_t used_mem)
-{
-	used_mem_avg = 0.95 * used_mem_avg + 0.05 * (1.0 + MAX_WASTED_SPACE) * (double)used_mem;
-
-	struct mm_checkpoint *ret;
-	if(unlikely(used_mem > used_mem_avg)) {
-		ret = mm_alloc(offsetof(struct mm_checkpoint, base_mem) + used_mem);
-		ret->ckpt_size = used_mem;
-		return ret;
-	}
-
-	while(likely(array_count(avail_ckpts))) {
-		ret = array_pop(avail_ckpts);
-		if(likely(ret->used_mem >= used_mem))
-			return ret;
-		mm_free(ret);
-	}
-
-	ret = mm_alloc(offsetof(struct mm_checkpoint, base_mem) + used_mem_avg);
-	ret->ckpt_size = (uint_fast32_t) used_mem_avg;
-
-	return ret;
-}
-
-void checkpoint_full_free(struct mm_checkpoint *ckpt)
-{
-	if(unlikely(ckpt->ckpt_size < used_mem_avg)) {
-		mm_free(ckpt);
-		return;
-	}
-	array_push(avail_ckpts, ckpt);
-}
-
 
 #define buddy_tree_visit(longest, on_visit)                                                                            \
 	__extension__({                                                                                                \
@@ -69,7 +19,7 @@ void checkpoint_full_free(struct mm_checkpoint *ckpt)
 		uint_fast8_t __l = B_TOTAL_EXP;                                                                        \
 		uint_fast32_t __i = 0;                                                                                 \
 		while(1) {                                                                                             \
-			uint_fast8_t __lon = (longest)[__i];                                                             \
+			uint_fast8_t __lon = (longest)[__i];                                                           \
 			if(!__lon) {                                                                                   \
 				uint_fast32_t __len = 1U << __l;                                                       \
 				uint_fast32_t __o = ((__i + 1) << __l) - (1 << B_TOTAL_EXP);                           \
@@ -92,9 +42,115 @@ void checkpoint_full_free(struct mm_checkpoint *ckpt)
 		}                                                                                                      \
 	})
 
+#ifdef ROOTSIM_INCREMENTAL
+
+struct mm_checkpoint *checkpoint_incremental_take(const struct mm_state *self)
+{
+	uint_fast32_t bset = bitmap_count_set(self->dirty, sizeof(self->dirty));
+
+	struct mm_checkpoint *ret = mm_alloc(
+		offsetof(struct mm_checkpoint, longest) +
+		bset * (1 << B_BLOCK_EXP));
+
+	unsigned char *ptr = ret->longest;
+	const unsigned char *src = self->longest;
+
+#define copy_block_to_ckp(i) 						\
+__extension__({								\
+	memcpy(ptr, src + (i << B_BLOCK_EXP), 1 << B_BLOCK_EXP);	\
+	ptr += 1 << B_BLOCK_EXP;					\
+})
+
+	bitmap_foreach_set(self->dirty, sizeof(self->dirty), copy_block_to_ckp);
+#undef copy_block_to_ckp
+
+	ret->used_mem = self->used_mem;
+	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
+	ret->is_incremental = true;
+	return ret;
+}
+
+void checkpoint_incremental_restore(struct mm_state *self,
+	const struct mm_checkpoint *ckp)
+{
+	self->used_mem = ckp->used_mem;
+
+	array_count_t i = array_count(self->logs) - 1;
+	const struct mm_checkpoint *cur_ckp = array_get_at(self->logs, i).c;
+
+	while (cur_ckp != ckp) {
+		bitmap_merge_or(self->dirty, cur_ckp->dirty,
+			sizeof(self->dirty));
+		cur_ckp = array_get_at(self->logs, --i).c;
+	}
+
+#define copy_dirty_block(i) 						\
+__extension__({								\
+	if (bitmap_check(self->dirty, i)) {				\
+		memcpy(self->longest + (i << B_BLOCK_EXP), ptr,		\
+		       1 << B_BLOCK_EXP);				\
+		bitmap_reset(self->dirty, i);				\
+		--r;							\
+	}								\
+	ptr += 1 << B_BLOCK_EXP;					\
+})
+
+#define copy_block_from_ckp(i) 						\
+__extension__({								\
+	memcpy(self->longest + (i << B_BLOCK_EXP), cur_ckp->longest + 	\
+		(i << B_BLOCK_EXP), 1 << B_BLOCK_EXP);			\
+	--r;								\
+})
+
+#define buddy_block_dirty_from_ckp(offset, len)				\
+__extension__({								\
+	uint_fast32_t i = (offset >> B_BLOCK_EXP) + 			\
+		(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));		\
+	uint_fast32_t b_len = len;					\
+	do {								\
+		copy_dirty_block(i);					\
+		i++;							\
+		b_len -= 1U << B_BLOCK_EXP;				\
+	} while(b_len);							\
+})
+
+	uint_fast32_t r = bitmap_count_set(self->dirty, sizeof(self->dirty));
+	const unsigned char *ptr = cur_ckp->longest;
+
+	bitmap_foreach_set(cur_ckp->dirty, sizeof(cur_ckp->dirty),
+		copy_dirty_block);
+
+	const unsigned tree_bit_size =
+		bitmap_required_size(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
+
+	while (r) {
+		cur_ckp = array_get_at(self->logs, --i).c;
+		if (cur_ckp->is_incremental) {
+			ptr = cur_ckp->longest;
+			bitmap_foreach_set(cur_ckp->dirty,
+				sizeof(cur_ckp->dirty), copy_dirty_block);
+		} else {
+			bitmap_foreach_set(self->dirty, tree_bit_size,
+					copy_block_from_ckp);
+			ptr = cur_ckp->base_mem;
+			buddy_tree_visit(cur_ckp->longest, buddy_block_dirty_from_ckp);
+		}
+	}
+
+#undef copy_dirty_block
+#undef copy_block_from_ckp
+#undef buddy_block_dirty_from_ckp
+}
+
+#endif
+
 struct mm_checkpoint *checkpoint_full_take(const struct mm_state *self)
 {
-	struct mm_checkpoint *ret = ckpt_alloc(self->used_mem);
+	struct mm_checkpoint *ret = mm_alloc(offsetof(struct mm_checkpoint, base_mem) + self->used_mem);
+	ret->is_incremental = false;
+#ifdef ROOTSIM_INCREMENTAL
+	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
+#endif
 
 	ret->used_mem = self->used_mem;
 	memcpy(ret->longest, self->longest, sizeof(ret->longest));

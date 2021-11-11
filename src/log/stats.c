@@ -146,6 +146,9 @@ void stats_global_time_take(enum stats_global_type this_stat)
 void stats_global_init(void)
 {
 	stats_glob_cur.timestamps[STATS_GLOBAL_START] = timer_value(sim_start_ts);
+	if(global_config.stats_file == NULL)
+		return;
+
 	stats_glob_cur.threads_count = global_config.n_threads;
 	if(mem_stat_setup() < 0)
 		logger(LOG_ERROR, "Unable to extract memory statistics!");
@@ -161,6 +164,9 @@ void stats_global_init(void)
  */
 void stats_init(void)
 {
+	if(global_config.stats_file == NULL)
+		return;
+
 	stats_tmps[rid] = io_file_tmp_get();
 	setvbuf(stats_tmps[rid], NULL, _IOFBF, STATS_BUFFER_ENTRIES * sizeof(stats_cur));
 }
@@ -286,6 +292,14 @@ void stats_take(enum stats_thread_type this_stat, unsigned c)
 
 void stats_on_gvt(simtime_t gvt)
 {
+	if(global_config.log_level != LOG_SILENT && !rid && !nid) {
+		printf("\rVirtual time: %lf", gvt);
+		fflush(stdout);
+	}
+
+	if(global_config.stats_file == NULL)
+		return;
+
 	stats_cur.s[STATS_REAL_TIME_GVT] = timer_value(sim_start_ts);
 
 	file_write_chunk(stats_tmps[rid], &stats_cur, sizeof(stats_cur));
@@ -297,14 +311,6 @@ void stats_on_gvt(simtime_t gvt)
 	struct stats_node stats_node_cur = {.gvt = gvt, .rss = mem_stat_rss_current_get()};
 	file_write_chunk(stats_node_tmp, &stats_node_cur, sizeof(stats_node_cur));
 	memset(&stats_node_cur, 0, sizeof(stats_node_cur));
-
-	if(nid != 0)
-		return;
-
-	if(global_config.log_level != LOG_SILENT) {
-		printf("\rVirtual time: %lf", gvt);
-		fflush(stdout);
-	}
 }
 
 void stats_dump(void)
