@@ -10,8 +10,8 @@ if(DOXYGEN_FOUND)
     set(DOXYGEN_USE_MDFILE_AS_MAINPAGE ../README.md)
     set(DOXYGEN_INPUT_FILTER ../scripts/doxygen_spdx_filter.py)
     doxygen_add_docs(doc
-            "../src"
-            "../README.md"
+            "./src"
+            "./README.md"
             ALL
             COMMENT "Generate documentation")
 endif()
