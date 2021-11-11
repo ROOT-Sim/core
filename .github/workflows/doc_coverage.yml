@@ -13,6 +13,8 @@ jobs:
         uses: ROOT-Sim/ci-actions/init@master
       - name: Generate Documentation
         uses: ROOT-Sim/ci-actions/docs@master
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
       - name: Documentation Coverage
         uses: ROOT-Sim/ci-actions/docs-coverage@master
         with:
