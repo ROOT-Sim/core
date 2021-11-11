@@ -17,7 +17,6 @@ jobs:
         uses: ROOT-Sim/ci-actions/docs-coverage@master
         with:
           build-path: docs
-          src-path: src
       - name: Comment PR
         uses: actions/github-script@v3
         with:
