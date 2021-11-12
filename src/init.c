@@ -21,7 +21,7 @@
 #include <parallel/parallel.h>
 
 /// The global configuration of the simulation, passed by the model
-struct simulation_configuration global_config;
+struct simulation_configuration global_config = {0};
 
 /**
  * @brief Pretty prints ROOT-Sim current configuration
