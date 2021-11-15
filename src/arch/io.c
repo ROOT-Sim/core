@@ -36,13 +36,6 @@
 
 #ifdef __POSIX
 
-#include <unistd.h>
-
-bool io_terminal_can_colorize(void)
-{
-	return isatty(STDERR_FILENO);
-}
-
 void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 {
 	time_t t = time(NULL);
@@ -63,19 +56,6 @@ FILE *io_file_tmp_get(void)
 #include <io.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
-bool io_terminal_can_colorize(void)
-{
-	HANDLE term = GetStdHandle(STD_ERROR_HANDLE);
-	if(term == NULL || term == INVALID_HANDLE_VALUE)
-		return false;
-
-	DWORD cmode;
-	if(!GetConsoleMode(term, &cmode))
-		return false;
-
-	return SetConsoleMode(term, cmode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-}
 
 void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 {

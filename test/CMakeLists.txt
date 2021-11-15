@@ -6,7 +6,7 @@ function(test_program name)
     add_executable(test_${name} ${ARGN})
     target_link_libraries(test_${name} rscore)
     add_test(NAME test_${name} COMMAND test_${name})
-    set_tests_properties(test_${name} PROPERTIES TIMEOUT 50)
+    set_tests_properties(test_${name} PROPERTIES TIMEOUT 60)
 endfunction()
 
 test_program(load core/load.c)

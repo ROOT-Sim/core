@@ -12,7 +12,7 @@
 
 struct simulation_configuration conf = {
     .lps = N_LPS,
-    .n_threads = 4,
+    .n_threads = 2,
     .termination_time = 0.0,
     .gvt_period = 1000,
     .log_level = LOG_SILENT,
