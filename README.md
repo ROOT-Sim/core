@@ -1,4 +1,7 @@
-# The ROme OpTimistic Simulator (ROOT-Sim) 3.0.0
+# ROOT-Sim core 3.0.0
+
+*Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/)
+Research Group*
 
 [![Build Status](https://github.com/ROOT-Sim/core/workflows/ROOT-Sim%20core%20CI/badge.svg)](https://github.com/ROOT-Sim/core/actions)
 [![codecov.io](https://codecov.io/gh/ROOT-Sim/branch/master/graphs/badge.svg)](https://codecov.io/gh/ROOT-Sim/core)
@@ -8,65 +11,73 @@
 [![GitHub](https://img.shields.io/github/license/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/blob/master/LICENSES/GPL-3.0-only.txt)
 [![REUSE Compliance Check](https://github.com/ROOT-Sim/core/actions/workflows/reuse_check.yml/badge.svg)](https://github.com/ROOT-Sim/core/actions/workflows/reuse_check.yml)
 
-*Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/) Research Group*
-
 ----------------------------------------------------------------------------------------
 
-The ROme OpTimistic Simulator is an x86-64 Open Source, distributed multithreaded parallel simulation library developed using C/POSIX technology. It transparently supports all the mechanisms associated with parallelization and distribution of workload across the nodes (e.g., mapping of simulation objects on different kernel instances) and optimistic synchronization (e.g., state recoverability).
-Distributed simulations rely on MPI3. In particular, global synchronization across the different nodes relies on asynchronous MPI primitives, for increased efficiency.
 
-The programming model supported by ROOT-Sim allows the simulation model developer  to use a simple application-callback function named `ProcessEvent()` as the event handler, whose parameters determine which simulation object is currently taking control for processing its next event, and where the state of this object is located in memory.  An object is a data structure, whose state can be scattered on dynamically allocated memory chunks, hence the memory address passed to the callback locates a top level data structure implementing the object state-layout.
+## The ROme OpTimistic Simulator
 
-ROOT-Sim's development started as a research project late back in 1987, and is currently maintained by the High Performance and Dependable Computing Systems group, a joint research group between Sapienza, University of Rome and University of Rome "Tor Vergata".
+The ROme OpTimistic Simulator is an open source, distributed and parallel simulation framework developed using C/POSIX
+technology. It transparently supports all the mechanisms associated with parallelization and distribution of workload
+across the nodes (e.g., mapping of simulation objects on different kernel instances) and optimistic synchronization (
+e.g., state recoverability). Distributed simulations rely on MPI3. In particular, global synchronization across the
+different nodes relies on asynchronous MPI primitives, for increased efficiency.
 
-## Dependencies
+The programming model supported by ROOT-Sim allows the simulation model developer to use a simple application-callback
+function named `ProcessEvent()` as the event handler, whose parameters determine which simulation object is currently
+taking control for processing its next event, and where the state of this object is located in memory. An object is a
+data structure, whose state can be scattered on dynamically allocated memory chunks, hence the memory address passed to
+the callback locates a top level data structure implementing the object state-layout.
 
-To build the project you need a C11 compiler such as GCC 8 or a later version, and the Meson build system.
+ROOT-Sim's development started as a research project late back in 1987, and is currently maintained by the High
+Performance and Dependable Computing Systems group, research group of the University of Rome "Tor Vergata".
+
+
+## ROOT-Sim Core
+
+This repository keeps the sources of the ROOT-Sim core: this is the fundamental library that implements the largest
+part of the simulation algorithms used in the simulation framework.
+
+The core can be built and used as a stand-alone low-level library writing C code, or it can be used within other
+projects, such as [cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim), i.e. the C/C++ version of the simulation library. 
+
+## Dependencies and platforms
+
+The core successfully compiles on x86 and ARM architectures, using either GCC or Clang compilers, on Linux, Windows,
+and macOS.
+A compiler supporting the C11 standard is required, such as GCC 8 or later. MSVC on Windows does not properly implement
+the full C11 standard (e.g., `stdatomic.h` is not provided), and cannot be therefore used to build the project. 
+
+MPI is a madatory dependency of the project, used to support simulations run on distributed systems. 
+The core is continuously tested against the following MPI implementations:
+* OpenMPI
+* MPICH
+* Microsoft MPI
+
+Any of the three is required to build the project. A full MPI3 implementation, supporting multithreading, is necessary.
+
 
 ## Building and installing
 
-Run:
+To build the project, run:
 
 ```bash
-meson build -Dprefix={installdir}
+mkdir build
 cd build
-ninja test
-ninja install
+cmake -DCMAKE_C_COMPILER=gcc ..
+make
 ```
 
-where `{installdir}` is your preferred installation directory expressed as an absolute path.\
-Alternatively you can skip the `-Dprefix` altogether: ROOT-Sim will be installed in your system directories.
-
-## Compile and run a model
-
-ROOT-Sim ships with two sample models in the `models` folder of the project: `pcs` and `phold`. For example, to compile the `pcs` model simply run:
+You can specify a different compiler using the `-DCMAKE_C_COMPILER=` flag.
+To run the test suite (which includes a correctness test), run in the `build` folder:
 
 ```bash
-cd models/pcs
-{installdir}/bin/rootsim-cc *.c
+ctest
 ```
 
-If you installed ROOT-Sim system-wide the second command becomes simply:
+## Compiling and running a model
 
-```bash
-rootsim-cc *.c -o model
-```
-
-To test the correctness of the model, it can be run sequentially, typing:
-
-```bash
-./model --serial --lp <number of required LPs> This allows to spot errors in the implementation more easily.
-```
-
-Then, to run it in parallel, type:
-```bash
-./model --wt <number of desired threads> --lp <number of required LPs>
-```
-
-To run in a distributed environment, you can use standard MPI commands, such as:
-
-```bash
-mpiexec -n 2 --hostfile hosts --map-by node ./model --wt 2 --lp 16
-```
-
-This command runs the simulation model on two nodes (`-n 2`) specified in the hosts file. Each node uses two concurrent threads (`--wt 2`). The simulation involves 16 total Logical Processes (`--lp 16`).
+The ROOT-Sim core is not expected to be used directly to run models (see, for example,
+[cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim)). Nevertheless, an implementation of a "low-level" model
+can be located in `test\integration`.
+The test can be compiled using the standard `mpicc` compiler, linking against `librscore` and launching either
+locally or using `mpiexec` to run on multiple nodes.
