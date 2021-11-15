@@ -20,7 +20,7 @@ struct simulation_configuration conf = {
     .ckpt_interval = 10,
     .prng_seed = 0,
     .core_binding = 0,
-    .serial = true,
+    .serial = false,
     .dispatcher = ProcessEvent,
     .committed = CanEnd,
 };
@@ -29,10 +29,6 @@ int main(void)
 {
 	init();
 
-	RootsimInit(&conf);
-	test("Correctness test (serial)", RootsimRun);
-
-	conf.serial = false;
 	RootsimInit(&conf);
 	test("Correctness test (parallel)", RootsimRun);
 
