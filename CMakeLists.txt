@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 project("ROOT-Sim core" LANGUAGES C)
 set(PROJECT_VERSION 3.0.0-alpha.3)
 set(PROJECT_DESCRIPTION "A General-Purpose Multithreaded Parallel/Distributed Simulation Library")
-set(CMAKE_VERBOSE_MAKEFILE ON)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_definitions(-DROOTSIM_VERSION=${PROJECT_VERSION})
 
@@ -40,7 +40,7 @@ set(srcs
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
-#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
 find_package(Threads REQUIRED)
 find_package(MPI REQUIRED)
@@ -48,6 +48,7 @@ find_package(MPI REQUIRED)
 if(MSVC)
     message(FATAL_ERROR "You are using MSVC compiler, that does not properly implement C11. Please consider switching to clang")
 endif()
+
 add_compile_options(${TARGET_NAME} ${MPI_C_COMPILE_FLAGS})
 link_libraries(${MPI_C_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 if(NOT WIN32)
