@@ -42,7 +42,7 @@
 
 #ifndef CACHE_LINE_SIZE // TODO: calculate and inject at build time
 /// The size of a cpu cache line used to align some data structures in order to avoid false sharing
-#define CACHE_LINE_SIZE 128
+#define CACHE_LINE_SIZE 64
 #endif
 
 #ifndef _MSC_VER
