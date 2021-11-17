@@ -39,6 +39,7 @@ set(srcs
         )
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
@@ -46,7 +47,7 @@ find_package(Threads REQUIRED)
 find_package(MPI REQUIRED)
 
 if(MSVC)
-    message(FATAL_ERROR "You are using MSVC compiler, that does not properly implement C11. Please consider switching to clang")
+    message(FATAL_ERROR "You are using the MSVC compiler, which does not properly implement C11. Please consider switching to clang.")
 endif()
 
 add_compile_options(${TARGET_NAME} ${MPI_C_COMPILE_FLAGS})
