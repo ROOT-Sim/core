@@ -4,7 +4,7 @@
  * @brief Message queue datatype
  *
  * This is the message queue for the parallel runtime.
- * The design is pretty simple. A queue for n threads is composed by a vector of
+ * The design is pretty simple. A queue for n threads is composed of a vector of
  * n simpler private thread queues plus n public buffers. If thread t1 wants to
  * send a message to thread t2 it puts a message in its buffer. Insertions are
  * then cheap, while extractions simply empty the buffer into the private queue.
