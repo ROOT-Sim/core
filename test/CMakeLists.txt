@@ -10,7 +10,7 @@ function(test_program name)
 endfunction()
 
 test_program(load core/load.c)
-#test_program(sync core/sync.c)
+test_program(sync core/sync.c)
 test_program(numerical lib/numerical.c)
 test_program(correctness_serial integration/serial.c integration/model/application.c integration/model/functions.c integration/model/output_256.c)
 test_program(correctness_parallel integration/parallel.c integration/model/application.c integration/model/functions.c integration/model/output_256.c)

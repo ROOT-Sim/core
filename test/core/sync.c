@@ -1,19 +1,17 @@
 /**
- * @file test/core/synchronize.c
+ * @file test/core/sync.c
  *
  * @brief Test: synchronization primitives test
- * @todo test the spinlock as well
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
+#include <stdatomic.h>
+#include <stdio.h>
 #include <test.h>
 
 #include <core/core.h>
 #include <core/sync.h>
-
-#include <stdatomic.h>
-
 
 #define N_THREADS 16
 #define REPS_COUNT 100000
@@ -24,11 +22,11 @@ static mrswlock_t rw_lock;
 static unsigned k = 0;
 static unsigned d = 0;
 
-_Static_assert(REPS_COUNT % 5 == 0, "Spinlock test is not correct");
+_Static_assert(REPS_COUNT % 5 == 0, "REPS_COUNT must be a multiple of 5 for the spinlock test to work.");
 
-static thr_ret_t THREAD_CALL_CONV sync_test(void *null)
+static thr_ret_t THREAD_CALL_CONV sync_barrier_test(void *tid_ptr)
 {
-	(void)null;
+	unsigned tid = *(unsigned *) tid_ptr;
 	unsigned long long ret = 0;
 	unsigned j = REPS_COUNT;
 	while(j--) {
@@ -36,23 +34,33 @@ static thr_ret_t THREAD_CALL_CONV sync_test(void *null)
 		sync_thread_barrier();
 		unsigned val = atomic_load_explicit(&counter, memory_order_relaxed);
 		sync_thread_barrier();
-		ret -= (int)(val % N_THREADS);
+		printf("[%u] Read counter: %u\n", tid, val);
+		ret -= (int) (val % N_THREADS);
 	}
 
-	sync_thread_barrier();
+	return (thr_ret_t) ret;
+}
 
-	j = REPS_COUNT;
+static thr_ret_t THREAD_CALL_CONV spinlock_test(void *tid_ptr)
+{
+	unsigned tid = *(unsigned *) tid_ptr;
+	unsigned long long ret = 0;
+	unsigned j = REPS_COUNT;
+
 	while(j--) {
 		spin_lock(&spin);
+		printf("[%u] Taken spinlock\n", tid);
 		switch(k % 5) {
 			case 0:
+					__attribute__((fallthrough));
 			case 2:
 				k += 1;
-				__attribute__((fallthrough));
+					__attribute__((fallthrough));
 			case 4:
 				k += 1;
 				break;
 			case 3:
+					__attribute__((fallthrough));
 			case 1:
 				k += 5;
 				break;
@@ -60,35 +68,47 @@ static thr_ret_t THREAD_CALL_CONV sync_test(void *null)
 				__builtin_unreachable();
 		}
 		spin_unlock(&spin);
+		printf("[%u] Released spinlock\n", tid);
 	}
 
 	sync_thread_barrier();
 	ret -= k != ((REPS_COUNT * 5 * N_THREADS + 2) / 3);
-	sync_thread_barrier();
 
-	j = REPS_COUNT;
+	return (thr_ret_t) ret;
+}
+
+static thr_ret_t THREAD_CALL_CONV mrswlock_test(void *tid_ptr)
+{
+	unsigned tid = *(unsigned *) tid_ptr;
+	unsigned long long ret = 0;
+	unsigned j = REPS_COUNT;
+
+	rid = tid;
+
 	while(j--) {
 		mrswlock_wlock(&rw_lock, (int)N_THREADS);
+		printf("[%u] Locking RW lock in write mode\n", tid);
 		switch(d % 5) {
-			case 0:
+			case 0: __attribute__((fallthrough));
 			case 2:
 				d += 1;
-				/* fallthrough */
+				__attribute__((fallthrough));
 			case 4:
 				d += 1;
 				break;
-			case 3:
+			case 3: __attribute__((fallthrough));
 			case 1:
 				d += 5;
 				break;
 			default:
 				__builtin_unreachable();
 		}
+		printf("[%u] Unlocking RW lock in write mode\n", tid);
 		mrswlock_wunlock(&rw_lock, N_THREADS);
 	}
 
 	sync_thread_barrier();
-	ret -= d != k;
+	ret -= d != ((REPS_COUNT * 5 * N_THREADS + 2) / 3);
 	sync_thread_barrier();
 	d = 0;
 	k = 0;
@@ -119,7 +139,7 @@ static thr_ret_t THREAD_CALL_CONV sync_test(void *null)
 void foo() {}
 
 struct simulation_configuration conf = {
-    .lps = 16,
+    .lps = N_THREADS,
     .n_threads = N_THREADS,
     .dispatcher = (ProcessEvent_t)foo,
     .committed = (CanEnd_t)foo,
@@ -131,9 +151,10 @@ int main(void)
 	init();
 
 	RootsimInit(&conf);
+	parallel_test("Testing synchronization barrier", N_THREADS, sync_barrier_test);
+	parallel_test("Testing spinlock", N_THREADS, spinlock_test);
 	mrswlock_init(&rw_lock, N_THREADS);
-
-	parallel_test("Testing synchronization barrier", N_THREADS, sync_test);
+	parallel_test("Testing mrswlock", N_THREADS, mrswlock_test);
 
 	finish();
 }
