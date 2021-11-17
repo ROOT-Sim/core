@@ -18,8 +18,11 @@
 /// Per-LP structure for core libraries
 struct lib_ctx {
 	// random library
+	/// The current seed
 	uint64_t rng_s[4];
+	/// Normal deviates are computed in pairs. This member keeps the second generated pair.
 	double unif;
+	/// This flag tells whether unif member is keeping a valid deviate.
 	bool has_normal;
 	// todo remove
 	void *state_s;

@@ -12,12 +12,6 @@
 #include <arch/io.h>
 
 /**
- * @fn io_terminal_can_colorize(void)
- * @brief Determines if stdout supports colored text
- * @return true if colors escape sequences can be used, false otherwise
- */
-
-/**
  * @fn io_local_time_get(char res[IO_TIME_BUFFER_LEN])
  * @brief Fills in a formatted string of the current time
  * @param res a pointer to a memory area with at least IO_TIME_BUFFER_LEN chars

@@ -44,10 +44,10 @@ static __thread enum thread_phase thread_phase = thread_phase_idle;
 static timer_uint gvt_timer;
 static simtime_t reducing_p[MAX_THREADS];
 static __thread simtime_t current_gvt;
-static _Atomic(rid_t) c_a = 0;
-static _Atomic(rid_t) c_b = 0;
+static _Atomic rid_t c_a = 0;
+static _Atomic rid_t c_b = 0;
 
-static _Atomic(nid_t) gvt_nodes;
+static _Atomic nid_t gvt_nodes;
 
 __thread _Bool gvt_phase;
 __thread uint32_t remote_msg_seq[2][MAX_NODES];

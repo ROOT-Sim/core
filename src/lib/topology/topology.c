@@ -77,11 +77,20 @@ struct topology_t *TopologyInit(enum _topology_geometry_t geometry, unsigned int
 	return topology;
 }
 
+/**
+ * @brief Count the regions in a topology
+ * @param topology the topology
+ * @return the number of regions
+ */
 unsigned long long RegionsCount(const struct topology_t *topology)
 {
 	return topology->regions_cnt;
 }
 
+/**
+ * @brief Get the number of directions
+ * @return the number of directions
+ */
 unsigned long long DirectionsCount(const struct topology_t *topology)
 {
 	switch(topology->geometry) {
@@ -102,6 +111,13 @@ unsigned long long DirectionsCount(const struct topology_t *topology)
 	__builtin_unreachable();
 }
 
+/**
+ * @brief Get a receiver LP
+ * @param topology the topology
+ * @param from the ID of the LP from where to compute the receiver
+ * @param direction the direction
+ * @return the ID of an LP, or DIRECTION_INVALID upon error
+ */
 lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direction_t direction)
 {
 	const lp_id_t sender = from;
@@ -221,6 +237,11 @@ lp_id_t GetReceiver(const struct topology_t *topology, lp_id_t from, enum _direc
 	return DIRECTION_INVALID;
 }
 
+/**
+ * @brief Find a received
+ * @param topology the topology
+ * @return the ID of the receiver.
+ */
 lp_id_t FindReceiver(const struct topology_t *topology)
 {
 	// Consider the degenerate case of a run with one single LP

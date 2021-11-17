@@ -24,6 +24,7 @@
 #include <stdalign.h>
 #include <stdatomic.h>
 
+/// Determine an ordering between two elements in a queue
 #define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && (ma).m->raw_flags > (mb).m->raw_flags))
 
 /// An element in the message queue

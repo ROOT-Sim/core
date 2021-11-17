@@ -29,13 +29,18 @@ static simtime_t current_evt_time;
 void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
     unsigned payload_size);
 
+/**
+ * @brief Initialize the serial model
+ *
+ * This function schedules a model-wide MODEL_INIT message, to initialize the model.
+ */
 void serial_model_init(void)
 {
 	global_config.dispatcher(0, 0, MODEL_INIT, NULL, 0, NULL);
 }
 
 /**
- * @brief Initializes the serial simulation environment
+ * @brief Initialize the serial simulation environment
  */
 static void serial_simulation_init(void)
 {

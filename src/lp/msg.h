@@ -38,10 +38,10 @@ struct lp_msg {
 		/// The message unique id, used for inter-node anti messages
 		uint32_t raw_flags;
 	};
-#if LOG_LEVEL <= LOG_DEBUG
+	/// The sender of the message
 	lp_id_t send;
+	/// The send time of the message
 	simtime_t send_t;
-#endif
 	/// The message sequence number
 	uint32_t m_seq;
 	/// The message type, a user controlled field

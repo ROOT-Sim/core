@@ -20,6 +20,9 @@
 #include <serial/serial.h>
 #include <parallel/parallel.h>
 
+/// A flag to check if the core library has been initialized correctly
+static bool configuration_done = false;
+
 /// The global configuration of the simulation, passed by the model
 struct simulation_configuration global_config = {0};
 
@@ -64,6 +67,15 @@ static void print_config(void)
 	fflush(stderr);
 }
 
+/**
+ * @brief Initialize the core library
+ *
+ * This function must be invoked so as to initialize the core. The structure passed to this function is
+ * copied into a library variable, that is used by the core to support the simulation run.
+ *
+ * @param conf A pointer to a struct simulation_configuration used to configure the core library.
+ * @return zero if the configuration is successful, non-zero otherwise.
+ */
 int RootsimInit(struct simulation_configuration *conf)
 {
 	memcpy(&global_config, conf, sizeof(struct simulation_configuration));
@@ -87,12 +99,26 @@ int RootsimInit(struct simulation_configuration *conf)
 	if(global_config.termination_time == 0)
 		global_config.termination_time = SIMTIME_MAX;
 
+	// Keep track of the successful configuration
+	configuration_done = true;
+
 	return 0;
 }
 
+/**
+ * @brief Start the simulation
+ *
+ * This function starts the simulation. It must be called *after* having initialized the ROOT-Sim core
+ * by calling RootsimInit(), otherwise the invokation will fail.
+ *
+ * @return zero on successful simulation completion, non-zero otherwise.
+ */
 int RootsimRun(void)
 {
 	int ret;
+
+	if(!configuration_done)
+		return -1;
 
 	if(global_config.log_level > LOG_SILENT)
 		print_config();

@@ -16,6 +16,11 @@
 
 #include <math.h>
 
+/**
+ * @brief Initalize the rollbackable RNG library of the current LP
+ * @todo Implement a scheme to support deterministic seed automatic selection
+ * @bug if global_config.prng_seed is zero, automatic seed initialization should be performed.
+ */
 void random_lib_lp_init(void)
 {
 	uint64_t seed = global_config.prng_seed;
@@ -25,6 +30,10 @@ void random_lib_lp_init(void)
 	ctx->has_normal = false;
 }
 
+/**
+ * @brief Return a random value in [0,1] according to a uniform distribution
+ * @return The random number
+ */
 double Random(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
@@ -44,6 +53,10 @@ double Random(void)
 	return ret;
 }
 
+/**
+ * @brief Return a random 64-bit value
+ * @return The random number
+ */
 uint64_t RandomU64(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();

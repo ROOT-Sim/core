@@ -12,13 +12,14 @@
 
 /// A restorable checkpoint of the memory context assigned to a single LP
 struct mm_checkpoint { // todo only log longest[] if changed, or incrementally
+	/// A flag discriminating whether this is an incremental checkpoint or not
 	_Bool is_incremental;
 	/// The checkpoint of the dirty bitmap
 	block_bitmap dirty [
 		bitmap_required_size(
-		// this tracks writes to the allocation tree
+		// this tracks writes to the allocation tree...
 			(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
-		// while this tracks writes to the actual memory buffer
+		// ...while this tracks writes to the actual memory buffer
 			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
 		)
 	];
