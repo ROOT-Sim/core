@@ -6,27 +6,22 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <test.h>
-#include <test_rng.h>
-
-#include <datatypes/bitmap.h>
-
 #include <memory.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
-#define THREAD_CNT 6
+#include <test.h>
+
+#include <datatypes/bitmap.h>
+
 #define THREAD_REPS 100000
 #define BITMAP_ENTRIES 10000
-
-extern __thread rid_t rid;
 
 static int bitmap_test(void)
 {
 	int ret = 0;
-	test_rng_state rng_state;
-	lcg_init(rng_state, (rid + 1) * 1713);
 
 	size_t b_size = bitmap_required_size(BITMAP_ENTRIES);
 	block_bitmap *b = malloc(b_size);
@@ -37,8 +32,8 @@ static int bitmap_test(void)
 
 	unsigned i = THREAD_REPS;
 	while (i--) {
-		unsigned e = lcg_random_u(rng_state) % BITMAP_ENTRIES;
-		bool v = lcg_random(rng_state) > 0.5;
+		unsigned e = rand() % BITMAP_ENTRIES;
+		bool v = (double)rand() / RAND_MAX > 0.5;
 		if (v)
 			bitmap_set(b, e);
 		else
@@ -70,7 +65,11 @@ __extension__({			\
 	return ret;
 }
 
-const struct test_config test_config = {
-	.threads_count = THREAD_CNT,
-	.test_fnc = bitmap_test
-};
+int main(void)
+{
+	init();
+	srand(time(NULL));
+
+	test("Testing bitmap implementation", bitmap_test);
+	finish();
+}
