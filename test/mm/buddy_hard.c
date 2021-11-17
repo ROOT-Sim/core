@@ -51,12 +51,13 @@ static void allocation_init(struct alc *alc)
 	unsigned c = ((lcg_random_u(rng_state) % MAX_ALLOC_E) + 1);
 
 	alc->ptr = malloc_mt(c * sizeof(*alc->ptr));
-	if (alc->ptr == NULL)
+	if(alc->ptr == NULL) {
 		abort();
+	}
 	alc->c = c;
 	__write_mem(alc->ptr, alc->c * sizeof(unsigned));
 
-	while (c--) {
+	while(c--) {
 		unsigned v = lcg_random_u(rng_state);
 		alc->ptr[c] = v;
 		alc->data[c] = v;
@@ -69,8 +70,9 @@ static struct alc *allocation_all_init(void)
 	memset(ret, 0, sizeof(*ret));
 
 	unsigned i = MAX_ALLOC_CNT;
-	while (i--)
+	while(i--) {
 		allocation_init(&ret[i]);
+	}
 
 	return ret;
 }
@@ -78,8 +80,9 @@ static struct alc *allocation_all_init(void)
 static void allocation_all_fini(struct alc *alc)
 {
 	unsigned i = MAX_ALLOC_CNT;
-	while (i--)
+	while(i--) {
 		free_mt(alc[i].ptr);
+	}
 	free(alc);
 }
 
@@ -90,11 +93,12 @@ static void allocation_partial_write(struct alc *alc, unsigned p)
 	memcpy(alc, alc - MAX_ALLOC_CNT, MAX_ALLOC_CNT * sizeof(*alc));
 
 	unsigned w = lcg_random_u(rng_state) % (MAX_ALLOC_CNT / 2);
-	while (w--) {
+	while(w--) {
 		unsigned i = lcg_random_u(rng_state) % MAX_ALLOC_CNT;
 
-		if (alc[i].ptr == NULL)
+		if(alc[i].ptr == NULL) {
 			continue;
+		}
 
 		unsigned c = alc[i].c;
 		unsigned e = lcg_random_u(rng_state) % (c + 1);
@@ -102,7 +106,7 @@ static void allocation_partial_write(struct alc *alc, unsigned p)
 
 		__write_mem(alc[i].ptr + l, (e - l) * sizeof(unsigned));
 
-		for (unsigned j = l; j < e; ++j) {
+		for(unsigned j = l; j < e; ++j) {
 			unsigned v = lcg_random_u(rng_state);
 			alc[i].ptr[j] = v;
 			alc[i].data[j] = v;
@@ -110,9 +114,9 @@ static void allocation_partial_write(struct alc *alc, unsigned p)
 	}
 
 	w = lcg_random_u(rng_state) % (MAX_ALLOC_CNT / 6);
-	while (w--) {
+	while(w--) {
 		unsigned i = lcg_random_u(rng_state) % MAX_ALLOC_CNT;
-		if (alc[i].ptr == NULL) {
+		if(alc[i].ptr == NULL) {
 			allocation_init(&alc[i]);
 		} else {
 			free_mt(alc[i].ptr);
@@ -127,14 +131,15 @@ static bool allocation_check(struct alc *alc, unsigned p)
 	alc += p * MAX_ALLOC_CNT;
 
 	unsigned i = MAX_ALLOC_CNT;
-	while (i--) {
-		if (alc[i].ptr == NULL) {
-			if (alc[i].c != 0)
+	while(i--) {
+		if(alc[i].ptr == NULL) {
+			if(alc[i].c != 0) {
 				return true;
+			}
 		} else {
-			if (memcmp(alc[i].ptr, alc[i].data,
-					alc[i].c * sizeof(unsigned)))
+			if(memcmp(alc[i].ptr, alc[i].data, alc[i].c * sizeof(unsigned))) {
 				return true;
+			}
 		}
 	}
 	return false;
@@ -142,27 +147,31 @@ static bool allocation_check(struct alc *alc, unsigned p)
 
 static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned down)
 {
-	for (unsigned i = c + 1; i <= up; ++i) {
+	for(unsigned i = c + 1; i <= up; ++i) {
 		allocation_partial_write(alc, i);
-		if (allocation_check(alc, i))
+		if(allocation_check(alc, i)) {
 			return true;
-		if (lcg_random(rng_state) < FULL_CHK_P)
+		}
+		if(lcg_random(rng_state) < FULL_CHK_P) {
 			model_allocator_checkpoint_next_force_full();
+		}
 		model_allocator_checkpoint_take(i);
 	}
 
 	up = max(up, c);
 
-	while (1) {
+	while(1) {
 		model_allocator_checkpoint_restore(up);
 
-		if (allocation_check(alc, up))
+		if(allocation_check(alc, up)) {
 			return true;
+		}
 
 		unsigned s = (lcg_random_u(rng_state) % MAX_ALLOC_STEP) + 1;
 
-		if (up <= down + s)
+		if(up <= down + s) {
 			break;
+		}
 		up -= s;
 	}
 
@@ -182,17 +191,19 @@ static int model_allocator_test(void)
 	model_allocator_checkpoint_next_force_full();
 	model_allocator_checkpoint_take(0);
 
-	if (allocation_check(alc, 0))
+	if(allocation_check(alc, 0)) {
 		return -1;
+	}
 
 	unsigned c = 0;
-	for (unsigned j = 0; j < ALLOC_OSCILLATIONS; ++j) {
+	for(unsigned j = 0; j < ALLOC_OSCILLATIONS; ++j) {
 
 		unsigned u = (lcg_random_u(rng_state) % (MAX_ALLOC_PHASES - 1)) + 1;
 		unsigned d = (lcg_random_u(rng_state) % u);
 
-		if (allocation_cycle(alc, c, u, d))
+		if(allocation_cycle(alc, c, u, d)) {
 			return -1;
+		}
 
 		c = d;
 	}
@@ -207,9 +218,3 @@ static int model_allocator_test(void)
 
 	return 0;
 }
-
-const struct test_config test_config = {
-	.threads_count = 4,
-	.test_fnc = model_allocator_test
-};
-

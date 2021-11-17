@@ -1,5 +1,5 @@
 /**
- * @file test/mm/buddy/buddy_test.c
+ * @file test/mm/buddy.c
  *
  * @brief Test: rollbackable buddy system allocator
  *
@@ -8,33 +8,26 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
+#include <stdlib.h>
 #include <test.h>
-#include <test_rng.h>
 
+#include <ROOT-Sim.h>
 #include <lp/lp.h>
 #include <mm/model_allocator.h>
+#include <mm/buddy/buddy.h>
 
-#include <stdlib.h>
-
-#ifndef ROOTSIM_INCREMENTAL
-#define __write_mem(x, y)
-#endif
-
-static __thread test_rng_state rng_state;
-
-__thread struct lp_ctx *current_lp; // needed by the model allocator
-__thread simtime_t current_gvt; // needed by the model allocator
+#define MAX_ALLOCATION 1024
 
 static int block_size_test(unsigned b_exp)
 {
 	unsigned errs = 0;
 	unsigned block_size = 1 << b_exp;
 	unsigned allocations_cnt = 1 << (B_TOTAL_EXP - b_exp);
-	test_rng_state rng_snap_a = rng_state;
+
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
-		allocations[i] = malloc_mt(block_size);
+		allocations[i] = rs_malloc(block_size);
 
 		if (allocations[i] == NULL) {
 			++errs;
@@ -42,37 +35,36 @@ static int block_size_test(unsigned b_exp)
 		}
 
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = lcg_random_u(rng_state);
-			__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
+			allocations[i][j] = (int)(MAX_ALLOCATION * Random());
+			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
 
-	errs += malloc_mt(block_size) != NULL;
+	errs += rs_malloc(block_size) != NULL;
 
 	model_allocator_checkpoint_next_force_full();
 	model_allocator_checkpoint_take(0);
-	test_rng_state rng_snap_b = rng_state;
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = lcg_random_u(rng_state);
-			__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
+			allocations[i][j] = (int)(MAX_ALLOCATION * Random());
+			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
 
-	errs += malloc_mt(block_size) != NULL;
+	errs += rs_malloc(block_size) != NULL;
 
 	model_allocator_checkpoint_take(1);
 
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = lcg_random_u(rng_state);
-			__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
+			allocations[i][j] = (int)(MAX_ALLOCATION * Random());
+			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
 
-	errs += malloc_mt(block_size) != NULL;
+	errs += rs_malloc(block_size) != NULL;
 
 	model_allocator_checkpoint_take(2);
 
@@ -80,55 +72,66 @@ static int block_size_test(unsigned b_exp)
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			errs += allocations[i][j] != lcg_random_u(rng_snap_b);
+			errs += allocations[i][j] != (int)(MAX_ALLOCATION * Random());
 		}
 
-		free_mt(allocations[i]);
+		rs_free(allocations[i]);
 	}
 
 	model_allocator_checkpoint_restore(0);
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			errs += allocations[i][j] != lcg_random_u(rng_snap_a);
+			errs += allocations[i][j] != (int)(MAX_ALLOCATION * Random());
 		}
 
-		free_mt(allocations[i]);
+		rs_free(allocations[i]);
 	}
 
 	free(allocations);
-	return -(!!errs);
+	return -(errs != 0);
 }
 
 static int model_allocator_test(void)
 {
 	current_lp = malloc(sizeof(*current_lp));
-	model_allocator_init();
 	model_allocator_lp_init();
-	lcg_init(rng_state, (rid + 1) * 1713);
 
 	unsigned errs = 0;
 	for (unsigned j = B_BLOCK_EXP; j < B_TOTAL_EXP; ++j) {
 		errs += block_size_test(j) < 0;
 	}
 
-	errs += malloc_mt(0) != NULL;
-	errs += calloc_mt(0, sizeof(uint64_t)) != NULL;
+	errs += rs_malloc(0) != NULL;
+	errs += rs_calloc(0, sizeof(uint64_t)) != NULL;
 
-	free_mt(NULL);
+	rs_free(NULL);
 
-	uint64_t *mem = calloc_mt(1, sizeof(uint64_t));
+	uint64_t *mem = rs_calloc(1, sizeof(uint64_t));
 	errs += *mem;
-	free_mt(mem);
+	rs_free(mem);
 
-	model_allocator_lp_fini();
-	model_allocator_fini();
-	free(current_lp);
-	return -(!!errs);
+	return -(errs != 0);
 }
 
-const struct test_config test_config = {
-	.threads_count = 4,
-	.test_fnc = model_allocator_test
-};
 
+
+int main(void)
+{
+	init();
+	srand(time(NULL));
+
+	// Mock a fake LP
+	struct lp_ctx lp = {0};
+	lp.lib_ctx = malloc(sizeof(*current_lp->lib_ctx));
+	lp.lib_ctx->rng_s[0] = 7319936632422683443ULL;
+	lp.lib_ctx->rng_s[1] = 2268344373199366324ULL;
+	lp.lib_ctx->rng_s[2] = 3443862242366399137ULL;
+	lp.lib_ctx->rng_s[3] = 2366399137344386224ULL;
+	current_lp = &lp;
+
+	test("Testing buddy system", model_allocator_test);
+
+	free(lp.lib_ctx);
+	finish();
+}
