@@ -24,6 +24,7 @@ int main(void)
 {
 	init();
 
+	test_xf("Start simulation with no configuration", RootsimRun);
 	test_xf("LPs not set", RootsimInit, &conf);
 	conf.lps = 1;
 	test_xf("Handler not set", RootsimInit, &conf);
