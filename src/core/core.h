@@ -56,8 +56,6 @@
 #endif
 
 
-/// The type used to represent logical time in the simulation
-typedef double simtime_t;
 /// The maximum value of the logical simulation time, semantically never
 #define SIMTIME_MAX DBL_MAX
 
@@ -70,8 +68,6 @@ typedef double simtime_t;
 /// Maximum number of threads that can be supported
 #define MAX_THREADS (1 << MAX_THREADS_EXP)
 
-/// Used to uniquely identify LPs in the simulation
-typedef uint64_t lp_id_t;
 /// Used to identify in a node the computing resources (threads at the moment)
 typedef unsigned rid_t;
 /// Used to identify MPI nodes in a distributed environment
@@ -87,4 +83,5 @@ extern nid_t n_nodes;
 /// The node identifier of the node
 extern nid_t nid;
 
+extern char *core_version;
 extern struct simulation_configuration global_config;

@@ -14,6 +14,8 @@ __thread rid_t rid;
 nid_t n_nodes = 1;
 nid_t nid;
 
+char *core_version = ROOTSIM_VERSION;
+
 /**
  * @brief API to inject a new event in the simulation
  *
