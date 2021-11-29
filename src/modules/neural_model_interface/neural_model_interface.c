@@ -77,8 +77,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 			// Framework-provided retractable messages -> valid
 			printdbg("[F - MS N%lu] Spiking!\n", me);
 			SendSpike(me, now);
-			
-			if(state->is_probed){
+
+			if(state->is_probed && !silent_processing){
 				printdbg("[F - MS N%lu] Neuron is probed\n", me);
 				ProbeRead_pr(now, me, state->neuron_state);
 			}
@@ -94,8 +94,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned int event, const void* evt
 			
 			printdbg("[F - MSW N%lu] Waking neuron\n", me);
 			NeuronWake_pr(me, now, state->neuron_state);
-			
-			if(state->is_probed){
+
+			if(state->is_probed && !silent_processing){
 				printdbg("[F - MSW N%lu] Neuron is probed\n", me);
 				ProbeRead_pr(now, me, state->neuron_state);
 			}
