@@ -58,8 +58,7 @@
 
 /// The type used to represent logical time in the simulation
 typedef double simtime_t;
-/// The maximum value of the logical simulation time, semantically never
-#define SIMTIME_MAX DBL_MAX
+
 
 /// The maximum number of supported MPI nodes
 /** FIXME: this is used very limitedly. Consider its removal */

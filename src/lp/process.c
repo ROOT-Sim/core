@@ -37,8 +37,10 @@ void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned e
 	struct process_data *proc_p = &current_lp->p;
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
+#ifndef NDEBUG
 	msg->send = current_lp - lps;
 	msg->send_t = proc_p->last_t;
+#endif
 
 	nid_t dest_nid = lid_to_nid(receiver);
 	if(dest_nid != nid) {

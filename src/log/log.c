@@ -47,7 +47,7 @@ void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...)
 	char time_string[IO_TIME_BUFFER_LEN];
 
 	// Check if this invocation should be skipped
-	if(level >= global_config.log_level)
+	if(level < global_config.log_level)
 		return;
 
 	io_local_time_get(time_string);

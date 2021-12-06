@@ -16,12 +16,15 @@
 #pragma once
 
 #include <limits.h>
+#include <float.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 typedef double simtime_t;
+/// The maximum value of the logical simulation time, semantically never
+#define SIMTIME_MAX DBL_MAX
 typedef uint64_t lp_id_t;
 
 typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content,
@@ -51,13 +54,13 @@ extern unsigned Zipf(double skew, unsigned limit);
 
 
 enum log_level {
-	LOG_SILENT, //!< Emit no message during the simulation
 	LOG_TRACE,  //!< The logging level reserved to very low priority messages
 	LOG_DEBUG,  //!< The logging level reserved to useful debug messages
 	LOG_INFO,   //!< The logging level reserved to useful runtime messages
 	LOG_WARN,   //!< The logging level reserved to unexpected, non deal breaking conditions
 	LOG_ERROR,  //!< The logging level reserved to unexpected, problematic conditions
-	LOG_FATAL   //!< The logging level reserved to unexpected, fatal conditions
+	LOG_FATAL,   //!< The logging level reserved to unexpected, fatal conditions
+	LOG_SILENT //!< Emit no message during the simulation
 };
 
 enum _topology_geometry_t {
