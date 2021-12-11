@@ -58,14 +58,8 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 	MPI_Init_thread(argc_p, argv_p, MPI_THREAD_MULTIPLE, &thread_lvl);
 
 	if(thread_lvl < MPI_THREAD_MULTIPLE) {
-		if(thread_lvl < MPI_THREAD_SERIALIZED) {
-			logger(LOG_FATAL, "This MPI implementation does not support threaded access");
-			abort();
-		} else {
-			logger(LOG_FATAL, "This MPI implementation only supports serialized calls: "
-					  "you need to build ROOT-Sim with -Dserialized_mpi=true");
-			abort();
-		}
+		logger(LOG_FATAL, "This MPI implementation does not support threaded access");
+		abort();
 	}
 
 	MPI_Errhandler err_handler;
@@ -141,7 +135,7 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
  * @brief Sends a platform control message to all the nodes, including self
  * @param ctrl the control message to send
  */
-void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl)
+void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
 {
 	MPI_Request req;
 	nid_t i = n_nodes;
@@ -156,7 +150,7 @@ void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl)
  * @param ctrl the control message to send
  * @param dest the id of the destination node
  */
-void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest)
+void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
 {
 	MPI_Request req;
 	MPI_Isend(NULL, 0, MPI_BYTE, dest, ctrl, MPI_COMM_WORLD, &req);
