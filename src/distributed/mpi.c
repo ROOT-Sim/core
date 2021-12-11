@@ -23,7 +23,16 @@
 
 #include <mpi.h>
 
-#define MSG_CTRL_RAW (MSG_CTRL_TERMINATION + 1)
+enum {
+	RS_MSG_TAG = 0,
+	RS_DATA_TAG
+};
+
+static const enum msg_ctrl_code ctrl_msgs[] = {
+	[MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
+	[MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
+	[MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
+};
 
 /**
  * @brief Handles a MPI error
@@ -106,7 +115,7 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	gvt_remote_msg_send(msg, dest_nid);
 
 	MPI_Request req;
-	MPI_Isend(msg, msg_bare_size(msg), MPI_BYTE, dest_nid, 0, MPI_COMM_WORLD, &req);
+	MPI_Isend(msg, msg_bare_size(msg), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 }
 
@@ -127,7 +136,7 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	gvt_remote_anti_msg_send(msg, dest_nid);
 
 	MPI_Request req;
-	MPI_Isend(msg, msg_anti_size(), MPI_BYTE, dest_nid, 0, MPI_COMM_WORLD, &req);
+	MPI_Isend(msg, msg_anti_size(), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 }
 
@@ -137,11 +146,9 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
  */
 void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
 {
-	MPI_Request req;
 	nid_t i = n_nodes;
 	while(i--) {
-		MPI_Isend(NULL, 0, MPI_BYTE, i, ctrl, MPI_COMM_WORLD, &req);
-		MPI_Request_free(&req);
+		mpi_control_msg_send_to(ctrl, i);
 	}
 }
 
@@ -153,7 +160,7 @@ void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
 void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
 {
 	MPI_Request req;
-	MPI_Isend(NULL, 0, MPI_BYTE, dest, ctrl, MPI_COMM_WORLD, &req);
+	MPI_Isend(&ctrl_msgs[ctrl], sizeof(*ctrl_msgs), MPI_BYTE, dest, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 }
 
@@ -174,22 +181,21 @@ void mpi_remote_msg_handle(void)
 		MPI_Message mpi_msg;
 		MPI_Status status;
 
-		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &pending, &mpi_msg, &status);
+		MPI_Improbe(MPI_ANY_SOURCE, RS_MSG_TAG, MPI_COMM_WORLD, &pending, &mpi_msg, &status);
 
-		if(!pending) {
+		if(!pending)
 			return;
-		}
-
-		if(unlikely(status.MPI_TAG)) {
-			MPI_Mrecv(NULL, 0, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-			control_msg_process(status.MPI_TAG);
-			continue;
-		}
 
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		struct lp_msg *msg;
-		if(unlikely(size == msg_anti_size())) {
+		if(unlikely(size <= msg_anti_size())) {
+			if (unlikely(size == sizeof(enum msg_ctrl_code))) {
+				enum msg_ctrl_code c;
+				MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+				control_msg_process(c);
+				continue;
+			}
 			msg = msg_allocator_alloc(0);
 			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
@@ -220,7 +226,7 @@ void mpi_remote_msg_drain(void)
 		MPI_Message mpi_msg;
 		MPI_Status status;
 
-		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &pending, &mpi_msg, &status);
+		MPI_Improbe(MPI_ANY_SOURCE, RS_MSG_TAG, MPI_COMM_WORLD, &pending, &mpi_msg, &status);
 
 		if(!pending)
 			break;
@@ -235,8 +241,8 @@ void mpi_remote_msg_drain(void)
 		MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
 		switch(size) {
-			case 0:
-				control_msg_process(status.MPI_TAG);
+			case sizeof(enum msg_ctrl_code):
+				control_msg_process(*(enum msg_ctrl_code *)msg);
 				break;
 			case msg_anti_size():
 				gvt_remote_anti_msg_receive(msg);
@@ -332,7 +338,7 @@ void mpi_node_barrier(void)
  */
 void mpi_blocking_data_send(const void *data, int data_size, nid_t dest)
 {
-	MPI_Send(data, data_size, MPI_BYTE, dest, MSG_CTRL_RAW, MPI_COMM_WORLD);
+	MPI_Send(data, data_size, MPI_BYTE, dest, RS_DATA_TAG, MPI_COMM_WORLD);
 }
 
 /**
@@ -348,7 +354,7 @@ void *mpi_blocking_data_rcv(int *data_size_p, nid_t src)
 {
 	MPI_Status status;
 	MPI_Message mpi_msg;
-	MPI_Mprobe(src, MSG_CTRL_RAW, MPI_COMM_WORLD, &mpi_msg, &status);
+	MPI_Mprobe(src, RS_DATA_TAG, MPI_COMM_WORLD, &mpi_msg, &status);
 	int data_size;
 	MPI_Get_count(&status, MPI_BYTE, &data_size);
 	char *ret = mm_alloc(data_size);
