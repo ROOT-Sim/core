@@ -53,27 +53,6 @@ void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned e
 	}
 }
 
-
-/**
- * @brief Initialize the global state of the simulation
- *
- * Setup the global state of the model by calling its MODEL_INIT handler
- */
-void process_global_init(void)
-{
-	serial_model_init();
-}
-
-/**
- * @brief Finalize the global state of the simulation
- *
- * Finalize the global state of the model by calling its MODEL_FINI handler
- */
-void process_global_fini(void)
-{
-	global_config.dispatcher(0, 0, MODEL_FINI, NULL, 0, NULL);
-}
-
 /**
  * @brief Initialize the thread-local processing data structures
  */

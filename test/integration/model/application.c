@@ -32,15 +32,11 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		return;
 	}
 
-	if(!state && event_type != LP_INIT && event_type != MODEL_INIT && event_type != MODEL_FINI) {
+	if(!state && event_type != LP_INIT) {
 		puts("[ERROR] Requested to process a weird event!");
 		abort();
 	}
 	switch(event_type) {
-		case MODEL_INIT:
-			crc_table_init();
-			break;
-
 		case LP_INIT:
 			state = rs_malloc(sizeof(lp_state));
 			if(state == NULL)
@@ -105,9 +101,6 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 				break;
 			state->head = allocate_buffer(state, event_content, event_size / sizeof(uint64_t));
 			state->buffer_count++;
-			break;
-
-		case MODEL_FINI:
 			break;
 
 		default:

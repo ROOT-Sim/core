@@ -29,6 +29,8 @@ int main(void)
 {
 	init();
 
+	crc_table_init();
+
 	RootsimInit(&conf);
 	test("Correctness test (serial)", RootsimRun);
 

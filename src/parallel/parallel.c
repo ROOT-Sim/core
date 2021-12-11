@@ -91,7 +91,6 @@ static void parallel_global_init(void)
 {
 	stats_global_init();
 	lib_global_init();
-	process_global_init();
 	lp_global_init();
 	msg_queue_global_init();
 	termination_global_init();
@@ -104,7 +103,6 @@ static void parallel_global_fini(void)
 {
 	msg_queue_global_fini();
 	lp_global_fini();
-	process_global_fini();
 	lib_global_fini();
 	stats_global_fini();
 }

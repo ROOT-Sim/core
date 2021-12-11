@@ -10,6 +10,4 @@
 
 #include <core/core.h>
 
-extern void serial_model_init(void);
-
 extern int serial_simulation(void);

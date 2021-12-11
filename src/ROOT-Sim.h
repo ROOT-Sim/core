@@ -31,7 +31,7 @@ typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, c
     unsigned event_size, void *st);
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
-enum rootsim_event { MODEL_INIT = 65532, LP_INIT, LP_FINI, MODEL_FINI };
+enum rootsim_event {LP_INIT = 65534, LP_FINI};
 
 extern void (*ScheduleNewEvent)(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
     unsigned event_size);
