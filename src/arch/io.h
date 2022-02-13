@@ -13,7 +13,6 @@
 
 #include <arch/platform.h>
 
-#include <stdbool.h>
 #include <stdio.h>
 
 /// The bytes required to store a time string obtained with io_local_time_get()

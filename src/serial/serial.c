@@ -30,16 +30,6 @@ void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned eve
     unsigned payload_size);
 
 /**
- * @brief Initialize the serial model
- *
- * This function schedules a model-wide MODEL_INIT message, to initialize the model.
- */
-void serial_model_init(void)
-{
-	global_config.dispatcher(0, 0, MODEL_INIT, NULL, 0, NULL);
-}
-
-/**
  * @brief Initialize the serial simulation environment
  */
 static void serial_simulation_init(void)
@@ -49,7 +39,6 @@ static void serial_simulation_init(void)
 	msg_allocator_init();
 	heap_init(queue);
 	lib_global_init();
-	serial_model_init();
 
 	ScheduleNewEvent = ScheduleNewEvent_serial;
 
@@ -76,8 +65,6 @@ static void serial_simulation_fini(void)
 		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lps[i].lib_ctx->state_s);
 		lib_lp_fini();
 	}
-
-	global_config.dispatcher(0, 0, MODEL_FINI, NULL, 0, NULL);
 
 	for(array_count_t i = 0; i < array_count(queue); ++i) {
 		msg_allocator_free(array_get_at(queue, i));

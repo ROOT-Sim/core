@@ -37,8 +37,10 @@ void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned e
 	struct process_data *proc_p = &current_lp->p;
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
+#ifndef NDEBUG
 	msg->send = current_lp - lps;
 	msg->send_t = proc_p->last_t;
+#endif
 
 	nid_t dest_nid = lid_to_nid(receiver);
 	if(dest_nid != nid) {
@@ -49,27 +51,6 @@ void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned e
 		msg_queue_insert(msg);
 		array_push(proc_p->p_msgs, mark_msg_sent(msg));
 	}
-}
-
-
-/**
- * @brief Initialize the global state of the simulation
- *
- * Setup the global state of the model by calling its MODEL_INIT handler
- */
-void process_global_init(void)
-{
-	serial_model_init();
-}
-
-/**
- * @brief Finalize the global state of the simulation
- *
- * Finalize the global state of the model by calling its MODEL_FINI handler
- */
-void process_global_fini(void)
-{
-	global_config.dispatcher(0, 0, MODEL_FINI, NULL, 0, NULL);
 }
 
 /**

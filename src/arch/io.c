@@ -25,7 +25,6 @@
  * @return a temporary file, an opaque object to be used in this module
  */
 
-#include <string.h>
 #include <time.h>
 
 #ifdef __POSIX

@@ -15,10 +15,10 @@ struct simulation_configuration conf = {
     .lps = N_LPS,
     .n_threads = 2,
     .termination_time = 0.0,
-    .gvt_period = 1000,
+    .gvt_period = 100000,
     .log_level = LOG_SILENT,
     .stats_file = NULL,
-    .ckpt_interval = 10,
+    .ckpt_interval = 0,
     .prng_seed = 0,
     .core_binding = 0,
     .serial = false,
@@ -35,6 +35,8 @@ static test_ret_t correctness(void *config)
 int main(void)
 {
 	init(0);
+
+	crc_table_init();
 
 	RootsimInit(&conf);
 	test("Correctness test (parallel)", correctness, &conf);

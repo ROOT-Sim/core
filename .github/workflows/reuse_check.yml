@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  build_and_test:
+  reuse_check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkpout repository

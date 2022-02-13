@@ -30,9 +30,6 @@ struct process_data {
 extern void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
     unsigned payload_size);
 
-extern void process_global_init(void);
-extern void process_global_fini(void);
-
 extern void process_init(void);
 extern void process_fini(void);
 

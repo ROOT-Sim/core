@@ -18,7 +18,6 @@ set(srcs
         src/datatypes/msg_queue.c
         src/distributed/control_msg.c
         src/distributed/mpi.c
-        src/distributed/no_mpi.c
         src/gvt/fossil.c
         src/gvt/gvt.c
         src/gvt/termination.c
@@ -42,6 +41,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+set(CMAKE_UNITY_BUILD ON)
+set(CMAKE_UNITY_BUILD_BATCH_SIZE 128)
 
 find_package(Threads REQUIRED)
 find_package(MPI REQUIRED)

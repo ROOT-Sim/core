@@ -18,10 +18,10 @@
 
 #define BASE_PAYLOAD_SIZE 32
 
-#define msg_is_before_serial(ma, mb) ((ma)->dest_t < (mb)->dest_t)
-
 #define msg_is_before(ma, mb)                                                                                          \
-	(msg_is_before_serial(ma, mb) || ((ma)->dest_t == (mb)->dest_t && (ma)->raw_flags > (mb)->raw_flags))
+	((ma)->dest_t < (mb)->dest_t || ((ma)->dest_t == (mb)->dest_t && (ma)->raw_flags > (mb)->raw_flags))
+
+#define msg_is_before_serial(ma, mb) msg_is_before((ma), (mb))
 
 #define msg_bare_size(msg) (offsetof(struct lp_msg, pl) + (msg)->pl_size)
 #define msg_anti_size() (offsetof(struct lp_msg, m_seq) + sizeof(uint32_t))
@@ -38,10 +38,12 @@ struct lp_msg {
 		/// The message unique id, used for inter-node anti messages
 		uint32_t raw_flags;
 	};
+#ifndef NDEBUG
 	/// The sender of the message
 	lp_id_t send;
 	/// The send time of the message
 	simtime_t send_t;
+#endif
 	/// The message sequence number
 	uint32_t m_seq;
 	/// The message type, a user controlled field

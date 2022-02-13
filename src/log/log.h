@@ -13,8 +13,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include <ROOT-Sim.h>
-
 void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...);
 
 /**

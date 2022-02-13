@@ -19,7 +19,6 @@
 #include <arch/platform.h>
 
 #if defined(__POSIX)
-#define _GNU_SOURCE
 #include <pthread.h>
 
 #define THREAD_CALL_CONV

@@ -285,11 +285,25 @@ void stats_global_fini(void)
 	fclose(stats_node_tmp);
 }
 
+/**
+ * @brief Sum a sample to a statistics value
+ *
+ * @param this_stat the statistics type to add the sample to
+ * @param c the sample to sum
+ */
 void stats_take(enum stats_thread_type this_stat, unsigned c)
 {
 	stats_cur.s[this_stat] += c;
 }
 
+/**
+ * @brief Perform GVT related activities for the statistics subsystem
+ *
+ * @param gvt the time value of the current GVT
+ *
+ * Dumps accumulated statistics to the file and resets the statistics buffer to
+ * ready up for the following processing phase
+ */
 void stats_on_gvt(simtime_t gvt)
 {
 	if(global_config.log_level != LOG_SILENT && !rid && !nid) {
