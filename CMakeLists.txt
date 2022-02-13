@@ -6,7 +6,7 @@ set(PROJECT_VERSION 3.0.0-alpha.3)
 set(PROJECT_DESCRIPTION "A General-Purpose Multithreaded Parallel/Distributed Simulation Library")
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_definitions(-DROOTSIM_VERSION=${PROJECT_VERSION})
+add_definitions(-DROOTSIM_VERSION="${PROJECT_VERSION}")
 
 set(srcs
         src/arch/io.c
@@ -36,7 +36,7 @@ set(srcs
         src/mm/msg_allocator.c
         src/parallel/parallel.c
         src/serial/serial.c
-        )
+        test/semaphore.c)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -71,4 +71,4 @@ enable_testing()
 add_subdirectory(test)
 
 # Generate and inspect documentation
-add_subdirectory(docs)
+#add_subdirectory(docs)

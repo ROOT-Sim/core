@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>
+
 #include <integration/model/application.h>
 #include <ROOT-Sim.h>
 
@@ -25,12 +26,18 @@ struct simulation_configuration conf = {
     .committed = CanEnd,
 };
 
+static test_ret_t correctness(void *config)
+{
+	RootsimInit((struct simulation_configuration *)config);
+	return RootsimRun();
+}
+
 int main(void)
 {
-	init();
+	init(0);
 
 	RootsimInit(&conf);
-	test("Correctness test (parallel)", RootsimRun);
+	test("Correctness test (parallel)", correctness, &conf);
 
 	finish();
 }

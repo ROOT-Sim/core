@@ -10,11 +10,66 @@
 
 #include <stdio.h>
 #include <setjmp.h>
-#include <arch/thread.h>
+#include <assert.h>
 
-static struct {
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+typedef HANDLE os_semaphore;
+#elif defined(__APPLE__) && defined(__MACH__)
+#include <mach/mach.h>
+typedef semaphore_t os_semaphore;
+#elif defined(__unix__) || defined(__unix)
+#include <errno.h>
+#include <semaphore.h>
+typedef sem_t * os_semaphore;
+#else
+#error Unsupported operating system
+#endif
+
+
+
+struct sema_t {
+	_Atomic int count;
+	os_semaphore os_sema;
+};
+
+#if defined(__unix__) || defined(__unix) || defined(__APPLE__) && defined(__MACH__)
+#define _GNU_SOURCE
+#include <pthread.h>
+
+#define THREAD_CALL_CONV
+typedef void * thrd_ret_t;
+typedef pthread_t thr_id_t;
+
+#elif defined(_WIN32)
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
+#define THREAD_CALL_CONV WINAPI
+typedef DWORD thrd_ret_t;
+typedef HANDLE thr_id_t;
+
+#define THREAD_RET_FAILURE (1)
+#define THREAD_RET_SUCCESS (0)
+
+#else
+#error Unsupported operating system
+#endif
+
+typedef thrd_ret_t(*thr_run_fnc)(void *);
+
+struct worker {
+	thr_id_t tid;
+	unsigned rid;
+	int ret;
+};
+
+struct test_unit {
 	unsigned n_th;
-	thr_id_t *thrs;
+	struct worker *pool;
 	jmp_buf fail_buffer;
 	int ret;
 	unsigned total;
@@ -24,22 +79,33 @@ static struct {
 	unsigned uxpassed;
 	unsigned should_pass;
 	unsigned should_fail;
-} test_unit = {0};
+};
+
+typedef unsigned test_ret_t;
+typedef test_ret_t(*test_fn)(void *);
+
+extern test_ret_t test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);
+extern test_ret_t test_thread_wait(thr_id_t thr, thrd_ret_t *ret);
+
+extern struct test_unit test_unit;
+
+extern void spawn_worker_pool(unsigned n_th);
+int signal_new_thread_action(test_fn fn, void *args);
+void tear_down_worker_pool(void);
+
+extern void sema_init(struct sema_t *sema, unsigned tokens);
+extern void sema_remove(struct sema_t *sema);
+extern void sema_wait(struct sema_t *sema, int count);
+extern void sema_signal(struct sema_t *sema, int count);
 
 
-#define assert(condition)                                                                                              \
+/****+ API TO BE USED IN TESTS ARE DECLARED BELOW THIS LINE ******/
+
+#define test_assert(condition)                                                                                              \
         do {                                                                                                           \
                 if(!(condition)) {                                                                                     \
                         fprintf(stderr, "assertion failed: " #condition " at %s:%d\n", __FILE__, __LINE__);            \
                         test_unit.ret = -1;                                                                            \
-                }                                                                                                      \
-        } while(0)
-
-#define init()                                                                                                         \
-        do {                                                                                                           \
-                if(setjmp(test_unit.fail_buffer)) {                                                                    \
-                        test_unit.ret = -1;                                                                            \
-                        finish();                                                                                      \
                 }                                                                                                      \
         } while(0)
 
@@ -50,85 +116,10 @@ static struct {
                 return ret;                                                                                            \
         } while(0)
 
-#define finish()                                                                                                       \
-        do {                                                                                                           \
-                int d1 = snprintf(NULL, 0, "PASSED.............: %u / %u\n", test_unit.passed, test_unit.should_pass); \
-                int d2 = snprintf(NULL, 0, "EXPECTED FAIL......: %u / %u\n", test_unit.xfailed, test_unit.should_fail);\
-                int d3 = snprintf(NULL, 0, "FAILED.............: %u\n", test_unit.failed);                             \
-                int d4 = snprintf(NULL, 0, "UNEXPECTED PASS....: %u\n", test_unit.uxpassed);                           \
-                int d = ((d1 > d2 && d1 > d3 && d1 > d4) ? d1 : ((d2 > d3 && d2 > d4) ? d2 : (d3 > d4 ? d3 : d4)));    \
-                printf("%.*s\n", d, "============================================================================");   \
-                printf("PASSED.............: %u / %u\n", test_unit.passed, test_unit.should_pass);                     \
-                printf("EXPECTED FAIL......: %u / %u\n", test_unit.xfailed, test_unit.should_fail);                    \
-                printf("FAILED.............: %u\n", test_unit.failed);                                                 \
-                printf("UNEXPECTED PASS....: %u\n", test_unit.uxpassed);                                               \
-                printf("%.*s\n", d, "============================================================================");   \
-                return test_unit.ret;                                                                                  \
-        } while(0)
 
-#define fail()                                                                                                         \
-        do {                                                                                                           \
-                fprintf(stderr, "Failing explicitly\n");                                                               \
-                longjmp(test_unit.fail_buffer, 1);                                                                     \
-        } while(0)
-
-#define test(desc, function, ...)                                                                                      \
-        do {                                                                                                           \
-                test_unit.should_pass++;                                                                               \
-                printf(desc "... ");                                                                                   \
-                if(function(__VA_ARGS__) != 0) {                                                                       \
-                        test_unit.ret = -1;                                                                            \
-                        test_unit.failed++;                                                                            \
-                        printf("FAIL.\n");                                                                             \
-                        fflush(stdout);                                                                                \
-                } else {                                                                                               \
-                        test_unit.passed++;                                                                            \
-                        printf("passed.\n");                                                                           \
-                        fflush(stdout);                                                                                \
-                }                                                                                                      \
-        } while(0)
-
-#define test_xf(desc, function, ...)                                                                                   \
-        do {                                                                                                           \
-                test_unit.should_fail++;                                                                               \
-                printf(desc "... ");                                                                                   \
-                if(function(__VA_ARGS__) == 0) {                                                                       \
-                        test_unit.ret = -1;                                                                            \
-                        test_unit.uxpassed++;                                                                          \
-                        printf("UNEXPECTED PASS.\n");                                                                  \
-                } else {                                                                                               \
-                        test_unit.xfailed++;                                                                           \
-                        printf("expected fail.\n");                                                                    \
-                }                                                                                                      \
-        } while(0)
-
-
-#define parallel_test(desc, n_th, function)                                                                            \
-        do {                                                                                                           \
-                unsigned i = n_th;                                                                                     \
-                unsigned failed_thr = 0;                                                                               \
-                test_unit.should_pass++;                                                                               \
-                printf(desc "... ");                                                                                   \
-                while(i--) {                                                                                           \
-                        rid = i;                                                                                       \
-                        if(thread_start(&thrs[i], function, &rid)) {                                                   \
-                                fprintf(stderr, "Unable to create thread %u/%d", i, N_THREADS);                        \
-                                fail();                                                                                \
-                        }                                                                                              \
-                }                                                                                                      \
-                i = n_th;                                                                                              \
-                while(i--) {                                                                                           \
-                        thr_ret_t ret;                                                                                 \
-                        thread_wait(thrs[i], &ret);                                                                    \
-                        if(ret != 0)                                                                                   \
-                                failed_thr++;                                                                          \
-                }                                                                                                      \
-                if(failed_thr == 0) {                                                                                  \
-                        test_unit.ret = -1;                                                                            \
-                        test_unit.passed++;                                                                            \
-                        printf("passed.\n");                                                                           \
-                } else {                                                                                               \
-                        test_unit.failed++;                                                                            \
-                        printf("FAIL.\n");                                                                             \
-                }                                                                                                      \
-        } while(0)
+extern void finish(void);
+extern void init(unsigned n_th);
+extern void fail(void);
+extern void test(char *desc, test_fn test_fn, void *arg);
+extern void test_xf(char *desc, test_fn test_fn, void *arg);
+extern void parallel_test(char *desc, test_fn test_fn, void *args);

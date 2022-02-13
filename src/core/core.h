@@ -55,7 +55,6 @@
 #define unlikely(exp) (exp)
 #endif
 
-
 /// The maximum value of the logical simulation time, semantically never
 #define SIMTIME_MAX DBL_MAX
 

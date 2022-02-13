@@ -61,7 +61,7 @@ static void worker_thread_fini(void)
 	msg_allocator_fini();
 }
 
-static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
+static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
 	worker_thread_init((uintptr_t)rid_arg);
 

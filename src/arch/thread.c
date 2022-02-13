@@ -36,7 +36,7 @@
  */
 
 /**
- * @fn thread_wait(thr_id_t thr, thr_ret_t *ret)
+ * @fn thread_wait(thr_id_t thr, thrd_ret_t *ret)
  * @brief Wait for specified thread to complete execution
  * @param thr The identifier of the thread to wait for
  * @param ret A pointer to the location where the return value will be copied,
@@ -100,7 +100,7 @@ int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 	return -(pthread_create(thr_p, NULL, t_fnc, t_fnc_arg) != 0);
 }
 
-int thread_wait(thr_id_t thr, thr_ret_t *ret)
+int thread_wait(thr_id_t thr, thrd_ret_t *ret)
 {
 	return -(pthread_join(thr, ret) != 0);
 }
@@ -132,7 +132,7 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 	return -(SetThreadAffinityMask(thr, 1 << core) == 0);
 }
 
-int thread_wait(thr_id_t thr, thr_ret_t *ret)
+int thread_wait(thr_id_t thr, thrd_ret_t *ret)
 {
 	if(WaitForSingleObject(thr, INFINITE) == WAIT_FAILED)
 		return -1;

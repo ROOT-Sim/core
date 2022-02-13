@@ -13,7 +13,6 @@ Research Group*
 
 ----------------------------------------------------------------------------------------
 
-
 ## The ROme OpTimistic Simulator
 
 The ROme OpTimistic Simulator is an open source, distributed and parallel simulation framework developed using C/POSIX
@@ -30,7 +29,6 @@ the callback locates a top level data structure implementing the object state-la
 
 ROOT-Sim's development started as a research project late back in 1987, and is currently maintained by the High
 Performance and Dependable Computing Systems group, research group of the University of Rome "Tor Vergata".
-
 
 ## ROOT-Sim Core
 
@@ -49,12 +47,11 @@ the full C11 standard (e.g., `stdatomic.h` is not provided), and cannot be there
 
 MPI is a madatory dependency of the project, used to support simulations run on distributed systems. 
 The core is continuously tested against the following MPI implementations:
-* OpenMPI
-* MPICH
-* Microsoft MPI
+*   OpenMPI
+*   MPICH
+*   Microsoft MPI
 
 Any of the three is required to build the project. A full MPI3 implementation, supporting multithreading, is necessary.
-
 
 ## Building and installing
 

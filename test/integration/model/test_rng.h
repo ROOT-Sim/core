@@ -3,7 +3,7 @@
  *
  * @brief Pseudo random number generator for tests
  *
- * An acceptable quality pseudo random number generator to be used in tests
+ * An acceptable-quality pseudo random number generator to be used in tests
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -34,11 +34,11 @@ typedef __uint128_t test_rng_state;
  * @return a uniformly distributed 64 bit pseudo random number
  */
 #define lcg_random_u(rng_state)                                                                                        \
-	__extension__({                                                                                                \
-		(rng_state) *= LCG_MULTIPLIER;                                                                         \
-		uint64_t __rng_val = (uint64_t)((rng_state) >> 64);                                                    \
-		__rng_val;                                                                                             \
-	})
+    __extension__({                                                                                                    \
+        (rng_state) *= LCG_MULTIPLIER;                                                                                 \
+        uint64_t __rng_val = (uint64_t)((rng_state) >> 64);                                                            \
+        __rng_val;                                                                                                     \
+    })
 
 /**
  * @brief Computes a pseudo random number in the [0, 1] range
@@ -46,18 +46,18 @@ typedef __uint128_t test_rng_state;
  * @return a uniformly distributed pseudo random double value in [0, 1]
  */
 #define lcg_random(rng_state)                                                                                          \
-	__extension__({                                                                                                \
-		uint64_t __u_val = lcg_random_u(rng_state);                                                            \
-		double __ret = 0.0;                                                                                    \
-		if(__builtin_expect(!!__u_val, 1)) {                                                                   \
-			unsigned __lzs = intrinsics_clz(__u_val) + 1;                                                  \
-			__u_val <<= __lzs;                                                                             \
-			__u_val >>= 12;                                                                                \
+    __extension__({                                                                                                    \
+        uint64_t __u_val = lcg_random_u(rng_state);                                                                    \
+        double __ret = 0.0;                                                                                            \
+        if(__builtin_expect(!!__u_val, 1)) {                                                                           \
+            unsigned __lzs = intrinsics_clz(__u_val) + 1;                                                              \
+            __u_val <<= __lzs;                                                                                         \
+            __u_val >>= 12;                                                                                            \
                                                                                                                        \
-			uint64_t __exp = 1023 - __lzs;                                                                 \
-			__u_val |= __exp << 52;                                                                        \
+            uint64_t __exp = 1023 - __lzs;                                                                             \
+            __u_val |= __exp << 52;                                                                                    \
                                                                                                                        \
-			memcpy(&__ret, &__u_val, sizeof(double));                                                      \
-		}                                                                                                      \
-		__ret;                                                                                                 \
-	})
+            memcpy(&__ret, &__u_val, sizeof(double));                                                                  \
+        }                                                                                                              \
+        __ret;                                                                                                         \
+    })

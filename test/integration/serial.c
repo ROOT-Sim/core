@@ -25,12 +25,15 @@ struct simulation_configuration conf = {
     .committed = CanEnd,
 };
 
+static test_ret_t correctness(void *config)
+{
+	RootsimInit((struct simulation_configuration *)config);
+	return RootsimRun();
+}
+
 int main(void)
 {
-	init();
-
-	RootsimInit(&conf);
-	test("Correctness test (serial)", RootsimRun);
-
+	init(0);
+	test("Correctness test (serial)", correctness, &conf);
 	finish();
 }

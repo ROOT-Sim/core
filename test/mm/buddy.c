@@ -92,7 +92,7 @@ static int block_size_test(unsigned b_exp)
 	return -(errs != 0);
 }
 
-static int model_allocator_test(void)
+static test_ret_t model_allocator_test(__unused void *_)
 {
 	current_lp = malloc(sizeof(*current_lp));
 	model_allocator_lp_init();
@@ -118,7 +118,7 @@ static int model_allocator_test(void)
 
 int main(void)
 {
-	init();
+	init(0);
 	srand(time(NULL));
 
 	// Mock a fake LP
@@ -130,7 +130,7 @@ int main(void)
 	lp.lib_ctx->rng_s[3] = 2366399137344386224ULL;
 	current_lp = &lp;
 
-	test("Testing buddy system", model_allocator_test);
+	test("Testing buddy system", model_allocator_test, NULL);
 
 	free(lp.lib_ctx);
 	finish();

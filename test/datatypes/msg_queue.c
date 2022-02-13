@@ -17,7 +17,7 @@
 #include <lp/lp.h>
 #include <core/sync.h>
 
-#define N_THREADS 1
+#define N_THREADS 16
 #define THREAD_REPS 100000
 #define N_LPS_PER_NODE 64
 
@@ -30,19 +30,19 @@ static void msg_allocator_free(struct lp_msg *msg)
 	free(msg);
 }
 
-static int msg_queue_test_init(void)
+static test_ret_t msg_queue_test_init(__unused void *_)
 {
 	msg_queue_global_init();
 	return 0;
 }
 
-static int msg_queue_test_fini(void)
+static test_ret_t msg_queue_test_fini(__unused void *_)
 {
 	msg_queue_global_fini();
-	return -(atomic_load(&msg_missing) | atomic_load(&msg_to_free));
+	return (atomic_load(&msg_missing) | atomic_load(&msg_to_free));
 }
 
-static thr_ret_t THREAD_CALL_CONV msg_queue_populate(void *tid_ptr)
+static test_ret_t msg_queue_populate(__unused void *_)
 {
 	int ret = 0;
 	msg_queue_init();
@@ -57,10 +57,10 @@ static thr_ret_t THREAD_CALL_CONV msg_queue_populate(void *tid_ptr)
 		atomic_fetch_add_explicit(&msg_missing, 1U, memory_order_relaxed);
 	}
 
-	return (thr_ret_t)(long long)(msg_missing != THREAD_REPS * N_THREADS);
+	return (msg_missing != THREAD_REPS * N_THREADS);
 }
 
-static thr_ret_t THREAD_CALL_CONV msg_queue_empty(void *tid_ptr)
+static test_ret_t msg_queue_empty(__unused void *_)
 {
 	int ret = 0;
 	struct lp_msg *msg;
@@ -99,16 +99,16 @@ struct simulation_configuration conf = {
 
 int main(void)
 {
-	init();
+	init(N_THREADS);
 	srand(time(NULL));
 	RootsimInit(&conf);
 
 	n_lps_node = N_LPS_PER_NODE;
 
-	test("Initializing message queue", msg_queue_test_init);
-	parallel_test("Populating threads message queues", N_THREADS, msg_queue_populate);
-	parallel_test("Extracting messages from queues", N_THREADS, msg_queue_empty);
-	test("Finalizing message queue", msg_queue_test_fini);
+	test("Initializing message queue", msg_queue_test_init, NULL);
+	parallel_test("Populating threads message queues", msg_queue_populate, NULL);
+	parallel_test("Extracting messages from queues", msg_queue_empty, NULL);
+	test("Finalizing message queue", msg_queue_test_fini, NULL);
 
 	finish();
 }

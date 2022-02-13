@@ -1,3 +1,11 @@
+/**
+ * @file test/mm/stress.c
+ *
+ * @brief Model memory allocator stress test.
+ *
+ * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 // Based on t-test1.c by Wolfram Gloger
 
 #include <unistd.h>

@@ -13,7 +13,7 @@
 #include <math.h>
 #include <limits.h>
 
-#include "test.h"
+#include <test.h>
 #include <ROOT-Sim.h>
 #include <lib/lib.h>
 #include <lp/lp.h>
@@ -93,8 +93,9 @@ static int ks_test(uint32_t N, uint32_t nBins, enum distribution distr)
 	return 0;
 }
 
-static int aux_ks_test(enum distribution distr) {
+static test_ret_t aux_ks_test(void *d) {
 	int passed = 0;
+	enum distribution distr = (enum distribution)(long long)d;
 
 	passed += ks_test(1000000, 1000, distr);
 	passed += ks_test(100000, 1000, distr);
@@ -105,7 +106,7 @@ static int aux_ks_test(enum distribution distr) {
 	return passed;
 }
 
-static int test_random_range_nonuniform(void) {
+static test_ret_t test_random_range_nonuniform(__unused void *_) {
 	int passed = 0;
 	int x, min, max, r, i;
 
@@ -122,7 +123,7 @@ static int test_random_range_nonuniform(void) {
 	return passed;
 }
 
-static int test_random_range(void) {
+static test_ret_t test_random_range(__unused void *_) {
 	int passed = 0;
 	int min, max, r, i;
 
@@ -141,7 +142,7 @@ static int test_random_range(void) {
 
 int main(void)
 {
-	init();
+	init(0);
 
 	// Mock a fake LP
 	struct lp_ctx lp = {0};
@@ -152,9 +153,9 @@ int main(void)
 	lp.lib_ctx->rng_s[3] = 2366399137344386224ULL;
 	current_lp = &lp;
 
-	test("Kolmogorov-Smirnov test on Random()", aux_ks_test, RANDOM);
-	test("Functional test on RandomRange()", test_random_range);
-	test("Functional test on RandomRangeNonUniform()", test_random_range_nonuniform);
+	test("Kolmogorov-Smirnov test on Random()", aux_ks_test, (void *)RANDOM);
+	test("Functional test on RandomRange()", test_random_range, NULL);
+	test("Functional test on RandomRangeNonUniform()", test_random_range_nonuniform, NULL);
 
 	free(lp.lib_ctx);
 

@@ -9,12 +9,12 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
+#define _CRT_SECURE_NO_WARNINGS
 #include <log/stats.h>
 
 #include <arch/io.h>
 #include <arch/mem.h>
 #include <arch/timer.h>
-#include <core/core.h>
 #include <distributed/mpi.h>
 #include <mm/mm.h>
 

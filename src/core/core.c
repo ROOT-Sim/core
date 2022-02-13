@@ -29,4 +29,5 @@ char *core_version = ROOTSIM_VERSION;
  * @param payload The event content
  * @param payload_size the size (in bytes) of the event content
  */
+//__exported
 void (*ScheduleNewEvent)(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload, unsigned payload_size);

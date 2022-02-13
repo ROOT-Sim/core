@@ -23,7 +23,7 @@
 #include <pthread.h>
 
 #define THREAD_CALL_CONV
-typedef void *thr_ret_t;
+typedef void *thrd_ret_t;
 typedef pthread_t thr_id_t;
 
 #define THREAD_RET_FAILURE ((void *)1)
@@ -36,21 +36,17 @@ typedef pthread_t thr_id_t;
 #undef WIN32_LEAN_AND_MEAN
 
 #define THREAD_CALL_CONV WINAPI
-typedef DWORD thr_ret_t;
+typedef DWORD thrd_ret_t;
 typedef HANDLE thr_id_t;
 
 #define THREAD_RET_FAILURE (1)
 #define THREAD_RET_SUCCESS (0)
-
-#ifdef _MSC_VER
-#define __thread __declspec(thread)
-#endif
 #endif
 
 /// The function type of a new thread entry point
-typedef thr_ret_t(*thr_run_fnc)(void *);
+typedef thrd_ret_t(*thr_run_fnc)(void *);
 
 extern int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);
 extern int thread_affinity_set(thr_id_t thr, unsigned core);
-extern int thread_wait(thr_id_t thr, thr_ret_t *ret);
+extern int thread_wait(thr_id_t thr, thrd_ret_t *ret);
 extern unsigned thread_cores_count(void);
