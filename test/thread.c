@@ -17,8 +17,8 @@
 
 static test_fn next_test;
 static void *next_args;
-static struct sema_t work;
-static struct sema_t ready;
+static os_semaphore work;
+static os_semaphore ready;
 
 #if defined(__unix__) || defined(__unix) || defined(__APPLE__) && defined(__MACH__)
 test_ret_t test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
@@ -60,10 +60,10 @@ thrd_ret_t test_worker(void *args)
 	rid = (unsigned)worker->rid;
 
 	while(true) {
-		sema_wait(&work, 1);
+		sema_wait(work, 1);
 		if(next_test != NULL)
 			worker->ret -= next_test(next_args);
-		sema_signal(&ready, 1);
+		sema_signal(ready, 1);
 		if(next_test == NULL)
 			break;
 	}
@@ -78,8 +78,8 @@ void spawn_worker_pool(unsigned n_th)
 	if(n_th == 0)
 		return;
 
-	sema_init(&work, 0);
-	sema_init(&ready, 0);
+	work = sema_init(0);
+	ready = sema_init(0);
 
 	test_unit.pool = malloc(sizeof(struct worker) * test_unit.n_th);
 	unsigned i = test_unit.n_th - 1;
@@ -99,8 +99,8 @@ int signal_new_thread_action(test_fn fn, void *args)
   	int ret = 0;
 	next_test = fn;
 	next_args = args;
-	sema_signal(&work, (int)test_unit.n_th);
-	sema_wait(&ready, (int)test_unit.n_th);
+	sema_signal(work, (int)test_unit.n_th);
+	sema_wait(ready, (int)test_unit.n_th);
 	for(int i = 0; i < test_unit.n_th; i++)
 		ret -= test_unit.pool[i].ret;
 	return ret;
@@ -115,8 +115,8 @@ void tear_down_worker_pool(void)
 	for(unsigned i = 0; i < test_unit.n_th; i++)
 		test_thread_wait(test_unit.pool[i].tid, NULL);
 
-	sema_remove(&work);
-	sema_remove(&ready);
+	sema_remove(work);
+	sema_remove(ready);
 
 	free(test_unit.pool);
 }

@@ -27,13 +27,6 @@ typedef sem_t * os_semaphore;
 #error Unsupported operating system
 #endif
 
-
-
-struct sema_t {
-	_Atomic int count;
-	os_semaphore os_sema;
-};
-
 #if defined(__unix__) || defined(__unix) || defined(__APPLE__) && defined(__MACH__)
 #define _GNU_SOURCE
 #include <pthread.h>
@@ -81,7 +74,7 @@ struct test_unit {
 	unsigned should_fail;
 };
 
-typedef unsigned test_ret_t;
+typedef int test_ret_t;
 typedef test_ret_t(*test_fn)(void *);
 
 extern test_ret_t test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);
@@ -93,10 +86,10 @@ extern void spawn_worker_pool(unsigned n_th);
 int signal_new_thread_action(test_fn fn, void *args);
 void tear_down_worker_pool(void);
 
-extern void sema_init(struct sema_t *sema, unsigned tokens);
-extern void sema_remove(struct sema_t *sema);
-extern void sema_wait(struct sema_t *sema, int count);
-extern void sema_signal(struct sema_t *sema, int count);
+extern os_semaphore sema_init(unsigned tokens);
+extern void sema_remove(os_semaphore sema);
+extern void sema_wait(os_semaphore sema, unsigned count);
+extern void sema_signal(os_semaphore sema, unsigned count);
 
 
 /****+ API TO BE USED IN TESTS ARE DECLARED BELOW THIS LINE ******/

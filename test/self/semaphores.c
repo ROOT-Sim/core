@@ -15,8 +15,8 @@ _Static_assert(N_CONS % N_PROD == 0, "The number of consumers must be a multiple
 _Atomic int prod_exec = 0;
 _Atomic int cons_exec = 0;
 
-struct sema_t producer;
-struct sema_t consumer;
+os_semaphore producer;
+os_semaphore consumer;
 
 thr_id_t tids[N_THREAD];
 unsigned seed[N_THREAD];
@@ -61,10 +61,10 @@ thrd_ret_t phase1(void *id)
 	for(int i = 0; i < r; i++);
 
 	if(tid < N_PROD) {
-		sema_signal(&producer, N_CONS/N_PROD);
+		sema_signal(producer, N_CONS/N_PROD);
 		prod_exec++;
 	} else {
-		sema_wait(&producer, 1);
+		sema_wait(producer, 1);
 		cons_exec++;
 	}
 	return 0;
@@ -77,10 +77,10 @@ thrd_ret_t phase2(void *id)
 	for(int i = 0; i < r; i++);
 
 	if(tid < N_PROD) {
-		sema_wait(&consumer, N_CONS/N_PROD);
+		sema_wait(consumer, N_CONS/N_PROD);
 		prod_exec++;
 	} else {
-		sema_signal(&consumer, 1);
+		sema_signal(consumer, 1);
 		cons_exec++;
 	}
 	return 0;
@@ -99,8 +99,8 @@ int main(void)
 	for(int i = 0; i < N_THREAD; i++)
 		seed[i] = rand(); // We don't really care about stochastic properties here!
 
-	sema_init(&producer, 0);
-	sema_init(&consumer, 0);
+	producer = sema_init(0);
+	consumer = sema_init(0);
 
 	for(int i = 1; i < REP_COUNT+1; i++) {
 		snprintf(desc, DESC_LEN, "Testing producer phase %d", i);
