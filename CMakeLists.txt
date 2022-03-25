@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 project("ROOT-Sim core" LANGUAGES C)
 set(PROJECT_VERSION 3.0.0-alpha.3)
 set(PROJECT_DESCRIPTION "A General-Purpose Multithreaded Parallel/Distributed Simulation Library")
+
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_definitions(-DROOTSIM_VERSION="${PROJECT_VERSION}")
@@ -35,7 +36,7 @@ set(srcs
         src/mm/msg_allocator.c
         src/parallel/parallel.c
         src/serial/serial.c
-        test/semaphore.c)
+        test/framework/semaphore.c)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -69,6 +70,7 @@ add_library(rscore STATIC ${srcs})
 
 # Run the tests
 enable_testing()
+include_directories(test)
 add_subdirectory(test)
 
 # Generate and inspect documentation

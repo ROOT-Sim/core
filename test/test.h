@@ -11,15 +11,19 @@
 #include <stdio.h>
 #include <setjmp.h>
 #include <assert.h>
+#include <limits.h>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <process.h>
 typedef HANDLE os_semaphore;
 #elif defined(__APPLE__) && defined(__MACH__)
+#include <unistd.h>
 #include <mach/mach.h>
 typedef semaphore_t os_semaphore;
 #elif defined(__unix__) || defined(__unix)
+#include <unistd.h>
 #include <errno.h>
 #include <semaphore.h>
 typedef sem_t * os_semaphore;
@@ -52,6 +56,10 @@ typedef HANDLE thr_id_t;
 #error Unsupported operating system
 #endif
 
+#ifndef __unused
+#define __unused __attribute__((unused))
+#endif
+
 typedef thrd_ret_t(*thr_run_fnc)(void *);
 
 struct worker {
@@ -60,11 +68,14 @@ struct worker {
 	int ret;
 };
 
+typedef int test_ret_t;
+typedef test_ret_t(*test_fn)(void *);
+
 struct test_unit {
 	unsigned n_th;
 	struct worker *pool;
 	jmp_buf fail_buffer;
-	int ret;
+	test_ret_t ret;
 	unsigned total;
 	unsigned passed;
 	unsigned failed;
@@ -73,9 +84,6 @@ struct test_unit {
 	unsigned should_pass;
 	unsigned should_fail;
 };
-
-typedef int test_ret_t;
-typedef test_ret_t(*test_fn)(void *);
 
 extern test_ret_t test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);
 extern test_ret_t test_thread_wait(thr_id_t thr, thrd_ret_t *ret);
@@ -91,6 +99,10 @@ extern void sema_remove(os_semaphore sema);
 extern void sema_wait(os_semaphore sema, unsigned count);
 extern void sema_signal(os_semaphore sema, unsigned count);
 
+extern unsigned int test_random(void);
+void test_random_init(void);
+#define RANDOM(s) (test_random() % (s))
+#define RANDOM_01() (test_random() / (double)ULLONG_MAX)
 
 /****+ API TO BE USED IN TESTS ARE DECLARED BELOW THIS LINE ******/
 
@@ -104,11 +116,12 @@ extern void sema_signal(os_semaphore sema, unsigned count);
 
 #define check_passed_asserts()                                                                                         \
         do {                                                                                                           \
-                int ret = test_unit.ret;                                                                               \
+                test_ret_t ret = test_unit.ret;                                                                        \
                 test_unit.ret = 0;                                                                                     \
                 return ret;                                                                                            \
         } while(0)
 
+#define test_thread_pool_size() (test_unit.n_th)
 
 extern void finish(void);
 extern void init(unsigned n_th);
