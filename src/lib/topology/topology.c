@@ -9,7 +9,7 @@
 * SPDX-License-Identifier: GPL-3.0-only
 */
 #include <assert.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include <core/core.h>
 #include <datatypes/list.h>

@@ -74,4 +74,4 @@ include_directories(test)
 add_subdirectory(test)
 
 # Generate and inspect documentation
-#add_subdirectory(docs)
+add_subdirectory(docs)
