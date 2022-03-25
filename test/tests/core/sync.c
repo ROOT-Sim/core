@@ -12,9 +12,9 @@
 #include "core/core.h"
 #include "core/sync.h"
 
-#define N_THREADS 4
 #define THREAD_REP 10000
 
+static unsigned n_threads;
 static atomic_uint counter;
 static spinlock_t spin;
 static mrswlock_t rw_lock;
@@ -32,7 +32,7 @@ static test_ret_t sync_barrier_test(__unused void *_)
 		sync_thread_barrier();
 		unsigned val = atomic_load_explicit(&counter, memory_order_relaxed);
 		sync_thread_barrier();
-		ret += (int)(val % N_THREADS);
+		ret += (int)(val % n_threads);
 	}
 
 	return ret;
@@ -66,7 +66,7 @@ static test_ret_t spinlock_test(__unused void *_)
 	}
 
 	sync_thread_barrier();
-	ret += k != ((THREAD_REP * 5 * N_THREADS + 2) / 3);
+	ret += k != ((THREAD_REP * 5 * n_threads + 2) / 3);
 
 	return ret;
 }
@@ -77,7 +77,7 @@ static test_ret_t mrswlock_test(__unused void *_)
 	unsigned j = THREAD_REP;
 
 	while(j--) {
-		mrswlock_wlock(&rw_lock, (int)N_THREADS);
+		mrswlock_wlock(&rw_lock, (int)n_threads);
 		switch(d % 5) {
 			case 0:
 				__attribute__((fallthrough));
@@ -95,11 +95,11 @@ static test_ret_t mrswlock_test(__unused void *_)
 			default:
 				__builtin_unreachable();
 		}
-		mrswlock_wunlock(&rw_lock, N_THREADS);
+		mrswlock_wunlock(&rw_lock, n_threads);
 	}
 
 	sync_thread_barrier();
-	ret += d != ((THREAD_REP * 5 * N_THREADS + 2) / 3);
+	ret += d != ((THREAD_REP * 5 * n_threads + 2) / 3);
 	sync_thread_barrier();
 	d = 0;
 	k = 0;
@@ -114,12 +114,12 @@ static test_ret_t mrswlock_test(__unused void *_)
 		}
 	} else {
 		while(j--) {
-			mrswlock_wlock(&rw_lock, N_THREADS);
+			mrswlock_wlock(&rw_lock, n_threads);
 			d += 3;
 			k += 2;
 			k += d % 5;
 			d += 2;
-			mrswlock_wunlock(&rw_lock, N_THREADS);
+			mrswlock_wunlock(&rw_lock, n_threads);
 		}
 	}
 
@@ -127,22 +127,13 @@ static test_ret_t mrswlock_test(__unused void *_)
 	return ret;
 }
 
-void foo() {}
-
-struct simulation_configuration conf = {
-    .lps = N_THREADS,
-    .n_threads = N_THREADS,
-    .dispatcher = (ProcessEvent_t)foo,
-    .committed = (CanEnd_t)foo,
-};
-
-
 int main(void)
 {
-	init(N_THREADS);
+	n_threads = thread_cores_count();
+	init(n_threads);
 	parallel_test("Testing synchronization barrier", sync_barrier_test, NULL);
 	parallel_test("Testing spinlock", spinlock_test, NULL);
-	mrswlock_init(&rw_lock, N_THREADS);
+	mrswlock_init(&rw_lock, n_threads);
 	parallel_test("Testing mrswlock", mrswlock_test, NULL);
 
 	finish();
