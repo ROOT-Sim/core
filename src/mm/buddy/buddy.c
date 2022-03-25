@@ -148,15 +148,38 @@ void rs_free(void *ptr)
 
 void *rs_realloc(void *ptr, size_t req_size)
 {
-	if(!req_size) {
-		rs_free(ptr);
+	if(!req_size) { // Adhering to C11 standard §7.20.3.1
+		if(!ptr)
+			errno = EINVAL;
 		return NULL;
 	}
-	if(!ptr) {
+	if(!ptr)
 		return rs_malloc(req_size);
+
+	struct mm_state *self = &current_lp->mm_state;
+	uint_fast8_t node_size = B_BLOCK_EXP;
+	uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
+	uint_fast32_t i = o + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
+
+	for(; self->longest[i]; i = buddy_parent(i))
+		++node_size;
+
+	size_t old_size = 1 << node_size;
+	size_t new_size = 1 << max(next_exp_of_2(req_size - 1), B_BLOCK_EXP);
+
+	if(old_size == new_size)
+		return ptr;
+
+	void *new_buffer = rs_malloc(req_size);
+	if(unlikely(new_buffer == NULL)) {
+		errno = ENOMEM;
+		return NULL;
 	}
-	// TODO!
-	return NULL;
+
+	memcpy(new_buffer, ptr, min(new_size, old_size));
+	rs_free(ptr);
+
+	return new_buffer;
 }
 
 void __write_mem(const void *ptr, size_t siz)
