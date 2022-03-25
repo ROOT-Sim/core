@@ -10,11 +10,12 @@
  */
 #include <lib/random/random.h>
 
+#include <core/core.h>
 #include <core/intrinsics.h>
-#include <lib/lib_internal.h>
 #include <lib/random/xoroshiro.h>
 
 #include <math.h>
+#include "lp/lp.h"
 
 /**
  * @brief Initalize the rollbackable RNG library of the current LP

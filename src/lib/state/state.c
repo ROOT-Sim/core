@@ -10,8 +10,7 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <lib/state/state.h>
-
-#include <lib/lib_internal.h>
+#include "lp/lp.h"
 
 void SetState(void *state)
 {
