@@ -50,7 +50,7 @@ unsigned int test_random(void)
 
 
 // This function must be explicitly called on each thread.
-// Currently, it's called in init().
+// Currently, it's called in init() and upon the creation of every worker thread.
 void test_random_init(void)
 {
 	rnd_seed = mix64(clock(), time(NULL), getpid());

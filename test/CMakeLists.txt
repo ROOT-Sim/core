@@ -32,6 +32,7 @@ test_program(mm tests/mm/buddy.c tests/mm/buddy_hard.c tests/mm/parallel.c tests
 # Test libraries
 test_program(sync tests/core/sync.c)
 test_program(numerical tests/lib/numerical.c)
+test_program(topology tests/lib/topology.c)
 
 # Correctness tests
 test_program(correctness_serial tests/integration/serial.c tests/integration/model/application.c tests/integration/model/functions.c tests/integration/model/output_256.c)
