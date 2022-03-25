@@ -58,10 +58,11 @@
 	})
 
 /**
- * @brief Inserts an element into the heap
+ * @brief Inserts n elements into the heap
  * @param self the heap target of the insertion
  * @param cmp_f a comparing function f(a, b) which returns true iff a < b
- * @param elem the element to insert
+ * @param ins the set of elements to insert
+ * @param n the number of elements in the set
  * @returns the position of the inserted element in the underlying array
  *
  * For correct operation of the heap you need to always pass the same @a cmp_f,

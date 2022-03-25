@@ -29,7 +29,9 @@
 
 /// An element in the message queue
 struct q_elem {
+	/// the timestamp of the message
 	simtime_t t;
+	/// the message enqueued
 	struct lp_msg *m;
 };
 

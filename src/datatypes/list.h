@@ -15,10 +15,13 @@
 #include <assert.h>
 
 
-/// This structure defines a generic list.
+/// This structure defines a generic list. Nodes of the list must have a next/prev pointer properly typed.
 struct list {
+	/// the size of the list
 	size_t size;
-	void *head;		// Generic pointers: nodes of the list must have a next/prev pointer properly typed
+	/// pointer to the first element
+	void *head;
+	/// pointer to the last element
 	void *tail;
 };
 
@@ -47,14 +50,14 @@ struct list {
 /**
  * This macro retrieves a pointer to the payload of the head node of a list.
  *
- * @param list a pointer to a list created using the new_list() macro.
+ * @param li a pointer to a list created using the new_list() macro.
  */
 #define list_head(li) ((__typeof__ (li))(((struct list *)(li))->head))
 
 /**
  * This macro retrieves a pointer to the payload of the tail node of a list.
  *
- * @param list a pointer to a list created using the new_list() macro.
+ * @param li a pointer to a list created using the new_list() macro.
  */
 #define list_tail(li) ((__typeof__ (li))(((struct list *)(li))->tail))
 

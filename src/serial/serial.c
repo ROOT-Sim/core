@@ -126,6 +126,14 @@ static int serial_simulation_run(void)
 	return 0;
 }
 
+/**
+ * @brief Schedule a new event. Sequential version.
+ * @param receiver destination LP
+ * @param timestamp timestamp of the injected event
+ * @param event_type model-defined type
+ * @param payload payload of the event
+ * @param payload_size size of the payload
+ */
 void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
     unsigned payload_size)
 {
