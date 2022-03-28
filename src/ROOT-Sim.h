@@ -23,13 +23,49 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+/// Simulation time data type
 typedef double simtime_t;
+
 /// The maximum value of the logical simulation time, semantically never
 #define SIMTIME_MAX DBL_MAX
+
+// Logical Process ID data type
 typedef uint64_t lp_id_t;
 
+/**
+ * @brief ProcessEvent callback function
+ * @param lp_id The logical process ID of the called LP
+ * @param now The current simulation time
+ * @param event_type The type of the simulation event
+ * @param event_content The (model-specific) content of the simulation event
+ * @param event_size The size of the event content
+ * @param st The current state of the logical process
+ *
+ * This function is called by the simulation kernel whenever a new event is extracted from the event queue.
+ * The event is executed in the speculative part of the simulation trajectory: any change to the simulation
+ * state (see @ref st) might be reverted by the simulation kernel in case a straggler event is detected.
+ *
+ * @warning The event content is not a copy, so it should not be modified. Failing to do so might lead to undefined
+ * behavior in case of straggler events.
+ * @warning Do not perform any non-rollbackable operation in this function (e.g., I/O).
+ */
 typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content,
     unsigned event_size, void *st);
+
+/**
+ * @brief Determine if simulation can be halted.
+ * @param me The logical process ID of the called LP
+ * @param snapshot The committed state of the logical process
+ *
+ * @return true if the simulation can be halted, false otherwise
+ *
+ * This function receives a committed snapshot of the logical process state. It can be inspected to determine
+ * whether the simulation can be halted, locally at the LP. The function should return true if the simulation
+ * can be halted, false otherwise.
+ *
+ * @warning The snapshot is in the committed part of the simulation trajectory, so it should not be modified. Any
+ * change to the snapshot might lead to undefined behavior.
+ */
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
 enum rootsim_event {LP_INIT = 65534, LP_FINI};
@@ -102,12 +138,16 @@ extern bool AddTopologyLink(struct topology *topology, unsigned from, unsigned t
 extern bool IsNeighbor(unsigned from, unsigned to, struct topology *topology);
 
 
-// This trick belongs to Laurent Deniau at CERN.
+// The following trick belongs to Laurent Deniau at CERN.
 // https://groups.google.com/g/comp.std.c/c/d-6Mj5Lko_s?pli=1
+
+/// Compute the number of arguments to a variadic macro
 #define PP_NARG(...) \
          PP_NARG_(__VA_ARGS__,PP_RSEQ_N())
+/// Compute the number of arguments to a variadic macro
 #define PP_NARG_(...) \
          PP_128TH_ARG(__VA_ARGS__)
+/// Enumerate the arguments' count to a variadic macro
 #define PP_128TH_ARG( \
           _1, _2, _3, _4, _5, _6, _7, _8, _9,_10, \
          _11,_12,_13,_14,_15,_16,_17,_18,_19,_20, \
@@ -122,6 +162,7 @@ extern bool IsNeighbor(unsigned from, unsigned to, struct topology *topology);
          _101,_102,_103,_104,_105,_106,_107,_108,_109,_110, \
          _111,_112,_113,_114,_115,_116,_117,_118,_119,_120, \
          _121,_122,_123,_124,_125,_126,_127,N,...) N
+/// Enumerate the arguments' count to a variadic macro in reverse order
 #define PP_RSEQ_N() \
          127,126,125,124,123,122,121,120, \
          119,118,117,116,115,114,113,112,111,110, \
@@ -138,10 +179,17 @@ extern bool IsNeighbor(unsigned from, unsigned to, struct topology *topology);
          9,8,7,6,5,4,3,2,1,0
 
 extern struct topology *vInitializeTopology(enum topology_geometry geometry, int argc, ...);
+
+
+/**
+ * @brief Initialize a topology struct
+ *
+ * @param geometry The topology struct to initialize
+ * @param ... The number of regions and/or the number of links, depending on the topology geometry
+ * @return A pointer to the topology structure
+ */
 #define InitializeTopology(geometry, ...) vInitializeTopology(geometry, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 /********* TOPOLOGY LIBRARY ************/
-
-
 
 /// A set of configurable values used by other modules
 struct simulation_configuration {

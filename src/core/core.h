@@ -82,5 +82,6 @@ extern nid_t n_nodes;
 /// The node identifier of the node
 extern nid_t nid;
 
+// A string keeping the textual representation of the version of the core
 extern char *core_version;
 extern struct simulation_configuration global_config;

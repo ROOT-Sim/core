@@ -56,11 +56,13 @@ typedef atomic_flag spinlock_t;
  */
 #define spin_unlock(lck_p) atomic_flag_clear_explicit((lck_p), memory_order_release)
 
-
+// Multiple readers, single writer lock
 typedef atomic_int mrswlock_t;
 
+// Initialize a mrswlock
 #define mrswlock_init(lck_p, r_cnt) atomic_store_explicit(lck_p, r_cnt, memory_order_relaxed)
 
+// Take a reader lock
 #define mrswlock_rlock(lck_p)                                                                                          \
 	__extension__({                                                                                                \
 		do {                                                                                                   \
@@ -75,6 +77,7 @@ typedef atomic_int mrswlock_t;
 		atomic_thread_fence(memory_order_acquire);                                                             \
 	})
 
+// Take a writer lock
 #define mrswlock_wlock(lck_p, r_cnt)                                                                                   \
 	__extension__({                                                                                                \
 		do {                                                                                                   \
@@ -95,12 +98,14 @@ typedef atomic_int mrswlock_t;
 		atomic_thread_fence(memory_order_acquire);                                                             \
 	})
 
+// Unlock a reader lock
 #define mrswlock_runlock(lck_p)                                                                                        \
 	__extension__({                                                                                                \
 		atomic_thread_fence(memory_order_release);                                                             \
 		atomic_fetch_add_explicit((lck_p), 1, memory_order_relaxed);                                           \
 	})
 
+// Unlock a writer lock
 #define mrswlock_wunlock(lck_p, r_cnt)                                                                                 \
 	__extension__({                                                                                                \
 		atomic_thread_fence(memory_order_release);                                                             \
