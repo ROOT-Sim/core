@@ -17,11 +17,11 @@
 
 #include <core/core.h>
 
-
 static test_fn next_test;
 static void *next_args;
 static os_semaphore work;
 static os_semaphore ready;
+static os_semaphore all_done;
 
 #if defined(__unix__) || defined(__unix) || defined(__APPLE__) && defined(__MACH__)
 test_ret_t test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
@@ -70,19 +70,21 @@ thrd_ret_t test_worker(void *args)
 		if(next_test == NULL)
 			break;
 	}
-
+	sema_signal(ready, 1);
 	return NULL;
 }
 
 void spawn_worker_pool(unsigned n_th)
 {
 	test_unit.n_th = n_th;
+	rid=(unsigned)-1;
 
 	if(n_th == 0)
 		return;
 
 	work = sema_init(0);
 	ready = sema_init(0);
+	all_done = sema_init(0);
 
 	test_unit.pool = malloc(sizeof(*test_unit.pool) * test_unit.n_th);
 	memset(test_unit.pool, 0, sizeof(*test_unit.pool) * test_unit.n_th);
@@ -107,6 +109,7 @@ int signal_new_thread_action(test_fn fn, void *args)
 	sema_wait(ready, (int)test_unit.n_th);
 	for(int i = 0; i < test_unit.n_th; i++)
 		ret -= test_unit.pool[i].ret;
+	sema_signal(all_done, (int)test_unit.n_th);
 	return ret;
 }
 
@@ -121,6 +124,7 @@ void tear_down_worker_pool(void)
 
 	sema_remove(work);
 	sema_remove(ready);
+	sema_remove(all_done);
 
 	free(test_unit.pool);
 }
