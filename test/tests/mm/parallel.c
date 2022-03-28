@@ -114,12 +114,10 @@ static void bin_alloc(struct bin *m, size_t size, unsigned r)
 	} else if (r < 200 && m->size > 0 && m->size < REALLOC_MAX) { // realloc
 		m->ptr = rs_realloc(m->ptr, size);
 		test_assert(m->ptr);
-	} else {
-		// malloc
+	} else { // malloc
 		if (m->size > 0)
 			rs_free(m->ptr);
 		m->ptr = rs_malloc(size);
-		printf("%zu %zu\n", size, m->size);
 		test_assert(m->ptr);
 	}
 
@@ -152,15 +150,7 @@ test_ret_t parallel_malloc_test(__unused void *_)
 {
 	unsigned i, b, j, actions, action;
 
-	// Mock a fake LP (per-thread)
-	struct lp_ctx lp = {0};
-	struct lib_ctx ctx = {0};
-	lp.lib_ctx = &ctx;
-	lp.lib_ctx->rng_s[0] = 7319936632422683443ULL;
-	lp.lib_ctx->rng_s[1] = 2268344373199366324ULL;
-	lp.lib_ctx->rng_s[2] = 3443862242366399137ULL;
-	lp.lib_ctx->rng_s[3] = 2366399137344386224ULL;
-	current_lp = &lp;
+	current_lp = mock_lp();
 	model_allocator_lp_init();
 
 	struct bin_info p;

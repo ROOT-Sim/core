@@ -1,5 +1,5 @@
 /**
- * @file test/tests/integration/model/test_rng.h
+ * @file test/framework/rng.c
  *
  * @brief Pseudo random number generator for tests
  *

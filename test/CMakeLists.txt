@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 set(test_srcs
         framework/test.c
+        framework/lp.c
         framework/semaphore.c
         framework/thread.c
         framework/rng.c

@@ -67,20 +67,11 @@ int main(void)
 {
 	init(0);
 
-	// Mock a fake LP
-	struct lp_ctx lp = {0};
-	lp.lib_ctx = malloc(sizeof(*current_lp->lib_ctx));
-	lp.lib_ctx->rng_s[0] = 7319936632422683443ULL;
-	lp.lib_ctx->rng_s[1] = 2268344373199366324ULL;
-	lp.lib_ctx->rng_s[2] = 3443862242366399137ULL;
-	lp.lib_ctx->rng_s[3] = 2366399137344386224ULL;
-	current_lp = &lp;
+	current_lp = mock_lp();
 
 	test("Kolmogorov-Smirnov test on Random()", aux_ks_test, (void *)test_random_range);
 	test("Functional test on RandomRange()", random_range_test, NULL);
 	test("Functional test on RandomRangeNonUniform()", random_range_non_uniform_test, NULL);
-
-	free(lp.lib_ctx);
 
 	finish();
 }

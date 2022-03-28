@@ -580,15 +580,7 @@ test_ret_t test_init_fini(__unused void *_)
 int main(void) {
 	init(0);
 
-	// Mock a fake LP
-	struct lp_ctx lp = {0};
-	struct lib_ctx ctx = {0};
-	lp.lib_ctx = &ctx;
-	lp.lib_ctx->rng_s[0] = 7319936632422683443ULL;
-	lp.lib_ctx->rng_s[1] = 2268344373199366324ULL;
-	lp.lib_ctx->rng_s[2] = 3443862242366399137ULL;
-	lp.lib_ctx->rng_s[3] = 2366399137344386224ULL;
-	current_lp = &lp;
+	current_lp = mock_lp();
 
 	test("Topology initialization and release", test_init_fini, NULL);
 	test("Hexagon topology", test_hexagon, NULL);

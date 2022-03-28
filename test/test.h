@@ -16,14 +16,11 @@
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <process.h>
 typedef HANDLE os_semaphore;
 #elif defined(__APPLE__) && defined(__MACH__)
-#include <unistd.h>
 #include <mach/mach.h>
 typedef semaphore_t os_semaphore;
 #elif defined(__unix__) || defined(__unix)
-#include <unistd.h>
 #include <errno.h>
 #include <semaphore.h>
 typedef sem_t * os_semaphore;
@@ -113,15 +110,18 @@ extern double test_random_double(void);
 extern void test_random_init(void);
 
 
+extern struct lp_ctx *mock_lp();
+
 /****+ API TO BE USED IN TESTS ARE DECLARED BELOW THIS LINE ******/
 
-#define test_assert(condition)                                                                                              \
-        do {                                                                                                           \
-                if(!(condition)) {                                                                                     \
-                        fprintf(stderr, "assertion failed: " #condition " at %s:%d\n", __FILE__, __LINE__);            \
-                        test_unit.ret = -1;                                                                            \
-                }                                                                                                      \
-        } while(0)
+#define test_assert(condition)                                                                                         \
+	do {                                                                                                           \
+		if(!(condition)) {                                                                                     \
+			fprintf(stderr, "assertion failed: " #condition " at %s:%d\n", __FILE__, __LINE__);            \
+			fflush(stderr);                                                                                \
+			test_unit.ret = -1;                                                                            \
+		}                                                                                                      \
+	} while(0)
 
 #define check_passed_asserts()                                                                                         \
         do {                                                                                                           \
