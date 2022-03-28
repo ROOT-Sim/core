@@ -42,7 +42,7 @@ struct alc {
 
 static void allocation_init(struct alc *alc)
 {
-	unsigned c = RANDOM(MAX_ALLOC_E) + 1;
+	unsigned c = test_random_range(MAX_ALLOC_E) + 1;
 
 	alc->ptr = rs_malloc(c * sizeof(*alc->ptr));
 	if(alc->ptr == NULL) {
@@ -52,7 +52,7 @@ static void allocation_init(struct alc *alc)
 	//	__write_mem(alc->ptr, alc->c * sizeof(unsigned));
 
 	while(c--) {
-		unsigned v = test_random();
+		unsigned v = test_random_u();
 		alc->ptr[c] = v;
 		alc->data[c] = v;
 	}
@@ -86,30 +86,30 @@ static void allocation_partial_write(struct alc *alc, unsigned p)
 
 	memcpy(alc, alc - MAX_ALLOC_CNT, MAX_ALLOC_CNT * sizeof(*alc));
 
-	unsigned w = RANDOM(MAX_ALLOC_CNT / 2);
+	unsigned w = test_random_range(MAX_ALLOC_CNT / 2);
 	while(w--) {
-		unsigned i = RANDOM(MAX_ALLOC_CNT);
+		unsigned i = test_random_range(MAX_ALLOC_CNT);
 
 		if(alc[i].ptr == NULL) {
 			continue;
 		}
 
 		unsigned c = alc[i].c;
-		unsigned e = RANDOM(c + 1);
-		unsigned l = RANDOM(e + 1);
+		unsigned e = test_random_range(c + 1);
+		unsigned l = test_random_range(e + 1);
 
 		//		__write_mem(alc[i].ptr + l, (e - l) * sizeof(unsigned));
 
 		for(unsigned j = l; j < e; ++j) {
-			unsigned v = test_random();
+			unsigned v = test_random_u();
 			alc[i].ptr[j] = v;
 			alc[i].data[j] = v;
 		}
 	}
 
-	w = RANDOM(MAX_ALLOC_CNT / 6);
+	w = test_random_range(MAX_ALLOC_CNT / 6);
 	while(w--) {
-		unsigned i = RANDOM(MAX_ALLOC_CNT);
+		unsigned i = test_random_range(MAX_ALLOC_CNT);
 		if(alc[i].ptr == NULL) {
 			allocation_init(&alc[i]);
 		} else {
@@ -146,7 +146,7 @@ static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned 
 		if(allocation_check(alc, i)) {
 			return true;
 		}
-		if(RANDOM_01() < FULL_CHK_P) {
+		if(test_random_double() < FULL_CHK_P) {
 			model_allocator_checkpoint_next_force_full();
 		}
 		model_allocator_checkpoint_take(i);
@@ -161,7 +161,7 @@ static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned 
 			return true;
 		}
 
-		unsigned s = RANDOM(MAX_ALLOC_STEP) + 1;
+		unsigned s = test_random_range(MAX_ALLOC_STEP) + 1;
 
 		if(up <= down + s) {
 			break;
@@ -198,8 +198,8 @@ test_ret_t model_allocator_test_hard(__unused void *_)
 	unsigned c = 0;
 	for(unsigned j = 0; j < ALLOC_OSCILLATIONS; ++j) {
 
-		unsigned u = RANDOM(MAX_ALLOC_PHASES - 1) + 1;
-		unsigned d = RANDOM(u);
+		unsigned u = test_random_range(MAX_ALLOC_PHASES - 1) + 1;
+		unsigned d = test_random_range(u);
 
 		if(allocation_cycle(alc, c, u, d)) {
 			return -1;

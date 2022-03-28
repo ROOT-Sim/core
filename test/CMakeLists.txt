@@ -4,7 +4,8 @@ set(test_srcs
         framework/test.c
         framework/semaphore.c
         framework/thread.c
-        framework/rng.c)
+        framework/rng.c
+)
 
 function(test_program name)
     add_executable(test_${name} ${ARGN} ${test_srcs})

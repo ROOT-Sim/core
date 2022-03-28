@@ -34,7 +34,7 @@ typedef uint64_t lp_id_t;
 
 /**
  * @brief ProcessEvent callback function
- * @param lp_id The logical process ID of the called LP
+ * @param me The logical process ID of the called LP
  * @param now The current simulation time
  * @param event_type The type of the simulation event
  * @param event_content The (model-specific) content of the simulation event
@@ -43,7 +43,7 @@ typedef uint64_t lp_id_t;
  *
  * This function is called by the simulation kernel whenever a new event is extracted from the event queue.
  * The event is executed in the speculative part of the simulation trajectory: any change to the simulation
- * state (see @ref st) might be reverted by the simulation kernel in case a straggler event is detected.
+ * state might be reverted by the simulation kernel in case a straggler event is detected.
  *
  * @warning The event content is not a copy, so it should not be modified. Failing to do so might lead to undefined
  * behavior in case of straggler events.

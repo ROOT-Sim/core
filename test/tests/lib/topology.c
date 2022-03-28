@@ -497,17 +497,17 @@ test_ret_t test_graph(__unused void *_)
 	for(unsigned nodes = 1; nodes < MAX_NODES_TEST; nodes++) {
 		topology = InitializeTopology(TOPOLOGY_GRAPH, nodes);
 
-		num_edges = (unsigned)(nodes + (double)test_random() / ((double)ULLONG_MAX / (9 * nodes + 1) + 1));
+		num_edges = (unsigned)(nodes + (double)test_random_u() / ((double)ULLONG_MAX / (9 * nodes + 1) + 1));
 		for(unsigned edge = 0; edge < num_edges; edge++) {
-			from = RANDOM(nodes);
-			to = RANDOM(nodes);
-			test_assert(AddTopologyLink(topology, from, to, RANDOM_01()));
+			from = test_random_range(nodes);
+			to = test_random_range(nodes);
+			test_assert(AddTopologyLink(topology, from, to, test_random_double()));
 			test_assert(AddTopologyLink(topology, from, to, 2.0) == false);
 			test_assert(AddTopologyLink(topology, from, to, -1.0) == false);
 		}
 
 		for(unsigned i = 0; i < NUM_QUERIES; i++) {
-			from = RANDOM(nodes);
+			from = test_random_range(nodes);
 			to = GetReceiver(from, topology, DIRECTION_RANDOM);
 
 			// We get an invalid direction only if there is a node with no
@@ -544,19 +544,19 @@ test_ret_t test_init_fini(__unused void *_)
 		test_assert(InitializeTopology(i, 1, 0) == NULL);
 		test_assert(InitializeTopology(i, 0, 1) == NULL);
 
-		par1 = RANDOM(100) + 1;
-		par2 = RANDOM(100) + 1;
+		par1 = test_random_range(100) + 1;
+		par2 = test_random_range(100) + 1;
 		topology = InitializeTopology(i, par1, par2);
 		test_assert(CountRegions(topology) == par1 * par2);
 		test_assert(GetReceiver(par1 * par2 + 1, topology, DIRECTION_E) == INVALID_DIRECTION);
-		test_assert(AddTopologyLink(topology, par1, par2, RANDOM_01()) == false);
+		test_assert(AddTopologyLink(topology, par1, par2, test_random_double()) == false);
 		ReleaseTopology(topology);
 	}
 
 	for(unsigned i = LAST_TOPOLOGY_WITH_TWO_PARAMETERS + 1; i <= LAST_TOPOLOGY_VALID_VALUE; i++) {
 		test_assert(InitializeTopology(i, 0) == NULL);
 
-		par1 = RANDOM(100) + 1;
+		par1 = test_random_range(100) + 1;
 		topology = InitializeTopology(i, par1);
 		test_assert(CountRegions(topology) == par1);
 		test_assert(GetReceiver(par1 + 1, topology, DIRECTION_E) == INVALID_DIRECTION);

@@ -119,6 +119,7 @@ static void bin_alloc(struct bin *m, size_t size, unsigned r)
 		if (m->size > 0)
 			rs_free(m->ptr);
 		m->ptr = rs_malloc(size);
+		printf("%zu %zu\n", size, m->size);
 		test_assert(m->ptr);
 	}
 
@@ -170,26 +171,26 @@ test_ret_t parallel_malloc_test(__unused void *_)
 	for (b = 0; b < p.bins; b++) {
 		p.m[b].size = 0;
 		p.m[b].ptr = NULL;
-		if (!RANDOM(2))
-			bin_alloc(&p.m[b], RANDOM(p.size) + 1, test_random());
+		if (!test_random_range(2))
+			bin_alloc(&p.m[b], test_random_range(p.size) + 1, test_random_u());
 	}
 
 	for (i = 0; i <= I_MAX; ) {
 		bin_test(&p);
 
-		actions = RANDOM(ACTIONS_MAX);
+		actions = test_random_range(ACTIONS_MAX);
 
 		for (j = 0; j < actions; j++) {
-			b = RANDOM(p.bins);
+			b = test_random_range(p.bins);
 			bin_free(&p.m[b]);
 		}
 		i += actions;
-		actions = RANDOM(ACTIONS_MAX);
+		actions = test_random_range(ACTIONS_MAX);
 
 		for (j = 0; j < actions; j++) {
-			b = RANDOM(p.bins);
-			action = test_random();
-			bin_alloc(&p.m[b], RANDOM(p.size) + 1, action);
+			b = test_random_range(p.bins);
+			action = test_random_u();
+			bin_alloc(&p.m[b], test_random_range(p.size) + 1, action);
 			bin_test(&p);
 		}
 

@@ -99,10 +99,19 @@ extern void sema_remove(os_semaphore sema);
 extern void sema_wait(os_semaphore sema, unsigned count);
 extern void sema_signal(os_semaphore sema, unsigned count);
 
-extern unsigned int test_random(void);
-void test_random_init(void);
-#define RANDOM(s) (test_random() % (s))
-#define RANDOM_01() (test_random() / (double)ULLONG_MAX)
+/// The type of this pseudo random number generator state
+typedef __uint128_t test_rng_state;
+
+extern int ks_test(__uint32_t N, __uint32_t nBins, double (*sample)(void));
+extern __uint64_t lcg_random_u(test_rng_state *rng_state);
+extern double lcg_random(test_rng_state *rng_state);
+extern __uint64_t lcg_random_range(test_rng_state *rng_state, __uint64_t n);
+extern void lcg_init(test_rng_state *rng_state, test_rng_state initseq);
+extern __uint64_t test_random_range(__uint64_t n);
+extern __uint64_t test_random_u(void);
+extern double test_random_double(void);
+extern void test_random_init(void);
+
 
 /****+ API TO BE USED IN TESTS ARE DECLARED BELOW THIS LINE ******/
 

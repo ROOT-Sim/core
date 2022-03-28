@@ -68,7 +68,7 @@ test_ret_t sem_test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 thrd_ret_t phase1(void *id)
 {
 	unsigned long tid = (unsigned long)id;
-	int r = RANDOM(RAND_DELAY_MAX);
+	int r = test_random_range(RAND_DELAY_MAX);
 	for(int i = 0; i < r; i++);
 
 	if(tid < N_PROD) {
@@ -84,7 +84,7 @@ thrd_ret_t phase1(void *id)
 thrd_ret_t phase2(void *id)
 {
 	unsigned long tid = (unsigned long)id;
-	int r = RANDOM(RAND_DELAY_MAX);
+	int r = test_random_range(RAND_DELAY_MAX);
 	for(int i = 0; i < r; i++);
 
 	if(tid < N_PROD) {

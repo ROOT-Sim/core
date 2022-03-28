@@ -8,13 +8,14 @@
  */
 #include "application.h"
 
-#include "test.h"
+#include <test.h>
 
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define do_random() (lcg_random(state->rng_state))
+#define do_random() (lcg_random(&state->rng_state))
 
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st)
 {
@@ -44,7 +45,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 
 			memset(state, 0, sizeof(lp_state));
 
-			lcg_init(state->rng_state, ((test_rng_state)me + 1) * 4390023366657240769ULL);
+			lcg_init(&state->rng_state, ((test_rng_state)me + 1) * 4390023366657240769ULL);
 			SetState(state);
 
 			unsigned buffers_to_allocate = do_random() * MAX_BUFFERS;

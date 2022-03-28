@@ -37,7 +37,7 @@ buffer *allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
 		memcpy(new->data, data, count * sizeof(uint64_t));
 	else
 		for(unsigned i = 0; i < count; i++)
-			new->data[i] = lcg_random_u(state->rng_state);
+			new->data[i] = lcg_random_u(&state->rng_state);
 
 	return new;
 }

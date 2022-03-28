@@ -8,8 +8,8 @@
  */
 #pragma once
 
-#include "ROOT-Sim.h"
-#include "test_rng.h"
+#include <test.h>
+#include <ROOT-Sim.h>
 
 #define N_LPS 256
 #define MAX_BUFFERS 256

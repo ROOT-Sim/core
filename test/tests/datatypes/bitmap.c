@@ -31,8 +31,8 @@ static test_ret_t bitmap_test(__unused void *_)
 
 	unsigned i = THREAD_REPS;
 	while (i--) {
-		unsigned e = RANDOM(BITMAP_ENTRIES);
-		bool v = (double)test_random() / RAND_MAX > 0.5;
+		unsigned e = test_random_range(BITMAP_ENTRIES);
+		bool v = (double)test_random_u() / RAND_MAX > 0.5;
 		if (v)
 			bitmap_set(b, e);
 		else
