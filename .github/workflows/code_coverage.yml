@@ -12,7 +12,7 @@ jobs:
       - name: Initialize Environment
         uses: ROOT-Sim/ci-actions/init@v1
       - name: Build & Test
-        uses: ROOT-Sim/ci-actions/cmake@v1
+        uses: ROOT-Sim/ci-actions/cmake@v1.1
         with:
           build-dir: ${{ runner.workspace }}/build
           cc: gcc

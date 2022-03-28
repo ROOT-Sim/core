@@ -18,9 +18,9 @@ jobs:
       - name: Checkpout repository
         uses: actions/checkout@v2
       - name: Initialize Environment
-        uses: ROOT-Sim/ci-actions/init@v1
+        uses: ROOT-Sim/ci-actions/init@v1.1
       - name: Build & Test
-        uses: ROOT-Sim/ci-actions/cmake@v1
+        uses: ROOT-Sim/ci-actions/cmake@v2
         with:
           build-dir: ${{ runner.workspace }}/build
           cc: ${{ matrix.compiler }}
