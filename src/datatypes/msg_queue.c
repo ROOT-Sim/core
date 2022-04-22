@@ -76,14 +76,22 @@ void msg_queue_init(void)
 	spin_init(&mq->q_lock);
 }
 
+/**
+ * @brief Initialize the message queue for the current LP
+ *
+ * This is a no-op for this kind of queue.
+ */
 void msg_queue_lp_init(void)
 {
-
 }
 
+/**
+ * @brief Finalize the message queue for the current LP
+ *
+ * This is a no-op for this kind of queue.
+ */
 void msg_queue_lp_fini(void)
 {
-
 }
 
 /**

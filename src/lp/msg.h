@@ -55,13 +55,27 @@ struct lp_msg {
 	unsigned char extra_pl[];
 };
 
+/// The data structure used to keep track of out-of-order distributed antimessages
 struct lp_msg_remote_match {
+	/// The original anti message raw_flags
 	uint32_t raw_flags;
+	/// The original anti message m_seq
 	uint32_t m_seq;
 };
 
 enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
 
+/**
+ * @brief Compute a deterministic order for messages with same timestamp
+ * @param a the first message to compare
+ * @param b the second message to compare
+ * @return true if the @p a come before @p b
+ *
+ * There can be two distinct messages a and b so that
+ * msg_is_before_extended(a, b) == false and msg_is_before_extended(b, a) == false.
+ * In that case, the two messages will necessarily induce the same state change
+ * in the receiving LP: it doesn't make any difference which one will be processed first.
+ */
 static inline bool msg_is_before_extended(const struct lp_msg *restrict a,
 		const struct lp_msg *restrict b)
 {
