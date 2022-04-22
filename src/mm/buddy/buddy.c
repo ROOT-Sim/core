@@ -18,6 +18,7 @@
 
 
 #define is_power_of_2(i) (!((i) & ((i)-1)))
+// doesn't work correctly for 0 values!
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
 
 void model_allocator_lp_init(void)
@@ -50,7 +51,7 @@ void *rs_malloc(size_t req_size)
 		return NULL;
 
 	struct mm_state *self = &current_lp->mm_state;
-	uint_fast8_t req_blks = max(next_exp_of_2(req_size - 1), B_BLOCK_EXP);
+	uint_fast8_t req_blks = next_exp_of_2(max(req_size, 1 << B_BLOCK_EXP) - 1);
 
 	if(unlikely(self->longest[0] < req_blks)) {
 		errno = ENOMEM;
