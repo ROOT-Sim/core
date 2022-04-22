@@ -17,8 +17,6 @@
 struct process_data {
 	/// The messages processed in the past by the owner LP
 	dyn_array(struct lp_msg *) p_msgs;
-	/// Last simulation time
-	simtime_t last_t;
 };
 
 #define is_msg_sent(msg_p) (((uintptr_t)(msg_p)) & 3U)

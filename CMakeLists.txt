@@ -35,8 +35,7 @@ set(srcs
         src/mm/buddy/ckpt.c
         src/mm/msg_allocator.c
         src/parallel/parallel.c
-        src/serial/serial.c
-        test/framework/semaphore.c)
+        src/serial/serial.c)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)

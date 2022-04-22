@@ -78,6 +78,7 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
 			lp_on_gvt(current_gvt);
+			msg_allocator_on_gvt(current_gvt);
 			stats_on_gvt(current_gvt);
 		}
 	}

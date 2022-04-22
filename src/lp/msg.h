@@ -12,16 +12,15 @@
 
 #include <core/core.h>
 
+#include <limits.h>
 #include <stdatomic.h>
 #include <stddef.h>
-#include <limits.h>
+#include <string.h>
 
 #define BASE_PAYLOAD_SIZE 32
 
-#define msg_is_before(ma, mb)                                                                                          \
-	((ma)->dest_t < (mb)->dest_t || ((ma)->dest_t == (mb)->dest_t && (ma)->raw_flags > (mb)->raw_flags))
-
-#define msg_is_before_serial(ma, mb) msg_is_before((ma), (mb))
+#define msg_is_before(ma, mb) ((ma)->dest_t < (mb)->dest_t || 		\
+	((ma)->dest_t == (mb)->dest_t && msg_is_before_extended(ma, mb)))
 
 #define msg_bare_size(msg) (offsetof(struct lp_msg, pl) + (msg)->pl_size)
 #define msg_anti_size() (offsetof(struct lp_msg, m_seq) + sizeof(uint32_t))
@@ -62,3 +61,19 @@ struct lp_msg_remote_match {
 };
 
 enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
+
+static inline bool msg_is_before_extended(const struct lp_msg *restrict a,
+		const struct lp_msg *restrict b)
+{
+	if ((a->raw_flags & MSG_FLAG_ANTI) != (b->raw_flags & MSG_FLAG_ANTI))
+		return (a->raw_flags & MSG_FLAG_ANTI) >
+				(b->raw_flags & MSG_FLAG_ANTI);
+
+	if (a->m_type != b->m_type)
+		return a->m_type > b->m_type;
+
+	if (a->pl_size != b->pl_size)
+		return a->pl_size < b->pl_size;
+
+	return memcmp(a->pl, b->pl, a->pl_size) > 0;
+}

@@ -9,8 +9,9 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <lp/lp.h>
-#include <mm/mm.h>
 
+#include <datatypes/msg_queue.h>
+#include <mm/mm.h>
 #include <core/sync.h>
 #include <gvt/fossil.h>
 
@@ -87,6 +88,7 @@ void lp_init(void)
 		model_allocator_lp_init();
 		lp->lib_ctx = rs_malloc(sizeof(*current_lp->lib_ctx));
 
+		msg_queue_lp_init();
 		lib_lp_init();
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init();
@@ -113,6 +115,7 @@ void lp_fini(void)
 
 		process_lp_fini();
 		lib_lp_fini();
+		msg_queue_lp_fini();
 		model_allocator_lp_fini();
 	}
 

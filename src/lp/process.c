@@ -22,6 +22,9 @@
 
 static __thread bool silent_processing = false;
 static __thread dyn_array(struct lp_msg_remote_match) early_antis;
+#ifndef NDEBUG
+static __thread struct lp_msg *current_msg;
+#endif
 
 #define mark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))
 #define mark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 1U))
@@ -38,8 +41,12 @@ void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned e
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
 #ifndef NDEBUG
+	if(msg_is_before(msg, current_msg)) {
+		logger(LOG_FATAL, "Scheduling a message in the past!");
+		abort();
+	}
 	msg->send = current_lp - lps;
-	msg->send_t = proc_p->last_t;
+	msg->send_t = current_msg->dest_t;
 #endif
 
 	nid_t dest_nid = lid_to_nid(receiver);
@@ -88,9 +95,10 @@ void process_lp_init(void)
 	array_init(proc_p->p_msgs);
 
 	struct lp_msg *msg = msg_allocator_pack(lp - lps, 0, LP_INIT, NULL, 0U);
-
-	proc_p->last_t = 0;
-
+	msg->raw_flags = MSG_FLAG_PROCESSED;
+#ifndef NDEBUG
+	current_msg = msg;
+#endif
 	global_config.dispatcher(lp - lps, 0, LP_INIT, NULL, 0, NULL);
 	stats_take(STATS_MSG_PROCESSED, 1);
 
@@ -118,9 +126,11 @@ void process_lp_fini(void)
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
 		if(is_msg_local_sent(msg))
 			continue;
+
+		bool remote = is_msg_remote(msg);
 		msg = unmark_msg(msg);
 		uint32_t flags = atomic_load_explicit(&msg->flags, memory_order_relaxed);
-		if(!(flags & MSG_FLAG_ANTI))
+		if(remote || !(flags & MSG_FLAG_ANTI))
 			msg_allocator_free(msg);
 	}
 	array_fini(proc_p->p_msgs);
@@ -159,6 +169,7 @@ static inline void send_anti_messages(struct process_data *proc_p, array_count_t
 				msg = unmark_msg_remote(msg);
 				nid_t dest_nid = lid_to_nid(msg->dest);
 				mpi_remote_anti_msg_send(msg, dest_nid);
+				msg_allocator_free_at_gvt(msg);
 			} else {
 				msg = unmark_msg_sent(msg);
 				int f = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
@@ -186,12 +197,13 @@ static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 	stats_take(STATS_ROLLBACK, 1);
 }
 
-static inline array_count_t match_straggler_msg(const struct process_data *proc_p, const struct lp_msg *s_msg)
+static inline array_count_t match_straggler_msg(
+		const struct process_data *proc_p, const struct lp_msg *s_msg)
 {
 	array_count_t i = array_count(proc_p->p_msgs) - 1;
 	const struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
 	while(1) {
-		if(msg_is_before(msg, s_msg))
+		if(!msg_is_before(s_msg, msg))
 			return i + 1;
 		while(1) {
 			if(!i)
@@ -233,7 +245,6 @@ static inline void handle_remote_anti_msg(struct process_data *proc_p, const str
 			// suppresses the re-insertion in the processing queue
 			amsg->raw_flags |= MSG_FLAG_ANTI;
 			do_rollback(proc_p, past_i);
-			proc_p->last_t = past_i == 0 ? 0 : array_get_at(proc_p->p_msgs, --past_i)->dest_t;
 			termination_on_lp_rollback(msg->dest_t);
 			msg_allocator_free(amsg);
 			return;
@@ -293,7 +304,6 @@ void process_msg(void)
 		} else if(flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 			array_count_t past_i = match_anti_msg(proc_p, msg);
 			do_rollback(proc_p, past_i);
-			proc_p->last_t = past_i == 0 ? 0 : array_get_at(proc_p->p_msgs, --past_i)->dest_t;
 			termination_on_lp_rollback(msg->dest_t);
 			auto_ckpt_register_bad(&this_lp->auto_ckpt);
 		}
@@ -305,15 +315,15 @@ void process_msg(void)
 	if(unlikely(check_early_anti_messages(msg)))
 		return;
 
-	if(unlikely(proc_p->last_t > msg->dest_t)) {
+	if(unlikely(array_count(proc_p->p_msgs) && msg_is_before(msg, array_peek(proc_p->p_msgs)))) {
 		array_count_t past_i = match_straggler_msg(proc_p, msg);
 		do_rollback(proc_p, past_i);
 		termination_on_lp_rollback(msg->dest_t);
 		auto_ckpt_register_bad(&this_lp->auto_ckpt);
 	}
-
-	proc_p->last_t = msg->dest_t;
-
+#ifndef NDEBUG
+	current_msg = msg;
+#endif
 	global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, this_lp->lib_ctx->state_s);
 	stats_take(STATS_MSG_PROCESSED, 1);
 	array_push(proc_p->p_msgs, msg);

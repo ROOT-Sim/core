@@ -17,11 +17,11 @@
 
 #include <limits.h>
 #include <float.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <stdarg.h>
+#include <stdlib.h>
 
 /// Simulation time data type
 typedef double simtime_t;

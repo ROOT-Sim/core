@@ -118,7 +118,7 @@ static int serial_simulation_run(void)
 			last_vt = timer_new();
 		}
 
-		msg_allocator_free(heap_extract(queue, msg_is_before_serial));
+		msg_allocator_free(heap_extract(queue, msg_is_before));
 	}
 
 	stats_dump();
@@ -142,7 +142,7 @@ void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned eve
 
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
-	heap_insert(queue, msg_is_before_serial, msg);
+	heap_insert(queue, msg_is_before, msg);
 }
 
 /**

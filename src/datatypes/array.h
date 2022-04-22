@@ -198,3 +198,8 @@ typedef uint_fast32_t array_count_t;
 			    mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));          \
 		}                                                                                                      \
 	})
+
+#define array_lazy_remove_at(self, i)					\
+__extension__({								\
+	array_items(self)[(i)] = array_items(self)[--array_count(self)];\
+})

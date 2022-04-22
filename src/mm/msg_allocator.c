@@ -15,6 +15,7 @@
 #include <gvt/gvt.h>
 
 static __thread dyn_array(struct lp_msg *) free_list = {0};
+static __thread dyn_array(struct lp_msg *) at_gvt_list = {0};
 
 /**
  * @brief Initialize the message allocator thread-local data structures
@@ -29,10 +30,13 @@ void msg_allocator_init(void)
  */
 void msg_allocator_fini(void)
 {
-	while(!array_is_empty(free_list)) {
+	while(!array_is_empty(free_list))
 		mm_free(array_pop(free_list));
-	}
 	array_fini(free_list);
+
+	while(!array_is_empty(at_gvt_list))
+		mm_free(array_pop(at_gvt_list));
+	array_fini(at_gvt_list);
 }
 
 /**
@@ -66,6 +70,30 @@ void msg_allocator_free(struct lp_msg *msg)
 		array_push(free_list, msg);
 	else
 		mm_free(msg);
+}
+
+/**
+ * @brief Free a message after its destination time is committed
+ * @param msg a pointer to the message to release
+ */
+void msg_allocator_free_at_gvt(struct lp_msg *msg)
+{
+	array_push(at_gvt_list, msg);
+}
+
+/**
+ * @brief Free a message after its destination time is committed
+ * @param msg a pointer to the message to release
+ */
+void msg_allocator_on_gvt(simtime_t current_gvt)
+{
+	for (array_count_t i = array_count(at_gvt_list); i-- > 0;) {
+		struct lp_msg *msg = array_get_at(at_gvt_list, i);
+		if (msg->dest_t < current_gvt) {
+			msg_allocator_free(msg);
+			array_lazy_remove_at(at_gvt_list, i);
+		}
+	}
 }
 
 /**

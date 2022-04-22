@@ -35,11 +35,7 @@ static test_ret_t correctness(void *config)
 int main(void)
 {
 	init(0);
-
 	crc_table_init();
-
-	RootsimInit(&conf);
 	test("Correctness test (parallel)", correctness, &conf);
-
 	finish();
 }
