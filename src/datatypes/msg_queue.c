@@ -124,7 +124,8 @@ static inline void msg_queue_insert_queued(void)
 {
 	struct msg_queue *mq = &queues[rid];
 
-	spin_lock(&mq->q_lock);
+	if (unlikely(!spin_trylock(&mq->q_lock)))
+		return;
 
 	struct q_elem *tmp_items = array_items(mq->b);
 	array_count_t c = array_count(mq->b);

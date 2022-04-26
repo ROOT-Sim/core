@@ -22,6 +22,7 @@ static __thread dyn_array(struct lp_msg *) at_gvt_list = {0};
  */
 void msg_allocator_init(void)
 {
+	array_init(at_gvt_list);
 	array_init(free_list);
 }
 
