@@ -9,10 +9,10 @@ set(PROJECT_DESCRIPTION "A General-Purpose Multithreaded Parallel/Distributed Si
 
 if (MSVC)
     # warning level 4 and all warnings as errors
-    add_compile_options(/W4 /WX)
+    add_compile_options(/Wall)
 else()
     # lots of warnings and all warnings as errors
-    add_compile_options(-Wall -Wextra -pedantic -Werror)
+    add_compile_options(-Wall -Wextra -pedantic)
 endif()
 
 add_definitions(-DROOTSIM_VERSION="${PROJECT_VERSION}")

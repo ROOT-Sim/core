@@ -118,26 +118,21 @@ struct list {
 #define list_insert_head(li, data) \
 	do {	\
 		__typeof__(data) __new_n = (data); /* in-block scope variable */\
-		size_t __size_before;\
 		struct list *__l;\
 		__new_n->next = NULL;\
 		__new_n->prev = NULL;\
-		do {\
-			__l = (struct list *)(li);\
-			assert(__l);\
-			__size_before = __l->size;\
-			if(__l->size == 0) { /* is the list empty? */\
-				__l->head = __new_n;\
-				__l->tail = __new_n;\
-				break; /* leave the inner do-while */\
-			}\
-			__new_n->prev = NULL; /* Otherwise add at the beginning */\
-			__new_n->next = __l->head;\
-			((__typeof(data))__l->head)->prev = __new_n;\
+		__l = (struct list *)(li);\
+		assert(__l);\
+		if(__l->size == 0) { /* is the list empty? */\
 			__l->head = __new_n;\
-		} while(0);\
+			__l->tail = __new_n;\
+		}else{\
+        	__new_n->prev = NULL; /* Otherwise add at the beginning */\
+        	__new_n->next = __l->head;\
+        	((__typeof(data))__l->head)->prev = __new_n;\
+        	__l->head = __new_n;\
+        }\
 		__l->size++;\
-		assert(__l->size == (__size_before + 1));\
 	} while(0)
 
 /// Insert a new node in the list
