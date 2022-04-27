@@ -67,9 +67,9 @@ test_ret_t sem_test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 
 thrd_ret_t phase1(void *id)
 {
-	unsigned long tid = (unsigned long)id;
-	int r = test_random_range(RAND_DELAY_MAX);
-	for(int i = 0; i < r; i++);
+	uintptr_t tid = (uintptr_t)id;
+	uint64_t r = test_random_range(RAND_DELAY_MAX);
+	for(int i = 0; i < r; i++); // FIXME: this would get for sure optimized away
 
 	if(tid < N_PROD) {
 		sema_signal(producer, N_CONS/N_PROD);
@@ -83,9 +83,9 @@ thrd_ret_t phase1(void *id)
 
 thrd_ret_t phase2(void *id)
 {
-	unsigned long tid = (unsigned long)id;
-	int r = test_random_range(RAND_DELAY_MAX);
-	for(int i = 0; i < r; i++);
+	uintptr_t tid = (uintptr_t)id;
+	uint64_t r = test_random_range(RAND_DELAY_MAX);
+	for(int i = 0; i < r; i++); // FIXME: this would get for sure optimized away
 
 	if(tid < N_PROD) {
 		sema_wait(consumer, N_CONS/N_PROD);
@@ -105,17 +105,17 @@ test_ret_t test_semaphores(__unused void *_)
 	consumer = sema_init(0);
 
 	for(int i = 1; i < REP_COUNT+1; i++) {
-		for(unsigned long j = 0; j < N_THREAD; j++)
+		for(uintptr_t j = 0; j < N_THREAD; j++)
 			sem_test_thread_start(&tids[j], phase1, (void *)j);
-		for(unsigned long j = 0; j < N_THREAD; j++)
+		for(uintptr_t j = 0; j < N_THREAD; j++)
 			sem_test_thread_wait(tids[j], NULL);
 
 		test_assert(prod_exec_1 == N_PROD * i);
 		test_assert(cons_exec_1 == N_CONS * i);
 
-		for(unsigned long j = 0; j < N_THREAD; j++)
-			sem_test_thread_start(&tids[j], phase2, (void *)j);
-		for(unsigned long j = 0; j < N_THREAD; j++)
+		for(uintptr_t j = 0; j < N_THREAD; j++)
+			sem_test_thread_start(&tids[j], phase2, (void *)(uintptr_t)j);
+		for(uintptr_t j = 0; j < N_THREAD; j++)
 			sem_test_thread_wait(tids[j], NULL);
 
 		test_assert(prod_exec_2 == N_PROD * i);

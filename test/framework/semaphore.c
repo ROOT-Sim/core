@@ -27,7 +27,7 @@ void sema_remove(os_semaphore sema)
 	CloseHandle(sema);
 }
 
-void sema_wait(os_semaphore sema)
+void sema_wait(os_semaphore sema, unsigned count)
 {
 	assert(count > 0);
 	while(count-- > 0)
