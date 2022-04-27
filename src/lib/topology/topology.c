@@ -213,9 +213,9 @@ static lp_id_t get_neighbor_square(lp_id_t from, struct topology *topology, enum
 			return get_random_neighbor(from, topology, sizeof(directions_square_torus) / sizeof(enum topology_direction),
 						   directions_square_torus);
 		default:
-			return UINT_MAX;
+			return INVALID_DIRECTION;
 	}
-	return (x < topology->width && y < topology->height) ? y * topology->width + x : UINT_MAX;
+	return (x < topology->width && y < topology->height) ? y * topology->width + x : INVALID_DIRECTION;
 }
 
 
