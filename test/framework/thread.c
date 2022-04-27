@@ -23,7 +23,8 @@ static os_semaphore work;
 static os_semaphore ready;
 static os_semaphore all_done;
 
-#if defined(__unix__) || defined(__unix) || defined(__APPLE__) && defined(__MACH__)
+#if defined(__POSIX)
+
 test_ret_t test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 {
 	return (pthread_create(thr_p, NULL, t_fnc, t_fnc_arg) != 0);
@@ -33,7 +34,9 @@ test_ret_t test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 {
 	return (pthread_join(thr, ret) != 0);
 }
-#elif defined(_WIN32)
+
+#elif defined(__WINDOWS)
+
 test_ret_t test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 {
 	*thr_p = CreateThread(NULL, 0, t_fnc, t_fnc_arg, 0, NULL);
@@ -50,8 +53,7 @@ test_ret_t test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 
 	return 0;
 }
-#else
-#error Unsupported operating system
+
 #endif
 
 thrd_ret_t test_worker(void *args)
@@ -71,7 +73,7 @@ thrd_ret_t test_worker(void *args)
 			break;
 	}
 	sema_signal(ready, 1);
-	return NULL;
+	return THREAD_RET_SUCCESS;
 }
 
 void spawn_worker_pool(unsigned n_th)

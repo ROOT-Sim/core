@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <arch/thread.h>
 #include <ROOT-Sim.h>
 
 #ifdef max

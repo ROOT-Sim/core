@@ -9,10 +9,7 @@
 * SPDX-License-Identifier: GPL-3.0-only
 */
 
-#include <stdint.h>
-#include <math.h>
-
-#include <test.h>
+#include "test.h"
 
 
 test_ret_t test_rng(__unused void *_)

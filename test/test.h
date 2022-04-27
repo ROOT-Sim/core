@@ -8,50 +8,42 @@
 */
 #pragma once
 
+#include "arch/platform.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <setjmp.h>
 
-#if defined(_WIN32)
+#ifdef __WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 typedef HANDLE os_semaphore;
-#elif defined(__APPLE__) && defined(__MACH__)
-#include <mach/mach.h>
-typedef semaphore_t os_semaphore;
-#elif defined(__unix__) || defined(__unix)
-#include <errno.h>
-#include <semaphore.h>
-typedef sem_t * os_semaphore;
-#else
-#error Unsupported operating system
-#endif
-
-#if defined(__unix__) || defined(__unix) || defined(__APPLE__) && defined(__MACH__)
-#define _GNU_SOURCE
-#include <pthread.h>
-
-#define THREAD_CALL_CONV
-typedef void * thrd_ret_t;
-typedef pthread_t thr_id_t;
-
-#elif defined(_WIN32)
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
 
 #define THREAD_CALL_CONV WINAPI
 typedef DWORD thrd_ret_t;
 typedef HANDLE thr_id_t;
-
-#define THREAD_RET_FAILURE (1)
 #define THREAD_RET_SUCCESS (0)
+#endif
 
-#else
-#error Unsupported operating system
+#ifdef __POSIX
+#include <pthread.h>
+#define THREAD_CALL_CONV
+typedef void * thrd_ret_t;
+typedef pthread_t thr_id_t;
+#define THREAD_RET_SUCCESS (NULL)
+#endif
+
+#ifdef __MACOS
+#include <mach/mach.h>
+typedef semaphore_t os_semaphore;
+#endif
+
+#ifdef __LINUX
+#include <errno.h>
+#include <semaphore.h>
+typedef sem_t * os_semaphore;
 #endif
 
 #ifndef __unused
@@ -74,7 +66,6 @@ struct test_unit {
 	struct worker *pool;
 	jmp_buf fail_buffer;
 	test_ret_t ret;
-	unsigned total;
 	unsigned passed;
 	unsigned failed;
 	unsigned xfailed;

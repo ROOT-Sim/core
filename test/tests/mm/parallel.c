@@ -9,18 +9,13 @@
 * SPDX-License-Identifier: GPL-3.0-only
 */
 
-#include <unistd.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <pthread.h>
-#include <stdlib.h>
+#include "test.h"
+
 
 #include "mm/mm.h"
-#include <string.h>
-#include "test.h"
 #include "lp/lp.h"
+
+#include <string.h>
 
 #define ACTIONS_MAX	100
 #define I_MAX		10000
