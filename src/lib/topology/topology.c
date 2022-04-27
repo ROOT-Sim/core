@@ -18,15 +18,15 @@
 
 /// A node in the topology adjacency matrix
 struct graph_node {
-	unsigned	neighbor;        /**< The ID of the neighbor */
-	double	probability;     /**< The probability to traverse this edge */
+	lp_id_t	neighbor;        /**< The ID of the neighbor */
+	double probability;     /**< The probability to traverse this edge */
 	struct graph_node *next; /**< Next node in the adjacency list */
 	struct graph_node *prev; /**< Next node in the adjacency list */
 };
 
 /// The structure describing a topology
 struct topology {
-	unsigned regions;                          /**< the number of LPs involved in the topology */
+	lp_id_t regions;                          /**< the number of LPs involved in the topology */
 	uint32_t width;                           /**< the width of the grid */
 	uint32_t height;                          /**< the height of the grid */
 	enum topology_geometry geometry;          /**< the topology geometry */
@@ -34,9 +34,10 @@ struct topology {
 };
 
 /// Allowed directions to reach a neighbor in a TOPOLOGY_HEXAGON
-static unsigned directions_hexagon[] = {DIRECTION_E, DIRECTION_W, DIRECTION_NE, DIRECTION_NW, DIRECTION_SE, DIRECTION_SW};
+static enum topology_direction directions_hexagon[] =
+		{DIRECTION_E, DIRECTION_W, DIRECTION_NE, DIRECTION_NW, DIRECTION_SE, DIRECTION_SW};
 /// Allowed directions to reach a neighbor in either a TOPOLOGY_SQUARE or a TOPOLOGY_TORUS
-static unsigned directions_square_torus[] = {DIRECTION_E, DIRECTION_W, DIRECTION_N, DIRECTION_S};
+static enum topology_direction directions_square_torus[] = {DIRECTION_E, DIRECTION_W, DIRECTION_N, DIRECTION_S};
 
 /**
  * @brief Return a random neighbor
@@ -54,9 +55,9 @@ static unsigned directions_square_torus[] = {DIRECTION_E, DIRECTION_W, DIRECTION
  *
  * @return A random neighbor according to the specified topology
  */
-static unsigned get_random_neighbor(unsigned from, struct topology *topology, size_t n_directions, unsigned directions[n_directions])
+static lp_id_t get_random_neighbor(lp_id_t from, struct topology *topology, size_t n_directions, unsigned directions[n_directions])
 {
-	unsigned ret = INVALID_DIRECTION;
+	lp_id_t ret = INVALID_DIRECTION;
 
 	assert(topology->geometry != TOPOLOGY_RING);
 	assert(topology->geometry != TOPOLOGY_BIDRING);
@@ -126,9 +127,9 @@ static unsigned get_random_neighbor(unsigned from, struct topology *topology, si
  * @param direction The direction to move towards, to find a linear id
  * @return The linear id of the neighbor, INVALID_DIRECTION if such neighbor does not exist in the topology.
  */
-static unsigned get_neighbor_hexagon(unsigned from, struct topology *topology, enum topology_direction direction)
+static lp_id_t get_neighbor_hexagon(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
-	unsigned x, y;
+	uint32_t x, y;
 
 	assert(topology->geometry == TOPOLOGY_HEXAGON);
 
@@ -186,7 +187,7 @@ static unsigned get_neighbor_hexagon(unsigned from, struct topology *topology, e
  * @param direction The direction to move towards, to find a linear id
  * @return The linear id of the neighbor, INVALID_DIRECTION if such neighbor does not exist in the topology.
  */
-static unsigned get_neighbor_square(unsigned from, struct topology *topology, enum topology_direction direction)
+static lp_id_t get_neighbor_square(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
 	unsigned x, y;
 
@@ -212,9 +213,9 @@ static unsigned get_neighbor_square(unsigned from, struct topology *topology, en
 			return get_random_neighbor(from, topology, sizeof(directions_square_torus) / sizeof(enum topology_direction),
 						   directions_square_torus);
 		default:
-			return INVALID_DIRECTION;
+			return UINT_MAX;
 	}
-	return (x < topology->width && y < topology->height) ? y * topology->width + x : INVALID_DIRECTION;
+	return (x < topology->width && y < topology->height) ? y * topology->width + x : UINT_MAX;
 }
 
 
@@ -236,9 +237,9 @@ static unsigned get_neighbor_square(unsigned from, struct topology *topology, en
  * @param direction The direction to move towards, to find a linear id
  * @return The linear id of the neighbor, which always exists.
  */
-static unsigned get_neighbor_torus(unsigned from, struct topology *topology, enum topology_direction direction)
+static lp_id_t get_neighbor_torus(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
-	unsigned x, y;
+	uint32_t x, y;
 
 	assert(topology->geometry == TOPOLOGY_TORUS);
 
@@ -284,9 +285,9 @@ static unsigned get_neighbor_torus(unsigned from, struct topology *topology, enu
  * @param direction Can be only set to DIRECTION_RANDOM
  * @return The linear id of the neighbor, INVALID_DIRECTION if such neighbor does not exist in the topology.
  */
-static unsigned get_neighbor_mesh(unsigned from, struct topology *topology, enum topology_direction direction)
+static lp_id_t get_neighbor_mesh(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
-	unsigned ret;
+	lp_id_t ret;
 
 	assert(topology->geometry == TOPOLOGY_FCMESH);
 
@@ -300,14 +301,14 @@ static unsigned get_neighbor_mesh(unsigned from, struct topology *topology, enum
 		return INVALID_DIRECTION;
 
 	do {
-		ret = (unsigned)(topology->regions * Random());
+		ret = ((double)topology->regions * Random());
 	} while(ret == from);
 
 	return ret;
 }
 
 
-static unsigned get_neighbor_bidring(unsigned from, struct topology *topology, enum topology_direction direction)
+static lp_id_t get_neighbor_bidring(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
 	assert(topology->geometry == TOPOLOGY_BIDRING);
 
@@ -326,7 +327,7 @@ static unsigned get_neighbor_bidring(unsigned from, struct topology *topology, e
 }
 
 
-static unsigned get_neighbor_ring(unsigned from, struct topology *topology, enum topology_direction direction)
+static lp_id_t get_neighbor_ring(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
 	assert(topology->geometry == TOPOLOGY_RING);
 
@@ -336,7 +337,7 @@ static unsigned get_neighbor_ring(unsigned from, struct topology *topology, enum
 }
 
 
-static unsigned get_neighbor_star(unsigned from, struct topology *topology, enum topology_direction direction)
+static lp_id_t get_neighbor_star(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
 	assert(topology->geometry == TOPOLOGY_STAR);
 
@@ -351,7 +352,7 @@ static unsigned get_neighbor_star(unsigned from, struct topology *topology, enum
 }
 
 
-static unsigned get_neighbor_graph(unsigned from, struct topology *topology, enum topology_direction direction)
+static lp_id_t get_neighbor_graph(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
 	double rand, cumulative = 0.0;
 	struct graph_node *adj_node;
@@ -381,16 +382,16 @@ static unsigned get_neighbor_graph(unsigned from, struct topology *topology, enu
 }
 
 
-unsigned CountRegions(struct topology *topology)
+lp_id_t CountRegions(struct topology *topology)
 {
 	return topology->regions;
 }
 
 
-unsigned CountDirections(unsigned from, struct topology *topology)
+lp_id_t CountDirections(lp_id_t from, struct topology *topology)
 {
-	unsigned neighbors;
-	unsigned x, y;
+	lp_id_t neighbors;
+	uint32_t x, y;
 
 	assert(topology);
 
@@ -451,7 +452,7 @@ unsigned CountDirections(unsigned from, struct topology *topology)
 }
 
 
-bool IsNeighbor(unsigned from, unsigned to, struct topology *topology)
+bool IsNeighbor(lp_id_t from, lp_id_t to, struct topology *topology)
 {
 	struct graph_node *adj_node;
 
@@ -527,7 +528,7 @@ bool IsNeighbor(unsigned from, unsigned to, struct topology *topology)
 }
 
 
-unsigned GetReceiver(unsigned from, struct topology *topology, enum topology_direction direction)
+lp_id_t GetReceiver(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
 	if(unlikely(from >= topology->regions)) {
 		fprintf(stderr, "[ERROR] `from` does not belong to the topology.\n");
@@ -681,7 +682,7 @@ void ReleaseTopology(struct topology *topology)
 }
 
 
-bool AddTopologyLink(struct topology *topology, unsigned from, unsigned to, double probability)
+bool AddTopologyLink(struct topology *topology, lp_id_t from, lp_id_t to, double probability)
 {
 	if(unlikely(topology->geometry != TOPOLOGY_GRAPH)) {
 		fprintf(stderr, "[ERROR] Setting a weighted link in a topology which is not a graph.");

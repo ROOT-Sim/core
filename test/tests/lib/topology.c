@@ -492,7 +492,7 @@ test_ret_t test_graph(__unused void *_)
 {
 	struct topology *topology;
 	unsigned num_edges;
-	unsigned from, to;
+	lp_id_t from, to;
 
 	for(unsigned nodes = 1; nodes < MAX_NODES_TEST; nodes++) {
 		topology = InitializeTopology(TOPOLOGY_GRAPH, nodes);

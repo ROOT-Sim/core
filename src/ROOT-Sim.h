@@ -125,17 +125,18 @@ enum topology_direction {
 	DIRECTION_SE,	//!< South-east direction
 
 	DIRECTION_RANDOM, //!< Get a random direction, depending on the topology
-
-	INVALID_DIRECTION = INT_MIN	//!< A generic invalid direction
 };
 
-extern unsigned CountRegions(struct topology *topology);
-extern unsigned CountDirections(unsigned from, struct topology *topology);
-extern unsigned GetReceiver(unsigned from, struct topology *topology, enum topology_direction direction);
+//!< An invalid direction, used as error value for the functions which return a LP id
+#define INVALID_DIRECTION UINT64_MAX
+
+extern lp_id_t CountRegions(struct topology *topology);
+extern lp_id_t CountDirections(lp_id_t from, struct topology *topology);
+extern lp_id_t GetReceiver(lp_id_t from, struct topology *topology, enum topology_direction direction);
 
 extern void ReleaseTopology(struct topology *topology);
-extern bool AddTopologyLink(struct topology *topology, unsigned from, unsigned to, double probability);
-extern bool IsNeighbor(unsigned from, unsigned to, struct topology *topology);
+extern bool AddTopologyLink(struct topology *topology, lp_id_t from, lp_id_t to, double probability);
+extern bool IsNeighbor(lp_id_t from, lp_id_t to, struct topology *topology);
 
 
 // The following trick belongs to Laurent Deniau at CERN.
