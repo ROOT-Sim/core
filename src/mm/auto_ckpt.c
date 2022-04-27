@@ -15,11 +15,18 @@
 
 #include <math.h>
 
+/**
+ * Compute a new value of the exponential moving average
+ * @param f the retention factor for old observations
+ * @param old_v the latest value of the moving average
+ * @param sample the new value to include in the average
+ * @return the new value of the exponential moving average
+ */
 #define EXP_AVG(f, old_v, sample)                                                                                      \
 	__extension__({                                                                                                \
 		double s = (sample);                                                                                   \
 		double o = (old_v);                                                                                    \
-		o *(((f) - 1.0) / (f)) + s *(1.0 / (f));                                                                     \
+		o * (((f) - 1.0) / (f)) + s * (1.0 / (f));                                                                     \
 	})
 
 static __thread struct {

@@ -290,8 +290,28 @@ void gvt_msg_drain(void)
 	}
 }
 
-
+/**
+ * Registers an outgoing remote message in the GVT subsystem
+ * @param msg the remote message to register
+ * @param dest_nid the destination node id of the message
+ */
 extern void gvt_remote_msg_send(struct lp_msg *msg, nid_t dest_nid);
+
+/**
+ * Registers an outgoing remote anti-message in the GVT subsystem
+ * @param msg the remote anti-message to register
+ * @param dest_nid the destination node id of the anti-message
+ */
 extern void gvt_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
+
+/**
+ * Registers an incoming remote message in the GVT subsystem
+ * @param msg the remote message to register
+ */
 extern void gvt_remote_msg_receive(struct lp_msg *msg);
+
+/**
+ * Registers an incoming remote anti-message in the GVT subsystem
+ * @param msg the remote anti-message to register
+ */
 extern void gvt_remote_anti_msg_receive(struct lp_msg *msg);
