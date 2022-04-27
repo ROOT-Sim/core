@@ -8,10 +8,11 @@
 */
 #pragma once
 
-#include <stdio.h>
-#include <setjmp.h>
 #include <assert.h>
 #include <limits.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <setjmp.h>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -99,13 +100,13 @@ extern void sema_signal(os_semaphore sema, unsigned count);
 /// The type of this pseudo random number generator state
 typedef __uint128_t test_rng_state;
 
-extern int ks_test(__uint32_t N, __uint32_t nBins, double (*sample)(void));
-extern __uint64_t lcg_random_u(test_rng_state *rng_state);
+extern int ks_test(uint32_t N, uint32_t nBins, double (*sample)(void));
+extern uint64_t lcg_random_u(test_rng_state *rng_state);
 extern double lcg_random(test_rng_state *rng_state);
-extern __uint64_t lcg_random_range(test_rng_state *rng_state, __uint64_t n);
+extern uint64_t lcg_random_range(test_rng_state *rng_state, uint64_t n);
 extern void lcg_init(test_rng_state *rng_state, test_rng_state initseq);
-extern __uint64_t test_random_range(__uint64_t n);
-extern __uint64_t test_random_u(void);
+extern uint64_t test_random_range(uint64_t n);
+extern uint64_t test_random_u(void);
 extern double test_random_double(void);
 extern void test_random_init(void);
 

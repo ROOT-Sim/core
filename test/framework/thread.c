@@ -77,7 +77,7 @@ thrd_ret_t test_worker(void *args)
 void spawn_worker_pool(unsigned n_th)
 {
 	test_unit.n_th = n_th;
-	rid=(unsigned)-1;
+	rid = (rid_t)-1;
 
 	if(n_th == 0)
 		return;

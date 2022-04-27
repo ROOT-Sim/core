@@ -19,8 +19,7 @@
 
 #define BASE_PAYLOAD_SIZE 32
 
-#define msg_is_before(ma, mb) ((ma)->dest_t < (mb)->dest_t || 		\
-	((ma)->dest_t == (mb)->dest_t && msg_is_before_extended(ma, mb)))
+#define msg_is_before(a, b) ((a)->dest_t < (b)->dest_t || ((a)->dest_t == (b)->dest_t && msg_is_before_extended(a, b)))
 
 #define msg_bare_size(msg) (offsetof(struct lp_msg, pl) + (msg)->pl_size)
 #define msg_anti_size() (offsetof(struct lp_msg, m_seq) + sizeof(uint32_t))
@@ -76,12 +75,10 @@ enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
  * In that case, the two messages will necessarily induce the same state change
  * in the receiving LP: it doesn't make any difference which one will be processed first.
  */
-static inline bool msg_is_before_extended(const struct lp_msg *restrict a,
-		const struct lp_msg *restrict b)
+static inline bool msg_is_before_extended(const struct lp_msg *restrict a, const struct lp_msg *restrict b)
 {
 	if ((a->raw_flags & MSG_FLAG_ANTI) != (b->raw_flags & MSG_FLAG_ANTI))
-		return (a->raw_flags & MSG_FLAG_ANTI) >
-				(b->raw_flags & MSG_FLAG_ANTI);
+		return (a->raw_flags & MSG_FLAG_ANTI) > (b->raw_flags & MSG_FLAG_ANTI);
 
 	if (a->m_type != b->m_type)
 		return a->m_type > b->m_type;

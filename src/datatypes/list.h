@@ -10,10 +10,9 @@
 */
 #pragma once
 
-#include <stddef.h>
-#include <string.h>
 #include <assert.h>
-
+#include <memory.h>
+#include <stddef.h>
 
 /// This structure defines a generic list. Nodes of the list must have a next/prev pointer properly typed.
 struct list {
@@ -39,8 +38,8 @@ struct list {
  */
 #define new_list(type)	(type *)({ \
 				void *__lmptr; \
-				__lmptr = (void *)malloc(sizeof(struct list)); \
-				bzero(__lmptr, sizeof(struct list));\
+				__lmptr = malloc(sizeof(struct list)); \
+				memset(__lmptr, 0, sizeof(struct list));\
 				__lmptr;\
 			})
 
