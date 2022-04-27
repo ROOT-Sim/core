@@ -166,8 +166,11 @@ void *rs_realloc(void *ptr, size_t req_size)
 		++node_size;
 
 	size_t old_size = 1 << node_size;
-	size_t new_size = 1 << max(next_exp_of_2(req_size - 1), B_BLOCK_EXP);
+	size_t new_size = 1 << next_exp_of_2(max(req_size, 1U << B_BLOCK_EXP) - 1);
 
+	// fixme: we can do much better than this
+	//        for example we can always shrink memory allocations cheaply
+	//        we can also enlarge memory allocations without copying if our sibling branches are free
 	if(old_size == new_size)
 		return ptr;
 
