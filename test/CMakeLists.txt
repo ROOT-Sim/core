@@ -1,16 +1,16 @@
 # SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
-set(test_srcs
-        framework/test.c
-        framework/lp.c
-        framework/semaphore.c
-        framework/thread.c
-        framework/rng.c
+add_library(test_framework_lib STATIC
+    framework/lp.c
+    framework/rng.c
+    framework/semaphore.c
+    framework/test.c
+    framework/thread.c
 )
 
 function(test_program name)
-    add_executable(test_${name} ${ARGN} ${test_srcs})
-    target_link_libraries(test_${name} rscore) # FIXME this doesn't need to be in all the tests
+    add_executable(test_${name} ${ARGN})
+    target_link_libraries(test_${name} test_framework_lib rscore) # FIXME this doesn't need to be in all the tests
     add_test(NAME test_${name} COMMAND test_${name})
     set_tests_properties(test_${name} PROPERTIES TIMEOUT 60)
 endfunction()
