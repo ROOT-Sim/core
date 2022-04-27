@@ -192,10 +192,8 @@ struct list {
 	do {\
 		__typeof__(node) __n = (node); /* in-block scope variable */\
 		struct list *__l;\
-		size_t __size_before;\
 		__l = (struct list *)(li);\
 		assert(__l);\
-		__size_before = __l->size;\
 		/* Unchain the node */\
 		if(__l->head == __n) {\
 			__l->head = __n->next;\
@@ -218,7 +216,6 @@ struct list {
 		__n->next = (void *)0xBEEFC0DE;\
 		__n->prev = (void *)0xDEADC0DE;\
 		__l->size--;\
-		assert(__l->size == (__size_before - 1));\
 	} while(0)
 
 #define list_pop(list)\

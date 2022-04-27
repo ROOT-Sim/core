@@ -126,7 +126,7 @@ enum topology_direction {
 
 	DIRECTION_RANDOM, //!< Get a random direction, depending on the topology
 
-	INVALID_DIRECTION = UINT_MAX	//!< A generic invalid direction
+	INVALID_DIRECTION = INT_MIN	//!< A generic invalid direction
 };
 
 extern unsigned CountRegions(struct topology *topology);
