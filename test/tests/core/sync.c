@@ -127,6 +127,9 @@ static test_ret_t mrswlock_test(__unused void *_)
 	return ret;
 }
 
+// fixme: in this test we are assuming (even if it is not strictly needed) that we are linking with rscore. Remove this.
+extern unsigned thread_cores_count(void);
+
 int main(void)
 {
 	n_threads = thread_cores_count();
