@@ -93,14 +93,12 @@ struct list {
 #define list_insert_tail(li, data) \
 	do {	\
 		__typeof__(data) __new_n = (data); /* in-block scope variable */\
-		size_t __size_before;\
 		struct list *__l;\
 		__new_n->next = NULL;\
 		__new_n->prev = NULL;\
 		do {\
 			__l = (struct list *)(li);\
 			assert(__l);\
-			__size_before = __l->size;\
 			if(__l->size == 0) { /* is the list empty? */\
 				__l->head = __new_n;\
 				__l->tail = __new_n;\
@@ -112,7 +110,6 @@ struct list {
 			__l->tail = __new_n;\
 		} while(0);\
 		__l->size++;\
-		assert(__l->size == (__size_before + 1));\
 	} while(0)
 
 #define list_insert_head(li, data) \
