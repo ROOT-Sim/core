@@ -70,7 +70,7 @@ typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
 enum rootsim_event {LP_INIT = 65534, LP_FINI};
 
-extern void (*ScheduleNewEvent)(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
+extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
     unsigned event_size);
 extern void SetState(void *new_state);
 

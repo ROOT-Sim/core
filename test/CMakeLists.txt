@@ -20,8 +20,7 @@ test_program(testing_framework framework/self-tests/rng.c framework/self-tests/t
 
 # Visibility tests
 test_program(visibility1 tests/visibility/visibility_weak.c)
-#test_program(visibility2 visibility/visibility_override.c)
-#test_program(visibility3 visibility/visibility_api.c)
+test_program(visibility2 tests/visibility/visibility_override.c)
 
 # Test the API
 test_program(load tests/core/load.c)

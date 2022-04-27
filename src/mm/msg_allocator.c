@@ -83,8 +83,8 @@ void msg_allocator_free_at_gvt(struct lp_msg *msg)
 }
 
 /**
- * @brief Free a message after its destination time is committed
- * @param msg a pointer to the message to release
+ * @brief Free the committed messages after a new GVT has been computed
+ * @param current_gvt the latest value of the GVT
  */
 void msg_allocator_on_gvt(simtime_t current_gvt)
 {

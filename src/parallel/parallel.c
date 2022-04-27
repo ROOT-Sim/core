@@ -96,8 +96,6 @@ static void parallel_global_init(void)
 	msg_queue_global_init();
 	termination_global_init();
 	gvt_global_init();
-
-	ScheduleNewEvent = ScheduleNewEvent_parallel;
 }
 
 static void parallel_global_fini(void)

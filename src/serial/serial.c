@@ -26,9 +26,6 @@ static heap_declare(struct lp_msg *) queue;
 static simtime_t current_evt_time;
 #endif
 
-void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
-    unsigned payload_size);
-
 /**
  * @brief Initialize the serial simulation environment
  */
@@ -39,8 +36,6 @@ static void serial_simulation_init(void)
 	msg_allocator_init();
 	heap_init(queue);
 	lib_global_init();
-
-	ScheduleNewEvent = ScheduleNewEvent_serial;
 
 	lps = mm_alloc(sizeof(*lps) * global_config.lps);
 	memset(lps, 0, sizeof(*lps) * global_config.lps);
