@@ -107,7 +107,7 @@ int signal_new_thread_action(test_fn fn, void *args)
 	next_args = args;
 	sema_signal(work, (int)test_unit.n_th);
 	sema_wait(ready, (int)test_unit.n_th);
-	for(int i = 0; i < test_unit.n_th; i++)
+	for(unsigned i = 0; i < test_unit.n_th; i++)
 		ret -= test_unit.pool[i].ret;
 	sema_signal(all_done, (int)test_unit.n_th);
 	return ret;

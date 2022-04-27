@@ -69,7 +69,7 @@ int main(void)
 
 	current_lp = mock_lp();
 
-	test("Kolmogorov-Smirnov test on Random()", aux_ks_test, (void *)test_random_range);
+	test("Kolmogorov-Smirnov test on Random()", aux_ks_test, NULL);
 	test("Functional test on RandomRange()", random_range_test, NULL);
 	test("Functional test on RandomRangeNonUniform()", random_range_non_uniform_test, NULL);
 

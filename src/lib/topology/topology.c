@@ -656,9 +656,8 @@ struct topology *vInitializeTopology(enum topology_geometry geometry, int argc, 
 
     err2:
 	// Free the memory that has been partially allocated
-	for(i--; i >= 0; i--) {
-		free(topology->adjacency[i]);
-	}
+	for(size_t k = 0; k < i; ++k)
+		free(topology->adjacency[k]);
 	free(topology->adjacency);
 
     err1:

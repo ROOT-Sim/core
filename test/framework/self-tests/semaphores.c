@@ -69,7 +69,7 @@ thrd_ret_t phase1(void *id)
 {
 	uintptr_t tid = (uintptr_t)id;
 	uint64_t r = test_random_range(RAND_DELAY_MAX);
-	for(int i = 0; i < r; i++); // FIXME: this would get for sure optimized away
+	for(uint64_t i = 0; i < r; i++); // FIXME: this would get for sure optimized away
 
 	if(tid < N_PROD) {
 		sema_signal(producer, N_CONS/N_PROD);
@@ -85,7 +85,7 @@ thrd_ret_t phase2(void *id)
 {
 	uintptr_t tid = (uintptr_t)id;
 	uint64_t r = test_random_range(RAND_DELAY_MAX);
-	for(int i = 0; i < r; i++); // FIXME: this would get for sure optimized away
+	for(uint64_t i = 0; i < r; i++); // FIXME: this would get for sure optimized away
 
 	if(tid < N_PROD) {
 		sema_wait(consumer, N_CONS/N_PROD);

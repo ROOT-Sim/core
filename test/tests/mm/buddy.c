@@ -35,7 +35,7 @@ static test_ret_t block_size_test(unsigned b_exp)
 		}
 
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = (int)(MAX_ALLOCATION * Random());
+			allocations[i][j] = (uint64_t)(MAX_ALLOCATION * Random());
 			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
@@ -59,7 +59,7 @@ static test_ret_t block_size_test(unsigned b_exp)
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = (int)(MAX_ALLOCATION * Random());
+			allocations[i][j] = (uint64_t)(MAX_ALLOCATION * Random());
 //			__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
@@ -72,7 +72,7 @@ static test_ret_t block_size_test(unsigned b_exp)
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			errs += allocations[i][j] != (int)(MAX_ALLOCATION * Random());
+			errs += allocations[i][j] != (uint64_t)(MAX_ALLOCATION * Random());
 		}
 
 		rs_free(allocations[i]);
@@ -82,7 +82,7 @@ static test_ret_t block_size_test(unsigned b_exp)
 
 	for (unsigned i = 0; i < allocations_cnt; ++i) {
 		for (unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			errs += allocations[i][j] != (int)(MAX_ALLOCATION * Random());
+			errs += allocations[i][j] != (uint64_t)(MAX_ALLOCATION * Random());
 		}
 
 		rs_free(allocations[i]);

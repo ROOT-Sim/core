@@ -12,7 +12,7 @@
 
 #define REP_COUNT 25
 
-_Atomic int count = 0;
+_Atomic unsigned count = 0;
 
 static test_ret_t thread(__unused void *_)
 {

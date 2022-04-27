@@ -36,12 +36,13 @@ struct list {
  *   list(int) = new_list(int);
  *  \endcode
  */
-#define new_list(type)	(type *)({ \
-				void *__lmptr; \
-				__lmptr = malloc(sizeof(struct list)); \
-				memset(__lmptr, 0, sizeof(struct list));\
-				__lmptr;\
-			})
+#define new_list(type)	\
+	__extension__({ \
+		void *__lmptr; \
+		__lmptr = malloc(sizeof(struct list)); \
+		memset(__lmptr, 0, sizeof(struct list));\
+		__lmptr;\
+	})
 
 // Get the size of the current list.
 #define list_sizeof(list) ((struct list *)list)->size

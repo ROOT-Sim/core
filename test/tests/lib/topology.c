@@ -12,9 +12,9 @@
 #include <ROOT-Sim.h>
 #include <lp/lp.h>
 
-const int LAST_TOPOLOGY_WITH_TWO_PARAMETERS = TOPOLOGY_TORUS;
-const int LAST_TOPOLOGY_VALID_VALUE = TOPOLOGY_GRAPH;
-const int LAST_DIRECTION_VALID_VALUE = DIRECTION_SE;
+const enum topology_geometry LAST_TOPOLOGY_WITH_TWO_PARAMETERS = TOPOLOGY_TORUS;
+const enum topology_geometry LAST_TOPOLOGY_VALID_VALUE = TOPOLOGY_GRAPH;
+const enum topology_direction LAST_DIRECTION_VALID_VALUE = DIRECTION_SE;
 
 #define RANDOM_TRIALS 100
 
@@ -112,7 +112,7 @@ test_ret_t test_hexagon(__unused void *_)
 
 	ReleaseTopology(topology);
 	check_passed_asserts();
-};
+}
 
 test_ret_t test_square(__unused void *_)
 {
@@ -526,7 +526,7 @@ test_ret_t test_graph(__unused void *_)
 
 	// Test sanity checks on graphs
 	topology = InitializeTopology(TOPOLOGY_GRAPH, 1);
-	for(int i = 0; i <= LAST_DIRECTION_VALID_VALUE; i++)
+	for(enum topology_direction i = 0; i <= LAST_DIRECTION_VALID_VALUE; i++)
 		test_assert(GetReceiver(0, topology, i) == INVALID_DIRECTION);
 
 	check_passed_asserts();
@@ -539,7 +539,7 @@ test_ret_t test_init_fini(__unused void *_)
 	struct topology *topology;
 	unsigned par1, par2; // Testing a variadic function, these are the two parameters
 
-	for(unsigned i = 1; i <= LAST_TOPOLOGY_WITH_TWO_PARAMETERS; i++) {
+	for(enum topology_geometry i = 1; i <= LAST_TOPOLOGY_WITH_TWO_PARAMETERS; i++) {
 		test_assert(InitializeTopology(i, 0, 0) == NULL);
 		test_assert(InitializeTopology(i, 1, 0) == NULL);
 		test_assert(InitializeTopology(i, 0, 1) == NULL);
@@ -553,7 +553,7 @@ test_ret_t test_init_fini(__unused void *_)
 		ReleaseTopology(topology);
 	}
 
-	for(unsigned i = LAST_TOPOLOGY_WITH_TWO_PARAMETERS + 1; i <= LAST_TOPOLOGY_VALID_VALUE; i++) {
+	for(enum topology_geometry i = LAST_TOPOLOGY_WITH_TWO_PARAMETERS + 1; i <= LAST_TOPOLOGY_VALID_VALUE; i++) {
 		test_assert(InitializeTopology(i, 0) == NULL);
 
 		par1 = test_random_range(100) + 1;

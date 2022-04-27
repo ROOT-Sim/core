@@ -51,7 +51,7 @@ void *rs_malloc(size_t req_size)
 		return NULL;
 
 	struct mm_state *self = &current_lp->mm_state;
-	uint_fast8_t req_blks = next_exp_of_2(max(req_size, 1 << B_BLOCK_EXP) - 1);
+	uint_fast8_t req_blks = next_exp_of_2(max(req_size, 1U << B_BLOCK_EXP) - 1);
 
 	if(unlikely(self->longest[0] < req_blks)) {
 		errno = ENOMEM;

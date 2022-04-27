@@ -189,7 +189,7 @@ void mpi_remote_msg_handle(void)
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		struct lp_msg *msg;
-		if(unlikely(size <= msg_anti_size())) {
+		if(unlikely(size <= (int)msg_anti_size())) {
 			if (unlikely(size == sizeof(enum msg_ctrl_code))) {
 				enum msg_ctrl_code c;
 				MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);

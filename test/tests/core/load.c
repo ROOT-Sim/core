@@ -12,8 +12,23 @@
 
 #include "ROOT-Sim.h"
 
+void DummProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content,
+					  unsigned event_size, void *st)
+{
+	(void)me;
+	(void)now;
+	(void)event_type;
+	(void)event_content;
+	(void)event_size;
+	(void)st;
+}
 
-void foo() {}
+bool DummyCanEnd(lp_id_t lid, const void *state)
+{
+	(void)lid;
+	(void)state;
+	return false;
+}
 
 struct simulation_configuration conf = {
     .lps = 0,
@@ -39,9 +54,9 @@ int main(void)
 	test_xf("LPs not set", init_rootsim, &conf);
 	conf.lps = 1;
 	test_xf("Handler not set", init_rootsim, &conf);
-	conf.dispatcher = (ProcessEvent_t)foo;
+	conf.dispatcher = DummProcessEvent;
 	test_xf("CanEnd not set", init_rootsim, &conf);
-	conf.committed = (CanEnd_t)foo;
+	conf.committed = DummyCanEnd;
 	test("Initialization", init_rootsim, &conf);
 
 	finish();
