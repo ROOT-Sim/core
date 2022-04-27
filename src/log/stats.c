@@ -9,7 +9,6 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#define _CRT_SECURE_NO_WARNINGS
 #include <log/stats.h>
 
 #include <arch/io.h>

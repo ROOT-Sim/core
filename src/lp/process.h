@@ -25,9 +25,6 @@ struct process_data {
 #define is_msg_past(msg_p) (!(((uintptr_t)(msg_p)) & 3U))
 #define unmark_msg(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
 
-extern void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
-    unsigned payload_size);
-
 extern void process_init(void);
 extern void process_fini(void);
 

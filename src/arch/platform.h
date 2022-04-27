@@ -15,6 +15,8 @@
 
 #if defined(_WIN32)
 #define __WINDOWS
+// windows specific :)))
+#define _CRT_SECURE_NO_WARNINGS
 #define _pure
 #elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
 #define __POSIX

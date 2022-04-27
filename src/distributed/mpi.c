@@ -270,7 +270,7 @@ static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
  * a time. Both arguments must point to valid memory regions until
  * mpi_reduce_sum_scatter_done() returns true.
  */
-void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], unsigned *result)
+void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
 {
 	MPI_Ireduce_scatter_block(values, result, 1, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD, &reduce_sum_scatter_req);
 }

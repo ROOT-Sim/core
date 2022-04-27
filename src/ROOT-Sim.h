@@ -29,7 +29,7 @@ typedef double simtime_t;
 /// The maximum value of the logical simulation time, semantically never
 #define SIMTIME_MAX DBL_MAX
 
-// Logical Process ID data type
+/// Logical Process ID data type
 typedef uint64_t lp_id_t;
 
 /**
@@ -127,7 +127,7 @@ enum topology_direction {
 	DIRECTION_RANDOM, //!< Get a random direction, depending on the topology
 };
 
-//!< An invalid direction, used as error value for the functions which return a LP id
+/// An invalid direction, used as error value for the functions which return a LP id
 #define INVALID_DIRECTION UINT64_MAX
 
 extern lp_id_t CountRegions(struct topology *topology);

@@ -9,13 +9,12 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <stdlib.h>
+#include "test.h"
+
 #include <assert.h>
+#include <stdlib.h>
 
-#include <test.h>
-
-
-#if defined(_WIN32)
+#if defined(__WINDOWS)
 
 os_semaphore sema_init(unsigned tokens)
 {
@@ -40,7 +39,7 @@ void sema_signal(os_semaphore sema, unsigned count)
 	ReleaseSemaphore(sema, count, NULL);
 }
 
-#elif defined(__APPLE__) && defined(__MACH__)
+#elif defined(__MACOS)
 
 os_semaphore sema_init(unsigned tokens)
 {
@@ -70,7 +69,7 @@ void sema_signal(os_semaphore sema, unsigned count)
 	}
 }
 
-#elif defined(__unix__) || defined(__unix)
+#elif defined(__LINUX)
 
 os_semaphore sema_init(unsigned tokens)
 {
@@ -104,6 +103,5 @@ void sema_signal(os_semaphore sema, unsigned count)
 		sem_post(sema);
 	}
 }
-#else
-#error Unsupported operating system
+
 #endif

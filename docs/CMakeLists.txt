@@ -4,6 +4,7 @@ find_package(Doxygen OPTIONAL_COMPONENTS dot)
 
 if(DOXYGEN_FOUND)
     set(DOXYGEN_GENERATE_HTML YES)
+    set(DOXYGEN_QUIET YES)
     set(DOXYGEN_GENERATE_XML YES)
     set(DOXYGEN_PROJECT_LOGO img/rs.png)
     set(DOXYGEN_HTML_EXTRA_STYLESHEET flatdoc.css inline-params.css)
