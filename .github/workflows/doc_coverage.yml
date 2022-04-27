@@ -14,7 +14,7 @@ jobs:
       - name: Generate Documentation
         uses: ROOT-Sim/ci-actions/docs@v1.1
       - name: Documentation Coverage
-        uses: ROOT-Sim/ci-actions/docs-coverage@v1.1
+        uses: ROOT-Sim/ci-actions/docs-coverage@master
         with:
           build-path: docs
       - name: Comment PR
