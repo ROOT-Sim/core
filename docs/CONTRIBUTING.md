@@ -32,13 +32,13 @@ The development model adopted by ROOT-Sim is essentially no more than a set of p
 
 ### Decentralised but centralised
 
-The repository setup that we use and that works well with this branching model, is that with a central “truth” repo. Note that this repo is only considered to be the central one (since Git is a DVCS, there is no such thing as a central repo at a technical level). We will refer to this repo as origin, since this name is familiar to all Git users.
+The repository setup that we use and that works well with this branching model, is that with a central “truth” repo. Note that this repo is only considered to be the central one (since Git is a DVCS, there is no such thing as a central repo at a technical level). We will refer to this repo as origin, since this name is familiar to all Git users.
 
 ![Branching Model Decentralised](img/branching-model-decentralised.png  "Branching Model Decentralised")
 
-Each developer pulls and pushes to origin. But besides the centralized push-pull relationships, each developer may also pull changes from other peers to form sub teams. For example, this might be useful to work together with two or more developers on a big new feature, before pushing the work in progress to origin prematurely. In the figure above, there are subteams of Alice and Bob, Alice and David, and Clair and David.
+Each developer pulls and pushes to origin. But besides the centralized push-pull relationships, each developer may also pull changes from other peers to form sub teams. For example, this might be useful to work together with two or more developers on a big new feature, before pushing the work in progress to origin prematurely. In the figure above, there are subteams of Alice and Bob, Alice and David, and Clair and David.
 
-Technically, this means nothing more than that Alice has defined a Git remote, named bob, pointing to Bob’s repository, and vice versa.
+Technically, this means nothing more than that Alice has defined a Git remote, named bob, pointing to Bob’s repository, and vice versa.
 
 ### The main branches
 
@@ -49,21 +49,21 @@ The central repo holds two main branches with an infinite lifetime:
 * `master`
 * `develop`
 
-The `master` branch at origin should be familiar to every Git user. Parallel to the `master` branch, another branch exists called `develop`.
+The `master` branch at origin should be familiar to every Git user. Parallel to the `master` branch, another branch exists called `develop`.
 
-We consider `origin/master` to be the main branch where the source code of `HEAD` always reflects a *production-ready* state.
+We consider `origin/master` to be the main branch where the source code of `HEAD` always reflects a *production-ready* state.
 
-We consider `origin/develop` to be the main branch where the source code of `HEAD` always reflects a state with the latest delivered development changes for the next release. Some would call this the "*integration branch*".
+We consider `origin/develop` to be the main branch where the source code of `HEAD` always reflects a state with the latest delivered development changes for the next release. Some would call this the "*integration branch*".
 
-When the source code in the `develop` branch reaches a stable point and is ready to be released, all of the changes should be merged back into `master` somehow and then tagged with a release number. How this is done in detail will be discussed further on.
+When the source code in the `develop` branch reaches a stable point and is ready to be released, all of the changes should be merged back into `master` somehow and then tagged with a release number. How this is done in detail will be discussed further on.
 
-Therefore, each time when changes are merged back into `master`, this is a new production release *by definition*. This must be enforced strictly: if there is some issue which is still known to be in the `origin/develop` for some reason, then `origin/develop` should not be merged into `origin/master`.
+Therefore, each time when changes are merged back into `master`, this is a new production release *by definition*. This must be enforced strictly: if there is some issue which is still known to be in the `origin/develop` for some reason, then `origin/develop` should not be merged into `origin/master`.
 
 `origin/master` is a *protected branch*: no one can directly push into it. This branch is used only by relying on *pull requests*, and the repository rules enforce that all automatic integration checks must pass in order to merge, and at least two independent code reviews are required for a pull request to be merged. This should reduce the chances that a broken release is delivered.
 
 ### Supporting Branches
 
-Next to the main branches `master` and `develop`, our development model uses a variety of supporting branches to aid parallel development between team members, ease tracking of features, prepare for production releases and to assist in quickly fixing live production problems. Unlike the main branches, these branches always have a limited life time, since they will be removed eventually.
+Next to the main branches `master` and `develop`, our development model uses a variety of supporting branches to aid parallel development between team members, ease tracking of features, prepare for production releases and to assist in quickly fixing live production problems. Unlike the main branches, these branches always have a limited life time, since they will be removed eventually.
 
 The different types of branches we may use are:
 
@@ -73,7 +73,7 @@ The different types of branches we may use are:
 
 Each of these branches have a specific purpose and are bound to strict rules as to which branches may be their originating branch and which branches must be their merge targets. We will walk through them shortly.
 
-By no means are these branches "special" from a technical perspective. The branch types are categorized by how we use them. They are of course plain old Git branches.
+By no means are these branches "special" from a technical perspective. The branch types are categorized by how we use them. They are of course plain old Git branches.
 
 In general, if you want to contribute by delevoping a *new feature*, you should use a **feature branch**. If you have spotted a bug and have a patch for it, you should rely on a **hotfix branch**.
 
@@ -83,20 +83,19 @@ The semantics behind these branches are described below.
 
 ![Feature Branches](img/branching-model-feature.png  "Feature Branches")
 
-|                  Rule | Description                                                     |
-|----------------------:|-----------------------------------------------------------------|
-|      May branch from: | `develop`                                                       |
-| Must merge back into: | `develop`                                                       |
-|    Naming convention: | anything except `master`, `develop`, `release-*`, or `hotfix-*` |
+|                  Rule | Description                                                      |
+|----------------------:|------------------------------------------------------------------|
+|      May branch from: | `develop`                                                        |
+| Must merge back into: | `develop`                                                        |
+|    Naming convention: | anything except `master`, `develop`, `release-*`, or `hotfix-*`  |
 
+Feature branches (or sometimes called topic branches) are used to develop new features for the upcoming or a distant future release. When starting development of a feature, the target release in which this feature will be incorporated may well be unknown at that point (an issue marked as a development note might result in such a branch). The essence of a feature branch is that it exists as long as the feature is in development, but will eventually be merged back into develop (to definitely add the new feature to the upcoming release) or discarded (in case of a disappointing experiment).
 
-Feature branches (or sometimes called topic branches) are used to develop new features for the upcoming or a distant future release. When starting development of a feature, the target release in which this feature will be incorporated may well be unknown at that point (an issue marked as a development note might result in such a branch). The essence of a feature branch is that it exists as long as the feature is in development, but will eventually be merged back into develop (to definitely add the new feature to the upcoming release) or discarded (in case of a disappointing experiment).
-
-Feature branches typically exist in developer repos only, not in `origin`, although we do not necessarily strictly enforce this.
+Feature branches typically exist in developer repos only, not in `origin`, although we do not necessarily strictly enforce this.
 
 #### Creating a feature branch
 
-When starting work on a new feature, branch off from the `develop` branch.
+When starting work on a new feature, branch off from the `develop` branch.
 
 ```
 $ git checkout -b myfeature develop
@@ -107,7 +106,7 @@ Switched to a new branch "myfeature"
 
 It is a good practice to issue a **Pull Request** to incorporate a feature branch into develop, and ask at least for one code review.
 
-Finished features may be anyhow merged into the develop branch definitely add them to the upcoming release, provided that extensive tests have been carried:
+Finished features may be anyhow merged into the develop branch definitely add them to the upcoming release, provided that extensive tests have been carried:
 
 ```
 $ git checkout develop
@@ -129,11 +128,11 @@ In case you want to delete the remote branch, you can additionally run:
 git push origin --delete myfeature
 ```
 
-The `--no-ff` flag causes the merge to always create a new commit object, even if the merge could be performed with a fast-forward. This avoids losing information about the historical existence of a feature branch and groups together all commits that together added the feature. Compare:
+The `--no-ff` flag causes the merge to always create a new commit object, even if the merge could be performed with a fast-forward. This avoids losing information about the historical existence of a feature branch and groups together all commits that together added the feature. Compare:
 
 ![Merging Feature Branches](img/branching-model-feature-merge.png  "Merging Feature Branches")
 
-In the latter case, it is impossible to see from Git history which of the commit objects together have implemented a feature (you would have to manually read all the log messages). Reverting a whole feature (i.e. a group of commits), is a true headache in the latter situation, whereas it is easily done if the `--no-ff` flag was used.
+In the latter case, it is impossible to see from Git history which of the commit objects together have implemented a feature (you would have to manually read all the logger messages). Reverting a whole feature (i.e. a group of commits), is a true headache in the latter situation, whereas it is easily done if the `--no-ff` flag was used.
 Yes, it will create a few more (empty) commit objects, but the gain is much bigger that that cost.
 
 erging into `develop` is sometimes referred to as "merge window". Once a new release branch is created (see below), new features are automatically directed towards the next release.
@@ -150,15 +149,15 @@ Once a feature branch is closed, the contributor is required to create a short n
 |    Naming convention: | `release-*`            |
 
 
-Release branches support preparation of a new production release. They allow for last-minute dotting of i's and crossing t's. Furthermore, they allow for minor bug fixes and preparing meta-data for a release (version number, build dates, etc.). By doing all of this work on a release branch, the `develop` branch is cleared to receive features for the next big release.
+Release branches support preparation of a new production release. They allow for last-minute dotting of i's and crossing t's. Furthermore, they allow for minor bug fixes and preparing meta-data for a release (version number, build dates, etc.). By doing all of this work on a release branch, the `develop` branch is cleared to receive features for the next big release.
 
-The key moment to branch off a new release branch from `develop` is when `develop` (almost) reflects the desired state of the new release. At least all features that are targeted for the release-to-be-built must be merged in to `develop` at this point in time. All features targeted at future releases may not: they must wait until after the release branch is branched off.
+The key moment to branch off a new release branch from `develop` is when `develop` (almost) reflects the desired state of the new release. At least all features that are targeted for the release-to-be-built must be merged in to `develop` at this point in time. All features targeted at future releases may not: they must wait until after the release branch is branched off.
 
-It is exactly at the start of a release branch that the upcoming release gets assigned a version number, not any earlier. Up until that moment, the `develop` branch reflected changes for the "next release", but it is unclear whether that "next release" will eventually become 0.3 or 1.0, until the release branch is started. That decision is made on the start of the release branch and is carried out by the project's rules on version number bumping.
+It is exactly at the start of a release branch that the upcoming release gets assigned a version number, not any earlier. Up until that moment, the `develop` branch reflected changes for the "next release", but it is unclear whether that "next release" will eventually become 0.3 or 1.0, until the release branch is started. That decision is made on the start of the release branch and is carried out by the project's rules on version number bumping.
 
-#### Creating a release branch 
+#### Creating a release branch
 
-Release branches are created from the `develop` branch. For example, say version 1.1.5 is the current production release and we have a big release coming up. The state of develop is ready for the "next release". So we branch off and give the release branch a name reflecting the new version number:
+Release branches are created from the `develop` branch. For example, say version 1.1.5 is the current production release and we have a big release coming up. The state of develop is ready for the "next release". So we branch off and give the release branch a name reflecting the new version number:
 
 ```
 $ git checkout -b release-1.2.0 develop
@@ -172,26 +171,26 @@ $ git commit -s -a -m "Bumped version number to 1.2.0"
 1 files changed, 1 insertions(+), 1 deletions(-)
 ```
 
-After creating a new branch and switching to it, we bump the version number. Here, `scripts/bump-version.py` is a commodity shell script, included in the repository, that changes the relevant information in the source tree to reflect the new version. This shell script reads the name of the current branch and automatically increases the version number depending on the kind of branch (hence, the importance of branch names). The only exception is when we want to update the major number, which is a decision which cannot be taken automatically (see versioning below). To bump the major version number, you can run the following command:
+After creating a new branch and switching to it, we bump the version number. Here, `scripts/bump-version.py` is a commodity shell script, included in the repository, that changes the relevant information in the source tree to reflect the new version. This shell script reads the name of the current branch and automatically increases the version number depending on the kind of branch (hence, the importance of branch names). The only exception is when we want to update the major number, which is a decision which cannot be taken automatically (see versioning below). To bump the major version number, you can run the following command:
 
 ```
 $ ./scripts/bump-version.py major
 ```
 
-This newly-created branch may exist there for a while, until the release may be rolled out definitely. During that time, bug fixes may be applied in this branch (rather than on the `develop` branch). Adding large new features here is **strictly prohibited**. They must be merged into `develop`, and therefore, wait for the next big release.
+This newly-created branch may exist there for a while, until the release may be rolled out definitely. During that time, bug fixes may be applied in this branch (rather than on the `develop` branch). Adding large new features here is **strictly prohibited**. They must be merged into `develop`, and therefore, wait for the next big release.
 
-#### Finishing a release branch 
+#### Finishing a release branch
 
 When the state of the release branch is ready to become a real release, some actions need to be carried out.
 
 First, the release branch must be merged into `master`. This action can be only done by issuing a Pull Request, and asking for two different code reviews which must positively pass. Also, all automatic tests must pass.
 
-Once the Pull Request is merged (again creating a no-fast-foward commit), the changes made on the release branch need to be merged back into `develop`, so that future releases also contain these bug fixes.
+Once the Pull Request is merged (again creating a no-fast-foward commit), the changes made on the release branch need to be merged back into `develop`, so that future releases also contain these bug fixes.
 
 We then have to create a tag to identify the new release in `master`. By definition, all tags must be signed. This should be done by using git’s integration with PGP, so a key to identify the signer must be publicly available. At least, for easiness of retrieval, the public key of the person creating the tag should be published here:
 
-* http://pgp.mit.edu/[http://pgp.mit.edu/](http://pgp.mit.edu/) 
-* [http://keyserver.pgp.com/ ](http://keyserver.pgp.com/) 
+* http://pgp.mit.edu/[http://pgp.mit.edu/](http://pgp.mit.edu/)
+* [http://keyserver.pgp.com/ ](http://keyserver.pgp.com/)
 
 To set up git for using your private key to sign tags:
 
@@ -201,7 +200,7 @@ $ git config --global user.signingkey HASH
 
 This allows to use `-s` as a shortcut to select the key for signing. If you don't want for some reason to globally set your key for signing, in the tag creation command you must replace `-s` with `-u <key>`.
 
-The git steps to create the release from the `master branch` after that the Pull Request have been merged are:
+The git steps to create the release from the `master branch` after that the Pull Requests have been merged are:
 
 ```
 $ git checkout master
@@ -229,7 +228,7 @@ It pushes only "sane" tags, namely tags that are both:
 This is sane because only annotated tags should be pushed on the remote, keeping lightweight tags for local development only, and doesnt push tags on unrelated branches. `git push --tags` should be avoided at all because it pushes all tags, not only "sane" ones.
 
 The release is now done, and tagged for future reference.
-To keep the changes made in the release branch, we need to merge those back into `develop`, though. In git:
+To keep the changes made in the release branch, we need to merge those back into `develop`, though. In git:
 
 ```
 $ git checkout develop
@@ -263,11 +262,11 @@ Deleted branch release-1.2 (was ff452fe).
 
 Hotfix branches are very much like release branches in that they are also meant to prepare for a new production release, albeit unplanned. They arise from the necessity to act immediately upon an undesired state of a live production version. When a critical bug in a production version must be resolved immediately, a hotfix branch may be branched off from the corresponding tag on the `master` branch that marks the production version.
 
-The essence is that work of team members (on the `develop` branch) can continue, while another person is preparing a quick production fix.
+The essence is that work of team members (on the `develop` branch) can continue, while another person is preparing a quick production fix.
 
-#### Creating the hotfix branch 
+#### Creating the hotfix branch
 
-Hotfix branches are created from the `master` branch. For example, say version 1.2.1 is the current production release running live and causing troubles due to a severe bug. But changes on `develop` are yet unstable. We may then branch off a hotfix branch and start fixing the problem:
+Hotfix branches are created from the `master` branch. For example, say version 1.2.1 is the current production release running live and causing troubles due to a severe bug. But changes on `develop` are yet unstable. We may then branch off a hotfix branch and start fixing the problem:
 
 ```
 $ git checkout -b hotfix-1.2.1 master
@@ -292,13 +291,13 @@ $ git commit
 ```
 
 #### Finishing a hotfix branch
-When finished, the bugfix needs to be merged back into `master`, but also needs to be merged back into `develop`, in order to safeguard that the bugfix is included in the next release as well. This is completely similar to how release branches are finished.
+When finished, the bugfix needs to be merged back into `master`, but also needs to be merged back into `develop`, in order to safeguard that the bugfix is included in the next release as well. This is completely similar to how release branches are finished.
 
-The one exception to the rule here is that, when a release branch currently exists, the hotfix changes need to be merged into that release branch, instead of `develop`. 
+The one exception to the rule here is that, when a release branch currently exists, the hotfix changes need to be merged into that release branch, instead of `develop`.
 
-Back-merging the bugfix into the release branch will eventually result in the bugfix being merged into `develop` too, when the release branch is finished. 
+Back-merging the bugfix into the release branch will eventually result in the bugfix being merged into `develop` too, when the release branch is finished.
 
-(If work in develop immediately requires this bugfix and cannot wait for the release branch to be finished, you may safely merge the bugfix into `develop` now already as well.)
+(If work in develop immediately requires this bugfix and cannot wait for the release branch to be finished, you may safely merge the bugfix into `develop` now already as well.)
 
 Finally, remove the temporary branch:
 
@@ -320,7 +319,7 @@ aking good commits is a form of art. A good way to decide whether a commit is se
 Commit messages should be meaningful. A one-line commit message like "I’m developing foo" will not allow other developers to understand what that commit is for. A minimal commit message would be of the format:
 
 ```
-  Short log
+  Short logger
 
   (Optional pointers to external resources, such as defect tracking)
 
@@ -329,7 +328,7 @@ Commit messages should be meaningful. A one-line commit message like "I’m deve
   (Optional, if it's not clear from above) how your change resolves the
   issues in the first part.
 
-  Tag line(s) at the end.	
+  Tag line(s) at the end.
 ```
 
 This is an example of a good commit message:
@@ -340,31 +339,31 @@ This is an example of a good commit message:
   When using foobar on systems with less than a gigabyte of RAM common
   usage patterns often result in an Out-of-memory condition causing
   slowdowns and unexpected application termination.
- 
+
   Low-memory systems should continue to function without running into
   memory-starvation conditions with minimal cost to systems with more
   available memory.  High-memory systems will be less able to use the
   full extent of the system, a dynamically tunable option may be best,
   long-term.
-  
+
   The foo setting in bar was decreased from X to X-50% in order to
   ensure we don't exhaust all system memory with foobar threads.
-  
+
   Signed-off-by: Joe Developer <joe.developer@example.com>
 ```
 
 Several things should be noted here. The minimal commit message is good for new code development and simple changes. An empty line must always come after it, otherwise post processing software might not be able to distinguish it from the rest of the commit text.
 
-The single short log message indicates what needed to be changed. It should begin with an indicator as to the primary item changed by this work, followed by a short summary of the change. In the above case we're indicating that we've changed the "foobar" item, by "adjusting the foo setting in bar".
+The single short logger message indicates what needed to be changed. It should begin with an indicator as to the primary item changed by this work, followed by a short summary of the change. In the above case we're indicating that we've changed the "foobar" item, by "adjusting the foo setting in bar".
 
-The single short log message is analogous to the git "commit summary". While no maximum line length is specified by this policy, it is suggested that it remains under 50 characters wherever possible. Think of it as the subject of an email: you should never write too much text in it, otherwise receivers will not understand easily what the email is about.
+The single short logger message is analogous to the git "commit summary". While no maximum line length is specified by this policy, it is suggested that it remains under 50 characters wherever possible. Think of it as the subject of an email: you should never write too much text in it, otherwise receivers will not understand easily what the email is about.
 
 Optionally, you may include pointers to defects this change corrects. Unless the defect format is specified by the component you are modifying, it is suggested that you use a full URL to specify the reference to the defect information. Generally, these pointers will precede any long description, but as an optional item it may be after the long description. This could be a good way, for example, to refer to open issues in a bug tracker.
 You must then have a full description of the change. Specifying the intent of your change and if necessary how the change resolves the issue.
 
 Finally, one or more tag lines should exist. Each developer responsible for working on the patch is responsible for adding a `Signed-off-by:` tag line. This tag line should be added by people writing the patch, and additional tag lines should be added by people, for example, merging the patch into different branches. This allows to easily track the updates to the code base, and determine who did what.
 
-It is not acceptable to have an empty or non-existent header, or just a single line message. The summary and description is required for all changes. 
+It is not acceptable to have an empty or non-existent header, or just a single line message. The summary and description is required for all changes.
 
 The commit messages should be manually indented. Usually, each line of the message, should not be longer than 78 characters. Note that in order to do this easily, is always better to avoid using the `-m` switch when committing: in fact, simply issuing:
 
@@ -422,7 +421,7 @@ ROOT-Sim documentation is organised into three different parts, some of which ar
 
 ### Change Log
 
-The `ChangeLog` file in the master folder is an important living document which should be updated any time that a new feature is added, or something is changed in the code. Therefore, before committing to any branch, take some time to understand whether you should put some note on what you are doing in that file. This simplifies a lot the release of a new version, as this reduces the time required to navigate back the git log.
+The `ChangeLog` file in the master folder is an important living document which should be updated any time that a new feature is added, or something is changed in the code. Therefore, before committing to any branch, take some time to understand whether you should put some note on what you are doing in that file. This simplifies a lot the release of a new version, as this reduces the time required to navigate back the git logger.
 
 Changes in the `ChangeLog` file should go in the `[Unreleased]` section which is at the top of the file. This also helps users at understanding what changes are expected to come in the next releases.
 
@@ -575,7 +574,7 @@ Inserting blank before/after a chunk of code can be useful for indicating a conc
 
 Examples:
 
-``` 
+```
 func(a, b);
 
 if(var) {
@@ -687,4 +686,3 @@ Also, never ever do this:
 Often, fixes made to one piece of code will be missed in the other, and the two pieces of code may drift apart, introduced or unfixed bugs unnoticed for years.
 
 If you do have to use `#ifdef` for something, absolutely try to minimize the amount of code within it. Make the remaining code as generic and portable as possible.
-

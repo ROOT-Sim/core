@@ -10,8 +10,8 @@
  */
 #pragma once
 
+#include <arch/platform.h>
 #include <core/core.h>
-#include <gvt/termination.h>
 #include <lib/lib.h>
 #include <lp/msg.h>
 #include <lp/process.h>
@@ -20,10 +20,12 @@
 
 /// A complete LP context
 struct lp_ctx {
+	/// ID of the current LP
+	lp_id_t id;
 	/// The termination time of this LP, handled by the termination module
-	simtime_t t_d;
+	simtime_t termination_t;
 	/// The additional libraries context of this LP
-	struct lib_ctx *lib_ctx_p;
+	struct lib_ctx *lib_ctx;
 	/// The automatic checkpointing interval selection data
 	struct auto_ckpt auto_ckpt;
 	/// The message processing context of this LP
@@ -32,14 +34,13 @@ struct lp_ctx {
 	struct mm_state mm_state;
 };
 
-#define lid_to_nid(lp_id) ((nid_t)((lp_id) * n_nodes / n_lps))
-#define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * n_threads / n_lps_node))
+#define lid_to_nid(lp_id) ((nid_t)((lp_id) * n_nodes / global_config.lps))
+#define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
 
 extern uint64_t lid_node_first;
 extern __thread uint64_t lid_thread_first;
 extern __thread uint64_t lid_thread_end;
 
-extern uint64_t n_lps_node;
 extern __thread struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
 
@@ -51,5 +52,5 @@ extern void lp_fini(void);
 
 extern void lp_on_gvt(simtime_t gvt);
 
-__attribute__ ((pure)) extern lp_id_t lp_id_get_mt(void);
-__attribute__ ((pure)) extern struct lib_ctx *lib_ctx_get_mt(void);
+_pure extern lp_id_t lp_id_get(void);
+_pure extern struct lib_ctx *lib_ctx_get(void);

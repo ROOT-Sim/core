@@ -1,4 +1,0 @@
-# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
-# SPDX-License-Identifier: CC0-1.0
-option('iss', type : 'feature', value : 'disabled', description : '')
-option('mpi', type : 'feature', value : 'auto', description : '')

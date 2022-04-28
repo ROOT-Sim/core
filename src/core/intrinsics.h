@@ -21,19 +21,14 @@
  * compiler built-ins. Selection of the matching built-in is done statically at
  * compile time. If no matching built-in is found a compilation error is thrown.
  */
-#define intrinsics_ctz(x) 						\
-__extension__({								\
-	__builtin_choose_expr( 						\
-	__builtin_types_compatible_p(__typeof__ (x), unsigned), 	\
-		__builtin_ctz(x),					\
-	__builtin_choose_expr(						\
-	__builtin_types_compatible_p(__typeof__ (x), unsigned long),	\
-		__builtin_ctzl(x),					\
-	__builtin_choose_expr(						\
-	__builtin_types_compatible_p(__typeof__ (x), unsigned long long),\
-		__builtin_ctzll(x),					\
-	(void)0)));							\
-})
+#define intrinsics_ctz(x)                                                                                              \
+	__extension__({                                                                                                \
+		__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned), __builtin_ctz(x),         \
+		    __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned long),                  \
+			__builtin_ctzl(x),                                                                             \
+			__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned long long),         \
+			    __builtin_ctzll(x), (void)0)));                                                            \
+	})
 
 /**
  * @brief Counts the leading zeros in a base 2 number
@@ -44,19 +39,14 @@ __extension__({								\
  * compiler built-ins. Selection of the matching built-in is done statically at
  * compile time. If no matching built-in is found a compilation error is thrown.
  */
-#define intrinsics_clz(x) 						\
-__extension__({								\
-	__builtin_choose_expr( 						\
-	__builtin_types_compatible_p(__typeof__ (x), unsigned), 	\
-		__builtin_clz(x),					\
-	__builtin_choose_expr(						\
-	__builtin_types_compatible_p(__typeof__ (x), unsigned long),	\
-		__builtin_clzl(x),					\
-	__builtin_choose_expr(						\
-	__builtin_types_compatible_p(__typeof__ (x), unsigned long long),\
-		__builtin_clzll(x),					\
-	(void)0)));							\
-})
+#define intrinsics_clz(x)                                                                                              \
+	__extension__({                                                                                                \
+		__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned), __builtin_clz(x),         \
+		    __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned long),                  \
+			__builtin_clzl(x),                                                                             \
+			__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned long long),         \
+			    __builtin_clzll(x), (void)0)));                                                            \
+	})
 
 /**
  * @brief Counts the set bits in a base 2 number
@@ -67,17 +57,11 @@ __extension__({								\
  * compiler built-ins. Selection of the matching built-in is done statically at
  * compile time. If no matching built-in is found a compilation error is thrown.
  */
-#define intrinsics_popcount(x) 						\
-__extension__({								\
-	__builtin_choose_expr( 						\
-	__builtin_types_compatible_p(__typeof__ (x), unsigned), 	\
-		__builtin_popcount(x),					\
-	__builtin_choose_expr(						\
-	__builtin_types_compatible_p(__typeof__ (x), unsigned long),	\
-		__builtin_popcountl(x),					\
-	__builtin_choose_expr(						\
-	__builtin_types_compatible_p(__typeof__ (x), unsigned long long),\
-		__builtin_popcountll(x),				\
-	(void)0)));							\
-})
-
+#define intrinsics_popcount(x)                                                                                         \
+	__extension__({                                                                                                \
+		__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned), __builtin_popcount(x),    \
+		    __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned long),                  \
+			__builtin_popcountl(x),                                                                        \
+			__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned long long),         \
+			    __builtin_popcountll(x), (void)0)));                                                       \
+	})

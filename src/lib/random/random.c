@@ -10,13 +10,18 @@
  */
 #include <lib/random/random.h>
 
+#include <core/core.h>
 #include <core/intrinsics.h>
-#include <lib/lib_internal.h>
 #include <lib/random/xoroshiro.h>
 
 #include <math.h>
-#include <memory.h>
+#include "lp/lp.h"
 
+/**
+ * @brief Initalize the rollbackable RNG library of the current LP
+ * @todo Implement a scheme to support deterministic seed automatic selection
+ * @bug if global_config.prng_seed is zero, automatic seed initialization should be performed.
+ */
 void random_lib_lp_init(void)
 {
 	uint64_t seed = global_config.prng_seed;
@@ -26,11 +31,15 @@ void random_lib_lp_init(void)
 	ctx->has_normal = false;
 }
 
+/**
+ * @brief Return a random value in [0,1] according to a uniform distribution
+ * @return The random number
+ */
 double Random(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
 	uint64_t u_val = random_u64(ctx->rng_s);
-	if (unlikely(!u_val))
+	if(unlikely(!u_val))
 		return 0.0;
 
 	double ret = 0.0;
@@ -45,6 +54,10 @@ double Random(void)
 	return ret;
 }
 
+/**
+ * @brief Return a random 64-bit value
+ * @return The random number
+ */
 uint64_t RandomU64(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
@@ -60,8 +73,8 @@ uint64_t RandomU64(void)
  */
 double Expent(double mean)
 {
-	if (unlikely(mean < 0)) {
-		log_log(LOG_WARN, "Passed a negative mean into Expent()");
+	if(unlikely(mean < 0)) {
+		logger(LOG_WARN, "Passed a negative mean into Expent()");
 	}
 	return -mean * log(1 - Random());
 }
@@ -74,7 +87,7 @@ double Expent(double mean)
 double Normal(void)
 {
 	struct lib_ctx *ctx = lib_ctx_get();
-	if (!ctx->has_normal) {
+	if(!ctx->has_normal) {
 		ctx->has_normal = true;
 
 		double v1, v2, rsq;
@@ -82,7 +95,7 @@ double Normal(void)
 			v1 = 2.0 * Random() - 1.0;
 			v2 = 2.0 * Random() - 1.0;
 			rsq = v1 * v1 + v2 * v2;
-		} while (rsq >= 1.0 || rsq == 0);
+		} while(rsq >= 1.0 || rsq == 0);
 
 		double fac = sqrt(-2.0 * log(rsq) / rsq);
 
@@ -104,8 +117,7 @@ int RandomRange(int min, int max)
 
 int RandomRangeNonUniform(int x, int min, int max)
 {
-	return (((RandomRange(0, x) | RandomRange(min, max))) %
-			(max - min + 1)) + min;
+	return (((RandomRange(0, x) | RandomRange(min, max))) % (max - min + 1)) + min;
 }
 
 /**
@@ -118,18 +130,18 @@ int RandomRangeNonUniform(int x, int min, int max)
  */
 double Gamma(unsigned ia)
 {
-	if (unlikely(ia < 1)) {
-		log_log(LOG_WARN, "Gamma distribution must have a ia "
-				"value >= 1. Defaulting to 1...");
+	if(unlikely(ia < 1)) {
+		logger(LOG_WARN, "Gamma distribution must have a ia "
+				 "value >= 1. Defaulting to 1...");
 		ia = 1;
 	}
 
 	double x;
 
-	if (ia < 6) {
+	if(ia < 6) {
 		// Use direct method, adding waiting times
 		x = 1.0;
-		while (ia--)
+		while(ia--)
 			x *= 1 - Random();
 		x = -log(x);
 	} else {
@@ -141,15 +153,15 @@ double Gamma(unsigned ia)
 				do {
 					v1 = Random();
 					v2 = 2.0 * Random() - 1.0;
-				} while (v1 * v1 + v2 * v2 > 1.0);
+				} while(v1 * v1 + v2 * v2 > 1.0);
 
 				y = v2 / v1;
 				s = sqrt(2.0 * am + 1.0);
 				x = s * y + am;
-			} while (x < 0.0);
+			} while(x < 0.0);
 
 			e = (1.0 + y * y) * exp(am * log(x / am) - s * y);
-		} while (Random() > e);
+		} while(Random() > e);
 	}
 
 	return x;
@@ -181,6 +193,6 @@ unsigned Zipf(double skew, unsigned limit)
 	do {
 		x = floor(pow(Random(), -1. / skew - 1.));
 		t = pow(1. + 1. / x, skew - 1.);
-	} while (x > limit || Random() * x * (t - 1.) * b > t * (b - 1.));
-	return x;
+	} while(x > limit || Random() * x * (t - 1.) * b > t * (b - 1.));
+	return (unsigned)x;
 }

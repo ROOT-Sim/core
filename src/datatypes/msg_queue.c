@@ -4,7 +4,7 @@
  * @brief Message queue datatype
  *
  * This is the message queue for the parallel runtime.
- * The design is pretty simple. A queue for n threads is composed by a vector of
+ * The design is pretty simple. A queue for n threads is composed of a vector of
  * n simpler private thread queues plus n public buffers. If thread t1 wants to
  * send a message to thread t2 it puts a message in its buffer. Insertions are
  * then cheap, while extractions simply empty the buffer into the private queue.
@@ -24,11 +24,14 @@
 #include <stdalign.h>
 #include <stdatomic.h>
 
-#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || 		\
-	((ma).t == (mb).t && (ma).m->raw_flags > (mb).m->raw_flags))
+/// Determine an ordering between two elements in a queue
+#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended(ma.m, mb.m)))
 
+/// An element in the message queue
 struct q_elem {
+	/// the timestamp of the message
 	simtime_t t;
+	/// the message enqueued
 	struct lp_msg *m;
 };
 
@@ -54,8 +57,7 @@ static __thread struct {
  */
 void msg_queue_global_init(void)
 {
-	queues = mm_aligned_alloc(CACHE_LINE_SIZE, n_threads *
-			sizeof(*queues));
+	queues = mm_aligned_alloc(CACHE_LINE_SIZE, global_config.n_threads * sizeof(*queues));
 }
 
 /**
@@ -75,18 +77,36 @@ void msg_queue_init(void)
 }
 
 /**
+ * @brief Initialize the message queue for the current LP
+ *
+ * This is a no-op for this kind of queue.
+ */
+void msg_queue_lp_init(void)
+{
+}
+
+/**
+ * @brief Finalize the message queue for the current LP
+ *
+ * This is a no-op for this kind of queue.
+ */
+void msg_queue_lp_fini(void)
+{
+}
+
+/**
  * @brief Finalizes the message queue for the current thread
  */
 void msg_queue_fini(void)
 {
-	for (array_count_t i = 0; i < heap_count(mqp.q); ++i)
+	for(array_count_t i = 0; i < heap_count(mqp.q); ++i)
 		msg_allocator_free(heap_items(mqp.q)[i].m);
 
 	heap_fini(mqp.q);
 	mm_free(mqp.alt_items);
 
 	struct msg_queue *mq = &queues[rid];
-	for (array_count_t i = 0; i < array_count(mq->b); ++i)
+	for(array_count_t i = 0; i < array_count(mq->b); ++i)
 		msg_allocator_free(array_get_at(mq->b, i).m);
 
 	array_fini(mq->b);
@@ -104,7 +124,8 @@ static inline void msg_queue_insert_queued(void)
 {
 	struct msg_queue *mq = &queues[rid];
 
-	spin_lock(&mq->q_lock);
+	if (unlikely(!spin_trylock(&mq->q_lock)))
+		return;
 
 	struct q_elem *tmp_items = array_items(mq->b);
 	array_count_t c = array_count(mq->b);
@@ -133,8 +154,7 @@ static inline void msg_queue_insert_queued(void)
 struct lp_msg *msg_queue_extract(void)
 {
 	msg_queue_insert_queued();
-	return likely(heap_count(mqp.q)) ?
-			heap_extract(mqp.q, q_elem_is_before).m : NULL;
+	return likely(heap_count(mqp.q)) ? heap_extract(mqp.q, q_elem_is_before).m : NULL;
 }
 
 /**

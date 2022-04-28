@@ -17,18 +17,13 @@
 struct process_data {
 	/// The messages processed in the past by the owner LP
 	dyn_array(struct lp_msg *) p_msgs;
-	simtime_t last_t;
 };
 
 #define is_msg_sent(msg_p) (((uintptr_t)(msg_p)) & 3U)
 #define is_msg_remote(msg_p) (((uintptr_t)(msg_p)) & 2U)
 #define is_msg_local_sent(msg_p) (((uintptr_t)(msg_p)) & 1U)
 #define is_msg_past(msg_p) (!(((uintptr_t)(msg_p)) & 3U))
-#define unmark_msg(msg_p) \
-	((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
-
-extern void process_global_init(void);
-extern void process_global_fini(void);
+#define unmark_msg(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
 
 extern void process_init(void);
 extern void process_fini(void);

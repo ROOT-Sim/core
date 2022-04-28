@@ -8,4 +8,4 @@
  */
 #pragma once
 
-extern void parallel_simulation(void);
+extern int parallel_simulation(void);

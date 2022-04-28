@@ -36,7 +36,7 @@
  */
 
 /**
- * @fn thread_wait(thr_id_t thr, thr_ret_t *ret)
+ * @fn thread_wait(thr_id_t thr, thrd_ret_t *ret)
  * @brief Wait for specified thread to complete execution
  * @param thr The identifier of the thread to wait for
  * @param ret A pointer to the location where the return value will be copied,
@@ -52,7 +52,6 @@
 
 #ifdef __POSIX
 #include <sched.h>
-#include <signal.h>
 #include <unistd.h>
 
 #ifdef __MACOS
@@ -62,8 +61,7 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 {
 	thread_affinity_policy_data_t policy = {core};
 	thread_port_t mach_thread = pthread_mach_thread_np(thr);
-	kern_return_t ret = thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY,
-					      (thread_policy_t) &policy, 1);
+	kern_return_t ret = thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
 	return -(ret != KERN_SUCCESS);
 }
 
@@ -75,15 +73,14 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 	cpu_set_t cpuset;
 	sched_getaffinity(0, sizeof(cpuset), &cpuset);
 
-	for (unsigned i = 0; i < CPU_SETSIZE; ++i) {
-		if (!CPU_ISSET(i, &cpuset))
+	for(unsigned i = 0; i < CPU_SETSIZE; ++i) {
+		if(!CPU_ISSET(i, &cpuset))
 			continue;
 
-		if (core == 0) {
+		if(core == 0) {
 			CPU_ZERO(&cpuset);
 			CPU_SET(i, &cpuset);
-			return -(pthread_setaffinity_np(thr, sizeof(cpuset),
-					&cpuset) != 0);
+			return -(pthread_setaffinity_np(thr, sizeof(cpuset), &cpuset) != 0);
 		}
 		--core;
 	}
@@ -103,7 +100,7 @@ int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 	return -(pthread_create(thr_p, NULL, t_fnc, t_fnc_arg) != 0);
 }
 
-int thread_wait(thr_id_t thr, thr_ret_t *ret)
+int thread_wait(thr_id_t thr, thrd_ret_t *ret)
 {
 	return -(pthread_join(thr, ret) != 0);
 }
@@ -135,12 +132,12 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 	return -(SetThreadAffinityMask(thr, 1 << core) == 0);
 }
 
-int thread_wait(thr_id_t thr, thr_ret_t *ret)
+int thread_wait(thr_id_t thr, thrd_ret_t *ret)
 {
-	if (WaitForSingleObject(thr, INFINITE) == WAIT_FAILED)
+	if(WaitForSingleObject(thr, INFINITE) == WAIT_FAILED)
 		return -1;
 
-	if (ret)
+	if(ret)
 		return -(GetExitCodeThread(thr, ret) == 0);
 
 	return 0;
