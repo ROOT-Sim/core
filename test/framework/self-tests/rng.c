@@ -14,7 +14,7 @@
 
 test_ret_t test_rng(__unused void *_)
 {
-	test_assert(ks_test(100000000, 1000, test_random_double) == 0);
+	test_assert(ks_test(10000000, 1000, test_random_double) == 0);
 	test_assert(ks_test(1000000, 1000, test_random_double) == 0);
 	test_assert(ks_test(100000, 1000, test_random_double) == 0);
 	test_assert(ks_test(10000, 100, test_random_double) == 0);
