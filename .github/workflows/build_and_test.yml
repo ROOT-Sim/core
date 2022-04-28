@@ -14,6 +14,16 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         compiler: [ clang, gcc ]
         type: [ Debug, Release ]
+        exclude:
+          - os: macos-latest
+            compiler: gcc
+        include:
+          - os: macos-latest
+            compiler: gcc-11
+            type: Debug
+          - os: macos-latest
+            compiler: gcc-11
+            type: Release
     steps:
       - name: Checkpout repository
         uses: actions/checkout@v2
