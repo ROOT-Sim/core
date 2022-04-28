@@ -14,6 +14,7 @@
 #include <mm/mm.h>
 #include <core/sync.h>
 #include <gvt/fossil.h>
+#include <gvt/termination.h>
 
 uint64_t lid_node_first;
 __thread uint64_t lid_thread_first;
