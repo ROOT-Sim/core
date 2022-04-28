@@ -12,7 +12,6 @@
 
 #include <arch/platform.h>
 #include <core/core.h>
-#include <gvt/termination.h>
 #include <lib/lib.h>
 #include <lp/msg.h>
 #include <lp/process.h>
@@ -24,7 +23,7 @@ struct lp_ctx {
 	/// ID of the current LP
 	lp_id_t id;
 	/// The termination time of this LP, handled by the termination module
-	simtime_t t_d;
+	simtime_t termination_t;
 	/// The additional libraries context of this LP
 	struct lib_ctx *lib_ctx;
 	/// The automatic checkpointing interval selection data
@@ -33,11 +32,6 @@ struct lp_ctx {
 	struct process_data p;
 	/// The memory allocator state of this LP
 	struct mm_state mm_state;
-
-	/// The logical time of the last processed event by this LP
-	simtime_t last_evt_time;
-	/// The last evaluation of the termination predicate for this LP
-	bool terminating;
 };
 
 #define lid_to_nid(lp_id) ((nid_t)((lp_id) * n_nodes / global_config.lps))
