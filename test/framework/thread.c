@@ -78,12 +78,11 @@ thrd_ret_t test_worker(void *args)
 
 void spawn_worker_pool(unsigned n_th)
 {
-	test_unit.n_th = n_th;
-	rid = (rid_t)-1;
-
 	if(n_th == 0)
 		return;
 
+	test_unit.n_th = n_th;
+	rid = (rid_t)-1;
 	work = sema_init(0);
 	ready = sema_init(0);
 	all_done = sema_init(0);
