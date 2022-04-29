@@ -42,6 +42,7 @@ static void serial_simulation_init(void)
 		lib_lp_init();
 
 		struct lp_msg *msg = msg_allocator_pack(i, 0.0, LP_INIT, NULL, 0);
+		msg->raw_flags = 0;
 		heap_insert(queue, msg_is_before, msg);
 	}
 }
@@ -55,11 +56,14 @@ static void serial_simulation_fini(void)
 		current_lp = &lps[i];
 		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lps[i].lib_ctx->state_s);
 		lib_lp_fini();
+		model_allocator_lp_fini();
 	}
 
 	for(array_count_t i = 0; i < array_count(queue); ++i) {
 		msg_allocator_free(array_get_at(queue, i));
 	}
+
+	mm_free(lps);
 
 	lib_global_fini();
 	heap_fini(queue);
@@ -120,6 +124,7 @@ void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned eve
     unsigned payload_size)
 {
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
+	msg->raw_flags = 0;
 
 	if (!msg_is_before(heap_min(queue), msg))
 		logger(LOG_WARN, "Sending a contemporaneous message or worse, in the PAST!");
