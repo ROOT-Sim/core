@@ -27,6 +27,18 @@ static bool configuration_done = false;
 struct simulation_configuration global_config = {0};
 
 /**
+ * @brief Prints a fancy ROOT-Sim logo
+ */
+static void print_logo(void)
+{
+	fprintf(stderr, "\x1b[94m   __ \x1b[90m __   _______   \x1b[94m  _ \x1b[90m       \n");
+	fprintf(stderr, "\x1b[94m  /__)\x1b[90m/  ) /  ) /  __ \x1b[94m ( `\x1b[90m . ___ \n");
+	fprintf(stderr, "\x1b[94m / \\ \x1b[90m(__/ (__/ (      \x1b[94m._)\x1b[90m / / / )\n");
+	fprintf(stderr, "\x1b[0m\n");
+}
+
+
+/**
  * @brief Pretty prints ROOT-Sim current configuration
  */
 static void print_config(void)
@@ -120,15 +132,19 @@ int RootsimRun(void)
 	if(!configuration_done)
 		return -1;
 
-	if(global_config.log_level > LOG_SILENT)
+	if(!global_config.serial)
+		mpi_global_init(NULL, NULL);
+
+	if(global_config.log_level < LOG_SILENT) {
+		print_logo();
 		print_config();
+	}
 
 	stats_global_time_start();
 
 	if(global_config.serial) {
 		ret = serial_simulation();
 	} else {
-		mpi_global_init(NULL, NULL);
 		ret = parallel_simulation();
 		mpi_global_fini();
 	}

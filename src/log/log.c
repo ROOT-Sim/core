@@ -63,27 +63,11 @@ void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...)
 }
 
 /**
- * @brief Prints a fancy ROOT-Sim logo
- */
-static void print_logo(void)
-{
-	fprintf(stderr, "\x1b[94m   __ \x1b[90m __   _______   \x1b[94m  _ \x1b[90m       \n");
-	fprintf(stderr, "\x1b[94m  /__)\x1b[90m/  ) /  ) /  __ \x1b[94m ( `\x1b[90m . ___ \n");
-	fprintf(stderr, "\x1b[94m / \\ \x1b[90m(__/ (__/ (      \x1b[94m._)\x1b[90m / / / )\n");
-	fprintf(stderr, "\x1b[0m\n");
-}
-
-/**
  * @brief Initialize the logging subsystem
  *
  * @param file The FILE to write logging information to. If set to NULL, it is defaulted to stdout.
  */
 void log_init(FILE *file)
 {
-	logfile = file;
-	if(logfile == NULL)
-		logfile = stdout;
-
-	if(global_config.log_level != LOG_SILENT)
-		print_logo();
+	logfile = logfile == NULL ? stdout : file;
 }

@@ -197,6 +197,9 @@ void mpi_remote_msg_handle(void)
 				continue;
 			}
 			msg = msg_allocator_alloc(0);
+			// make sure the deterministic tie-breaking doesn't read uninitialized data
+			msg->m_type = 0;
+			msg->pl_size = 0;
 			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
 			gvt_remote_anti_msg_receive(msg);
