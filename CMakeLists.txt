@@ -32,6 +32,7 @@ set(srcs
         src/gvt/termination.c
         src/lib/lib.c
         src/lib/random/random.c
+        src/lib/retractable/retractable.c
         src/lib/state/state.c
         src/lib/topology/topology.c
         src/log/log.c

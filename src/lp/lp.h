@@ -24,6 +24,8 @@ struct lp_ctx {
 	lp_id_t id;
 	/// The termination time of this LP, handled by the termination module
 	simtime_t termination_t;
+	/// Position of the retractable entry in the heap data structure
+	array_count_t retractable_pos;
 	/// The additional libraries context of this LP
 	struct lib_ctx *lib_ctx;
 	/// The automatic checkpointing interval selection data

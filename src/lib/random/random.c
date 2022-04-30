@@ -32,7 +32,7 @@ void random_lib_lp_init(void)
 }
 
 /**
- * @brief Return a random value in [0,1] according to a uniform distribution
+ * @brief Return a random value in [0,1) according to a uniform distribution
  * @return The random number
  */
 double Random(void)

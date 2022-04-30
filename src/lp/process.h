@@ -32,4 +32,6 @@ extern void process_lp_init(void);
 extern void process_lp_deinit(void);
 extern void process_lp_fini(void);
 
+extern bool process_is_silent(void);
+
 extern void process_msg(void);

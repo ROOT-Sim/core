@@ -12,7 +12,9 @@
 
 #include <stdbool.h>
 
+#include <core/core.h>
 #include <lib/random/random.h>
+#include <lib/retractable/retractable.h>
 #include <lib/state/state.h>
 
 /// Per-LP structure for core libraries
@@ -26,6 +28,8 @@ struct lib_ctx {
 	bool has_normal;
 	// todo remove
 	void *state_s;
+	/// Timestamp of retractable msg
+	simtime_t retractable_t;
 };
 
 extern void lib_global_init(void);

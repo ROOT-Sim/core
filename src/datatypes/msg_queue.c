@@ -18,6 +18,7 @@
 #include <core/core.h>
 #include <core/sync.h>
 #include <datatypes/heap.h>
+#include <lib/retractable/retractable.h>
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
@@ -74,6 +75,8 @@ void msg_queue_init(void)
 
 	array_init(mq->b);
 	spin_init(&mq->q_lock);
+
+	retractable_lib_init();
 }
 
 /**
@@ -99,6 +102,8 @@ void msg_queue_lp_fini(void)
  */
 void msg_queue_fini(void)
 {
+	retractable_lib_fini();
+
 	for(array_count_t i = 0; i < heap_count(mqp.q); ++i)
 		msg_allocator_free(heap_items(mqp.q)[i].m);
 
@@ -154,6 +159,14 @@ static inline void msg_queue_insert_queued(void)
 struct lp_msg *msg_queue_extract(void)
 {
 	msg_queue_insert_queued();
+
+#ifdef ROOTSIM_RETRACTABLE
+	simtime_t qt = likely(heap_count(mqp.q)) ? heap_min(mqp.q).t : SIMTIME_MAX;
+	struct lp_msg *retractable = retractable_extract(qt);
+	if (retractable != NULL)
+		return retractable;
+#endif
+
 	return likely(heap_count(mqp.q)) ? heap_extract(mqp.q, q_elem_is_before).m : NULL;
 }
 
@@ -169,7 +182,13 @@ struct lp_msg *msg_queue_extract(void)
 simtime_t msg_queue_time_peek(void)
 {
 	msg_queue_insert_queued();
+
+#ifdef ROOTSIM_RETRACTABLE
+	simtime_t qt = likely(heap_count(mqp.q)) ? heap_min(mqp.q).t : SIMTIME_MAX;
+	return retractable_min_t(qt);
+#else
 	return likely(heap_count(mqp.q)) ? heap_min(mqp.q).t : SIMTIME_MAX;
+#endif
 }
 
 /**

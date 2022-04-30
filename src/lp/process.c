@@ -14,6 +14,7 @@
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
 #include <gvt/gvt.h>
+#include <lib/retractable/retractable.h>
 #include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/auto_ckpt.h>
@@ -45,9 +46,9 @@ static __thread struct lp_msg *current_msg;
  * @param payload_size the size (in bytes) of the event content
  */
 void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
-    unsigned payload_size) {
-
-	if (unlikely(global_config.serial)) {
+    unsigned payload_size)
+{
+	if(unlikely(global_config.serial)) {
 		ScheduleNewEvent_serial(receiver, timestamp, event_type, payload, payload_size);
 		return;
 	}
@@ -59,6 +60,7 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
 #ifndef NDEBUG
+	msg->raw_flags = 0;
 	if(msg_is_before(msg, current_msg)) {
 		logger(LOG_FATAL, "Scheduling a message in the past!");
 		abort();
@@ -190,7 +192,8 @@ static inline void send_anti_messages(struct process_data *proc_p, array_count_t
 				msg_allocator_free_at_gvt(msg);
 			} else {
 				msg = unmark_msg_sent(msg);
-				int f = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
+				uint32_t f =
+				    atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
 				if(f & MSG_FLAG_PROCESSED)
 					msg_queue_insert(msg);
 			}
@@ -198,11 +201,15 @@ static inline void send_anti_messages(struct process_data *proc_p, array_count_t
 			msg = array_get_at(proc_p->p_msgs, ++i);
 		}
 
-		int f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
+		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(f & MSG_FLAG_ANTI)) {
-			msg_queue_insert(msg);
-			stats_take(STATS_MSG_ROLLBACK, 1);
+			if(is_retractable(msg)) {
+				msg_allocator_free(msg);
+			} else {
+				msg_queue_insert(msg);
+			}
 		}
+		stats_take(STATS_MSG_ROLLBACK, 1);
 	}
 	array_count(proc_p->p_msgs) = past_i;
 }
@@ -212,11 +219,11 @@ static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 	send_anti_messages(proc_p, past_i);
 	array_count_t last_i = model_allocator_checkpoint_restore(past_i);
 	silent_execution(proc_p, last_i, past_i);
+	retractable_rollback_handle();
 	stats_take(STATS_ROLLBACK, 1);
 }
 
-static inline array_count_t match_straggler_msg(
-		const struct process_data *proc_p, const struct lp_msg *s_msg)
+static inline array_count_t match_straggler_msg(const struct process_data *proc_p, const struct lp_msg *s_msg)
 {
 	array_count_t i = array_count(proc_p->p_msgs) - 1;
 	const struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
@@ -351,4 +358,9 @@ void process_msg(void)
 		checkpoint_take(proc_p);
 
 	termination_on_msg_process(msg->dest_t);
+}
+
+bool process_is_silent(void)
+{
+	return silent_processing;
 }

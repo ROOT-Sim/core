@@ -29,6 +29,7 @@ void lib_global_fini(void) {}
 void lib_lp_init(void)
 {
 	random_lib_lp_init();
+	retractable_lib_lp_init();
 	state_lib_lp_init();
 }
 

@@ -88,9 +88,9 @@ void msg_allocator_free_at_gvt(struct lp_msg *msg)
  */
 void msg_allocator_on_gvt(simtime_t current_gvt)
 {
-	for (array_count_t i = array_count(at_gvt_list); i-- > 0;) {
+	for(array_count_t i = array_count(at_gvt_list); i-- > 0;) {
 		struct lp_msg *msg = array_get_at(at_gvt_list, i);
-		if (msg->dest_t < current_gvt) {
+		if(msg->dest_t < current_gvt) {
 			msg_allocator_free(msg);
 			array_lazy_remove_at(at_gvt_list, i);
 		}
