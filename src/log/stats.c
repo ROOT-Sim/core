@@ -50,13 +50,16 @@ struct stats_global {
 	uint64_t timestamps[STATS_GLOBAL_COUNT];
 };
 
-static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT
-		  && sizeof(struct stats_node) == 16
-		  && sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
+static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct stats_node) == 16 &&
+		  sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
     "structs aren't properly packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the header of the final csv
 const char *const s_names[] = {
+    [STATS_EXTRACTION_TIME] = "extraction time",
+    [STATS_ROLLBACK_TIME] = "rollbacks time",
+    [STATS_FORWARD_TIME] = "forward time",
+    [STATS_SCHEDULE_TIME] = "schedule time",
     [STATS_ROLLBACK] = "rollbacks",
     [STATS_MSG_ROLLBACK] = "rolled back messages",
     [STATS_MSG_REMOTE_RECEIVED] = "remote messages received",

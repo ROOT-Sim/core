@@ -56,6 +56,7 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 	if(unlikely(silent_processing))
 		return;
 
+	timer_uint t = timer_hr_new();
 	struct process_data *proc_p = &current_lp->p;
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
@@ -78,6 +79,7 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 		msg_queue_insert(msg);
 		array_push(proc_p->p_msgs, mark_msg_sent(msg));
 	}
+	stats_take(STATS_SCHEDULE_TIME, timer_hr_value(t));
 }
 
 /**
@@ -308,7 +310,9 @@ static inline bool check_early_anti_messages(struct lp_msg *msg)
  */
 void process_msg(void)
 {
+	timer_uint t = timer_hr_new();
 	struct lp_msg *msg = msg_queue_extract();
+	stats_take(STATS_EXTRACTION_TIME, timer_hr_value(t));
 	if(unlikely(!msg)) {
 		current_lp = NULL;
 		return;
@@ -323,6 +327,7 @@ void process_msg(void)
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
+		timer_uint t = timer_hr_new();
 		if(flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 			handle_remote_anti_msg(proc_p, msg);
 			auto_ckpt_register_bad(&this_lp->auto_ckpt);
@@ -333,7 +338,7 @@ void process_msg(void)
 			auto_ckpt_register_bad(&this_lp->auto_ckpt);
 		}
 		msg_allocator_free(msg);
-
+		stats_take(STATS_ROLLBACK_TIME, timer_hr_value(t));
 		return;
 	}
 
@@ -341,15 +346,19 @@ void process_msg(void)
 		return;
 
 	if(unlikely(array_count(proc_p->p_msgs) && msg_is_before(msg, array_peek(proc_p->p_msgs)))) {
+		timer_uint t = timer_hr_new();
 		array_count_t past_i = match_straggler_msg(proc_p, msg);
 		do_rollback(proc_p, past_i);
 		termination_on_lp_rollback(msg->dest_t);
 		auto_ckpt_register_bad(&this_lp->auto_ckpt);
+		stats_take(STATS_ROLLBACK_TIME, timer_hr_value(t));
 	}
 #ifndef NDEBUG
 	current_msg = msg;
 #endif
+	t = timer_hr_new();
 	global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, this_lp->lib_ctx->state_s);
+	stats_take(STATS_FORWARD_TIME, timer_hr_value(t));
 	stats_take(STATS_MSG_PROCESSED, 1);
 	array_push(proc_p->p_msgs, msg);
 
