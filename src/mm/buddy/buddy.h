@@ -8,43 +8,32 @@
  */
 #pragma once
 
-#include <datatypes/array.h>
 #include <datatypes/bitmap.h>
 
 #include <assert.h>
 #include <stdalign.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#define B_LOG_INCREMENTAL_THRESHOLD 4
-#define B_TOTAL_EXP 17U
+#define B_TOTAL_EXP 16U
 #define B_BLOCK_EXP 6U
+
+// doesn't work correctly for 0 values!
+#define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
+#define buddy_allocation_block_compute(req_size) next_exp_of_2(max(req_size, 1U << B_BLOCK_EXP) - 1);
 
 #define buddy_left_child(i) (((i) << 1U) + 1U)
 #define buddy_right_child(i) (((i) << 1U) + 2U)
 #define buddy_parent(i) ((((i) + 1) >> 1U) - 1U)
 
 /// The checkpointable memory context assigned to a single LP
-struct mm_state {
-	/// The array of checkpoints
-	dyn_array(
-		/// Binds a checkpoint together with a reference index
-		struct mm_log {
-			/// The reference index, used to identify this checkpoint
-			array_count_t ref_i;
-			/// A pointer to the actual checkpoint
-			struct mm_checkpoint *c;
-		}
-	) logs;
-	/// The count of allocated bytes
-	uint_fast32_t used_mem;
+struct buddy_state {
 	/// The checkpointed binary tree representing the buddy system
 	/** the last char is actually unused */
 	alignas(16) uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
 	/// The memory buffer served to the model
 	alignas(16) unsigned char base_mem[1U << B_TOTAL_EXP];
-	/// The bytes count of the memory dirtied by writes
-	uint_fast32_t dirty_mem;
 	/// Keeps track of memory blocks which have been dirtied by a write
 	block_bitmap dirty[
 		bitmap_required_size(
@@ -52,13 +41,26 @@ struct mm_state {
 			(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
 		// while this tracks writes to the actual memory buffer
 			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
-
 		)
 	];
 };
 
 static_assert(
-	offsetof(struct mm_state, longest) ==
-	offsetof(struct mm_state, base_mem) -
-	sizeof(((struct mm_state *)0)->longest),
+	offsetof(struct buddy_state, longest) ==
+	offsetof(struct buddy_state, base_mem) -
+	sizeof(((struct buddy_state *)0)->longest),
 	"longest and base_mem are not contiguous, this will break incremental checkpointing");
+
+extern void buddy_init(struct buddy_state *self);
+extern void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp);
+extern uint_fast32_t buddy_free(struct buddy_state *self, void *ptr);
+
+struct buddy_realloc_res {
+	bool handled;
+	union {
+		int_fast32_t variation;
+		uint_fast32_t original;
+	};
+};
+extern struct buddy_realloc_res buddy_best_effort_realloc(struct buddy_state *self, void *ptr, size_t req_size);
+extern void buddy_dirty_mark(struct buddy_state *self, const void *ptr, size_t s);
