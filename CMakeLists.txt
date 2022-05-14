@@ -42,6 +42,7 @@ set(srcs
         src/mm/auto_ckpt.c
         src/mm/buddy/buddy.c
         src/mm/buddy/ckpt.c
+        src/mm/buddy/multi.c
         src/mm/msg_allocator.c
         src/parallel/parallel.c
         src/serial/serial.c)

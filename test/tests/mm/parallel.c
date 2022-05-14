@@ -11,7 +11,7 @@
 
 #include "test.h"
 
-
+#include "mm/buddy/buddy.h"
 #include "mm/mm.h"
 #include "lp/lp.h"
 
