@@ -16,8 +16,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define B_TOTAL_EXP 20U
-#define B_BLOCK_EXP 8U
+#define B_TOTAL_EXP 23U
+#define B_BLOCK_EXP 10U
 
 // doesn't work correctly for 0 values!
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
