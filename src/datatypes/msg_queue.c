@@ -29,20 +29,20 @@
 
 /// An element in the message queue
 struct q_elem {
-	/// the timestamp of the message
+	/// The timestamp of the message
 	simtime_t t;
-	/// the message enqueued
+	/// The message enqueued
 	struct lp_msg *m;
 };
 
-/// A queue synchronized by a spinlock
-struct msg_queue {
-	/// Synchronizes access to the queue
+/// The multi-threaded message buffer, implemented as a non-blocking list
+struct msg_buffer {
+	/// The head of the messages list
 	alignas(CACHE_LINE_SIZE) _Atomic(struct lp_msg *) list;
 };
 
-/// The queues vector
-static struct msg_queue *queues;
+/// The buffers vector
+static struct msg_buffer *queues;
 /// The private thread queue
 static __thread heap_declare(struct q_elem) mqp;
 
@@ -128,8 +128,7 @@ struct lp_msg *msg_queue_extract(void)
 
 /**
  * @brief Peeks the timestamp of the next message from the queue
- * @returns the lowest timestamp of the next message to be processed or
- *          SIMTIME_MAX is there's no message to process
+ * @returns the lowest timestamp of the next message to be processed or SIMTIME_MAX is there's no message to process
  *
  * This returns the lowest timestamp of the next message to be processed for the
  * current thread. This is calculated in a precise fashion since this value is
