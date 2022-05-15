@@ -147,8 +147,8 @@ simtime_t msg_queue_time_peek(void)
 void msg_queue_insert(struct lp_msg *msg)
 {
 	_Atomic(struct lp_msg *) *list_p = &queues[lid_to_rid(msg->dest)].list;
-	struct lp_msg *list = atomic_load_explicit(list_p, memory_order_relaxed);
-	do {
-		msg->next = list;
-	} while(!atomic_compare_exchange_weak_explicit(list_p, &list, msg, memory_order_release, memory_order_relaxed));
+	msg->next = atomic_load_explicit(list_p, memory_order_relaxed);
+	while(unlikely(!atomic_compare_exchange_weak_explicit(list_p, &msg->next, msg, memory_order_release,
+	    memory_order_relaxed)))
+		spin_pause();
 }
