@@ -11,9 +11,14 @@
 #include <distributed/mpi.h>
 #include <lp/lp.h>
 
+/// The number of nodes that still need to continue running the simulation
 _Atomic nid_t nodes_to_end;
+/// The number of local threads that still need to continue running the simulation
 static _Atomic rid_t thr_to_end;
+/// The number of thread-locally bounded LPs that still need to continue running the simulation
 static __thread uint64_t lps_to_end;
+/// The maximum speculative time at which a thread-local LP declared its intention to terminate
+/** FIXME: a wrong high termination time during a speculative trajectory forces the simulation to uselessly continue */
 static __thread simtime_t max_t;
 
 /**

@@ -44,11 +44,11 @@ struct auto_ckpt {
  * @return true if the LP needs a checkpoint, false otherwise
  */
 #define auto_ckpt_is_needed(auto_ckpt)                                                                                 \
-	__extension__({                                                                                                    \
-		_Bool r = ++(auto_ckpt)->ckpt_rem >= (auto_ckpt)->ckpt_interval;                                               \
-		if(r)                                                                                                          \
-			(auto_ckpt)->ckpt_rem = 0;                                                                                 \
-		r;                                                                                                             \
+	__extension__({                                                                                                \
+		_Bool r = ++(auto_ckpt)->ckpt_rem >= (auto_ckpt)->ckpt_interval;                                       \
+		if(r)                                                                                                  \
+			(auto_ckpt)->ckpt_rem = 0;                                                                     \
+		r;                                                                                                     \
 	})
 
 extern void auto_ckpt_init(void);

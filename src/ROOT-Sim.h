@@ -70,8 +70,22 @@ typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
 enum rootsim_event {LP_INIT = 65534, LP_FINI};
 
+/**
+ * @brief API to inject a new event in the simulation
+ *
+ * This is a function pointer that is setup at simulation startup to point to either
+ * ScheduleNewEvent_parallel() in case of a parallel/distributed simulation, or to
+ * ScheduleNewEvent_serial() in case of a serial simulation.
+ *
+ * @param receiver The ID of the LP that should receive the newly-injected message
+ * @param timestamp The simulation time at which the event should be delivered at the recipient LP
+ * @param event_type Numerical event type to be passed to the model's dispatcher
+ * @param event_content The event content
+ * @param event_size The size (in bytes) of the event content
+ */
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
     unsigned event_size);
+
 extern void SetState(void *new_state);
 
 extern void *rs_malloc(size_t req_size);
