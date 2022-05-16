@@ -43,8 +43,8 @@ class RSStats:
         return ret
 
     def _nodes_stats_load(self):
-        self.nodes_count = self._pattern_unpack("q")[0]
-        for _ in range(self.nodes_count):
+        nodes_count = self._pattern_unpack("q")[0]
+        for _ in range(nodes_count):
             glob_stats = self._pattern_unpack("8Q")
             n_threads = glob_stats[0]
             self.threads_count.append(n_threads)
@@ -105,18 +105,24 @@ class RSStats:
         self._gvts = []
         self._truncate_to_last_gvt()
 
-        self._global_measures = []
+        self._global_measures = {
+            "maximum_resident_set": [],
+            "node_init_time": [],
+            "worker_threads_init_time": [],
+            "processing_time": [],
+            "worker_threads_fini_time": [],
+            "node_fini_time": [],
+            "resident_set": []
+        }
         for triple in self.all_stats:
             glob_stats, node_stats, threads_stats = triple
 
-            this_measures = {
-                "maximum_resident_set": glob_stats[1],
-                "node_init_time": glob_stats[3] - glob_stats[2],
-                "worker_threads_init_time": glob_stats[4] - glob_stats[3],
-                "processing_time": glob_stats[5] - glob_stats[4],
-                "worker_threads_fini_time": glob_stats[6] - glob_stats[5],
-                "node_fini_time": glob_stats[7] - glob_stats[6]
-            }
+            self._global_measures["maximum_resident_set"].append(glob_stats[1])
+            self._global_measures["node_init_time"].append(glob_stats[3] - glob_stats[2])
+            self._global_measures["worker_threads_init_time"].append(glob_stats[4] - glob_stats[3])
+            self._global_measures["processing_time"].append(glob_stats[5] - glob_stats[4])
+            self._global_measures["worker_threads_fini_time"].append(glob_stats[6] - glob_stats[5])
+            self._global_measures["node_fini_time"].append(glob_stats[7] - glob_stats[6])
 
             mem = []
             for i, (gvt, crs_mem) in enumerate(node_stats):
@@ -127,8 +133,7 @@ class RSStats:
 
                 mem.append(crs_mem)
 
-            this_measures["resident_set"] = mem
-            self._global_measures.append(this_measures)
+            self._global_measures["resident_set"].append(mem)
 
             for j, metric_name in enumerate(metric_names):
                 metric_n_stat = []
@@ -159,8 +164,8 @@ class RSStats:
     # @return a dictionary containing node-specific statistics
     # TODO more thorough description of what we have here
     @property
-    def node_stats(self):
-        return list(self._global_measures)
+    def nodes_stats(self):
+        return self._global_measures
 
     @property
     def nodes_count(self):
@@ -218,26 +223,36 @@ if __name__ == "__main__":
     stats = RSStats(sys.argv[1])
 
     processed_msgs = stats.thread_metric_get("processed messages", aggregate_nodes=True, aggregate_gvts=True)
-    rollbacked_msgs = stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
+    rollback_msgs = stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
     silent_msgs = stats.thread_metric_get("silent messages", aggregate_nodes=True, aggregate_gvts=True)
     rollbacks = stats.thread_metric_get("rollbacks", aggregate_nodes=True, aggregate_gvts=True)
 
-    outname = sys.argv[1][4:] if sys.argv[1].endswith(".bin") else sys.argv[1]
-    outname = outname + ".txt"
+    peak_memory_usage = sum(stats.nodes_stats["maximum_resident_set"])
+    avg_memory_usage = sum([sum(t) for t in stats.nodes_stats["resident_set"]]) / len(stats.gvts)
 
-    with open(outname, "w") as f:
+    out_name = sys.argv[1][:-4] if sys.argv[1].endswith(".bin") else sys.argv[1]
+    out_name = out_name + ".txt"
+
+    def fmt_size(num, suffix="B"):
+        for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+            if abs(num) < 1024.0:
+                return f"{num:3.1f}{unit}{suffix}"
+            num /= 1024.0
+        return f"{num:.1f}Yi{suffix}"
+
+    with open(out_name, "w+") as f:
         f.write(f"TOTAL KERNELS ............. : {stats.nodes_count}\n")
         f.write(f"TOTAL_THREADS ............. : {sum(stats.threads_count)}\n")
         f.write(f"TOTAL_LPs ................. : TODO\n")  # TODO add number of LPs to stats in ROOT-Sim!
         f.write(f"TOTAL EXECUTED EVENTS ..... : {processed_msgs + silent_msgs}\n")
-        f.write(f"TOTAL COMMITTED EVENTS..... : {processed_msgs - rollbacked_msgs}\n")
-        f.write(f"TOTAL REPROCESSED EVENTS... : {rollbacked_msgs}\n")
+        f.write(f"TOTAL COMMITTED EVENTS..... : {processed_msgs - rollback_msgs}\n")
+        f.write(f"TOTAL REPROCESSED EVENTS... : {rollback_msgs}\n")
         f.write(f"TOTAL SILENT EVENTS........ : {silent_msgs}\n")
         f.write(f"TOTAL ROLLBACKS EXECUTED... : {rollbacks}\n")
         f.write(f"TOTAL ANTIMESSAGES......... : TODO\n")  # TODO add antimessages to stats in ROOT-Sim!
-        f.write(f"ROLLBACK FREQUENCY......... : {100 * rollbacked_msgs / processed_msgs}%\n")
-        f.write(f"ROLLBACK LENGTH............ : {rollbacked_msgs / rollbacks}\n")
-        f.write(f"EFFICIENCY................. : {100 * (processed_msgs - rollbacked_msgs) / processed_msgs}%\n")
+        f.write(f"ROLLBACK FREQUENCY......... : {100 * rollbacks / processed_msgs:.2f}%\n")
+        f.write(f"ROLLBACK LENGTH............ : {rollback_msgs / rollbacks:.2f}\n")
+        f.write(f"EFFICIENCY................. : {100 * (processed_msgs - rollback_msgs) / processed_msgs:.2f}%\n")
         f.write(f"AVERAGE EVENT COST......... : TODO\n")  # TODO do we want this?
         f.write(f"AVERAGE EVENT COST (EMA)... : TODO\n")  # TODO do we want this?
         f.write(f"AVERAGE CHECKPOINT COST.... : TODO\n")  # TODO do we want this?
@@ -250,5 +265,5 @@ if __name__ == "__main__":
         f.write(f"MAX GVT ROUND TIME......... : TODO\n")  # TODO do we want this?
         f.write(f"AVERAGE GVT ROUND TIME..... : TODO\n")  # TODO do we want this?
         f.write(f"SIMULATION TIME SPEED...... : {stats.gvts[-1] / len(stats.gvts)}\n")
-        f.write(f"AVERAGE MEMORY USAGE....... : TODO\n")  # TODO get from stats
-        f.write(f"PEAK MEMORY USAGE.......... : TODO\n")  # TODO get from stats
+        f.write(f"AVERAGE MEMORY USAGE....... : {fmt_size(avg_memory_usage)}\n")
+        f.write(f"PEAK MEMORY USAGE.......... : {fmt_size(peak_memory_usage)}\n")
