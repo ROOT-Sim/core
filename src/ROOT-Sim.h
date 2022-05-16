@@ -210,7 +210,7 @@ extern struct topology *vInitializeTopology(enum topology_geometry geometry, int
 struct simulation_configuration {
 	/// The number of LPs to be used in the simulation
 	lp_id_t lps;
-	/// The number of threads to be used in the simulation
+	/// The number of threads to be used in the simulation. If zero, it defaults to the amount of available cores
 	unsigned n_threads;
 	/// The target termination logical time. Setting this value to zero means that LVT-based termination is disabled
 	simtime_t termination_time;
@@ -236,5 +236,5 @@ struct simulation_configuration {
 	CanEnd_t committed;
 };
 
-extern int RootsimInit(struct simulation_configuration *conf);
+extern int RootsimInit(const struct simulation_configuration *conf);
 extern int RootsimRun(void);

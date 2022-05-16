@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 import copy
 import struct
+import sys
 
 
 ##
@@ -42,10 +43,11 @@ class RSStats:
         return ret
 
     def _nodes_stats_load(self):
-        n_nodes = self._pattern_unpack("q")[0]
-        for _ in range(n_nodes):
+        self.nodes_count = self._pattern_unpack("q")[0]
+        for _ in range(self.nodes_count):
             glob_stats = self._pattern_unpack("8Q")
             n_threads = glob_stats[0]
+            self.threads_count.append(n_threads)
             n_stats = self._pattern_unpack("q")[0] // 16
             node_stats = []
             for _ in range(n_stats):
@@ -93,6 +95,7 @@ class RSStats:
         self._metrics = {}
         metric_names = self._metric_names_load()
 
+        self.threads_count = []
         self.all_stats = []
         self._nodes_stats_load()
 
@@ -159,6 +162,10 @@ class RSStats:
     def node_stats(self):
         return list(self._global_measures)
 
+    @property
+    def nodes_count(self):
+        return len(self.threads_count)
+
     ##
     # @brief Get the thread-specific metric values
     # @return a list of values FIXME: much more complicated, explain it!
@@ -200,3 +207,48 @@ class RSStats:
                     this_stats = gvt_stats
 
         return this_stats
+
+
+# Produce a boring textual report
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Please, supply the name of the raw statistics file!", file=sys.stderr)
+        exit(-1)
+
+    stats = RSStats(sys.argv[1])
+
+    processed_msgs = stats.thread_metric_get("processed messages", aggregate_nodes=True, aggregate_gvts=True)
+    rollbacked_msgs = stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
+    silent_msgs = stats.thread_metric_get("silent messages", aggregate_nodes=True, aggregate_gvts=True)
+    rollbacks = stats.thread_metric_get("rollbacks", aggregate_nodes=True, aggregate_gvts=True)
+
+    outname = sys.argv[1][4:] if sys.argv[1].endswith(".bin") else sys.argv[1]
+    outname = outname + ".txt"
+
+    with open(outname, "w") as f:
+        f.write(f"TOTAL KERNELS ............. : {stats.nodes_count}\n")
+        f.write(f"TOTAL_THREADS ............. : {sum(stats.threads_count)}\n")
+        f.write(f"TOTAL_LPs ................. : TODO\n")  # TODO add number of LPs to stats in ROOT-Sim!
+        f.write(f"TOTAL EXECUTED EVENTS ..... : {processed_msgs + silent_msgs}\n")
+        f.write(f"TOTAL COMMITTED EVENTS..... : {processed_msgs - rollbacked_msgs}\n")
+        f.write(f"TOTAL REPROCESSED EVENTS... : {rollbacked_msgs}\n")
+        f.write(f"TOTAL SILENT EVENTS........ : {silent_msgs}\n")
+        f.write(f"TOTAL ROLLBACKS EXECUTED... : {rollbacks}\n")
+        f.write(f"TOTAL ANTIMESSAGES......... : TODO\n")  # TODO add antimessages to stats in ROOT-Sim!
+        f.write(f"ROLLBACK FREQUENCY......... : {100 * rollbacked_msgs / processed_msgs}%\n")
+        f.write(f"ROLLBACK LENGTH............ : {rollbacked_msgs / rollbacks}\n")
+        f.write(f"EFFICIENCY................. : {100 * (processed_msgs - rollbacked_msgs) / processed_msgs}%\n")
+        f.write(f"AVERAGE EVENT COST......... : TODO\n")  # TODO do we want this?
+        f.write(f"AVERAGE EVENT COST (EMA)... : TODO\n")  # TODO do we want this?
+        f.write(f"AVERAGE CHECKPOINT COST.... : TODO\n")  # TODO do we want this?
+        f.write(f"AVERAGE RECOVERY COST...... : TODO\n")  # TODO do we want this?
+        f.write(f"AVERAGE LOG SIZE........... : TODO\n")  # TODO add log size to stats in ROOT-Sim!
+        f.write(f"IDLE CYCLES................ : TODO\n")  # TODO do we want this?
+        f.write(f"LAST COMMITTED GVT ........ : {stats.gvts[-1]}\n")
+        f.write(f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n")
+        f.write(f"MIN GVT ROUND TIME......... : TODO\n")  # TODO do we want this?
+        f.write(f"MAX GVT ROUND TIME......... : TODO\n")  # TODO do we want this?
+        f.write(f"AVERAGE GVT ROUND TIME..... : TODO\n")  # TODO do we want this?
+        f.write(f"SIMULATION TIME SPEED...... : {stats.gvts[-1] / len(stats.gvts)}\n")
+        f.write(f"AVERAGE MEMORY USAGE....... : TODO\n")  # TODO get from stats
+        f.write(f"PEAK MEMORY USAGE.......... : TODO\n")  # TODO get from stats
