@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     def plot_metric(sub_fig, metric_name, metric_display):
         metrics = stats.thread_metric_get(metric_name,
-                                          aggregate_resources=False,
+                                          aggregate_threads=False,
                                           aggregate_nodes=False)
         labels = ["Thread " + str(i + 1) for i in range(len(metrics[0]))]
         sub_fig.stackplot(gvts, metrics[0], labels=labels)

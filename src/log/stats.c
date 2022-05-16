@@ -306,7 +306,11 @@ void stats_take(enum stats_thread_type this_stat, unsigned c)
 void stats_on_gvt(simtime_t gvt)
 {
 	if(global_config.log_level != LOG_SILENT && !rid && !nid) {
-		printf("\rVirtual time: %lf", gvt);
+		if (unlikely(gvt == SIMTIME_MAX))
+			printf("\rVirtual time: infinity");
+		else
+			printf("\rVirtual time: %lf", gvt);
+
 		fflush(stdout);
 	}
 
@@ -330,8 +334,11 @@ void stats_dump(void)
 {
 	if(nid == 0) {
 		double t = timer_value(sim_start_ts) / 1000000.0;
-		logger(LOG_INFO, "\nSimulation completed in %.3lf seconds\n", t);
-		fflush(stdout);
+		if(global_config.log_level != LOG_SILENT) {
+			puts("");
+			fflush(stdout);
+		}
+		logger(LOG_INFO, "Simulation completed in %.3lf seconds", t);
 	}
 }
 

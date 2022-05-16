@@ -113,7 +113,7 @@ void process_lp_init(void)
 }
 
 /**
- * @brief Deinitializes the LP by calling the model's DEINIT handler
+ * @brief Deinitializes the LP by calling the model's LP_FINI handler
  */
 void process_lp_deinit(void)
 {
@@ -282,7 +282,7 @@ static inline bool check_early_anti_messages(struct lp_msg *msg)
 }
 
 /**
- * @brief extract and process a message, if available
+ * @brief Extract and process a message, if available
  *
  * This function encloses most of the actual simulation logic.
  */
