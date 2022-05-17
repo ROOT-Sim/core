@@ -115,7 +115,7 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	gvt_remote_msg_send(msg, dest_nid);
 
 	MPI_Request req;
-	MPI_Isend(msg, msg_bare_size(msg), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
+	MPI_Isend(msg_remote_data(msg), msg_remote_size(msg), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 }
 
@@ -136,7 +136,7 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	gvt_remote_anti_msg_send(msg, dest_nid);
 
 	MPI_Request req;
-	MPI_Isend(msg, msg_anti_size(), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
+	MPI_Isend(msg_remote_data(msg), msg_remote_anti_size(), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 }
 
@@ -189,8 +189,8 @@ void mpi_remote_msg_handle(void)
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		struct lp_msg *msg;
-		if(unlikely(size <= (int)msg_anti_size())) {
-			if (unlikely(size == sizeof(enum msg_ctrl_code))) {
+		if(unlikely(size <= (int)msg_remote_anti_size())) {
+			if(unlikely(size == sizeof(enum msg_ctrl_code))) {
 				enum msg_ctrl_code c;
 				MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 				control_msg_process(c);
@@ -200,12 +200,12 @@ void mpi_remote_msg_handle(void)
 			// make sure the deterministic tie-breaking doesn't read uninitialized data
 			msg->m_type = 0;
 			msg->pl_size = 0;
-			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
 			gvt_remote_anti_msg_receive(msg);
 		} else {
-			msg = msg_allocator_alloc(size - offsetof(struct lp_msg, pl));
-			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			msg = msg_allocator_alloc(size - offsetof(struct lp_msg, pl) + msg_preamble_size());
+			MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
 			gvt_remote_msg_receive(msg);
 		}
@@ -237,22 +237,23 @@ void mpi_remote_msg_drain(void)
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 
+		if(unlikely(size == sizeof(enum msg_ctrl_code))) {
+			enum msg_ctrl_code c;
+			MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			control_msg_process(c);
+			continue;
+		}
+
 		if(size > msg_size) {
-			msg = mm_realloc(msg, size);
+			msg = mm_realloc(msg, size + msg_preamble_size());
 			msg_size = size;
 		}
-		MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+		MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
-		switch(size) {
-			case sizeof(enum msg_ctrl_code):
-				control_msg_process(*(enum msg_ctrl_code *)msg);
-				break;
-			case msg_anti_size():
-				gvt_remote_anti_msg_receive(msg);
-				break;
-			default:
-				gvt_remote_msg_receive(msg);
-		}
+		if(size == msg_remote_anti_size())
+			gvt_remote_anti_msg_receive(msg);
+		else
+			gvt_remote_msg_receive(msg);
 	}
 
 	mm_free(msg);

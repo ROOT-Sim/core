@@ -29,28 +29,22 @@
 
 /// An element in the message queue
 struct q_elem {
-	/// the timestamp of the message
+	/// The timestamp of the message
 	simtime_t t;
-	/// the message enqueued
+	/// The message enqueued
 	struct lp_msg *m;
 };
 
-/// A queue synchronized by a spinlock
-struct msg_queue {
-	/// Synchronizes access to the queue
-	alignas(CACHE_LINE_SIZE) spinlock_t q_lock;
-	/// The actual queue element of the matrix
-	dyn_array(struct q_elem) b;
+/// The multi-threaded message buffer, implemented as a non-blocking list
+struct msg_buffer {
+	/// The head of the messages list
+	alignas(CACHE_LINE_SIZE) _Atomic(struct lp_msg *) list;
 };
 
-/// The queues vector
-static struct msg_queue *queues;
+/// The buffers vector
+static struct msg_buffer *queues;
 /// The private thread queue
-static __thread struct {
-	heap_declare(struct q_elem) q;
-	struct q_elem *alt_items;
-	array_count_t alt_cap;
-} mqp;
+static __thread heap_declare(struct q_elem) mqp;
 
 /**
  * @brief Initializes the message queue at the node level
@@ -65,15 +59,8 @@ void msg_queue_global_init(void)
  */
 void msg_queue_init(void)
 {
-	heap_init(mqp.q);
-
-	mqp.alt_cap = INIT_SIZE_ARRAY;
-	mqp.alt_items = mm_alloc(sizeof(*mqp.alt_items) * mqp.alt_cap);
-
-	struct msg_queue *mq = &queues[rid];
-
-	array_init(mq->b);
-	spin_init(&mq->q_lock);
+	heap_init(mqp);
+	atomic_store_explicit(&queues[rid].list, NULL, memory_order_relaxed);
 }
 
 /**
@@ -81,35 +68,30 @@ void msg_queue_init(void)
  *
  * This is a no-op for this kind of queue.
  */
-void msg_queue_lp_init(void)
-{
-}
+void msg_queue_lp_init(void) {}
 
 /**
  * @brief Finalize the message queue for the current LP
  *
  * This is a no-op for this kind of queue.
  */
-void msg_queue_lp_fini(void)
-{
-}
+void msg_queue_lp_fini(void) {}
 
 /**
  * @brief Finalizes the message queue for the current thread
  */
 void msg_queue_fini(void)
 {
-	for(array_count_t i = 0; i < heap_count(mqp.q); ++i)
-		msg_allocator_free(heap_items(mqp.q)[i].m);
+	for(array_count_t i = 0; i < heap_count(mqp); ++i)
+		msg_allocator_free(heap_items(mqp)[i].m);
 
-	heap_fini(mqp.q);
-	mm_free(mqp.alt_items);
+	heap_fini(mqp);
 
-	struct msg_queue *mq = &queues[rid];
-	for(array_count_t i = 0; i < array_count(mq->b); ++i)
-		msg_allocator_free(array_get_at(mq->b, i).m);
-
-	array_fini(mq->b);
+	struct lp_msg *m = atomic_load_explicit(&queues[rid].list, memory_order_relaxed);
+	while(m != NULL) {
+		msg_allocator_free(m);
+		m = m->next;
+	}
 }
 
 /**
@@ -122,25 +104,12 @@ void msg_queue_global_fini(void)
 
 static inline void msg_queue_insert_queued(void)
 {
-	struct msg_queue *mq = &queues[rid];
-
-	if (unlikely(!spin_trylock(&mq->q_lock)))
-		return;
-
-	struct q_elem *tmp_items = array_items(mq->b);
-	array_count_t c = array_count(mq->b);
-	array_count_t tmp_cap = array_capacity(mq->b);
-
-	array_items(mq->b) = mqp.alt_items;
-	array_count(mq->b) = 0;
-	array_capacity(mq->b) = mqp.alt_cap;
-
-	spin_unlock(&mq->q_lock);
-
-	mqp.alt_items = tmp_items;
-	mqp.alt_cap = tmp_cap;
-
-	heap_insert_n(mqp.q, q_elem_is_before, tmp_items, c);
+	struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
+	while(m != NULL) {
+		struct q_elem qe = {.t = m->dest_t, .m = m};
+		heap_insert(mqp, q_elem_is_before, qe);
+		m = m->next;
+	}
 }
 
 /**
@@ -154,13 +123,12 @@ static inline void msg_queue_insert_queued(void)
 struct lp_msg *msg_queue_extract(void)
 {
 	msg_queue_insert_queued();
-	return likely(heap_count(mqp.q)) ? heap_extract(mqp.q, q_elem_is_before).m : NULL;
+	return likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
 }
 
 /**
  * @brief Peeks the timestamp of the next message from the queue
- * @returns the lowest timestamp of the next message to be processed or
- *          SIMTIME_MAX is there's no message to process
+ * @returns the lowest timestamp of the next message to be processed or SIMTIME_MAX is there's no message to process
  *
  * This returns the lowest timestamp of the next message to be processed for the
  * current thread. This is calculated in a precise fashion since this value is
@@ -169,7 +137,7 @@ struct lp_msg *msg_queue_extract(void)
 simtime_t msg_queue_time_peek(void)
 {
 	msg_queue_insert_queued();
-	return likely(heap_count(mqp.q)) ? heap_min(mqp.q).t : SIMTIME_MAX;
+	return likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
 }
 
 /**
@@ -178,11 +146,9 @@ simtime_t msg_queue_time_peek(void)
  */
 void msg_queue_insert(struct lp_msg *msg)
 {
-	rid_t dest_rid = lid_to_rid(msg->dest);
-	struct msg_queue *mq = &queues[dest_rid];
-	struct q_elem qe = {.t = msg->dest_t, .m = msg};
-
-	spin_lock(&mq->q_lock);
-	array_push(mq->b, qe);
-	spin_unlock(&mq->q_lock);
+	_Atomic(struct lp_msg *) *list_p = &queues[lid_to_rid(msg->dest)].list;
+	msg->next = atomic_load_explicit(list_p, memory_order_relaxed);
+	while(unlikely(!atomic_compare_exchange_weak_explicit(list_p, &msg->next, msg, memory_order_release,
+	    memory_order_relaxed)))
+		spin_pause();
 }

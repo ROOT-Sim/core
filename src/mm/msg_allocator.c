@@ -48,8 +48,8 @@ void msg_allocator_fini(void)
 struct lp_msg *msg_allocator_alloc(unsigned payload_size)
 {
 	struct lp_msg *ret;
-	if(unlikely(payload_size > BASE_PAYLOAD_SIZE)) {
-		ret = mm_alloc(offsetof(struct lp_msg, extra_pl) + (payload_size - BASE_PAYLOAD_SIZE));
+	if(unlikely(payload_size > MSG_PAYLOAD_BASE_SIZE)) {
+		ret = mm_alloc(offsetof(struct lp_msg, extra_pl) + (payload_size - MSG_PAYLOAD_BASE_SIZE));
 		ret->pl_size = payload_size;
 		return ret;
 	}
@@ -67,7 +67,7 @@ struct lp_msg *msg_allocator_alloc(unsigned payload_size)
  */
 void msg_allocator_free(struct lp_msg *msg)
 {
-	if(likely(msg->pl_size <= BASE_PAYLOAD_SIZE))
+	if(likely(msg->pl_size <= MSG_PAYLOAD_BASE_SIZE))
 		array_push(free_list, msg);
 	else
 		mm_free(msg);
