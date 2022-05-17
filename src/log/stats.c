@@ -3,8 +3,7 @@
  *
  * @brief Statistics module
  *
- * All facilities to collect, gather, and dump statistics are implemented
- * in this module.
+ * All facilities to collect, gather, and dump statistics are implemented in this module.
  *
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -24,7 +23,6 @@
 #include <stdio.h>
 
 #define STATS_BUFFER_ENTRIES (1024)
-#define STATS_MAX_STRLEN 32U
 
 /// A container for statistics in a logical time period
 struct stats_thread {
@@ -50,9 +48,8 @@ struct stats_global {
 	uint64_t timestamps[STATS_GLOBAL_COUNT];
 };
 
-static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT
-		  && sizeof(struct stats_node) == 16
-		  && sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
+static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct stats_node) == 16 &&
+		  sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
     "structs aren't properly packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the header of the final csv
@@ -144,18 +141,24 @@ void stats_global_time_take(enum stats_global_type this_stat)
  */
 void stats_global_init(void)
 {
-	stats_glob_cur.timestamps[STATS_GLOBAL_START] = timer_value(sim_start_ts);
 	if(global_config.stats_file == NULL)
 		return;
 
-	stats_glob_cur.threads_count = global_config.n_threads;
-	if(mem_stat_setup() < 0)
-		logger(LOG_ERROR, "Unable to extract memory statistics!");
+	stats_glob_cur.timestamps[STATS_GLOBAL_START] = timer_value(sim_start_ts);
 
 	stats_node_tmp = io_file_tmp_get();
+	if(unlikely(stats_node_tmp == NULL)) {
+		logger(LOG_ERROR, "Unable to open a temporary file, statistics won't be collected");
+		global_config.stats_file = NULL;
+		return;
+	}
+
 	setvbuf(stats_node_tmp, NULL, _IOFBF, STATS_BUFFER_ENTRIES * sizeof(struct stats_node));
 
+	if(mem_stat_setup() < 0)
+		logger(LOG_ERROR, "Unable to extract memory statistics!");
 	stats_tmps = mm_alloc(global_config.n_threads * sizeof(*stats_tmps));
+	stats_glob_cur.threads_count = global_config.n_threads;
 }
 
 /**
@@ -167,6 +170,12 @@ void stats_init(void)
 		return;
 
 	stats_tmps[rid] = io_file_tmp_get();
+	if(unlikely(stats_tmps[rid] == NULL)) {
+		logger(LOG_ERROR, "Unable to open a temporary file, statistics won't be collected");
+		global_config.stats_file = NULL;
+		return;
+	}
+
 	setvbuf(stats_tmps[rid], NULL, _IOFBF, STATS_BUFFER_ENTRIES * sizeof(stats_cur));
 }
 
@@ -175,15 +184,18 @@ static void stats_files_receive(FILE *o)
 	for(nid_t j = 1; j < n_nodes; ++j) {
 		int buf_size;
 		struct stats_global *sg_p = mpi_blocking_data_rcv(&buf_size, j);
-		file_write_chunk(o, sg_p, buf_size);
+		if(likely(o != NULL))
+			file_write_chunk(o, sg_p, buf_size);
 		uint64_t iters = sg_p->threads_count + 1; // +1 for node stats
 		mm_free(sg_p);
 
 		for(uint64_t i = 0; i < iters; ++i) {
 			void *buf = mpi_blocking_data_rcv(&buf_size, j);
 			int64_t f_size = buf_size;
-			file_write_chunk(o, &f_size, sizeof(f_size));
-			file_write_chunk(o, buf, buf_size);
+			if(likely(o != NULL)) {
+				file_write_chunk(o, &f_size, sizeof(f_size));
+				file_write_chunk(o, buf, buf_size);
+			}
 			mm_free(buf);
 		}
 	}
@@ -218,11 +230,9 @@ static void stats_file_final_write(FILE *o)
 	int64_t n = STATS_COUNT;
 	file_write_chunk(o, &n, sizeof(n));
 	for(int i = 0; i < STATS_COUNT; ++i) {
-		size_t l = min(strlen(s_names[i]), STATS_MAX_STRLEN);
+		unsigned char l = strnlen(s_names[i], UCHAR_MAX);
+		file_write_chunk(o, &l, 1);
 		file_write_chunk(o, s_names[i], l);
-		unsigned char nul = 0;
-		for(; l < STATS_MAX_STRLEN; ++l)
-			file_write_chunk(o, &nul, 1);
 	}
 
 	n = n_nodes;
@@ -261,21 +271,17 @@ void stats_global_fini(void)
 
 	if(nid) {
 		stats_files_send();
-		return;
+	} else {
+		FILE *o = file_open("w", "%s.bin", global_config.stats_file);
+		if(unlikely(o == NULL)) {
+			logger(LOG_WARN, "Unable to open statistics file for writing, statistics won't be saved.");
+			stats_files_receive(NULL);
+		} else {
+			stats_file_final_write(o);
+			stats_files_receive(o);
+			fclose(o);
+		}
 	}
-
-	FILE *o = file_open("w", "%s.bin", global_config.stats_file);
-	if(o == NULL) {
-		logger(LOG_WARN, "Unable to open statistics file for writing, statistics will now be collected.");
-		return;
-	}
-
-	stats_file_final_write(o);
-	stats_files_receive(o);
-
-	fflush(o);
-	if(o != stdout)
-		fclose(o);
 
 	for(rid_t i = 0; i < global_config.n_threads; ++i)
 		fclose(stats_tmps[i]);
@@ -306,7 +312,7 @@ void stats_take(enum stats_thread_type this_stat, unsigned c)
 void stats_on_gvt(simtime_t gvt)
 {
 	if(global_config.log_level != LOG_SILENT && !rid && !nid) {
-		if (unlikely(gvt == SIMTIME_MAX))
+		if(unlikely(gvt == SIMTIME_MAX))
 			printf("\rVirtual time: infinity");
 		else
 			printf("\rVirtual time: %lf", gvt);

@@ -11,11 +11,7 @@ import sys
 #
 # If you configured ROOT-Sim to produce a statistics file, a binary file will be generated.
 # You can use the facilities offered by this class to efficiently load those statistics.
-# TODO provide also statistics normalized by wall clock time
-# TODO document class APIs
 class RSStats:
-    _STATS_MAX_STRLEN = 32
-
     def _pattern_unpack(self, ptrn):
         ptrn_size = struct.calcsize(ptrn)
         data_parse = self._data[self._data_idx:ptrn_size + self._data_idx]
@@ -27,7 +23,8 @@ class RSStats:
         metric_names = []
         n_stats = self._pattern_unpack("q")[0]
         for _ in range(n_stats):
-            raw_name = self._pattern_unpack(f"{RSStats._STATS_MAX_STRLEN}s")[0]
+            raw_name_len = self._pattern_unpack("B")[0]
+            raw_name = self._pattern_unpack(f"{raw_name_len}s")[0]
             metric_name = raw_name.decode("utf-8").rstrip('\0')
             metric_names.append(metric_name)
             self._metrics[metric_name] = []
@@ -153,6 +150,20 @@ class RSStats:
         return list(self._gvts)
 
     ##
+    # @brief Get the real time values
+    # @return a list containing the computed GVTs (Global Virtual Times) in ascending order
+    def rts(self, reduction=min):
+        real_times = self._metrics["gvt real time"]
+        ret = []
+        for i in range(len(self._gvts)):
+            t = []
+            for node_stats in real_times:
+                for thread_stats in node_stats:
+                    t.append(thread_stats[i])
+            ret.append(reduction(t))
+        return ret
+
+    ##
     # @brief Get the thread-specific metric names
     # @return a list containing the metric names that you can use in #thread_metric_get()
     @property
@@ -173,9 +184,10 @@ class RSStats:
 
     ##
     # @brief Get the thread-specific metric values
-    # @return a list of values FIXME: much more complicated, explain it!
-    def thread_metric_get(self, metric, aggregate_gvts=False,
-                          aggregate_threads=False, aggregate_nodes=False):
+    # @return a list of values
+    # FIXME: much more complicated, explain it!
+    # TODO: optionally provide stats normalized by real-time
+    def thread_metric_get(self, metric, aggregate_gvts=False, aggregate_threads=False, aggregate_nodes=False):
         if metric not in self._metrics:
             raise RuntimeError(f"Asked stats for the non-existing thread_metric {metric}")
 
