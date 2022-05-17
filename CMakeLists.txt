@@ -34,6 +34,7 @@ set(srcs
         src/lib/random/random.c
         src/lib/state/state.c
         src/lib/topology/topology.c
+        src/log/file.c
         src/log/log.c
         src/log/stats.c
         src/lp/lp.c

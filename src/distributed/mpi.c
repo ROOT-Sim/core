@@ -28,11 +28,15 @@ enum {
 	RS_DATA_TAG
 };
 
+/// Array of control codes values to be able to get their address for MPI_Send()
 static const enum msg_ctrl_code ctrl_msgs[] = {
 	[MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
 	[MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
 	[MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
 };
+
+static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
+static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
 
 /**
  * @brief Handles a MPI error
@@ -258,8 +262,6 @@ void mpi_remote_msg_drain(void)
 	mm_free(msg);
 }
 
-static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
-
 /**
  * @brief Computes the sum-reduction-scatter operation across all nodes.
  * @param values a flexible array implementing the addendum vector from the calling node.
@@ -288,8 +290,6 @@ bool mpi_reduce_sum_scatter_done(void)
 	MPI_Test(&reduce_sum_scatter_req, &flag, MPI_STATUS_IGNORE);
 	return flag;
 }
-
-static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
 
 /**
  * @brief Computes the min-reduction operation across all nodes.
