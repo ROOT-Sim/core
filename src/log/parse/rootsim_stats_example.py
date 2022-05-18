@@ -14,25 +14,26 @@ if __name__ == "__main__":
         print("Please, supply the name of the raw statistics file!", file=sys.stderr)
         exit(-1)
 
+    def compute_avg(l):
+        return sum(l)/len(l)
+
     stats = RSStats(sys.argv[1])
-    gvts = stats.gvts
+    rts = stats.rts(reduction=compute_avg)
     fig, figxs = plt.subplots(4)
 
     def plot_metric(sub_fig, metric_name, metric_display):
-        metrics = stats.thread_metric_get(metric_name,
-                                          aggregate_resources=False,
-                                          aggregate_nodes=False)
-        labels = ["Thread " + str(i + 1) for i in range(len(metrics[0]))]
-        sub_fig.stackplot(gvts, metrics[0], labels=labels)
-        sub_fig.set_xlabel('GVT')
+        metrics = stats.thread_metric_get(metric_name)[0]  # get stats only for node 0
+        labels = ["Thread " + str(i + 1) for i in range(len(metrics))]
+        sub_fig.stackplot(rts, metrics, labels=labels)
+        sub_fig.set_xlabel('Real Time (in us)')
         sub_fig.set_ylabel(metric_display)
         sub_fig.label_outer()
 
-        for xc in gvts:
+        for xc in rts:
             sub_fig.axvline(x=xc, color='grey', linestyle='-', linewidth=0.1)
 
     plot_metric(figxs[0], "processed messages", "Processed messages")
-    plot_metric(figxs[1], "rollbacked messages", "Rollbacked messages")
+    plot_metric(figxs[1], "rolled back messages", "Rollbacked messages")
     plot_metric(figxs[2], "silent messages", "Silent messages")
     plot_metric(figxs[3], "checkpoints", "Checkpoints")
 

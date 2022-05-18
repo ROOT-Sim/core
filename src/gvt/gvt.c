@@ -87,12 +87,11 @@ void gvt_on_done_ctrl_msg(void)
  * @brief Informs the GVT subsystem that a new message is being processed
  * @param msg_t the timestamp of the message being processed
  *
- * Called by the process layer when processing a new message; used in the actual
- * GVT calculation
+ * Called by the process layer when processing a new message; used in the actual GVT calculation
  */
 void gvt_on_msg_extraction(simtime_t msg_t)
 {
-	if(unlikely(thread_phase && current_gvt > msg_t))
+	if(unlikely(current_gvt > msg_t))
 		current_gvt = msg_t;
 }
 
@@ -254,21 +253,20 @@ static bool gvt_node_phase_run(void)
 
 simtime_t gvt_phase_run(void)
 {
-	if(unlikely(thread_phase)) {
-		if(!gvt_node_phase_run())
-			return 0.0;
-		if(!rid)
-			gvt_timer = timer_new();
-		return *reducing_p;
-	}
+	if(unlikely(thread_phase))
+		return gvt_node_phase_run() ? *reducing_p : 0.0;
 
 	if(unlikely(atomic_load_explicit(&c_b, memory_order_relaxed)))
 		gvt_start_processing();
 
-	if(unlikely(!rid && !nid && global_config.gvt_period < timer_value(gvt_timer) &&
-		    !atomic_load_explicit(&gvt_nodes, memory_order_relaxed))) {
-		atomic_fetch_add_explicit(&gvt_nodes, n_nodes, memory_order_relaxed);
-		mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
+	if(unlikely(!rid && !nid)) {
+		timer_uint t = timer_new();
+		if(unlikely(global_config.gvt_period < t - gvt_timer &&
+			    !atomic_load_explicit(&gvt_nodes, memory_order_relaxed))) {
+			gvt_timer = t;
+			atomic_fetch_add_explicit(&gvt_nodes, n_nodes, memory_order_relaxed);
+			mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
+		}
 	}
 
 	return 0.0;

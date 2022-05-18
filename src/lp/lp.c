@@ -16,12 +16,18 @@
 #include <gvt/fossil.h>
 #include <gvt/termination.h>
 
+/// The lowest LP id between the ones hosted on this node
 uint64_t lid_node_first;
+/// The lowest LP id between the ones hosted on this thread
 __thread uint64_t lid_thread_first;
+/// One plus the highest LP id between the ones hosted on this thread
 __thread uint64_t lid_thread_end;
-
+/// A pointer to the currently processed LP context
 __thread struct lp_ctx *current_lp;
+/// A pointer to the LP contexts array
+/** Valid entries are contained between #lid_node_first and #lid_node_first + #n_lps_node - 1, limits included */
 struct lp_ctx *lps;
+/// The number of LPs hosted on this node
 lp_id_t n_lps_node;
 
 /**
@@ -32,15 +38,14 @@ lp_id_t n_lps_node;
  * @param start_i the first valid index of the space to partition
  * @param tot_i the size of the index space to partition
  *
- * The description is somewhat confusing but this does a simple thing.
- * Each LP has an integer id and we want each node/processing unit to have more
- * or less the same number of LPs assigned to it; this macro computes the first
- * index of the LP to assign to a node/processing unit.
+ * The description is somewhat confusing but this does a simple thing. Each LP has an integer id and we want each
+ * node/processing unit to have more or less the same number of LPs assigned to it; this macro computes the first index
+ * of the LP to assign to a node/processing unit.
  */
 #define partition_start(part_id, part_cnt, part_fnc, start_i, tot_i)                                                   \
 	__extension__({                                                                                                \
-		lp_id_t _g = (part_id) * (tot_i) / (part_cnt) + (start_i);                                               \
-		while(_g > (start_i) && part_fnc(_g) >= (part_id))                                                       \
+		lp_id_t _g = (part_id) * (tot_i) / (part_cnt) + (start_i);                                             \
+		while(_g > (start_i) && part_fnc(_g) >= (part_id))                                                     \
 			--_g;                                                                                          \
 		while(part_fnc(_g) < (part_id))                                                                        \
 			++_g;                                                                                          \
@@ -123,6 +128,10 @@ void lp_fini(void)
 	current_lp = NULL;
 }
 
+/**
+ * @brief Do housekeeping operations on the thread-locally hosted LPs after a fresh GVT
+ * @param gvt the value of the freshly computed GVT
+ */
 void lp_on_gvt(simtime_t gvt)
 {
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {

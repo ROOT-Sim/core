@@ -43,6 +43,7 @@ typedef uint_fast32_t array_count_t;
 /**
  * @brief Gets the count of contained element in a dynamic array
  * @param self The target dynamic array
+ * @return the count of contained elements
  */
 #define array_count(self) ((self).count)
 
@@ -53,8 +54,11 @@ typedef uint_fast32_t array_count_t;
 #define array_capacity(self) ((self).capacity)
 
 /**
- * @brief Gets the current capacity of a dynamic array
- * @param self The target dynamic array
+ * @brief Gets the last element of a dynamic array
+ * @param self the target dynamic array
+ * @return the last element of the array
+ *
+ * You have to check for the array emptiness before safely calling this macro
  */
 #define array_peek(self) (array_items(self)[array_count(self) - 1])
 
@@ -199,7 +203,10 @@ typedef uint_fast32_t array_count_t;
 		}                                                                                                      \
 	})
 
-#define array_lazy_remove_at(self, i)					\
-__extension__({								\
-	array_items(self)[(i)] = array_items(self)[--array_count(self)];\
-})
+/**
+ * @brief Remove an element at the given index from the dynamic array, last array element will take its place
+ * @param self The target dynamic array
+ * @param i The index of the element to remove
+ */
+#define array_lazy_remove_at(self, i)                                                                                  \
+	__extension__({ array_items(self)[(i)] = array_items(self)[--array_count(self)]; })

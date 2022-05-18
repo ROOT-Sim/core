@@ -117,7 +117,7 @@ typedef unsigned char block_bitmap;
  */
 #define bitmap_count_set(bitmap, bitmap_size)                                                                          \
 	__extension__({                                                                                                \
-		unsigned __i = (bitmap_size) / B_BLOCK_SIZE;                                                             \
+		unsigned __i = (bitmap_size) / B_BLOCK_SIZE;                                                           \
 		unsigned __ret = 0;                                                                                    \
 		B_BLOCK_TYPE *__block_b = B_UNION_CAST(bitmap);                                                        \
 		while(__i--) {                                                                                         \
@@ -136,7 +136,7 @@ typedef unsigned char block_bitmap;
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
 #define bitmap_count_reset(bitmap, bitmap_size)                                                                        \
-	__extension__({ (bitmap_size) *CHAR_BIT - bitmap_count_set(bitmap, bitmap_size); })
+	__extension__({ (bitmap_size) * CHAR_BIT - bitmap_count_set(bitmap, bitmap_size); })
 
 /**
  * @brief Computes the index of the first cleared bit in a bitmap.
@@ -149,7 +149,7 @@ typedef unsigned char block_bitmap;
  */
 #define bitmap_first_reset(bitmap, bitmap_size)                                                                        \
 	__extension__({                                                                                                \
-		unsigned __i, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                                   \
+		unsigned __i, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                                 \
 		unsigned __ret = UINT_MAX;                                                                             \
 		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);                                           \
 		for(__i = 0; __i < __blocks; ++__i) {                                                                  \
@@ -172,7 +172,7 @@ typedef unsigned char block_bitmap;
  */
 #define bitmap_foreach_set(bitmap, bitmap_size, func)                                                                  \
 	__extension__({                                                                                                \
-		unsigned __i, __fnd, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                            \
+		unsigned __i, __fnd, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                          \
 		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);                                           \
 		for(__i = 0; __i < __blocks; ++__i) {                                                                  \
 			if((__cur_block = __block_b[__i])) {                                                           \
@@ -197,7 +197,7 @@ typedef unsigned char block_bitmap;
  */
 #define bitmap_merge_or(dest, source, bitmap_size)                                                                     \
 	__extension__({                                                                                                \
-		unsigned __i = (bitmap_size) / B_BLOCK_SIZE;                                                             \
+		unsigned __i = (bitmap_size) / B_BLOCK_SIZE;                                                           \
 		B_BLOCK_TYPE *__s_blocks = B_UNION_CAST(source);                                                       \
 		B_BLOCK_TYPE *__d_blocks = B_UNION_CAST(dest);                                                         \
 		while(__i--) {                                                                                         \

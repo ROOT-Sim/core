@@ -8,11 +8,12 @@
 */
 #include "test.h"
 
-#include <stdio.h>
-
 #include "ROOT-Sim.h"
 
-void DummProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content,
+#include <memory.h>
+#include <stdio.h>
+
+void DummyProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content,
 					  unsigned event_size, void *st)
 {
 	(void)me;
@@ -36,6 +37,12 @@ struct simulation_configuration conf = {
     .committed = NULL,
 };
 
+const struct simulation_configuration valid_conf = {
+    .lps = 1,
+    .dispatcher = DummyProcessEvent,
+    .committed = DummyCanEnd,
+};
+
 static test_ret_t run_rootsim(__unused void *_)
 {
 	return RootsimRun();
@@ -51,13 +58,22 @@ int main(void)
 	init(0);
 
 	test_xf("Start simulation with no configuration", run_rootsim, NULL);
+
+	memcpy(&conf, &valid_conf, sizeof(conf));
+	conf.lps = 0;
 	test_xf("LPs not set", init_rootsim, &conf);
-	conf.lps = 1;
+
+	memcpy(&conf, &valid_conf, sizeof(conf));
+	conf.dispatcher = NULL;
 	test_xf("Handler not set", init_rootsim, &conf);
-	conf.dispatcher = DummProcessEvent;
+
+	memcpy(&conf, &valid_conf, sizeof(conf));
+	conf.committed = NULL;
 	test_xf("CanEnd not set", init_rootsim, &conf);
-	conf.committed = DummyCanEnd;
+
+	memcpy(&conf, &valid_conf, sizeof(conf));
 	test("Initialization", init_rootsim, &conf);
 
+	test("Dummy simulation", run_rootsim, NULL);
 	finish();
 }
