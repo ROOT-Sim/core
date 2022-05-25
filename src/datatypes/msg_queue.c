@@ -25,6 +25,8 @@
 #include <stdalign.h>
 #include <stdatomic.h>
 
+#define ROOTSIM_RETRACTABLE
+
 /// Determine an ordering between two elements in a queue
 #define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended(ma.m, mb.m)))
 
