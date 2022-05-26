@@ -3,20 +3,21 @@
 cmake_minimum_required(VERSION 3.10)
 project("ROOT-Sim core" LANGUAGES C DESCRIPTION "A General-Purpose Multi-threaded Parallel/Distributed Simulation Library")
 
-set(PROJECT_VERSION 3.0.0-alpha.3)
+set(PROJECT_VERSION 3.0.0-alpha.3) # todo: use cmake project VERSION argument when we are out of the alpha
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
-set(CMAKE_UNITY_BUILD ON)
-set(CMAKE_UNITY_BUILD_BATCH_SIZE 128)
+# set(CMAKE_UNITY_BUILD ON)
+# set(CMAKE_UNITY_BUILD_BATCH_SIZE 128)
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT SUPPORTS_IPO OUTPUT ERROR_IPO)
 if(SUPPORTS_IPO)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    set(CMAKE_C_COMPILE_OPTIONS_IPO "-flto")
 else()
-    message(WARNING "LTO is not supported: ${ERROR_IPO}")
+    message(WARNING "LTO is not supported")
 endif()
 
 if(MSVC)
