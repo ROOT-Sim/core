@@ -82,6 +82,7 @@ struct lp_msg *retractable_extract(simtime_t normal_t)
 
 	struct rq_elem rq = rheap_extract(r_queue, rq_elem_is_before, rq_elem_update);
 	struct lp_msg *ret = msg_allocator_pack(rq.lp - lps, rq.t, LP_RETRACTABLE, NULL, 0);
+	rq.lp->retractable_pos = ARRAY_COUNT_MAX;
 	ret->raw_flags = 0;
 	return ret;
 }
