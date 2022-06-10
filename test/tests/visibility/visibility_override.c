@@ -12,5 +12,5 @@ char *core_version = "This is a new variable";
 
 int main(void)
 {
-	return strcmp(core_version, ROOTSIM_VERSION) == 0;
+	return strcmp(core_version, "3.0.0-alpha.3") == 0;
 }

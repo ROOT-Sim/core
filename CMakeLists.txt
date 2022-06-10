@@ -29,9 +29,12 @@ find_package(MPI REQUIRED)
 
 add_compile_options(-Wall -Wextra -pedantic)
 
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DLOG_LEVEL=LOG_TRACE")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DLOG_LEVEL=LOG_INFO")
-add_definitions(-DROOTSIM_VERSION="${PROJECT_VERSION}")
+set(LOG_LEVEL_DEFINE
+    $<$<CONFIG:Debug>:LOG_LEVEL=LOG_TRACE>
+    $<$<CONFIG:RelWithDebInfo>:LOG_LEVEL=LOG_TRACE>
+    $<$<CONFIG:Release>:LOG_LEVEL=LOG_INFO>
+    $<$<CONFIG:MinSizeRel>:LOG_LEVEL=LOG_INFO>
+)
 
 include(CheckLibraryExists)
 CHECK_LIBRARY_EXISTS(m exp "" HAVE_LIB_M)
@@ -42,6 +45,7 @@ else()
 endif()
 
 if(WIN32)
+# Needed for some system calls
     set(EXTRA_LIBS ${EXTRA_LIBS} psapi)
 endif()
 
