@@ -15,10 +15,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define buddy_left_child(i) (((i) << 1U) + 1U)
-#define buddy_right_child(i) (((i) << 1U) + 2U)
-#define buddy_parent(i) ((((i) + 1) >> 1U) - 1U)
-
 struct mm_checkpoint {
 	uint32_t used_mem;
 	unsigned char chkps[];

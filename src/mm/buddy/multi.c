@@ -16,7 +16,11 @@
 
 #include <errno.h>
 
+#ifdef ROOTSIM_INCREMENTAL
 #define is_log_incremental(l) ((uintptr_t)(l).c & 0x1)
+#else
+#define is_log_incremental(l) false
+#endif
 
 void model_allocator_lp_init(void)
 {
@@ -173,10 +177,7 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 
 void model_allocator_checkpoint_next_force_full(void)
 {
-#ifdef ROOTSIM_INCREMENTAL
-	struct mm_state *self = &current_lp->mm_state;
-	self->dirty_mem = UINT32_MAX;
-#endif
+	// TODO: force full checkpointing when incremental state saving is enabled
 }
 
 array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
