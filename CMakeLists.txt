@@ -29,13 +29,6 @@ find_package(MPI REQUIRED)
 
 add_compile_options(-Wall -Wextra -pedantic)
 
-set(LOG_LEVEL_DEFINE
-    $<$<CONFIG:Debug>:LOG_LEVEL=LOG_TRACE>
-    $<$<CONFIG:RelWithDebInfo>:LOG_LEVEL=LOG_TRACE>
-    $<$<CONFIG:Release>:LOG_LEVEL=LOG_INFO>
-    $<$<CONFIG:MinSizeRel>:LOG_LEVEL=LOG_INFO>
-)
-
 include(CheckLibraryExists)
 CHECK_LIBRARY_EXISTS(m exp "" HAVE_LIB_M)
 if(HAVE_LIB_M)
