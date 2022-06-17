@@ -8,9 +8,11 @@
 */
 #include <string.h>
 
-char *core_version = "This is a new variable";
+#define VERSION_OVERRIDE_STR "This is a new variable"
+
+char *core_version = VERSION_OVERRIDE_STR;
 
 int main(void)
 {
-	return strcmp(core_version, ROOTSIM_VERSION) == 0;
+	return strcmp(core_version, VERSION_OVERRIDE_STR);
 }

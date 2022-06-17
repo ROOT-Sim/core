@@ -11,5 +11,5 @@
 
 int main(void)
 {
-	return strcmp(core_version, ROOTSIM_VERSION);
+	return strcmp(core_version, "3.0.0-alpha.3");
 }
