@@ -6,7 +6,7 @@
  * This library is responsible for allowing LPs to set their state entry
  * point and change it at runtime.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <lib/state/state.h>
