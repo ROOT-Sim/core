@@ -8,17 +8,19 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <inttypes.h>
-
 #include <arch/io.h>
+#include <arch/thread.h>
 #include <core/core.h>
-#include <ROOT-Sim.h>
-#include <string.h>
-#include <log/stats.h>
-#include <log/log.h>
 #include <distributed/mpi.h>
-#include <serial/serial.h>
+#include <log/log.h>
+#include <log/stats.h>
 #include <parallel/parallel.h>
+#include <serial/serial.h>
+
+#include <ROOT-Sim.h>
+
+#include <inttypes.h>
+#include <string.h>
 
 /// A flag to check if the core library has been initialized correctly
 static bool configuration_done = false;
@@ -88,30 +90,35 @@ static void print_config(void)
  * @param conf A pointer to a struct simulation_configuration used to configure the core library.
  * @return zero if the configuration is successful, non-zero otherwise.
  */
-int RootsimInit(struct simulation_configuration *conf)
+int RootsimInit(const struct simulation_configuration *conf)
 {
 	memcpy(&global_config, conf, sizeof(struct simulation_configuration));
 
-	// Sanity check on the number of LPs
 	if(unlikely(global_config.lps == 0)) {
 		fprintf(stderr, "You must specify the total number of Logical Processes\n");
 		return -1;
 	}
 
-	// Sanity check on function pointers
 	if(unlikely(global_config.dispatcher == NULL || global_config.committed == NULL)) {
 		fprintf(stderr, "Function pointers not correctly set\n");
 		return -1;
 	}
 
-	// Configure the logger
+	if(unlikely(global_config.n_threads > thread_cores_count())) {
+		fprintf(stderr, "Demanding %u cores, which are more than available (%u)\n", global_config.n_threads,
+		    thread_cores_count());
+		return -1;
+	}
+
 	log_init(global_config.logfile);
 
-	// Set termination time to infinity if required
+	if (global_config.n_threads == 0) {
+		global_config.n_threads = global_config.serial ? 1 : thread_cores_count();
+	}
+
 	if(global_config.termination_time == 0)
 		global_config.termination_time = SIMTIME_MAX;
 
-	// Keep track of the successful configuration
 	configuration_done = true;
 
 	return 0;
@@ -121,7 +128,7 @@ int RootsimInit(struct simulation_configuration *conf)
  * @brief Start the simulation
  *
  * This function starts the simulation. It must be called *after* having initialized the ROOT-Sim core
- * by calling RootsimInit(), otherwise the invokation will fail.
+ * by calling RootsimInit(), otherwise the invocation will fail.
  *
  * @return zero on successful simulation completion, non-zero otherwise.
  */

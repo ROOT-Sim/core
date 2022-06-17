@@ -7,9 +7,11 @@ add_library(test_framework_lib STATIC
     framework/test.c
     framework/thread.c
 )
+target_include_directories(test_framework_lib PRIVATE ../src .)
 
 function(test_program name)
     add_executable(test_${name} ${ARGN})
+    target_include_directories(test_${name} PRIVATE ../src .)
     target_link_libraries(test_${name} test_framework_lib rscore) # FIXME this doesn't need to be in all the tests
     add_test(NAME test_${name} COMMAND test_${name})
     set_tests_properties(test_${name} PROPERTIES TIMEOUT 60)

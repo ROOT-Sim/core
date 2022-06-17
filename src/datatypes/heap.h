@@ -12,37 +12,65 @@
 
 #include <datatypes/array.h>
 
+/**
+ * @brief Declares a heap
+ * @param type the type of the contained elements
+ */
 #define heap_declare(type) dyn_array(type)
 
+/**
+ * @brief Gets the underlying actual array of elements of a binary heap
+ * @param self the target heap
+ * @return a pointer to the underlying array of elements
+ *
+ * You can use the returned array to directly index items, but do it at your own risk!
+ */
 #define heap_items(self) array_items(self)
+
+/**
+ * @brief Gets the count of contained element in a heap
+ * @param self the target heap
+ * @return the count of contained elements
+ */
 #define heap_count(self) array_count(self)
 
 /**
- * @brief Initializes an empty heap
+ * @brief Initialize an empty heap
  * @param self the heap to initialize
  */
 #define heap_init(self) array_init(self)
 
 /**
- * @brief Finalizes an heap
+ * @brief Finalize a heap
  * @param self the heap to finalize
  *
  * The user is responsible for cleaning up the possibly contained items.
  */
 #define heap_fini(self) array_fini(self)
 
+/**
+ * @brief Check if a heap is empty
+ * @param self the heap to check
+ * @return true if @p self heap is empty, false otherwise
+ */
 #define heap_is_empty(self) array_is_empty(self)
+
+/**
+ * @brief Finalize an heap
+ * @param self the heap to finalize
+ *
+ * The user is responsible for cleaning up the possibly contained items.
+ */
 #define heap_min(self) (*(__typeof(*array_items(self)) *const)array_items(self))
 
 /**
- * @brief Inserts an element into the heap
+ * @brief Insert an element into the heap
  * @param self the heap target of the insertion
  * @param cmp_f a comparing function f(a, b) which returns true iff a < b
  * @param elem the element to insert
  * @returns the position of the inserted element in the underlying array
  *
- * For correct operation of the heap you need to always pass the same @a cmp_f,
- * both for insertion and extraction
+ * For correct operation of the heap you need to always pass the same @a cmp_f, both for insertion and extraction
  */
 #define heap_insert(self, cmp_f, elem)                                                                                 \
 	__extension__({                                                                                                \
@@ -58,15 +86,14 @@
 	})
 
 /**
- * @brief Inserts n elements into the heap
+ * @brief Insert n elements into the heap
  * @param self the heap target of the insertion
  * @param cmp_f a comparing function f(a, b) which returns true iff a < b
  * @param ins the set of elements to insert
  * @param n the number of elements in the set
  * @returns the position of the inserted element in the underlying array
  *
- * For correct operation of the heap you need to always pass the same @a cmp_f,
- * both for insertion and extraction
+ * For correct operation of the heap you need to always pass the same @a cmp_f, both for insertion and extraction
  */
 #define heap_insert_n(self, cmp_f, ins, n)                                                                             \
 	__extension__({                                                                                                \
@@ -75,22 +102,21 @@
 		__typeof__(array_items(self)) items = array_items(self);                                               \
 		while(j--) {                                                                                           \
 			__typeof(array_count(self)) i = array_count(self)++;                                           \
-			while(i && cmp_f((ins)[j], items[(i - 1U) / 2U])) {                                              \
+			while(i && cmp_f((ins)[j], items[(i - 1U) / 2U])) {                                            \
 				items[i] = items[(i - 1U) / 2U];                                                       \
 				i = (i - 1U) / 2U;                                                                     \
 			}                                                                                              \
-			items[i] = (ins)[j];                                                                             \
+			items[i] = (ins)[j];                                                                           \
 		}                                                                                                      \
 	})
 
 /**
- * @brief Extracts an element from the heap
+ * @brief Extract an element from the heap
  * @param self the heap from where to extract the element
  * @param cmp_f a comparing function f(a, b) which returns true iff a < b
  * @returns the extracted element
  *
- * For correct operation of the heap you need to always pass the same @a cmp_f
- * both for insertion and extraction
+ * For correct operation of the heap you need to always pass the same @a cmp_f both for insertion and extraction
  */
 #define heap_extract(self, cmp_f)                                                                                      \
 	__extension__({                                                                                                \

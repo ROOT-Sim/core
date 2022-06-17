@@ -14,6 +14,10 @@
 
 extern _Atomic nid_t nodes_to_end;
 
+/**
+ * @brief Get the termination status of this simulation
+ * @return true if the simulation must go on, false otherwise
+ */
 #define termination_cant_end() (atomic_load_explicit(&nodes_to_end, memory_order_relaxed) > 0)
 
 extern void termination_global_init(void);
