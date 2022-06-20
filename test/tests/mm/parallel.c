@@ -12,7 +12,6 @@
 #include <test.h>
 
 #include <lp/lp.h>
-#include <mm/buddy/buddy.h>
 #include <mm/mm.h>
 
 #include <string.h>
@@ -149,8 +148,8 @@ test_ret_t parallel_malloc_test(__unused void *_)
 	model_allocator_lp_init();
 
 	struct bin_info p;
-	p.size = (1 << (B_BLOCK_EXP + 1));
-	p.bins = (1 << B_TOTAL_EXP) / p.size;
+	p.size = 512;
+	p.bins = 10000;
 	p.m = malloc(p.bins * sizeof(*p.m));
 
 	for (b = 0; b < p.bins; b++) {

@@ -23,15 +23,25 @@ set(srcs
         lp/lp.c
         lp/process.c
         mm/auto_ckpt.c
-        mm/buddy/buddy.c
-        mm/buddy/ckpt.c
-        mm/buddy/multi.c
         mm/msg_allocator.c
         parallel/parallel.c
         serial/serial.c)
 
+set(lp_mm_srcs
+        mm/buddy/buddy.c
+        mm/buddy/ckpt.c
+        mm/buddy/multi.c
+)
+
+if(${want_dymelor}) # FIXME: super bad way of selecting dymelor at build time
+    set(lp_mm_srcs
+            mm/dymelor/checkpoint.c
+            mm/dymelor/dymelor.c
+    )
+endif()
+
 # Build the core library
-add_library(rscore STATIC ${srcs})
+add_library(rscore STATIC ${srcs} ${lp_mm_srcs})
 
 target_compile_definitions(rscore PRIVATE ROOTSIM_VERSION="${PROJECT_VERSION}")
 target_include_directories(rscore PRIVATE . ${MPI_C_INCLUDE_PATH})

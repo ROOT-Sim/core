@@ -11,7 +11,12 @@
 #pragma once
 
 #include <datatypes/array.h>
+
+#ifdef ROOTSIM_DYMELOR
+#include <mm/dymelor/dymelor.h>
+#else
 #include <mm/buddy/multi.h>
+#endif
 
 extern void model_allocator_lp_init(void);
 extern void model_allocator_lp_fini(void);

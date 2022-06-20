@@ -30,7 +30,7 @@ test_program(load tests/core/load.c)
 # Test data structures and subsystems
 #test_program(msg_queue tests/datatypes/msg_queue.c)
 test_program(bitmap tests/datatypes/bitmap.c)
-test_program(mm tests/mm/buddy.c tests/mm/buddy_hard.c tests/mm/parallel.c tests/mm/main.c)
+test_program(mm tests/mm/main.c tests/mm/mm_easy.c tests/mm/mm_hard.c tests/mm/parallel.c)
 
 # Test libraries
 test_program(sync tests/core/sync.c)

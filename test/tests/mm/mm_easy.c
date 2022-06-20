@@ -11,7 +11,6 @@
 #include <test.h>
 
 #include <lp/lp.h>
-#include <mm/buddy/buddy.h>
 #include <mm/model_allocator.h>
 
 #include <stdlib.h>
@@ -22,7 +21,7 @@ static test_ret_t block_size_test(unsigned b_exp)
 {
 	test_ret_t errs = 0;
 	unsigned block_size = 1 << b_exp;
-	unsigned allocations_cnt = 1 << (B_TOTAL_EXP - b_exp);
+	unsigned allocations_cnt = 1 << (24 - b_exp);
 	test_rng_state b_rng, b_chk;
 	lcg_init(&b_rng, BUDDY_TEST_SEED);
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));
@@ -96,7 +95,7 @@ test_ret_t model_allocator_test(__unused void *_)
 	current_lp = mock_lp();
 	model_allocator_lp_init();
 
-	for(unsigned j = B_BLOCK_EXP; j < B_TOTAL_EXP; ++j) {
+	for(unsigned j = 6; j < 16; ++j) {
 		errs += block_size_test(j);
 	}
 

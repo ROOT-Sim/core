@@ -42,6 +42,11 @@ if(WIN32)
     set(EXTRA_LIBS ${EXTRA_LIBS} psapi)
 endif()
 
+set(want_dymelor TRUE)
+if(${want_dymelor}) # FIXME: super bad way of selecting dymelor at build time
+    add_compile_definitions(ROOTSIM_DYMELOR)
+endif()
+
 add_subdirectory(src)
 
 # Run the tests
