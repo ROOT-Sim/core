@@ -528,6 +528,7 @@ test_ret_t test_graph(__unused void *_)
 	topology = InitializeTopology(TOPOLOGY_GRAPH, 1);
 	for(enum topology_direction i = 0; i <= LAST_DIRECTION_VALID_VALUE; i++)
 		test_assert(GetReceiver(0, topology, i) == INVALID_DIRECTION);
+	ReleaseTopology(topology);
 
 	check_passed_asserts();
 }
