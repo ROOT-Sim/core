@@ -674,7 +674,7 @@ void ReleaseTopology(struct topology *topology)
 		for(size_t i = 0; i < topology->regions; i++) {
 			struct graph_node *curr;
 			while((curr = list_head(topology->adjacency[i])) != NULL) {
-				list_delete_by_content(topology->adjacency[i], curr);
+				list_detach_by_content(topology->adjacency[i], curr);
 				free(curr);
 			}
 			free(topology->adjacency[i]);
