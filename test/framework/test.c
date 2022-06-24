@@ -32,15 +32,10 @@ void finish(void)
 	exit(test_unit.ret);
 }
 
-void init(unsigned n_th)
+void test_init(unsigned n_th)
 {
-	if(setjmp(test_unit.fail_buffer)) {
-		test_unit.ret = -1; // getting here from fail()
-		finish();
-	}
-
 	test_random_init();
-	global_config.n_threads = n_th;
+	global_config.n_threads = (n_th);
 	spawn_worker_pool(n_th);
 }
 

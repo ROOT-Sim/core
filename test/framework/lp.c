@@ -26,7 +26,7 @@ static void lp_exit(void)
 {
 	struct lp_mock_t *mock;
 	while ((mock = list_head(lp_mocks)) != NULL) {
-		list_delete_by_content(lp_mocks, mock);
+		list_detach_by_content(lp_mocks, mock);
 		free(mock);
 	}
 }
