@@ -36,16 +36,16 @@ This repository keeps the sources of the ROOT-Sim core: this is the fundamental 
 part of the simulation algorithms used in the simulation framework.
 
 The core can be built and used as a stand-alone low-level library writing C code, or it can be used within other
-projects, such as [cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim), i.e. the C/C++ version of the simulation library. 
+projects, such as [cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim), i.e. the C/C++ version of the simulation library.
 
 ## Dependencies and platforms
 
 The core successfully compiles on x86 and ARM architectures, using either GCC or Clang compilers, on Linux, Windows,
 and macOS.
 A compiler supporting the C11 standard is required, such as GCC 8 or later. MSVC on Windows does not properly implement
-the full C11 standard (e.g., `stdatomic.h` is not provided), and cannot be therefore used to build the project. 
+the full C11 standard (e.g., `stdatomic.h` is not provided), and cannot be therefore used to build the project.
 
-MPI is a madatory dependency of the project, used to support simulations run on distributed systems. 
+MPI is a madatory dependency of the project, used to support simulations run on distributed systems.
 The core is continuously tested against the following MPI implementations:
 *   OpenMPI
 *   MPICH
@@ -53,7 +53,7 @@ The core is continuously tested against the following MPI implementations:
 
 Any of the three is required to build the project. A full MPI3 implementation, supporting multithreading, is necessary.
 
-## Building and installing
+## Building
 
 To build the project, run:
 

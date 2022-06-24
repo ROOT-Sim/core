@@ -26,11 +26,11 @@ jobs:
             type: Release
     steps:
       - name: Checkpout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Initialize Environment
-        uses: ROOT-Sim/ci-actions/init@v1.1
+        uses: ROOT-Sim/ci-actions/init@master
       - name: Build & Test
-        uses: ROOT-Sim/ci-actions/cmake@v1.1
+        uses: ROOT-Sim/ci-actions/cmake@master
         with:
           build-dir: ${{ runner.workspace }}/build
           cc: ${{ matrix.compiler }}
