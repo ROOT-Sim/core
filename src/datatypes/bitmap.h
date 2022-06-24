@@ -26,7 +26,7 @@ typedef unsigned char block_bitmap;
 /// The primitive type used to build a bitmap
 #define B_BLOCK_TYPE uint_fast32_t
 /// The size of the primitive type to build a bitmap
-#define B_BLOCK_SIZE ((unsigned)sizeof(B_BLOCK_TYPE))
+#define B_BLOCK_SIZE (sizeof(B_BLOCK_TYPE))
 /// Number of bits in a primitive type to build a bitmap
 #define B_BITS_PER_BLOCK (B_BLOCK_SIZE * CHAR_BIT)
 /// Mask used to fiddle single bits
@@ -172,12 +172,12 @@ typedef unsigned char block_bitmap;
  */
 #define bitmap_foreach_set(bitmap, bitmap_size, func)                                                                  \
 	__extension__({                                                                                                \
-		unsigned __i, __fnd, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                          \
+		unsigned __blocks = (bitmap_size) / B_BLOCK_SIZE;                                                      \
 		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);                                           \
-		for(__i = 0; __i < __blocks; ++__i) {                                                                  \
+		for(unsigned __i = 0; __i < __blocks; ++__i) {                                                         \
 			if((__cur_block = __block_b[__i])) {                                                           \
 				do {                                                                                   \
-					__fnd = intrinsics_ctz(__cur_block);                                           \
+					unsigned __fnd = intrinsics_ctz(__cur_block);                                  \
 					B_RESET_BIT_AT(__cur_block, __fnd);                                            \
 					func((__fnd + __i * B_BITS_PER_BLOCK));                                        \
 				} while(__cur_block);                                                                  \

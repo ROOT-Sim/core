@@ -73,6 +73,7 @@ uint_fast32_t buddy_free(struct buddy_state *self, void *ptr)
 	uint_fast32_t b = (1 << (node_size - B_BLOCK_EXP)) - 1;
 	o += (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 	// need to track freed blocks content because full checkpoints don't
+	// XXX: this wouldn't be needed if we use the simpler way of restoring incremental checkpoints
 	do {
 		bitmap_set(self->dirty, o + b);
 	} while(b--);

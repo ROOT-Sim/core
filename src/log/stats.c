@@ -55,7 +55,10 @@ static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct st
 
 /// The statistics names, used to fill in the preamble of the final statistics binary file
 const char *const stats_names[] = {
-    [STATS_ROLLBACK] = "rollbacks",
+    [STATS_RESTORE] = "restores",
+    [STATS_RESTORE_TIME] = "restores time",
+    [STATS_APPROX_RESTORE] = "approx restores",
+    [STATS_APPROX_RESTORE_TIME] = "approx restores time",
     [STATS_MSG_ROLLBACK] = "rolled back messages",
     [STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
     [STATS_MSG_SILENT] = "silent messages",
@@ -321,7 +324,7 @@ void stats_global_fini(void)
  * @param this_stat the statistics type to add the sample to
  * @param c the sample to sum
  */
-void stats_take(enum stats_thread_type this_stat, unsigned c)
+void stats_take(enum stats_thread_type this_stat, uint64_t c)
 {
 	stats_cur.s[this_stat] += c;
 }

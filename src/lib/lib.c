@@ -28,6 +28,7 @@ void lib_global_fini(void) {}
  */
 void lib_lp_init(void)
 {
+	approximated_lp_init();
 	random_lib_lp_init();
 	state_lib_lp_init();
 }

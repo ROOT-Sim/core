@@ -199,7 +199,7 @@ static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 	send_anti_messages(proc_p, past_i);
 	array_count_t last_i = model_allocator_checkpoint_restore(past_i);
 	silent_execution(proc_p, last_i, past_i);
-	stats_take(STATS_ROLLBACK, 1);
+	approximated_lp_on_rollback();
 }
 
 static inline array_count_t match_straggler_msg(
@@ -334,7 +334,7 @@ void process_msg(void)
 	array_push(proc_p->p_msgs, msg);
 
 	auto_ckpt_register_good(&this_lp->auto_ckpt);
-	if(auto_ckpt_is_needed(&this_lp->auto_ckpt))
+	if(auto_ckpt_is_needed(&this_lp->auto_ckpt, this_lp->mm_state.is_approximated))
 		checkpoint_take(proc_p);
 
 	termination_on_msg_process(msg->dest_t);

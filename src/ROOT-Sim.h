@@ -68,6 +68,8 @@ typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, c
  */
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
+typedef bool (*RestoreApproximated_t)(lp_id_t me, void *snapshot);
+
 enum rootsim_event {LP_INIT = 65534, LP_FINI};
 
 /**
@@ -206,6 +208,14 @@ extern struct topology *vInitializeTopology(enum topology_geometry geometry, int
 #define InitializeTopology(geometry, ...) vInitializeTopology(geometry, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 /********* TOPOLOGY LIBRARY ************/
 
+enum approximated_mode {
+	APPROXIMATED_MODE_PRECISE,
+	APPROXIMATED_MODE_APPROXIMATED,
+	APPROXIMATED_MODE_AUTONOMIC
+};
+extern void ApproximatedModeSwitch(enum approximated_mode mode);
+extern void ApproximatedMemoryMark(const void *ptr, bool is_approximated);
+
 /// A set of configurable values used by other modules
 struct simulation_configuration {
 	/// The number of LPs to be used in the simulation
@@ -234,6 +244,8 @@ struct simulation_configuration {
 	ProcessEvent_t dispatcher;
 	/// Function pointer to the termination detection function
 	CanEnd_t committed;
+
+	RestoreApproximated_t restore;
 };
 
 extern int RootsimInit(const struct simulation_configuration *conf);

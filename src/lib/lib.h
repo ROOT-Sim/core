@@ -12,6 +12,7 @@
 
 #include <stdbool.h>
 
+#include <lib/approximated/approximated.h>
 #include <lib/random/random.h>
 #include <lib/state/state.h>
 
@@ -24,6 +25,7 @@ struct lib_ctx {
 	double unif;
 	/// This flag tells whether unif member is keeping a valid deviate.
 	bool has_normal;
+	enum approximated_mode approximated_mode;
 	// todo remove
 	void *state_s;
 };

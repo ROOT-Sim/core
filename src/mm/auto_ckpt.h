@@ -15,6 +15,7 @@ struct auto_ckpt {
 	double inv_bad_p;
 	unsigned m_bad;
 	unsigned m_good;
+	unsigned approx_ckpt_interval;
 	unsigned ckpt_interval;
 	unsigned ckpt_rem;
 };
@@ -43,9 +44,10 @@ struct auto_ckpt {
  * @param auto_ckpt a pointer to the auto-checkpoint module struct of the current LP
  * @return true if the LP needs a checkpoint, false otherwise
  */
-#define auto_ckpt_is_needed(auto_ckpt)                                                                                 \
+#define auto_ckpt_is_needed(auto_ckpt, approx)                                                                         \
 	__extension__({                                                                                                \
-		_Bool r = ++(auto_ckpt)->ckpt_rem >= (auto_ckpt)->ckpt_interval;                                       \
+		_Bool r = ++(auto_ckpt)->ckpt_rem >=                                                                   \
+		          ((approx) ? (auto_ckpt)->approx_ckpt_interval : (auto_ckpt)->ckpt_interval);                 \
 		if(r)                                                                                                  \
 			(auto_ckpt)->ckpt_rem = 0;                                                                     \
 		r;                                                                                                     \

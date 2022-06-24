@@ -14,6 +14,7 @@ set(srcs
         gvt/gvt.c
         gvt/termination.c
         lib/lib.c
+        lib/approximated/approximated.c
         lib/random/random.c
         lib/state/state.c
         lib/topology/topology.c

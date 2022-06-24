@@ -25,10 +25,15 @@ enum stats_global_type {
 
 enum stats_thread_type {
 	STATS_MSG_PROCESSED,
-	STATS_ROLLBACK,
+	STATS_APPROX_RESTORE,
+	STATS_APPROX_RESTORE_TIME,
+	STATS_RESTORE,
+	STATS_RESTORE_TIME,
 	STATS_MSG_ROLLBACK,
 	STATS_CKPT,
 	STATS_CKPT_TIME,
+	STATS_APPROX_CKPT,
+	STATS_APPROX_CKPT_TIME,
 	STATS_MSG_SILENT,
 	STATS_MSG_SILENT_TIME,
 	STATS_MSG_REMOTE_RECEIVED,
@@ -43,7 +48,7 @@ extern void stats_global_init(void);
 extern void stats_global_fini(void);
 extern void stats_init(void);
 
-extern void stats_take(enum stats_thread_type this_stat, unsigned c);
+extern void stats_take(enum stats_thread_type this_stat, uint64_t c);
 extern uint64_t stats_retrieve(enum stats_thread_type this_stat);
 extern void stats_on_gvt(simtime_t current_gvt);
 extern void stats_dump(void);

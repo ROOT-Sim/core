@@ -11,6 +11,7 @@
 #include <lp/lp.h>
 
 #include <datatypes/msg_queue.h>
+#include <lib/approximated/approximated.h>
 #include <mm/mm.h>
 #include <core/sync.h>
 #include <gvt/fossil.h>
@@ -136,6 +137,7 @@ void lp_on_gvt(simtime_t gvt)
 {
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
+		approximated_lp_on_gvt(lp);
 		fossil_lp_on_gvt(lp, gvt);
 		auto_ckpt_lp_on_gvt(&lp->auto_ckpt);
 	}

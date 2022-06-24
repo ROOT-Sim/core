@@ -13,6 +13,7 @@ void model_allocator_lp_init(void)
 	struct mm_state *self = &current_lp->mm_state;
 	memset(self->areas, 0, sizeof(self->areas));
 	array_init(self->logs);
+	self->is_approximated = false;
 }
 
 void model_allocator_lp_fini(void)
@@ -37,7 +38,7 @@ void model_allocator_lp_fini(void)
 void model_allocator_checkpoint_take(array_count_t ref_i)
 {
 	struct mm_state *self = &current_lp->mm_state;
-	struct dymelor_log mm_log = {.ref_i = ref_i, .c = checkpoint_full_take(self)};
+	struct dymelor_log mm_log = {.ref_i = ref_i, .c = checkpoint_full_take(self, self->is_approximated)};
 	array_push(self->logs, mm_log);
 }
 
@@ -86,17 +87,24 @@ array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_cou
 
 static struct dymelor_area *malloc_area_new(unsigned chunk_size_exp, uint_least32_t num_chunks)
 {
-	size_t bitmap_size = bitmap_required_size(num_chunks);
+	size_t bitmap_size = 2 * bitmap_required_size(num_chunks);
+#ifdef ROOTSIM_INCREMENTAL
+	bitmap_size += bitmap_required_size(num_chunks);
+#endif
 	struct dymelor_area *area =
-	    mm_alloc(offsetof(struct dymelor_area, area) + 2 * bitmap_size + (num_chunks << chunk_size_exp));
+	    mm_alloc(offsetof(struct dymelor_area, area) + bitmap_size + (num_chunks << chunk_size_exp));
 	area->alloc_chunks = 0;
-	area->dirty_chunks = 0;
+	area->core_chunks = 0;
 	area->last_chunk = 0;
 	area->last_access = -1;
 	area->chk_size_exp = chunk_size_exp;
 	area->use_bitmap = area->area + (num_chunks << chunk_size_exp);
-	area->dirty_bitmap = area->use_bitmap + bitmap_size;
-	memset(area->use_bitmap, 0, 2 * bitmap_size);
+	area->core_bitmap = area->use_bitmap + bitmap_required_size(num_chunks);
+#ifdef ROOTSIM_INCREMENTAL
+	area->dirty_bitmap = area->approx_bitmap + bitmap_required_size(num_chunks);
+	area->dirty_chunks = 0;
+#endif
+	memset(area->use_bitmap, 0, bitmap_size);
 	area->next = NULL;
 	return area;
 }
@@ -135,8 +143,10 @@ void *rs_malloc(size_t req_size)
 		m_area->last_chunk++;
 
 	bitmap_set(m_area->use_bitmap, m_area->last_chunk);
+	bitmap_set(m_area->core_bitmap, m_area->last_chunk);
 	// m_area->last_access = lvt(current);
 	++m_area->alloc_chunks;
+	++m_area->core_chunks;
 	uint_least32_t offset = m_area->last_chunk << size_exp;
 	m_area->last_chunk++;
 
@@ -187,12 +197,18 @@ void rs_free(void *ptr)
 	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
 
 	uint_least32_t idx = (p - m_area->area) >> m_area->chk_size_exp;
+#ifndef NDEBUG
 	if(!bitmap_check(m_area->use_bitmap, idx)) {
 		logger(LOG_FATAL, "double free() corruption or address not malloc'd\n");
 		abort();
 	}
+#endif
 	bitmap_reset(m_area->use_bitmap, idx);
 	--m_area->alloc_chunks;
+
+	if(bitmap_check(m_area->core_bitmap, idx))
+		--m_area->core_chunks;
+	bitmap_reset(m_area->core_bitmap, idx);
 
 #ifdef ROOTSIM_INCREMENTAL
 	if(bitmap_check(m_area->dirty_bitmap, idx)) {
@@ -207,6 +223,7 @@ void rs_free(void *ptr)
 		m_area->last_chunk = idx;
 }
 
+#ifdef ROOTSIM_INCREMENTAL
 void dirty_mem(void *base, int size)
 {
 	// FIXME: check base belongs to the LP memory allocator
@@ -218,6 +235,7 @@ void dirty_mem(void *base, int size)
 		m_area->dirty_chunks++;
 	}
 }
+#endif
 
 void clean_buffers_on_gvt(struct mm_state *state, simtime_t time_barrier)
 {

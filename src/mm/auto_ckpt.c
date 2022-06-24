@@ -31,6 +31,7 @@
 
 static __thread struct {
 	double ckpt_avg_cost;
+	double approx_ckpt_avg_cost;
 	double inv_sil_avg_cost;
 } ackpt;
 
@@ -40,6 +41,7 @@ static __thread struct {
 void auto_ckpt_init(void)
 {
 	ackpt.ckpt_avg_cost = 4096.0;
+	ackpt.approx_ckpt_avg_cost = 4096.0;
 	ackpt.inv_sil_avg_cost = 1.0 / 4096.0;
 }
 
@@ -56,6 +58,8 @@ void auto_ckpt_on_gvt(void)
 
 	uint64_t ckpt_count = stats_retrieve(STATS_CKPT);
 	uint64_t ckpt_cost = stats_retrieve(STATS_CKPT_TIME);
+	uint64_t approx_ckpt_count = stats_retrieve(STATS_APPROX_CKPT);
+	uint64_t approx_ckpt_cost = stats_retrieve(STATS_APPROX_CKPT_TIME);
 	uint64_t sil_count = stats_retrieve(STATS_MSG_SILENT);
 	uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
 
@@ -64,6 +68,9 @@ void auto_ckpt_on_gvt(void)
 
 	if(likely(ckpt_count))
 		ackpt.ckpt_avg_cost = EXP_AVG(16.0, ackpt.ckpt_avg_cost, (double)ckpt_cost / (double)ckpt_count);
+
+	if(likely(approx_ckpt_count))
+		ackpt.approx_ckpt_avg_cost = EXP_AVG(16.0, ackpt.ckpt_avg_cost, (double)approx_ckpt_cost / (double)approx_ckpt_count);
 }
 
 /**
@@ -74,6 +81,7 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 {
 	memset(auto_ckpt, 0, sizeof(*auto_ckpt));
 	auto_ckpt->ckpt_interval = global_config.ckpt_interval ? global_config.ckpt_interval : 256;
+	auto_ckpt->approx_ckpt_interval = global_config.ckpt_interval ? global_config.ckpt_interval : 256;
 	auto_ckpt->inv_bad_p = 64.0;
 }
 
@@ -93,4 +101,5 @@ void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt)
 	auto_ckpt->m_bad = 0;
 	auto_ckpt->m_good = 0;
 	auto_ckpt->ckpt_interval = ceil(sqrt(auto_ckpt->inv_bad_p * ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost));
+	auto_ckpt->approx_ckpt_interval = ceil(sqrt(auto_ckpt->inv_bad_p * ackpt.approx_ckpt_avg_cost * ackpt.inv_sil_avg_cost));
 }

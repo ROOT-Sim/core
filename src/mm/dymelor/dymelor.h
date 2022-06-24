@@ -21,14 +21,18 @@
 
 /// This structure let DyMeLoR handle one malloc area (for serving given-size memory requests)
 struct dymelor_area {
-	uint_least32_t alloc_chunks;
+	simtime_t last_access;
+	struct dymelor_area *next;
+	block_bitmap *use_bitmap;
+	block_bitmap *core_bitmap;
+#ifdef ROOTSIM_INCREMENTAL
+	block_bitmap *dirty_bitmap;
 	uint_least32_t dirty_chunks;
+#endif
+	uint_least32_t core_chunks;
+	uint_least32_t alloc_chunks;
 	uint_least32_t last_chunk;
 	unsigned chk_size_exp;
-	simtime_t last_access;
-	block_bitmap *use_bitmap;
-	block_bitmap *dirty_bitmap;
-	struct dymelor_area *next;
 	uint_least32_t first_back_p;
 	alignas(16) unsigned char area[];
 };
@@ -45,4 +49,6 @@ struct mm_state {
 	struct dymelor_area *areas[NUM_AREAS];
 	/// The array of checkpoints
 	dyn_array(struct dymelor_log) logs;
+
+	bool is_approximated;
 };
