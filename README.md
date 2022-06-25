@@ -45,7 +45,7 @@ and macOS.
 A compiler supporting the C11 standard is required, such as GCC 8 or later. MSVC on Windows does not properly implement
 the full C11 standard (e.g., `stdatomic.h` is not provided), and cannot be therefore used to build the project.
 
-MPI is a madatory dependency of the project, used to support simulations run on distributed systems.
+MPI is a mandatory dependency of the project, used to support simulations run on distributed systems.
 The core is continuously tested against the following MPI implementations:
 *   OpenMPI
 *   MPICH
