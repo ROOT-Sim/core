@@ -15,43 +15,44 @@ Research Group*
 
 ## The ROme OpTimistic Simulator
 
-The ROme OpTimistic Simulator is an open source, distributed and parallel simulation framework developed using C/POSIX
-technology. It transparently supports all the mechanisms associated with parallelization and distribution of workload
-across the nodes (e.g., mapping of simulation objects on different kernel instances) and optimistic synchronization (
-e.g., state recoverability). Distributed simulations rely on MPI3. In particular, global synchronization across the
-different nodes relies on asynchronous MPI primitives, for increased efficiency.
+The ROme OpTimistic Simulator is an open-source, distributed and parallel simulation framework developed using C11.
+It transparently supports all the mechanisms associated with parallelization and distribution of workload across the
+nodes (e.g., mapping of simulation objects on different kernel instances) and optimistic synchronization (e.g., state
+recoverability). Distributed simulations rely on MPI3. In particular, global synchronization across the various nodes
+relies on asynchronous MPI primitives for increased efficiency.
 
 The programming model supported by ROOT-Sim allows the simulation model developer to use a simple application-callback
-function named `ProcessEvent()` as the event handler, whose parameters determine which simulation object is currently
-taking control for processing its next event, and where the state of this object is located in memory. An object is a
-data structure, whose state can be scattered on dynamically allocated memory chunks, hence the memory address passed to
-the callback locates a top level data structure implementing the object state-layout.
+function named `ProcessEvent()` as the event handler. Its parameters determine which simulation object is currently
+taking control for processing its next event and where the state of this object is located in memory. An object is a
+data structure whose state can be scattered on dynamically allocated memory chunks. Hence the memory address passed to
+the callback identifies a top-level data structure implementing the object state layout.
 
-ROOT-Sim's development started as a research project late back in 1987, and is currently maintained by the High
-Performance and Dependable Computing Systems group, research group of the University of Rome "Tor Vergata".
+ROOT-Sim's development started as a research project late back in 1987 and is currently maintained by the High
+Performance and Dependable Computing Systems group, a research group of the University of Rome "Tor Vergata".
 
 ## ROOT-Sim Core
 
-This repository keeps the sources of the ROOT-Sim core: this is the fundamental library that implements the largest
-part of the simulation algorithms used in the simulation framework.
+This repository keeps the sources of the ROOT-Sim core: this is the lowest-level library that implements the most
+significant part of the simulation algorithms used in the simulation framework.
 
 The core can be built and used as a stand-alone low-level library writing C code, or it can be used within other
-projects, such as [cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim), i.e. the C/C++ version of the simulation library.
+projects, such as [cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim), i.e. the C/C++ packaging of the simulation library.
 
 ## Dependencies and platforms
 
 The core successfully compiles on x86 and ARM architectures, using either GCC or Clang compilers, on Linux, Windows,
 and macOS.
-A compiler supporting the C11 standard is required, such as GCC 8 or later. MSVC on Windows does not properly implement
-the full C11 standard (e.g., `stdatomic.h` is not provided), and cannot be therefore used to build the project.
+A compiler supporting the C11 standard is required, such as GCC 8 or later. MSVC on Windows does not correctly
+implement the full C11 standard (e.g., `stdatomic.h` is not provided) and cannot be therefore used to build the project.
+Windows users are encouraged to use clang.
 
-MPI is a mandatory dependency of the project, used to support simulations run on distributed systems.
+MPI is a mandatory dependency of the project, used to support simulations runs on distributed systems.
 The core is continuously tested against the following MPI implementations:
 *   OpenMPI
 *   MPICH
 *   Microsoft MPI
 
-Any of the three is required to build the project. A full MPI3 implementation, supporting multithreading, is necessary.
+Any of the three is required to build the project. A full MPI3 implementation supporting multithreading is necessary.
 
 ## Building
 
@@ -74,7 +75,7 @@ ctest
 ## Compiling and running a model
 
 The ROOT-Sim core is not expected to be used directly to run models (see, for example,
-[cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim)). Nevertheless, an implementation of a "low-level" model
+[cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim)). Nevertheless, an implementation of "low-level" models
 can be located in `test\integration`.
-The test can be compiled using the standard `mpicc` compiler, linking against `librscore` and launching either
-locally or using `mpiexec` to run on multiple nodes.
+The tests can be compiled using the standard `mpicc` compiler, linking against `librscore` and launching
+locally, or using `mpiexec` to run on multiple nodes.
