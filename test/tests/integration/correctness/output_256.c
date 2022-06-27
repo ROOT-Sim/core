@@ -1,5 +1,5 @@
 /**
- * @file test/tests/integration/model/output_256.c
+ * @file test/tests/integration/correctness/output_256.c
  *
  * @brief Correct output of the model used to verify correctness (with 256 LPs)
  *

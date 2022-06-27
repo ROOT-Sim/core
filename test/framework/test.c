@@ -32,15 +32,8 @@ void finish(void)
 	exit(test_unit.ret);
 }
 
-void init(unsigned n_th)
+void test_init(unsigned n_th)
 {
-	// FIXME: this use of setjmp() is prone to undefined behaviour
-	//        since we expect to longjmp once this function has returned
-	if(setjmp(test_unit.fail_buffer)) {
-		test_unit.ret = -1; // getting here from fail()
-		finish();
-	}
-
 	test_random_init();
 	global_config.n_threads = n_th;
 	spawn_worker_pool(n_th);
@@ -49,7 +42,6 @@ void init(unsigned n_th)
 void fail(void)
 {
 	fprintf(stderr, "Failing explicitly\n");
-	// FIXME: this longjmp() invokes undefined behaviour (see previous FIXME)
         longjmp(test_unit.fail_buffer, 1);
 }
 

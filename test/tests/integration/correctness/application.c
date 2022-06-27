@@ -1,5 +1,5 @@
 /**
- * @file test/tests/integration/model/application.c
+ * @file test/tests/integration/correctness/application.c
  *
  * @brief Main module of the model used to verify the runtime correctness
  *
