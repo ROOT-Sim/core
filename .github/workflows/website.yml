@@ -2,9 +2,6 @@ name: Documentation Deployment
 
 on:
   push:
-    branches:
-      - master
-      - develop
 
 jobs:
   update-website:
