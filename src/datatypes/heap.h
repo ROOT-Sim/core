@@ -56,10 +56,9 @@
 #define heap_is_empty(self) array_is_empty(self)
 
 /**
- * @brief Finalize an heap
- * @param self the heap to finalize
- *
- * The user is responsible for cleaning up the possibly contained items.
+ * @brief Get the highest priority element
+ * @param self the heap
+ * @return the highest priority element, cast to const
  */
 #define heap_min(self) (*(__typeof(*array_items(self)) *const)array_items(self))
 
