@@ -10,6 +10,8 @@
  */
 #pragma once
 
+#include <inttypes.h>
+
 /// Structure to keep data used for autonomic checkpointing selection
 struct auto_ckpt {
 	double inv_bad_p;
@@ -54,4 +56,4 @@ struct auto_ckpt {
 extern void auto_ckpt_init(void);
 extern void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt);
 extern void auto_ckpt_on_gvt(void);
-extern void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt);
+extern void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size);

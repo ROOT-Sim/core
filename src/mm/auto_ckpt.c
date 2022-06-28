@@ -26,7 +26,7 @@
 	__extension__({                                                                                                \
 		double s = (sample);                                                                                   \
 		double o = (old_v);                                                                                    \
-		o * (((f) - 1.0) / (f)) + s * (1.0 / (f));                                                                     \
+		o *(((f)-1.0) / (f)) + s *(1.0 / (f));                                                                 \
 	})
 
 static __thread struct {
@@ -39,7 +39,7 @@ static __thread struct {
  */
 void auto_ckpt_init(void)
 {
-	ackpt.ckpt_avg_cost = 4096.0;
+	ackpt.ckpt_avg_cost = 1.0;
 	ackpt.inv_sil_avg_cost = 1.0 / 4096.0;
 }
 
@@ -54,16 +54,16 @@ void auto_ckpt_on_gvt(void)
 	if(unlikely(global_config.ckpt_interval))
 		return;
 
-	uint64_t ckpt_count = stats_retrieve(STATS_CKPT);
 	uint64_t ckpt_cost = stats_retrieve(STATS_CKPT_TIME);
+	uint64_t ckpt_state_size = stats_retrieve(STATS_CKPT_STATE_SIZE);
 	uint64_t sil_count = stats_retrieve(STATS_MSG_SILENT);
 	uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
 
 	if(likely(sil_count))
 		ackpt.inv_sil_avg_cost = EXP_AVG(16.0, ackpt.inv_sil_avg_cost, (double)sil_count / (double)sil_cost);
 
-	if(likely(ckpt_count))
-		ackpt.ckpt_avg_cost = EXP_AVG(16.0, ackpt.ckpt_avg_cost, (double)ckpt_cost / (double)ckpt_count);
+	if(likely(ckpt_state_size))
+		ackpt.ckpt_avg_cost = EXP_AVG(16.0, ackpt.ckpt_avg_cost, (double)ckpt_cost / (double)ckpt_state_size);
 }
 
 /**
@@ -84,7 +84,7 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
  * This function should be called only at the end of GVT reductions, because
  * the used statistics values are representative only in that moment.
  */
-void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt)
+void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size)
 {
 	if(unlikely(!auto_ckpt->m_bad || global_config.ckpt_interval))
 		return;
@@ -92,5 +92,6 @@ void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt)
 	auto_ckpt->inv_bad_p = EXP_AVG(8.0, auto_ckpt->inv_bad_p, 2.0 * auto_ckpt->m_good / auto_ckpt->m_bad);
 	auto_ckpt->m_bad = 0;
 	auto_ckpt->m_good = 0;
-	auto_ckpt->ckpt_interval = ceil(sqrt(auto_ckpt->inv_bad_p * ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost));
+	auto_ckpt->ckpt_interval =
+	    ceil(sqrt(auto_ckpt->inv_bad_p * ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost * (double)state_size));
 }
