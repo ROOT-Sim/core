@@ -20,3 +20,5 @@ jobs:
           build-path: docs
       - name: Website Deployment
         uses: ROOT-Sim/ci-actions/website-deploy@master
+        with:
+          build-path: docs
