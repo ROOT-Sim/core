@@ -5,7 +5,7 @@
  *
  * This module defines synchronization primitives for the parallel runtime.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -37,26 +37,79 @@ typedef atomic_flag spinlock_t;
  * @brief Locks a spinlock
  * @param lck_p a pointer to the spinlock_t to lock
  */
-#define spin_lock(lck_p)						\
-__extension__({								\
-	while(atomic_flag_test_and_set_explicit((lck_p), 		\
-		memory_order_acquire))					\
-		spin_pause();						\
-})
+#define spin_lock(lck_p)                                                                                               \
+	__extension__({                                                                                                \
+		while(atomic_flag_test_and_set_explicit((lck_p), memory_order_acquire))                                \
+			spin_pause();                                                                                  \
+	})
 
 /**
  * @brief Executes the trylock operation on a spinlock
  * @param lck_p a pointer to the spinlock_t to try to lock
- * @return true if the lock was acquired successfully, fals otherwise
+ * @return true if the lock was acquired successfully, false otherwise
  */
-#define spin_trylock(lck_p)						\
-	!atomic_flag_test_and_set_explicit((lck_p), memory_order_acquire)
+#define spin_trylock(lck_p) !atomic_flag_test_and_set_explicit((lck_p), memory_order_acquire)
 
 /**
  * @brief Unlocks a spinlock
  * @param lck_p a pointer to the spinlock_t to unlock
  */
-#define spin_unlock(lck_p)						\
-	atomic_flag_clear_explicit((lck_p), memory_order_release)
+#define spin_unlock(lck_p) atomic_flag_clear_explicit((lck_p), memory_order_release)
+
+// Multiple readers, single writer lock
+typedef atomic_int mrswlock_t;
+
+// Initialize a mrswlock
+#define mrswlock_init(lck_p, r_cnt) atomic_store_explicit(lck_p, r_cnt, memory_order_relaxed)
+
+// Take a reader lock
+#define mrswlock_rlock(lck_p)                                                                                          \
+	__extension__({                                                                                                \
+		do {                                                                                                   \
+			int i = atomic_fetch_add_explicit((lck_p), -1, memory_order_relaxed);                          \
+			if(likely(i > 0))                                                                              \
+				break;                                                                                 \
+			atomic_fetch_add_explicit((lck_p), 1, memory_order_relaxed);                                   \
+			do {                                                                                           \
+				spin_pause();                                                                          \
+			} while(atomic_load_explicit((lck_p), memory_order_relaxed) <= 0);                             \
+		} while(1);                                                                                            \
+		atomic_thread_fence(memory_order_acquire);                                                             \
+	})
+
+// Take a writer lock
+#define mrswlock_wlock(lck_p, r_cnt)                                                                                   \
+	__extension__({                                                                                                \
+		do {                                                                                                   \
+			int i = atomic_fetch_add_explicit((lck_p), -(r_cnt), memory_order_relaxed);                    \
+			if(likely(i == (int)(r_cnt)))                                                                  \
+				break;                                                                                 \
+			if(likely(i > 0)) {                                                                            \
+				do {                                                                                   \
+					spin_pause();                                                                  \
+				} while(atomic_load_explicit((lck_p), memory_order_relaxed) < 0);                      \
+				break;                                                                                 \
+			}                                                                                              \
+			atomic_fetch_add_explicit((lck_p), (r_cnt), memory_order_relaxed);                             \
+			do {                                                                                           \
+				spin_pause();                                                                          \
+			} while(atomic_load_explicit((lck_p), memory_order_relaxed) < 0);                              \
+		} while(1);                                                                                            \
+		atomic_thread_fence(memory_order_acquire);                                                             \
+	})
+
+// Unlock a reader lock
+#define mrswlock_runlock(lck_p)                                                                                        \
+	__extension__({                                                                                                \
+		atomic_thread_fence(memory_order_release);                                                             \
+		atomic_fetch_add_explicit((lck_p), 1, memory_order_relaxed);                                           \
+	})
+
+// Unlock a writer lock
+#define mrswlock_wunlock(lck_p, r_cnt)                                                                                 \
+	__extension__({                                                                                                \
+		atomic_thread_fence(memory_order_release);                                                             \
+		atomic_fetch_add_explicit((lck_p), (r_cnt), memory_order_relaxed);                                     \
+	})
 
 extern bool sync_thread_barrier(void);

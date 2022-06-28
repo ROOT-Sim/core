@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: CC0-1.0
-comment: no
-
 coverage:
   range: 70..90
 
@@ -11,6 +9,8 @@ coverage:
       target: auto
       threshold: 3%
 
-    patch: no
-    changes: no
+    patch: false
+    changes: false
 
+fixes:
+  - "*/::"        # Adjust the relative path of the files (should be relative to git repo's root)

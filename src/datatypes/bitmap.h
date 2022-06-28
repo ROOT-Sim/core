@@ -8,41 +8,48 @@
  * performances and simplicity reasons, doesn't remember its effective size;
  * consequently it doesn't check boundaries on the array that stores the bits.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
 #include <core/intrinsics.h>
 
-#include <limits.h>		// for CHAR_BIT
-#include <memory.h>		// for memset()
+#include <limits.h> // for CHAR_BIT
+#include <memory.h> // for memset()
 
 /// The type of a generic bitmap.
 typedef unsigned char block_bitmap;
 
 /* macros for internal use */
-#define B_BLOCK_TYPE uint_fast32_t
-#define B_BLOCK_SIZE ((unsigned) sizeof(B_BLOCK_TYPE))
-#define B_BITS_PER_BLOCK (B_BLOCK_SIZE * CHAR_BIT)
-#define B_MASK ((B_BLOCK_TYPE)1U)
-#define B_UNION_CAST(bitmap) ((B_BLOCK_TYPE*)(bitmap))
 
-// B_BITS_PER_BLOCK is a power of 2 in any real architecture
+/// The primitive type used to build a bitmap
+#define B_BLOCK_TYPE uint_fast32_t
+/// The size of the primitive type to build a bitmap
+#define B_BLOCK_SIZE ((unsigned)sizeof(B_BLOCK_TYPE))
+/// Number of bits in a primitive type to build a bitmap
+#define B_BITS_PER_BLOCK (B_BLOCK_SIZE * CHAR_BIT)
+/// Mask used to fiddle single bits
+#define B_MASK ((B_BLOCK_TYPE)1U)
+/// Union cast to access the bitmap
+#define B_UNION_CAST(bitmap) ((B_BLOCK_TYPE *)(bitmap))
+
+/// B_BITS_PER_BLOCK is a power of 2 in any real architecture
 #define B_MOD_OF_BPB(n) (((unsigned)(n)) & ((unsigned)(B_BITS_PER_BLOCK - 1)))
 
-#define B_SET_BIT_AT(B,K) 	( B |= (B_MASK << K) )
-#define B_RESET_BIT_AT(B,K) 	( B &= ~(B_MASK << K) )
-#define B_CHECK_BIT_AT(B,K) 	( B & (B_MASK << K) )
+/// Macro to set a bit in a primitive block composing a bitmap
+#define B_SET_BIT_AT(B, K) ((B) |= (B_MASK << (K)))
+/// Macro to clear a bit in a primitive block composing a bitmap
+#define B_RESET_BIT_AT(B, K) ((B) &= ~(B_MASK << (K)))
+/// Macro to check if a bit is set in a primitive block composing a bitmap
+#define B_CHECK_BIT_AT(B, K) ((B) & (B_MASK << (K)))
 
-#define B_SET_BIT(A, I) 						\
-	B_SET_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
-
-#define B_RESET_BIT(A, I) 						\
-	B_RESET_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
-
-#define B_CHECK_BIT(A, I) 						\
-	B_CHECK_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
+/// Macro to set a bit in a bitmap
+#define B_SET_BIT(A, I) B_SET_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
+/// Macro to clear a bit in a bitmap
+#define B_RESET_BIT(A, I) B_RESET_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
+/// Macro to check if a bit is set in a bitmap
+#define B_CHECK_BIT(A, I) B_CHECK_BIT_AT((A)[((I) / B_BITS_PER_BLOCK)], (B_MOD_OF_BPB(I)))
 
 /**
  * @brief Computes the required size of a bitmap
@@ -53,11 +60,8 @@ typedef unsigned char block_bitmap;
  * 		block_bitmap my_bitmap[bitmap_required_size(100)] = {0};
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_required_size(requested_bits)				\
-	((								\
-		((requested_bits) / B_BITS_PER_BLOCK) + 		\
-		(B_MOD_OF_BPB(requested_bits) != 0)			\
-	) * B_BLOCK_SIZE)
+#define bitmap_required_size(requested_bits)                                                                           \
+	((((requested_bits) / B_BITS_PER_BLOCK) + (B_MOD_OF_BPB(requested_bits) != 0)) * B_BLOCK_SIZE)
 
 /**
  * @brief Initializes a bitmap
@@ -71,7 +75,7 @@ typedef unsigned char block_bitmap;
  * 		bitmap_initialize(my_bitmap, 100);
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_initialize(memory_pointer, requested_bits)		\
+#define bitmap_initialize(memory_pointer, requested_bits)                                                              \
 	memset(memory_pointer, 0, bitmap_required_size(requested_bits))
 
 /**
@@ -81,8 +85,7 @@ typedef unsigned char block_bitmap;
  *
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_set(bitmap, bit_index)					\
-	(B_SET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
+#define bitmap_set(bitmap, bit_index) (B_SET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
 
 /**
  * @brief Resets a bit in a bitmap
@@ -91,8 +94,7 @@ typedef unsigned char block_bitmap;
  *
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_reset(bitmap, bit_index)					\
-	(B_RESET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
+#define bitmap_reset(bitmap, bit_index) (B_RESET_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))))
 
 /**
  * @brief Checks a bit in a bitmap
@@ -102,8 +104,7 @@ typedef unsigned char block_bitmap;
  *
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_check(bitmap, bit_index)					\
-	(B_CHECK_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))) != 0)
+#define bitmap_check(bitmap, bit_index) (B_CHECK_BIT(B_UNION_CAST(bitmap), ((unsigned)(bit_index))) != 0)
 
 /**
  * @brief Counts the occurrences of set bits in a bitmap
@@ -114,16 +115,16 @@ typedef unsigned char block_bitmap;
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_count_set(bitmap, bitmap_size) 				\
-__extension__({ 							\
-	unsigned __i = bitmap_size / B_BLOCK_SIZE;			\
-	unsigned __ret = 0;						\
-	B_BLOCK_TYPE *__block_b = B_UNION_CAST(bitmap);			\
-	while (__i--){							\
-		__ret += SAFE_POPC(__block_b[__i]);			\
-	}								\
-	__ret; 								\
-})
+#define bitmap_count_set(bitmap, bitmap_size)                                                                          \
+	__extension__({                                                                                                \
+		unsigned __i = (bitmap_size) / B_BLOCK_SIZE;                                                           \
+		unsigned __ret = 0;                                                                                    \
+		B_BLOCK_TYPE *__block_b = B_UNION_CAST(bitmap);                                                        \
+		while(__i--) {                                                                                         \
+			__ret += intrinsics_popcount(__block_b[__i]);                                                  \
+		}                                                                                                      \
+		__ret;                                                                                                 \
+	})
 
 /**
  * @brief Counts the occurrences of cleared bits in a bitmap
@@ -134,10 +135,8 @@ __extension__({ 							\
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_count_reset(bitmap, bitmap_size)				\
-__extension__({								\
-	bitmap_size * CHAR_BIT - bitmap_count_set(bitmap, bitmap_size); \
-})
+#define bitmap_count_reset(bitmap, bitmap_size)                                                                        \
+	__extension__({ (bitmap_size) * CHAR_BIT - bitmap_count_set(bitmap, bitmap_size); })
 
 /**
  * @brief Computes the index of the first cleared bit in a bitmap.
@@ -148,20 +147,19 @@ __extension__({								\
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_first_reset(bitmap, bitmap_size)				\
-__extension__({								\
-	unsigned __i, __blocks = bitmap_size / B_BLOCK_SIZE;		\
-	unsigned __ret = UINT_MAX;					\
-	B_BLOCK_TYPE __cur_block,					\
-		*__block_b = B_UNION_CAST(bitmap);			\
-	for(__i = 0; __i < __blocks; ++__i){				\
-		if((__cur_block = ~__block_b[__i])){			\
-			__ret = B_CTZ(__cur_block);			\
-			break;						\
-		}							\
-	}								\
-	__ret; 								\
-})
+#define bitmap_first_reset(bitmap, bitmap_size)                                                                        \
+	__extension__({                                                                                                \
+		unsigned __i, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                                 \
+		unsigned __ret = UINT_MAX;                                                                             \
+		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);                                           \
+		for(__i = 0; __i < __blocks; ++__i) {                                                                  \
+			if((__cur_block = ~__block_b[__i])) {                                                          \
+				__ret = intrinsics_ctz(__cur_block);                                                   \
+				break;                                                                                 \
+			}                                                                                              \
+		}                                                                                                      \
+		__ret;                                                                                                 \
+	})
 
 /**
  * @brief Executes a user supplied function for each set bit in a bitmap.
@@ -172,20 +170,20 @@ __extension__({								\
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_foreach_set(bitmap, bitmap_size, func) 			\
-__extension__({ 							\
-	unsigned __i, __fnd, __blocks = bitmap_size / B_BLOCK_SIZE;	\
-	B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);	\
-	for(__i = 0; __i < __blocks; ++__i){				\
-		if((__cur_block = __block_b[__i])){			\
-			do {						\
-				__fnd = SAFE_CTZ(__cur_block);		\
-				B_RESET_BIT_AT(__cur_block, __fnd);	\
-				func((__fnd + __i * B_BITS_PER_BLOCK));	\
-			} while(__cur_block);				\
-		}							\
-	}								\
-})
+#define bitmap_foreach_set(bitmap, bitmap_size, func)                                                                  \
+	__extension__({                                                                                                \
+		unsigned __i, __fnd, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                          \
+		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);                                           \
+		for(__i = 0; __i < __blocks; ++__i) {                                                                  \
+			if((__cur_block = __block_b[__i])) {                                                           \
+				do {                                                                                   \
+					__fnd = intrinsics_ctz(__cur_block);                                           \
+					B_RESET_BIT_AT(__cur_block, __fnd);                                            \
+					func((__fnd + __i * B_BITS_PER_BLOCK));                                        \
+				} while(__cur_block);                                                                  \
+			}                                                                                              \
+		}                                                                                                      \
+	})
 
 /**
  * @brief Merges a bitmap into another one by OR-ing all the bits.
@@ -197,13 +195,13 @@ __extension__({ 							\
  * This macro expects the number of bits in the bitmap to be a multiple of B_BITS_PER_BLOCK.
  * Avoid side effects in the arguments, they may be evaluated more than once.
  */
-#define bitmap_merge_or(dest, source, bitmap_size)			\
-__extension__({ 							\
-	unsigned __i = bitmap_size / B_BLOCK_SIZE;			\
-	B_BLOCK_TYPE *__s_blocks = B_UNION_CAST(source);		\
-	B_BLOCK_TYPE *__d_blocks = B_UNION_CAST(dest);			\
-	while (__i--){							\
-		__d_blocks[__i] |= __s_blocks[__i];			\
-	}								\
-	__d_blocks; 							\
-})
+#define bitmap_merge_or(dest, source, bitmap_size)                                                                     \
+	__extension__({                                                                                                \
+		unsigned __i = (bitmap_size) / B_BLOCK_SIZE;                                                           \
+		B_BLOCK_TYPE *__s_blocks = B_UNION_CAST(source);                                                       \
+		B_BLOCK_TYPE *__d_blocks = B_UNION_CAST(dest);                                                         \
+		while(__i--) {                                                                                         \
+			__d_blocks[__i] |= __s_blocks[__i];                                                            \
+		}                                                                                                      \
+		__d_blocks;                                                                                            \
+	})

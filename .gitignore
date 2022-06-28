@@ -54,5 +54,11 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-# Common name for Meson build folder
-build/
+# ROOT-Sim statistics
+*.bin
+
+# Idea stuff
+*.iml
+*.xml
+.idea
+cmake-build-*

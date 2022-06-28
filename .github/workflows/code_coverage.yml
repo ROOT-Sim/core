@@ -1,0 +1,28 @@
+name: Code Coverage
+
+on:
+  push
+
+jobs:
+  code_coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch ROOT-Sim repository
+        uses: actions/checkout@v3
+      - name: Initialize Environment
+        uses: ROOT-Sim/ci-actions/init@master
+      - name: Build & Test
+        uses: ROOT-Sim/ci-actions/cmake@master
+        with:
+          build-dir: ${{ runner.workspace }}/build
+          cc: gcc
+          build-type: Debug
+          cflags: --coverage
+          run-test: true
+      - name: Generate coverage report
+        run: find ${{ runner.workspace }}/build/ -name "*.gcda" -exec gcov -abcfu {} \;
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
+          verbose: true

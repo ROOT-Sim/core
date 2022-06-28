@@ -5,7 +5,7 @@
  *
  * Memory management functions for messages
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -17,13 +17,13 @@
 extern void msg_allocator_init(void);
 extern void msg_allocator_fini(void);
 
-extern struct lp_msg* msg_allocator_alloc(unsigned payload_size);
-extern void msg_allocator_free		(struct lp_msg *msg);
-extern void msg_allocator_free_at_gvt	(struct lp_msg *msg);
-extern void msg_allocator_fossil_collect(simtime_t current_gvt);
+extern struct lp_msg *msg_allocator_alloc(unsigned payload_size);
+extern void msg_allocator_free(struct lp_msg *msg);
+extern void msg_allocator_free_at_gvt(struct lp_msg *msg);
+extern void msg_allocator_on_gvt(simtime_t current_gvt);
 
-inline struct lp_msg* msg_allocator_pack(lp_id_t receiver, simtime_t timestamp,
-	unsigned event_type, const void *payload, unsigned payload_size)
+static inline struct lp_msg *msg_allocator_pack(lp_id_t receiver, simtime_t timestamp, unsigned event_type,
+    const void *payload, unsigned payload_size)
 {
 	struct lp_msg *msg = msg_allocator_alloc(payload_size);
 

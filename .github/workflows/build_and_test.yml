@@ -1,0 +1,38 @@
+name: Continuous Integration
+
+on:
+  push:
+  schedule:
+    - cron: "0 2 * * 1"
+
+jobs:
+  build_and_test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        compiler: [ clang, gcc ]
+        type: [ Debug, Release ]
+        exclude:
+          - os: macos-latest
+            compiler: gcc
+        include:
+          - os: macos-latest
+            compiler: gcc-11
+            type: Debug
+          - os: macos-latest
+            compiler: gcc-11
+            type: Release
+    steps:
+      - name: Checkpout repository
+        uses: actions/checkout@v3
+      - name: Initialize Environment
+        uses: ROOT-Sim/ci-actions/init@master
+      - name: Build & Test
+        uses: ROOT-Sim/ci-actions/cmake@master
+        with:
+          build-dir: ${{ runner.workspace }}/build
+          cc: ${{ matrix.compiler }}
+          build-type: ${{ matrix.type }}
+          run-test: true

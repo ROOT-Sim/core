@@ -4,14 +4,13 @@
  * @brief Message queue datatype
  *
  * This is the message queue for the parallel runtime.
- * The design is pretty simple. A queue for n threads is composed by a n * n
- * square matrix of simpler queues. If thread t1 wants to send a message to
- * thread t2 it puts a message in the i-th queue where i = t2 * n + t1.
- * Insertions are then cheap, while extractions lazily lock the queues
- * (costing linear time in the number of worked threads, which seems to be
- * acceptable in practice).
+ * The design is pretty simple. A queue for n threads is composed of a vector of
+ * n simpler private thread queues plus n public buffers. If thread t1 wants to
+ * send a message to thread t2 it puts a message in its buffer. Insertions are
+ * then cheap, while extractions simply empty the buffer into the private queue.
+ * This way the critically thread locked code is minimal.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <datatypes/msg_queue.h>
@@ -23,30 +22,36 @@
 #include <mm/msg_allocator.h>
 
 #include <stdalign.h>
+#include <stdatomic.h>
 
-/// A queue synchronized by a spinlock
-struct msg_queue {
-	/// Synchronizes access to the queue
-	alignas(CACHE_LINE_SIZE) spinlock_t lck;
-	/// The actual queue element of the matrix
-	binary_heap(struct lp_msg *) q;
+/// Determine an ordering between two elements in a queue
+#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended(ma.m, mb.m)))
+
+/// An element in the message queue
+struct q_elem {
+	/// The timestamp of the message
+	simtime_t t;
+	/// The message enqueued
+	struct lp_msg *m;
 };
 
-/// The queues matrix, linearized in a contiguous array
-static struct msg_queue *queues;
+/// The multi-threaded message buffer, implemented as a non-blocking list
+struct msg_buffer {
+	/// The head of the messages list
+	alignas(CACHE_LINE_SIZE) _Atomic(struct lp_msg *) list;
+};
 
-/**
- * @brief Utility macro to fetch the correct inner queue
- */
-#define mqueue(from, to) (&queues[to * n_threads + from])
+/// The buffers vector
+static struct msg_buffer *queues;
+/// The private thread queue
+static __thread heap_declare(struct q_elem) mqp;
 
 /**
  * @brief Initializes the message queue at the node level
  */
 void msg_queue_global_init(void)
 {
-	queues = mm_aligned_alloc(CACHE_LINE_SIZE, n_threads * n_threads *
-			sizeof(*queues));
+	queues = mm_aligned_alloc(CACHE_LINE_SIZE, global_config.n_threads * sizeof(*queues));
 }
 
 /**
@@ -54,27 +59,38 @@ void msg_queue_global_init(void)
  */
 void msg_queue_init(void)
 {
-	rid_t i = n_threads;
-	while (i--) {
-		heap_init(mqueue(i, rid)->q);
-		spin_init(&(mqueue(i, rid)->lck));
-	}
+	heap_init(mqp);
+	atomic_store_explicit(&queues[rid].list, NULL, memory_order_relaxed);
 }
+
+/**
+ * @brief Initialize the message queue for the current LP
+ *
+ * This is a no-op for this kind of queue.
+ */
+void msg_queue_lp_init(void) {}
+
+/**
+ * @brief Finalize the message queue for the current LP
+ *
+ * This is a no-op for this kind of queue.
+ */
+void msg_queue_lp_fini(void) {}
 
 /**
  * @brief Finalizes the message queue for the current thread
  */
 void msg_queue_fini(void)
 {
-	rid_t i = n_threads;
-	while (i--) {
-		struct msg_queue *this_q = mqueue(i, rid);
-		array_count_t j = heap_count(this_q->q);
-		while (j--) {
-			struct lp_msg *msg = heap_items(this_q->q)[j];
-			msg_allocator_free(msg);
-		}
-		heap_fini(this_q->q);
+	for(array_count_t i = 0; i < heap_count(mqp); ++i)
+		msg_allocator_free(heap_items(mqp)[i].m);
+
+	heap_fini(mqp);
+
+	struct lp_msg *m = atomic_load_explicit(&queues[rid].list, memory_order_relaxed);
+	while(m != NULL) {
+		msg_allocator_free(m);
+		m = m->next;
 	}
 }
 
@@ -83,7 +99,17 @@ void msg_queue_fini(void)
  */
 void msg_queue_global_fini(void)
 {
-	mm_free(queues);
+	mm_aligned_free(queues);
+}
+
+static inline void msg_queue_insert_queued(void)
+{
+	struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
+	while(m != NULL) {
+		struct q_elem qe = {.t = m->dest_t, .m = m};
+		heap_insert(mqp, q_elem_is_before, qe);
+		m = m->next;
+	}
 }
 
 /**
@@ -96,38 +122,13 @@ void msg_queue_global_fini(void)
  */
 struct lp_msg *msg_queue_extract(void)
 {
-	rid_t i = n_threads;
-	struct msg_queue *bid_q = mqueue(rid, rid);
-	struct lp_msg *msg = heap_count(bid_q->q) ? heap_min(bid_q->q) : NULL;
-
-	while (i--) {
-		struct msg_queue *this_q = mqueue(i, rid);
-		if(!spin_trylock(&this_q->lck))
-			continue;
-
-		if (heap_count(this_q->q) &&
-		    (!msg || msg_is_before(heap_min(this_q->q), msg))) {
-			msg = heap_min(this_q->q);
-			bid_q = this_q;
-		}
-		spin_unlock(&this_q->lck);
-	}
-
-	spin_lock(&bid_q->lck);
-
-	if(likely(heap_count(bid_q->q)))
-		msg = heap_extract(bid_q->q, msg_is_before);
-	else
-		msg = NULL;
-
-	spin_unlock(&bid_q->lck);
-	return msg;
+	msg_queue_insert_queued();
+	return likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
 }
 
 /**
  * @brief Peeks the timestamp of the next message from the queue
- * @returns the lowest timestamp of the next message to be processed or
- *          SIMTIME_MAX is there's no message to process
+ * @returns the lowest timestamp of the next message to be processed or SIMTIME_MAX is there's no message to process
  *
  * This returns the lowest timestamp of the next message to be processed for the
  * current thread. This is calculated in a precise fashion since this value is
@@ -135,29 +136,8 @@ struct lp_msg *msg_queue_extract(void)
  */
 simtime_t msg_queue_time_peek(void)
 {
-	const rid_t t_cnt = n_threads;
-	simtime_t t_min = SIMTIME_MAX;
-	bool done[t_cnt];
-	memset(done, 0, sizeof(done));
-
-	for (rid_t i = 0, r = t_cnt; r; i = (i + 1) % t_cnt) {
-		if (done[i])
-			continue;
-
-		struct msg_queue *this_q = mqueue(i, rid);
-		if (!spin_trylock(&this_q->lck))
-			continue;
-
-		done[i] = true;
-		--r;
-		if (heap_count(this_q->q) &&
-				t_min > heap_min(this_q->q)->dest_t)
-			t_min = heap_min(this_q->q)->dest_t;
-
-		spin_unlock(&this_q->lck);
-	}
-
-	return t_min;
+	msg_queue_insert_queued();
+	return likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
 }
 
 /**
@@ -166,9 +146,9 @@ simtime_t msg_queue_time_peek(void)
  */
 void msg_queue_insert(struct lp_msg *msg)
 {
-	rid_t dest_rid = lid_to_rid(msg->dest);
-	struct msg_queue *this_q = mqueue(rid, dest_rid);
-	spin_lock(&this_q->lck);
-	heap_insert(this_q->q, msg_is_before, msg);
-	spin_unlock(&this_q->lck);
+	_Atomic(struct lp_msg *) *list_p = &queues[lid_to_rid(msg->dest)].list;
+	msg->next = atomic_load_explicit(list_p, memory_order_relaxed);
+	while(unlikely(!atomic_compare_exchange_weak_explicit(list_p, &msg->next, msg, memory_order_release,
+	    memory_order_relaxed)))
+		spin_pause();
 }

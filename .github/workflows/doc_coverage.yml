@@ -1,0 +1,34 @@
+name: Documentation Coverage
+
+on:
+  pull_request:
+
+jobs:
+  doc_coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v1
+      - name: Initialize Environment
+        uses: ROOT-Sim/ci-actions/init@master
+      - name: Generate Documentation
+        uses: ROOT-Sim/ci-actions/docs@master
+      - name: Documentation Coverage
+        uses: ROOT-Sim/ci-actions/docs-coverage@master
+        with:
+          build-path: docs
+      - name: Comment PR
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: ${{env.COMMENT}}
+            })
+      - name: Determine success
+        run: |
+          if [ ${{env.acceptable}} -eq 0 ]; then exit 1; fi
+          exit 0;

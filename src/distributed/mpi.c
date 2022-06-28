@@ -10,39 +10,33 @@
  * of these can be used by worker threads without coordination when relying
  * on this module.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <distributed/mpi.h>
+#include <mm/mm.h>
 
 #include <core/core.h>
 #include <core/sync.h>
-#include <datatypes/array.h>
 #include <datatypes/msg_queue.h>
-#include <gvt/gvt.h>
-#include <gvt/termination.h>
 #include <mm/msg_allocator.h>
 
 #include <mpi.h>
 
-#define MSG_CTRL_RAW (MSG_CTRL_TERMINATION + 1)
+enum {
+	RS_MSG_TAG = 0,
+	RS_DATA_TAG
+};
 
-#ifdef ROOTSIM_MPI_SERIALIZABLE
+/// Array of control codes values to be able to get their address for MPI_Send()
+static const enum msg_ctrl_code ctrl_msgs[] = {
+	[MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
+	[MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
+	[MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
+};
 
-static bool mpi_serialize;
-static spinlock_t mpi_spinlock;
-
-#define mpi_lock() 	if (mpi_serialize) spin_lock(&mpi_spinlock)
-#define mpi_unlock() 	if (mpi_serialize) spin_unlock(&mpi_spinlock)
-#define mpi_trylock() 	(!mpi_serialize || spin_trylock(&mpi_spinlock))
-
-#else
-
-#define mpi_lock()
-#define mpi_unlock()
-#define mpi_trylock()	(true)
-
-#endif
+static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
+static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
 
 /**
  * @brief Handles a MPI error
@@ -55,13 +49,13 @@ static spinlock_t mpi_spinlock;
  */
 static void comm_error_handler(MPI_Comm *comm, int *err_code_p, ...)
 {
-	(void) comm;
-	log_log(LOG_FATAL, "MPI error with code %d!", *err_code_p);
+	(void)comm;
+	logger(LOG_FATAL, "MPI error with code %d!", *err_code_p);
 
 	int err_len;
 	char err_str[MPI_MAX_ERROR_STRING];
 	MPI_Error_string(*err_code_p, err_str, &err_len);
-	log_log(LOG_FATAL, "MPI error msg is %s ", err_str);
+	logger(LOG_FATAL, "MPI error msg is %s ", err_str);
 
 	exit(-1);
 }
@@ -76,27 +70,14 @@ void mpi_global_init(int *argc_p, char ***argv_p)
 	int thread_lvl = MPI_THREAD_SINGLE;
 	MPI_Init_thread(argc_p, argv_p, MPI_THREAD_MULTIPLE, &thread_lvl);
 
-	if (thread_lvl < MPI_THREAD_MULTIPLE) {
-		if (thread_lvl < MPI_THREAD_SERIALIZED) {
-			log_log(LOG_FATAL,
-				"This MPI implementation does not support threaded access");
-			abort();
-		} else {
-#ifdef ROOTSIM_MPI_SERIALIZABLE
-			mpi_serialize = true;
-			spin_init(&mpi_spinlock);
-#else
-			log_log(LOG_FATAL,
-				"This MPI implementation only supports serialized calls: "
-				"you need to build ROOT-Sim with -Dserialized_mpi=true");
-			abort();
-#endif
-		}
+	if(thread_lvl < MPI_THREAD_MULTIPLE) {
+		logger(LOG_FATAL, "This MPI implementation does not support threaded access");
+		abort();
 	}
 
 	MPI_Errhandler err_handler;
-	if (MPI_Comm_create_errhandler(comm_error_handler, &err_handler)) {
-		log_log(LOG_FATAL, "Unable to create MPI error handler");
+	if(MPI_Comm_create_errhandler(comm_error_handler, &err_handler)) {
+		logger(LOG_FATAL, "Unable to create MPI error handler");
 		abort();
 	}
 
@@ -137,12 +118,9 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	gvt_remote_msg_send(msg, dest_nid);
 
-	mpi_lock();
 	MPI_Request req;
-	MPI_Isend(msg, msg_bare_size(msg), MPI_BYTE, dest_nid, 0,
-			MPI_COMM_WORLD, &req);
+	MPI_Isend(msg_remote_data(msg), msg_remote_size(msg), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
-	mpi_unlock();
 }
 
 /**
@@ -161,28 +139,21 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	gvt_remote_anti_msg_send(msg, dest_nid);
 
-	mpi_lock();
 	MPI_Request req;
-	MPI_Isend(msg, msg_anti_size(), MPI_BYTE, dest_nid, 0, MPI_COMM_WORLD,
-			&req);
+	MPI_Isend(msg_remote_data(msg), msg_remote_anti_size(), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
-	mpi_unlock();
 }
 
 /**
  * @brief Sends a platform control message to all the nodes, including self
  * @param ctrl the control message to send
  */
-void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl)
+void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
 {
-	MPI_Request req;
 	nid_t i = n_nodes;
-	mpi_lock();
-	while (i--) {
-		MPI_Isend(NULL, 0, MPI_BYTE, i, ctrl, MPI_COMM_WORLD, &req);
-		MPI_Request_free(&req);
+	while(i--) {
+		mpi_control_msg_send_to(ctrl, i);
 	}
-	mpi_unlock();
 }
 
 /**
@@ -190,13 +161,11 @@ void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl)
  * @param ctrl the control message to send
  * @param dest the id of the destination node
  */
-void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest)
+void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
 {
 	MPI_Request req;
-	mpi_lock();
-	MPI_Isend(NULL, 0, MPI_BYTE, dest, ctrl, MPI_COMM_WORLD, &req);
+	MPI_Isend(&ctrl_msgs[ctrl], sizeof(*ctrl_msgs), MPI_BYTE, dest, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
-	mpi_unlock();
 }
 
 /**
@@ -211,58 +180,36 @@ void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest)
  */
 void mpi_remote_msg_handle(void)
 {
-	int pending;
-	MPI_Message mpi_msg;
-	MPI_Status status;
+	while(1) {
+		int pending;
+		MPI_Message mpi_msg;
+		MPI_Status status;
 
-	while (1) {
-		if (!mpi_trylock())
+		MPI_Improbe(MPI_ANY_SOURCE, RS_MSG_TAG, MPI_COMM_WORLD, &pending, &mpi_msg, &status);
+
+		if(!pending)
 			return;
-
-		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
-			&pending, &mpi_msg, &status);
-
-		if (!pending) {
-			mpi_unlock();
-			return;
-		}
-
-		if (unlikely(status.MPI_TAG)) {
-			MPI_Mrecv(NULL, 0, MPI_BYTE, &mpi_msg,
-					MPI_STATUS_IGNORE);
-			mpi_unlock();
-			switch (status.MPI_TAG) {
-			case MSG_CTRL_GVT_START:
-				gvt_start_processing();
-				break;
-			case MSG_CTRL_GVT_DONE:
-				gvt_on_done_ctrl_msg();
-				break;
-			case MSG_CTRL_TERMINATION:
-				termination_on_ctrl_msg();
-				break;
-			default:
-				__builtin_unreachable();
-			}
-			continue;
-		}
 
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		struct lp_msg *msg;
-		if (unlikely(size == msg_anti_size())) {
+		if(unlikely(size <= (int)msg_remote_anti_size())) {
+			if(unlikely(size == sizeof(enum msg_ctrl_code))) {
+				enum msg_ctrl_code c;
+				MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+				control_msg_process(c);
+				continue;
+			}
 			msg = msg_allocator_alloc(0);
-			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,
-					MPI_STATUS_IGNORE);
-			mpi_unlock();
+			// make sure the deterministic tie-breaking doesn't read uninitialized data
+			msg->m_type = 0;
+			msg->pl_size = 0;
+			MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
 			gvt_remote_anti_msg_receive(msg);
 		} else {
-			msg = msg_allocator_alloc(size -
-					offsetof(struct lp_msg, pl));
-			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,
-					MPI_STATUS_IGNORE);
-			mpi_unlock();
+			msg = msg_allocator_alloc(size - offsetof(struct lp_msg, pl) + msg_preamble_size());
+			MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
 			gvt_remote_msg_receive(msg);
 		}
@@ -270,11 +217,55 @@ void mpi_remote_msg_handle(void)
 	}
 }
 
-static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
+/**
+ * @brief Empties the queue of incoming MPI messages, ignoring them
+ *
+ * This routine checks, using the MPI probing mechanism, for new remote messages
+ * and it discards them. It is used at simulation completion to clear MPI state.
+ */
+void mpi_remote_msg_drain(void)
+{
+	struct lp_msg *msg = NULL;
+	int msg_size = 0;
+
+	while(1) {
+		int pending;
+		MPI_Message mpi_msg;
+		MPI_Status status;
+
+		MPI_Improbe(MPI_ANY_SOURCE, RS_MSG_TAG, MPI_COMM_WORLD, &pending, &mpi_msg, &status);
+
+		if(!pending)
+			break;
+
+		int size;
+		MPI_Get_count(&status, MPI_BYTE, &size);
+
+		if(unlikely(size == sizeof(enum msg_ctrl_code))) {
+			enum msg_ctrl_code c;
+			MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			control_msg_process(c);
+			continue;
+		}
+
+		if(size > msg_size) {
+			msg = mm_realloc(msg, size + msg_preamble_size());
+			msg_size = size;
+		}
+		MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+
+		if(size == msg_remote_anti_size())
+			gvt_remote_anti_msg_receive(msg);
+		else
+			gvt_remote_msg_receive(msg);
+	}
+
+	mm_free(msg);
+}
 
 /**
  * @brief Computes the sum-reduction-scatter operation across all nodes.
- * @param node_vals a pointer to the addendum vector from the calling node.
+ * @param values a flexible array implementing the addendum vector from the calling node.
  * @param result a pointer where the nid-th component of the sum will be stored.
  *
  * Each node supplies a n_nodes components vector. The sum of all these vector
@@ -285,12 +276,9 @@ static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
  * a time. Both arguments must point to valid memory regions until
  * mpi_reduce_sum_scatter_done() returns true.
  */
-void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], unsigned *result)
+void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
 {
-	mpi_lock();
-	MPI_Ireduce_scatter_block(values, result, 1, MPI_UINT32_T, MPI_SUM,
-			MPI_COMM_WORLD, &reduce_sum_scatter_req);
-	mpi_unlock();
+	MPI_Ireduce_scatter_block(values, result, 1, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD, &reduce_sum_scatter_req);
 }
 
 /**
@@ -300,13 +288,9 @@ void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], unsigned *result)
 bool mpi_reduce_sum_scatter_done(void)
 {
 	int flag = 0;
-	mpi_lock();
 	MPI_Test(&reduce_sum_scatter_req, &flag, MPI_STATUS_IGNORE);
-	mpi_unlock();
 	return flag;
 }
-
-static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
 
 /**
  * @brief Computes the min-reduction operation across all nodes.
@@ -325,10 +309,7 @@ void mpi_reduce_min(double *node_min_p)
 {
 	static double min_buff;
 	min_buff = *node_min_p;
-	mpi_lock();
-	MPI_Iallreduce(&min_buff, node_min_p, 1, MPI_DOUBLE, MPI_MIN,
-		MPI_COMM_WORLD, &reduce_min_req);
-	mpi_unlock();
+	MPI_Iallreduce(&min_buff, node_min_p, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD, &reduce_min_req);
 }
 
 /**
@@ -338,9 +319,7 @@ void mpi_reduce_min(double *node_min_p)
 bool mpi_reduce_min_done(void)
 {
 	int flag = 0;
-	mpi_lock();
 	MPI_Test(&reduce_min_req, &flag, MPI_STATUS_IGNORE);
-	mpi_unlock();
 	return flag;
 }
 
@@ -349,9 +328,7 @@ bool mpi_reduce_min_done(void)
  */
 void mpi_node_barrier(void)
 {
-	mpi_lock();
 	MPI_Barrier(MPI_COMM_WORLD);
-	mpi_unlock();
 }
 
 /**
@@ -365,9 +342,7 @@ void mpi_node_barrier(void)
  */
 void mpi_blocking_data_send(const void *data, int data_size, nid_t dest)
 {
-	mpi_lock();
-	MPI_Send(data, data_size, MPI_BYTE, dest, MSG_CTRL_RAW, MPI_COMM_WORLD);
-	mpi_unlock();
+	MPI_Send(data, data_size, MPI_BYTE, dest, RS_DATA_TAG, MPI_COMM_WORLD);
 }
 
 /**
@@ -383,14 +358,12 @@ void *mpi_blocking_data_rcv(int *data_size_p, nid_t src)
 {
 	MPI_Status status;
 	MPI_Message mpi_msg;
-	mpi_lock();
-	MPI_Mprobe(src, MSG_CTRL_RAW, MPI_COMM_WORLD, &mpi_msg, &status);
+	MPI_Mprobe(src, RS_DATA_TAG, MPI_COMM_WORLD, &mpi_msg, &status);
 	int data_size;
 	MPI_Get_count(&status, MPI_BYTE, &data_size);
 	char *ret = mm_alloc(data_size);
 	MPI_Mrecv(ret, data_size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-	if (data_size_p != NULL)
+	if(data_size_p != NULL)
 		*data_size_p = data_size;
-	mpi_unlock();
 	return ret;
 }
