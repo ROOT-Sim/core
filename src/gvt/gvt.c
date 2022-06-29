@@ -10,7 +10,7 @@
  * in Proceedings of the 21st IEEE/ACM International Symposium on Distributed
  * Simulation and Real Time Applications, 2017, pp. 51–58
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <gvt/gvt.h>
