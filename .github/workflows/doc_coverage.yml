@@ -7,12 +7,12 @@ jobs:
   doc_coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-python@v1
       - name: Initialize Environment
-        uses: ROOT-Sim/ci-actions/init@v1.1
+        uses: ROOT-Sim/ci-actions/init@master
       - name: Generate Documentation
-        uses: ROOT-Sim/ci-actions/docs@v1.1
+        uses: ROOT-Sim/ci-actions/docs@master
       - name: Documentation Coverage
         uses: ROOT-Sim/ci-actions/docs-coverage@master
         with:
