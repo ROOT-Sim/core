@@ -5,7 +5,7 @@
  *
  * A very simple binary heap implemented on top of our dynamic array
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -56,10 +56,9 @@
 #define heap_is_empty(self) array_is_empty(self)
 
 /**
- * @brief Finalize an heap
- * @param self the heap to finalize
- *
- * The user is responsible for cleaning up the possibly contained items.
+ * @brief Get the highest priority element
+ * @param self the heap
+ * @return the highest priority element, cast to const
  */
 #define heap_min(self) (*(__typeof(*array_items(self)) *const)array_items(self))
 
