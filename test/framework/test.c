@@ -14,6 +14,22 @@
 
 struct test_unit test_unit = {0};
 
+static struct {
+	int passed;
+	int xfailed;
+	int failed;
+	int uxpassed;
+} self_test_expected_results = {0};
+
+void self_test(int p, int xf, int f, int uxp)
+{
+	test_unit.self_test = true;
+	self_test_expected_results.passed = p;
+	self_test_expected_results.xfailed = xf;
+	self_test_expected_results.failed = f;
+	self_test_expected_results.uxpassed = uxp;
+}
+
 void finish(void)
 {
 	tear_down_worker_pool();
@@ -29,6 +45,22 @@ void finish(void)
 	printf("FAILED.............: %u\n", test_unit.failed);
 	printf("UNEXPECTED PASS....: %u\n", test_unit.uxpassed);
 	printf("%.*s\n", d, "============================================================================");
+
+	// Self test sanity check
+	if(test_unit.self_test) {
+		test_unit.ret = -!(test_unit.passed == self_test_expected_results.passed &&
+				   test_unit.xfailed == self_test_expected_results.xfailed &&
+				   test_unit.failed == self_test_expected_results.failed &&
+				   test_unit.uxpassed == self_test_expected_results.uxpassed);
+
+		printf("** SELF TEST SUMMARY **\n");
+		printf("Passed: %d - Should be: %d\n", test_unit.passed, self_test_expected_results.passed);
+		printf("Expected Fail: %d - Should be: %d\n", test_unit.xfailed, self_test_expected_results.xfailed);
+		printf("Failed: %d - Should be: %d\n", test_unit.failed, self_test_expected_results.failed);
+		printf("Unexpected Pass: %d - Should be: %d\n", test_unit.uxpassed,
+		    self_test_expected_results.uxpassed);
+	}
+
 	exit(test_unit.ret);
 }
 
@@ -39,10 +71,10 @@ void test_init(unsigned n_th)
 	spawn_worker_pool(n_th);
 }
 
-void fail(void)
+__attribute__((noreturn)) void fail(void)
 {
-	fprintf(stderr, "Failing explicitly\n");                                                               \
-        longjmp(test_unit.fail_buffer, 1);                                                                     \
+	fprintf(stderr, "Failing explicitly\n");
+	longjmp(test_unit.fail_buffer, 1);
 }
 
 void test(char *desc, test_fn test_fn, void *arg)

@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <setjmp.h>
+#include <stdbool.h>
 
 #ifdef __WINDOWS
 #define WIN32_LEAN_AND_MEAN
@@ -62,6 +63,7 @@ typedef int test_ret_t;
 typedef test_ret_t (*test_fn)(void *);
 
 struct test_unit {
+	bool self_test;
 	unsigned n_th;
 	struct worker *pool;
 	jmp_buf fail_buffer;
@@ -125,8 +127,9 @@ extern struct lp_ctx *mock_lp();
 #define test_thread_pool_size() (test_unit.n_th)
 
 extern void finish(void);
-extern void fail(void);
+extern __attribute__((noreturn)) void fail(void);
 extern void test_init(unsigned n_th);
+extern void self_test(int p, int xf, int f, int uxp);
 extern void test(char *desc, test_fn test_fn, void *arg);
 extern void test_xf(char *desc, test_fn test_fn, void *arg);
 extern void parallel_test(char *desc, test_fn test_fn, void *args);
@@ -134,7 +137,11 @@ extern void parallel_test(char *desc, test_fn test_fn, void *args);
 #define init(n_th)                                                                                                     \
 	do {                                                                                                           \
 		if(setjmp(test_unit.fail_buffer)) {                                                                    \
-			test_unit.ret = -1; /* getting here from fail()*/                                              \
+			if(!test_unit.self_test) {                                                                     \
+				test_unit.ret = -1; /* getting here from fail() */                                     \
+			} else {                                                                                       \
+				printf("passed.\n");                                                                   \
+			}                                                                                              \
 			finish();                                                                                      \
 		}                                                                                                      \
 		test_init(n_th);                                                                                       \

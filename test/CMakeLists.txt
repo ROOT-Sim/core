@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 add_library(test_framework_lib STATIC
-    framework/lp.c
-    framework/rng.c
-    framework/semaphore.c
-    framework/test.c
-    framework/thread.c
-)
+        framework/lp.c
+        framework/rng.c
+        framework/semaphore.c
+        framework/test.c
+        framework/thread.c
+        )
 target_include_directories(test_framework_lib PRIVATE ../src .)
 
 function(test_program name)
@@ -18,7 +18,7 @@ function(test_program name)
 endfunction()
 
 # Test framework tests
-test_program(testing_framework framework/self-tests/rng.c framework/self-tests/threads.c framework/self-tests/semaphores.c framework/self-tests/main.c)
+test_program(testing_framework framework/self-tests/core.c framework/self-tests/rng.c framework/self-tests/threads.c framework/self-tests/semaphores.c framework/self-tests/main.c)
 
 # Visibility tests
 test_program(visibility1 tests/visibility/visibility_weak.c)
