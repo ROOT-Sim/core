@@ -11,5 +11,5 @@
 
 int main(void)
 {
-	return strcmp(core_version, "3.0.0-alpha.4");
+	return strcmp(core_version, "3.0.0-alpha.5");
 }
