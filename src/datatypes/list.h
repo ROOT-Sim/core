@@ -180,17 +180,17 @@ struct list {
 		assert(__l->size == (__size_before + 1));\
 	} while(0)
 
-#define list_delete_by_content(li, node)\
-	do {\
-		__typeof__(node) __n = (node); /* in-block scope variable */\
-		struct list *__l;\
-		__l = (struct list *)(li);\
-		assert(__l);\
-		/* Unchain the node */\
-		if(__l->head == __n) {\
-			__l->head = __n->next;\
-			if(__l->head != NULL) {\
-				((__typeof(node))__l->head)->prev = NULL;\
+#define list_detach_by_content(li, node)                                                                               \
+	do {                                                                                                           \
+		__typeof__(node) __n = (node); /* in-block scope variable */                                           \
+		struct list *__l;                                                                                      \
+		__l = (struct list *)(li);                                                                             \
+		assert(__l);                                                                                           \
+		/* Unchain the node */                                                                                 \
+		if(__l->head == __n) {                                                                                 \
+			__l->head = __n->next;                                                                         \
+			if(__l->head != NULL) {                                                                        \
+				((__typeof(node))__l->head)->prev = NULL;                                              \
 			}\
 		}\
 		if(__l->tail == __n) {\

@@ -1,5 +1,5 @@
 /**
- * @file test/tests/integration/integration_serial.c
+ * @file test/tests/integration/correctness/parallel.c
  *
  * @brief Test: integration test of the serial runtime
  *
@@ -8,7 +8,7 @@
  */
 #include "test.h"
 
-#include "tests/integration/model/application.h"
+#include "tests/integration/correctness/application.h"
 #include "ROOT-Sim.h"
 
 struct simulation_configuration conf = {
@@ -20,7 +20,7 @@ struct simulation_configuration conf = {
     .stats_file = NULL,
     .ckpt_interval = 0,
     .prng_seed = 0,
-    .core_binding = 0,
+    .core_binding = false,
     .serial = false,
     .dispatcher = ProcessEvent,
     .committed = CanEnd,
