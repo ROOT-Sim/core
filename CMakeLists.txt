@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.10)
 project("ROOT-Sim core" LANGUAGES C DESCRIPTION "A General-Purpose Multi-threaded Parallel/Distributed Simulation Library")
 
-set(PROJECT_VERSION v3.0.0-alpha.5)
+set(PROJECT_VERSION 3.0.0-alpha.5)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
