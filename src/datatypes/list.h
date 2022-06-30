@@ -5,7 +5,7 @@
 *
 * A generic doubly-linked list
 *
-* SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
 * SPDX-License-Identifier: GPL-3.0-only
 */
 #pragma once
@@ -48,30 +48,30 @@ struct list {
 #define list_sizeof(list) ((struct list *)list)->size
 
 /**
- * This macro retrieves a pointer to the payload of the head node of a list.
+ * This macro retrieves a pointer to the head node of a list.
  *
  * @param li a pointer to a list created using the new_list() macro.
  */
 #define list_head(li) ((__typeof__ (li))(((struct list *)(li))->head))
 
 /**
- * This macro retrieves a pointer to the payload of the tail node of a list.
+ * This macro retrieves a pointer to the tail node of a list.
  *
  * @param li a pointer to a list created using the new_list() macro.
  */
 #define list_tail(li) ((__typeof__ (li))(((struct list *)(li))->tail))
 
 /**
- * Given a pointer to a list node's payload, this macro retrieves the next node's payload, if any.
+ * Given a pointer to a list node, this macro retrieves a pointer to the next node, if any.
  *
- * @param ptr a pointer to a list created using the new_list() macro.
+ * @param ptr a pointer to a list node.
  */
 #define list_next(ptr) ((ptr)->next)
 
 /**
- * Given a pointer to a list node's payload, this macro retrieves the prev node's payload, if any.
+ * Given a pointer to a list node, this macro retrieves a pointer to the prev node, if any.
  *
- * @param ptr a pointer to a list created using the new_list() macro.
+ * @param ptr a pointer to a list node.
  */
 #define list_prev(ptr) ((ptr)->prev)
 
