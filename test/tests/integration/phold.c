@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 #ifndef NUM_LPS
-#define NUM_LPS 16384
+#define NUM_LPS 8192
 #endif
 
 #ifndef NUM_THREADS
