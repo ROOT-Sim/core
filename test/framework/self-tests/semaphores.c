@@ -65,12 +65,17 @@ test_ret_t sem_test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 #error Unsupported operating system
 #endif
 
+__attribute__((noinline)) static void loop(unsigned int iterations)
+{
+	for(unsigned int i = 0; i < iterations; i++) {
+		__asm__ volatile("" : "+g"(i) : :);
+	}
+}
+
 static thrd_ret_t phase1(void *id)
 {
 	uintptr_t tid = (uintptr_t)id;
-	uint64_t r = test_random_range(RAND_DELAY_MAX);
-	for(uint64_t i = 0; i < r; i++)
-		; // FIXME: this would get for sure optimized away
+	loop(test_random_range(RAND_DELAY_MAX));
 
 	if(tid < N_PROD) {
 		sema_signal(producer, N_CONS / N_PROD);
@@ -85,9 +90,7 @@ static thrd_ret_t phase1(void *id)
 static thrd_ret_t phase2(void *id)
 {
 	uintptr_t tid = (uintptr_t)id;
-	uint64_t r = test_random_range(RAND_DELAY_MAX);
-	for(uint64_t i = 0; i < r; i++)
-		; // FIXME: this would get for sure optimized away
+	loop(test_random_range(RAND_DELAY_MAX));
 
 	if(tid < N_PROD) {
 		sema_wait(consumer, N_CONS / N_PROD);
