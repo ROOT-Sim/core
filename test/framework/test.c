@@ -48,6 +48,7 @@ __attribute__((noreturn)) void fail(void)
 
 void test(char *desc, test_fn test_fn, void *arg)
 {
+	test_unit.last_test_result = 0;
 	test_unit.should_pass++;
 	printf("%s... ", desc);
 	if(test_fn(arg) != 0) {
@@ -65,6 +66,7 @@ void test(char *desc, test_fn test_fn, void *arg)
 
 void test_xf(char *desc, test_fn test_fn, void *arg)
 {
+	test_unit.last_test_result = 0;
 	test_unit.should_fail++;
 	printf("%s... ", desc);
 	if(test_fn(arg) == 0) {
@@ -81,6 +83,7 @@ void test_xf(char *desc, test_fn test_fn, void *arg)
 
 void parallel_test(char *desc, test_fn test_fn, void *args)
 {
+	test_unit.last_test_result = 0;
 	int res = 0;
 	test_unit.should_pass++;
 	printf("%s... ", desc);
