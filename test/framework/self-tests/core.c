@@ -17,8 +17,11 @@ test_ret_t test_pass(__unused void *_)
 
 test_ret_t test_pass_assert(__unused void *_)
 {
-	test_assert(1);
-	check_passed_asserts();
+	test_assert(1 == 1);
+	//	check_passed_asserts();
+	test_ret_t ret = test_unit.ret;
+	test_unit.ret = 0;
+	return ret;
 }
 
 test_ret_t test_fail(__unused void *_)
@@ -28,7 +31,7 @@ test_ret_t test_fail(__unused void *_)
 
 test_ret_t test_fail_assert(__unused void *_)
 {
-	test_assert(0);
+	test_assert(0 == 1);
 	check_passed_asserts();
 }
 
