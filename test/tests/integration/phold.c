@@ -6,12 +6,13 @@
  * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
+#include <test.h>
 #include <ROOT-Sim.h>
 
 #include <stdio.h>
 
 #ifndef NUM_LPS
-#define NUM_LPS 16384
+#define NUM_LPS 8192
 #endif
 
 #ifndef NUM_THREADS
@@ -29,7 +30,8 @@ static simtime_t mean = 1.0;
 static simtime_t lookahead = 0.0;
 static int start_events = 1;
 
-void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *content, unsigned size, void *s)
+void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, __unused const void *content, __unused unsigned size,
+    __unused void *s)
 {
 	struct phold_message new_event = {0};
 	lp_id_t dest;
@@ -57,7 +59,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 	}
 }
 
-bool CanEnd(lp_id_t me, const void *snapshot)
+bool CanEnd(__unused lp_id_t me, __unused const void *snapshot)
 {
 	return false;
 }

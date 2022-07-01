@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <setjmp.h>
+#include <stdbool.h>
 
 #ifdef __WINDOWS
 #define WIN32_LEAN_AND_MEAN
@@ -65,6 +66,7 @@ struct test_unit {
 	unsigned n_th;
 	struct worker *pool;
 	jmp_buf fail_buffer;
+	test_ret_t last_test_result;
 	test_ret_t ret;
 	unsigned passed;
 	unsigned failed;
@@ -111,21 +113,20 @@ extern struct lp_ctx *mock_lp();
 		if(!(condition)) {                                                                                     \
 			fprintf(stderr, "assertion failed: " #condition " at %s:%d\n", __FILE__, __LINE__);            \
 			fflush(stderr);                                                                                \
-			test_unit.ret = -1;                                                                            \
+			test_unit.last_test_result = -1;                                                               \
 		}                                                                                                      \
 	} while(0)
 
 #define check_passed_asserts()                                                                                         \
 	do {                                                                                                           \
-		test_ret_t ret = test_unit.ret;                                                                        \
-		test_unit.ret = 0;                                                                                     \
+		test_ret_t ret = test_unit.last_test_result;                                                           \
 		return ret;                                                                                            \
 	} while(0)
 
 #define test_thread_pool_size() (test_unit.n_th)
 
 extern void finish(void);
-extern void fail(void);
+extern __attribute__((noreturn)) void fail(void);
 extern void test_init(unsigned n_th);
 extern void test(char *desc, test_fn test_fn, void *arg);
 extern void test_xf(char *desc, test_fn test_fn, void *arg);
