@@ -25,7 +25,8 @@ endfunction()
 # Test framework tests
 test_program(testing_framework framework/self-tests/core.c framework/self-tests/rng.c framework/self-tests/threads.c framework/self-tests/semaphores.c framework/self-tests/main.c)
 test_program_xf(testing_framework_fail framework/self-tests/core.c framework/self-tests/fail.c)
-test_program_xf(testing_framework_assert framework/self-tests/core.c framework/self-tests/fail_assert.c)
+test_program_xf(testing_framework_assert1 framework/self-tests/core.c framework/self-tests/fail_assert1.c)
+test_program_xf(testing_framework_assert2 framework/self-tests/core.c framework/self-tests/fail_assert2.c)
 
 # Visibility tests
 test_program(visibility1 tests/visibility/visibility_weak.c)

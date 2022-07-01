@@ -18,8 +18,6 @@ extern test_ret_t test_pass_assert(__unused void *_);
 int main(void)
 {
 	init(0);
-
-	test_xf("Test unexpected pass", test_pass, NULL);
 	test_xf("Test unexpected pass with asserts", test_pass_assert, NULL);
 	finish();
 }
