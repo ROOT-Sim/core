@@ -12,7 +12,6 @@
 #include <test.h>
 #include <string.h>
 
-extern test_ret_t test_pass(__unused void *_);
 extern test_ret_t test_pass_assert(__unused void *_);
 
 int main(void)
