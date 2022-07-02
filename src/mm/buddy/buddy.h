@@ -27,7 +27,7 @@
 #define buddy_right_child(i) (((i) << 1U) + 2U)
 #define buddy_parent(i) ((((i) + 1) >> 1U) - 1U)
 
-/// The checkpointable memory context assigned to a single LP
+/// The checkpoint-able memory context of a single buddy system
 struct buddy_state {
 	/// The checkpointed binary tree representing the buddy system
 	/** the last char is actually unused */
