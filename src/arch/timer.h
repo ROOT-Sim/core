@@ -3,8 +3,7 @@
  *
  * @brief Timers
  *
- * This header defines the timers which the simulator uses to monitor its
- * internal behaviour
+ * This header defines the timers which the simulator uses to monitor its internal behaviour
  *
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -19,16 +18,25 @@
 /** The type used to store results of timer related calls */
 typedef uint_fast64_t timer_uint;
 
-#ifdef __POSIX
-#include <sys/time.h>
-
 /**
- * @brief Gets a new starting point for an time interval measure
+ * @fn timer_new(void)
+ * @brief Get a new starting point for an time interval measure
  * @return a timer_uint value, a not meaningful value by itself
  *
- * The returned value can be used in conjunction with timer_value() to measure a
- * time interval with microsecond resolution
+ * The returned value can be used in conjunction with timer_value() to measure a time interval with microsecond
+ * resolution
  */
+
+/**
+ * @fn timer_value(timer_uint start)
+ * @brief Compute a time interval measure using a previous timer_uint value
+ * @param start a timer_uint value obtained from a previous timer_new() call
+ * @return a timer_uint value, the count of microseconds of the time interval
+ */
+
+#if defined(__POSIX)
+#include <sys/time.h>
+
 static inline timer_uint timer_new(void)
 {
 	struct timeval tmptv;
@@ -36,19 +44,12 @@ static inline timer_uint timer_new(void)
 	return (timer_uint)tmptv.tv_sec * 1000000U + tmptv.tv_usec;
 }
 
-/**
- * @brief Computes a time interval measure using a previous timer_uint value
- * @param start a timer_uint value obtained from a previous timer_new() call
- * @return a timer_uint value, the count of microseconds of the time interval
- */
 static inline timer_uint timer_value(timer_uint start)
 {
 	return timer_new() - start;
 }
 
-#endif
-
-#ifdef __WINDOWS
+#elif defined(__WINDOWS)
 #include <windows.h>
 
 static timer_uint timer_perf_freq = 0;
@@ -71,7 +72,28 @@ static inline timer_uint timer_value(timer_uint start)
 	return (timer_new() - start) * 1000000U / timer_perf_freq;
 }
 
+#else
+
+static inline timer_uint timer_new(void)
+{
+	return 0;
+}
+
+static inline timer_uint timer_value(timer_uint start)
+{
+	return 0;
+}
+
 #endif
+
+/**
+ * @fn timer_hr_new(void)
+ * @brief Start a high resolution, CPU dependent time interval measure
+ * @return a timer_uint value, a not meaningful value by itself
+ *
+ * The returned value can be used in conjunction with timer_hr_value() to measure a time interval with unspecified
+ * resolution
+ */
 
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __WINDOWS
@@ -80,13 +102,6 @@ static inline timer_uint timer_value(timer_uint start)
 #include <x86intrin.h>
 #endif
 
-/**
- * @brief Starts a high resolution, CPU dependent time interval measure
- * @return a timer_uint value, a not meaningful value by itself
- *
- * The returned value can be used in conjunction with timer_hr_value() to
- * measure a time interval with unspecified resolution
- */
 static inline timer_uint timer_hr_new(void)
 {
 	return __rdtsc();
@@ -102,7 +117,7 @@ static inline timer_uint timer_hr_new(void)
 #endif
 
 /**
- * @brief Computes a time interval measure using a previous timer_uint value
+ * @brief Compute a time interval measure using a previous timer_uint value
  * @param start a timer_uint value obtained from a previous timer_hr_new() call
  * @return a timer_uint value, a measure of the time interval
  */
