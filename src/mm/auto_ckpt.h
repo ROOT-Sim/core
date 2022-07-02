@@ -14,10 +14,15 @@
 
 /// Structure to keep data used for autonomic checkpointing selection
 struct auto_ckpt {
+	/// The inverse of the rollback probability
 	double inv_bad_p;
+	/// The count of straggler and anti-messages
 	unsigned m_bad;
+	/// The count of correctly processed forward messages
 	unsigned m_good;
+	/// The currently selected checkpointing interval
 	unsigned ckpt_interval;
+	/// The count of remaining events to process until the next checkpoint
 	unsigned ckpt_rem;
 };
 

@@ -80,6 +80,7 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 /**
  * @brief Compute the optimal checkpoint interval of the current LP and set it
  * @param auto_ckpt a pointer to the auto checkpoint context of the current LP
+ * @param state_size the size in bytes of the checkpoint-able state of the current LP
  *
  * This function should be called only at the end of GVT reductions, because
  * the used statistics values are representative only in that moment.
