@@ -42,6 +42,14 @@ static spinlock_t mpi_spinlock;
 
 #endif
 
+#define RS_MPI_TAG 0
+
+static const enum msg_ctrl_tag ctrl_msgs[] = {
+        [MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
+        [MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
+        [MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
+};
+
 /**
  * @brief Handles a MPI error
  * @param comm the MPI communicator involved in the error
@@ -137,7 +145,7 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 
 	mpi_lock();
 	MPI_Request req;
-	MPI_Isend(msg, msg_bare_size(msg), MPI_BYTE, dest_nid, 0,
+	MPI_Isend(msg, msg_bare_size(msg), MPI_BYTE, dest_nid, RS_MPI_TAG,
 			MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 	mpi_unlock();
@@ -161,8 +169,8 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 
 	mpi_lock();
 	MPI_Request req;
-	MPI_Isend(msg, msg_anti_size(), MPI_BYTE, dest_nid, 0, MPI_COMM_WORLD,
-			&req);
+    MPI_Isend(msg, msg_anti_size(), MPI_BYTE, dest_nid, RS_MPI_TAG,
+              MPI_COMM_WORLD,	&req);
 	MPI_Request_free(&req);
 	mpi_unlock();
 }
@@ -177,7 +185,8 @@ void mpi_control_msg_broadcast(enum msg_ctrl_tag ctrl)
 	nid_t i = n_nodes;
 	mpi_lock();
 	while (i--) {
-		MPI_Isend(NULL, 0, MPI_BYTE, i, ctrl, MPI_COMM_WORLD, &req);
+        MPI_Isend(&ctrl_msgs[ctrl], sizeof(*ctrl_msgs), MPI_BYTE, i,
+                  RS_MPI_TAG, MPI_COMM_WORLD, &req);
 		MPI_Request_free(&req);
 	}
 	mpi_unlock();
@@ -192,7 +201,8 @@ void mpi_control_msg_send_to(enum msg_ctrl_tag ctrl, nid_t dest)
 {
 	MPI_Request req;
 	mpi_lock();
-	MPI_Isend(NULL, 0, MPI_BYTE, dest, ctrl, MPI_COMM_WORLD, &req);
+    MPI_Isend(&ctrl_msgs[ctrl], sizeof(*ctrl_msgs), MPI_BYTE, dest,
+              RS_MPI_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 	mpi_unlock();
 }
@@ -217,7 +227,7 @@ void mpi_remote_msg_handle(void)
 		MPI_Message mpi_msg;
 		MPI_Status status;
 
-		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
+        MPI_Improbe(MPI_ANY_SOURCE, RS_MPI_TAG, MPI_COMM_WORLD,
 			&pending, &mpi_msg, &status);
 
 		if (!pending) {
@@ -225,53 +235,32 @@ void mpi_remote_msg_handle(void)
 			return;
 		}
 
-#ifdef PUBSUB
-		// TODO: add handling for PubSub messages!!
-		if(status.MPI_TAG == MSG_PUBSUB){
-			int size;
-			MPI_Get_count(&status, MPI_BYTE, &size);
-			struct lp_msg *msg;
-			if (unlikely(size == msg_anti_size())) {
-				msg = msg_allocator_alloc(0);
-				MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,
-						  MPI_STATUS_IGNORE);
-				mpi_unlock();
-
-				gvt_remote_anti_msg_receive(msg);
-				sub_node_handle_published_antimessage(msg);
-			} else {
-				msg = msg_allocator_alloc(size -
-										  offsetof(struct lp_msg, pl));
-				MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,
-						  MPI_STATUS_IGNORE);
-				mpi_unlock();
-
-				gvt_remote_msg_receive(msg);
-				sub_node_handle_published_message(msg);
-			}
-
-			continue;
-		}
-#endif
-
-		if (unlikely(status.MPI_TAG)) {
-			MPI_Mrecv(NULL, 0, MPI_BYTE, &mpi_msg,
-					MPI_STATUS_IGNORE);
-			mpi_unlock();
-			control_msg_process(status.MPI_TAG);
-			continue;
-		}
-
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		struct lp_msg *msg;
-		if (unlikely(size == msg_anti_size())) {
+        if (unlikely(size <= (int)msg_anti_size())) {
+            if (unlikely(size == sizeof(enum msg_ctrl_tag))) {
+                enum msg_ctrl_tag ctrl_type;
+                MPI_Mrecv(&ctrl_type, size, MPI_BYTE, &mpi_msg,
+                          MPI_STATUS_IGNORE);
+                mpi_unlock();
+                control_msg_process(ctrl_type);
+                continue;
+            }
+
 			msg = msg_allocator_alloc(0);
 			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg,
 					MPI_STATUS_IGNORE);
 			mpi_unlock();
 
 			gvt_remote_anti_msg_receive(msg);
+
+#ifdef PUBSUB
+            if (is_fresh_pubsub_msg(msg))
+                sub_node_handle_published_antimessage(msg);
+            else
+#endif
+                msg_queue_insert(msg);
 		} else {
 			msg = msg_allocator_alloc(size -
 					offsetof(struct lp_msg, pl));
@@ -280,8 +269,13 @@ void mpi_remote_msg_handle(void)
 			mpi_unlock();
 
 			gvt_remote_msg_receive(msg);
+#ifdef PUBSUB
+            if (is_fresh_pubsub_msg(msg))
+                sub_node_handle_published_message(msg);
+            else
+#endif
+                msg_queue_insert(msg);
 		}
-		msg_queue_insert(msg);
 	}
 }
 
@@ -303,7 +297,7 @@ void mpi_remote_msg_drain(void)
 		MPI_Message mpi_msg;
 		MPI_Status status;
 
-		MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,
+        MPI_Improbe(MPI_ANY_SOURCE, RS_MPI_TAG, MPI_COMM_WORLD,
 			&pending, &mpi_msg, &status);
 
 		if (!pending) {
@@ -321,8 +315,8 @@ void mpi_remote_msg_drain(void)
 		MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
 		switch(size) {
-		case 0:
-			control_msg_process(status.MPI_TAG);
+        case sizeof(enum msg_ctrl_tag):
+            control_msg_process(*(enum msg_ctrl_tag *)msg);
 			break;
 		case msg_anti_size():
 			gvt_remote_anti_msg_receive(msg);

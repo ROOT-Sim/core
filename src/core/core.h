@@ -47,10 +47,10 @@ __extension__({				\
 // this definition is shared with ROOT-Sim.h
 // TODO: generate ROOT-Sim.h at build time
 enum rootsim_event {
-	MODEL_INIT = 65532,
-	LP_INIT,
-	LP_FINI,
-	MODEL_FINI
+    MODEL_FINI = 65532,
+    LP_FINI,
+    LP_INIT,
+    MODEL_INIT
 };
 
 /// Optimize the branch as likely taken

@@ -20,6 +20,7 @@ rootsim_srcs = [
   'core' / 'core.c',
   'core' / 'init.c',
   'core' / 'sync.c',
+  'datatypes' / 'pubsub_map.c',
   'datatypes' / 'msg_queue.c',
   'distributed' / 'control_msg.c',
   'gvt' / 'fossil.c',

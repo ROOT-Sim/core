@@ -2,7 +2,7 @@
  * @file compiler.c
  *
  * @brief The ROOT-Sim compiler
- * 
+ *
  * This is the ROOT-Sim compiler, a compiler wrapper which allows
  * to setup all necessary includes and configurations to run with
  * a parallel or distributed simulation. This is targeting low

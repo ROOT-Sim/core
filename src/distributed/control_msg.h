@@ -16,15 +16,11 @@
 /// A control message MPI tag value
 enum msg_ctrl_tag {
 	/// Used by the master to start a new gvt reduction operation
-	MSG_CTRL_GVT_START = 1,
+	MSG_CTRL_GVT_START,
 	/// Used by slaves to signal their completion of the gvt protocol
 	MSG_CTRL_GVT_DONE,
 	/// Used in broadcast to signal that local LPs can terminate
-	MSG_CTRL_TERMINATION,
-#ifdef PUBSUB
-	/// Used to send PubSub messages from publisher to subscriber node
-	MSG_PUBSUB
-#endif
+	MSG_CTRL_TERMINATION
 };
 
 inline void control_msg_process(enum msg_ctrl_tag ctrl)

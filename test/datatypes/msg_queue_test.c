@@ -20,6 +20,9 @@
 #define THREAD_CNT 6
 #define THREAD_REPS 100000
 
+#define pubsub_thread_msg_free msg_allocator_free
+#define pubsub_thread_msg_free_in_fini msg_allocator_free
+
 uint64_t n_lps_node = 64;
 static __thread test_rng_state rng_state;
 static struct lp_ctx lps_m[THREAD_CNT];
@@ -56,7 +59,7 @@ static int msg_queue_test(void)
 	test_thread_barrier();
 
 	unsigned i = THREAD_REPS;
-	while(i--){
+	while(i--) {
 		struct lp_msg *msg = malloc(sizeof(*msg));
 		memset(msg, 0, sizeof(*msg));
 		msg->dest_t = lcg_random(rng_state) * THREAD_REPS;
@@ -69,12 +72,13 @@ static int msg_queue_test(void)
 	struct lp_msg *msg;
 	simtime_t last_time = 0.0;
 
-	while((msg = msg_queue_extract())){
+	while((msg = msg_queue_extract())) {
 		if(msg->dest_t < last_time)
 			--ret;
 		last_time = msg->dest_t;
 		free(msg);
-		atomic_fetch_sub_explicit(&msg_missing, 1U, memory_order_relaxed);
+		atomic_fetch_sub_explicit(&msg_missing, 1U,
+		    memory_order_relaxed);
 	}
 
 	test_thread_barrier();
@@ -90,9 +94,7 @@ static int msg_queue_test(void)
 	return ret;
 }
 
-const struct test_config test_config = {
-	.threads_count = THREAD_CNT,
-	.test_init_fnc = msg_queue_test_init,
-	.test_fini_fnc = msg_queue_test_fini,
-	.test_fnc = msg_queue_test
-};
+const struct test_config test_config = {.threads_count = THREAD_CNT,
+    .test_init_fnc = msg_queue_test_init,
+    .test_fini_fnc = msg_queue_test_fini,
+    .test_fnc = msg_queue_test};

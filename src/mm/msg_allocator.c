@@ -14,9 +14,7 @@
 #include <datatypes/array.h>
 #include <gvt/gvt.h>
 
-#ifdef PUBSUB
 #include <modules/publish_subscribe/pubsub.h>
-#endif
 
 static __thread dyn_array(struct lp_msg *) free_list = {0};
 
@@ -33,7 +31,7 @@ void msg_allocator_init(void)
  */
 void msg_allocator_fini(void)
 {
-	while (!array_is_empty(free_list)) {
+	while(!array_is_empty(free_list)) {
 		mm_free(array_pop(free_list));
 	}
 	array_fini(free_list);
@@ -44,23 +42,23 @@ void msg_allocator_fini(void)
  * @param payload_size the size in bytes of the requested message payload
  * @return a new message with at least the requested amount of payload space
  */
-struct lp_msg* msg_allocator_alloc(unsigned payload_size)
+struct lp_msg *msg_allocator_alloc(unsigned payload_size)
 {
 	struct lp_msg *ret;
-	if (unlikely(payload_size > BASE_PAYLOAD_SIZE)) {
-		ret = mm_alloc(
-			offsetof(struct lp_msg, extra_pl) +
-			(payload_size - BASE_PAYLOAD_SIZE)
-		);
+	if(unlikely(payload_size > BASE_PAYLOAD_SIZE)) {
+		ret = mm_alloc(offsetof(struct lp_msg, extra_pl) +
+			       (payload_size - BASE_PAYLOAD_SIZE));
 		ret->pl_size = payload_size;
 		return ret;
 	}
-	if (unlikely(array_is_empty(free_list))) {
+	if(unlikely(array_is_empty(free_list))) {
 		ret = mm_alloc(sizeof(struct lp_msg));
 		ret->pl_size = payload_size;
 		return ret;
 	}
-	return array_pop(free_list);
+	ret = array_pop(free_list);
+	ret->pl_size = payload_size;
+	return ret;
 }
 
 /**
@@ -69,11 +67,6 @@ struct lp_msg* msg_allocator_alloc(unsigned payload_size)
  */
 void msg_allocator_free(struct lp_msg *msg)
 {
-#ifdef PUBSUB
-	if(is_pubsub_msg(msg)){
-		pubsub_msg_free(msg);
-	} else
-#endif
 	if(likely(msg->pl_size <= BASE_PAYLOAD_SIZE)) {
 		array_push(free_list, msg);
 	} else {
@@ -90,5 +83,5 @@ void msg_allocator_free(struct lp_msg *msg)
  * @param payload_size the size in bytes of the payload to copy into the message
  * @return a new populated message
  */
-extern struct lp_msg* msg_allocator_pack(lp_id_t receiver, simtime_t timestamp,
-	unsigned event_type, const void *payload, unsigned payload_size);
+extern struct lp_msg *msg_allocator_pack(lp_id_t receiver, simtime_t timestamp,
+    unsigned event_type, const void *payload, unsigned payload_size);

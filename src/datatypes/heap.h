@@ -46,7 +46,7 @@
  */
 #define heap_insert(self, cmp_f, elem)					\
 __extension__({								\
-	array_reserve(self, 1);						\
+	array_reserve_one(self);						\
 	__typeof(array_count(self)) i = array_count(self)++;		\
 	__typeof__(array_items(self)) items = array_items(self);	\
 	while (i && cmp_f(elem, items[(i - 1U) / 2U])) {		\

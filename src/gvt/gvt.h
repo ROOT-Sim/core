@@ -26,8 +26,8 @@ extern void gvt_msg_drain(void);
 inline void gvt_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	msg->m_seq = (remote_msg_seq[gvt_phase][dest_nid]++ << 1) | gvt_phase;
-	msg->raw_flags = (nid << (MAX_THREADS_EXP + MSG_FLAGS_BITS)) | ((rid + 1) << MSG_FLAGS_BITS) |
-			gvt_phase;
+    msg->raw_flags = (nid << (MAX_THREADS_EXP + MSG_FLAGS_BITS)) |
+                     ((rid + 1) << MSG_FLAGS_BITS) | gvt_phase;
 }
 
 inline void gvt_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)

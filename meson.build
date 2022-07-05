@@ -12,6 +12,14 @@ assert(meson.get_compiler('c').get_id() == 'clang' or not get_option('b_lto'),
   '\'-Db_lto=false\' to the meson command or prepend it with \'env CC=clang ' +
   'CXX=clang++\'')
 
+c_optimization_options = []
+
+if get_option('profile').enabled()
+  add_global_arguments(['-pg', '-fno-omit-frame-pointer'], language : 'c')
+  add_global_link_arguments(['-pg', '-fno-omit-frame-pointer'], language : 'c')
+  c_optimization_options += ['-pg', '-fno-omit-frame-pointer']
+endif
+
 # Workaround to have reproducible unity builds
 if get_option('unity') == 'on'
   if meson.get_compiler('c').has_argument('-ffile-prefix-map=.=.')
@@ -22,11 +30,16 @@ endif
 
 # Used in some defines, the llvm plugin and the tests
 if get_option('buildtype') == 'release'
-  c_optimization_options = ['-Ofast', '-march=native', '-mtune=native']
+  c_optimization_options += ['-Ofast', '-march=native', '-mtune=native']
   add_global_arguments(c_optimization_options, language : 'c')
   add_global_link_arguments(c_optimization_options, language : 'c')
 else
-  c_optimization_options = ['-O' + get_option('optimization')]
+  c_optimization_options += '-O' + get_option('optimization')
+endif
+
+if get_option('profile').enabled()
+  add_global_arguments(['-pg'], language : 'c')
+  add_global_link_arguments(['-pg'], language : 'c')
 endif
 
 # Include directory used explicitly in tests and LLVM plugin compilation

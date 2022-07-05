@@ -16,6 +16,7 @@
 #include <mm/msg_allocator.h>
 
 #include <memory.h>
+#include <log/stats.h>
 
 void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt)
 {
@@ -40,11 +41,24 @@ void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt)
 
 	past_i = model_allocator_fossil_lp_collect(&lp->mm_state, past_i + 1);
 
-	array_count_t k = past_i;
+    if (PUBSUB_DUMP_MSGS) {
+        // We want to log committed pubsub messages this lp has sent
+        log_pubsub_msgs_to_file(proc_p->p_msgs.items, past_i);
+    }
+
+    array_count_t k = past_i;
 	while (k--) {
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, k);
-		if (!is_msg_local_sent(msg))
-			msg_allocator_free(unmark_msg(msg));
+        if (!is_msg_local_sent(msg)) {
+            msg=unmark_msg(msg);
+            if (msg->raw_flags & MSG_FLAG_PUBSUB) {
+                if (msg->dest_t <= global_config.termination_time)
+                    stats_take(STATS_MSG_PUBSUB_COMMITTED, 1);
+                pubsub_msg_free(msg);
+            } else {
+                msg_allocator_free(msg);
+            }
+        }
 	}
 	array_truncate_first(proc_p->p_msgs, past_i);
 }

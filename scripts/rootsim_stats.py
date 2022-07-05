@@ -2,16 +2,15 @@ import copy
 import struct
 
 # TODO proper documentation of the RSStats object
-# TODO expose memory statistics
 # TODO provide also statistics normalized by wall clock time
 class RSStats:
     _STATS_MAX_STRLEN = 32
 
     def _pattern_unpack(self, ptrn):
         ptrn_size = struct.calcsize(ptrn)
-        data_parse = self.data[:ptrn_size]
+        data_parse = self.data[self.data_idx:ptrn_size + self.data_idx]
+        self.data_idx += ptrn_size
         ret = struct.unpack((">" if self.big_endian else "<") + ptrn, data_parse)
-        self.data = self.data[ptrn_size:]
         return ret
 
     def _metric_names_load(self):
@@ -66,6 +65,7 @@ class RSStats:
         with open(rs_stats_file, 'rb') as f:
             self.data = f.read()
 
+        self.data_idx = 0
         self.big_endian = True
         magic_number = self._pattern_unpack("H")[0]
         if magic_number == 61455 or magic_number == 4080:
@@ -79,7 +79,7 @@ class RSStats:
         self.all_stats = []
         self._nodes_stats_load()
 
-        if len(self.data) != 0:
+        if len(self.data) != self.data_idx:
             raise RuntimeWarning("Parsing failed, there's garbage at the end")
 
         self._gvts = []
@@ -89,12 +89,30 @@ class RSStats:
         for metric_name in self.metric_names:
             self._metrics[metric_name] = []
 
+        self.global_measures = []
         for triple in self.all_stats:
             glob_stats, node_stats, threads_stats = triple
-            if len(self._gvts) == 0:
-                for gvt, crs_mem in node_stats:
+
+            this_measures = {
+                "maximum_resident_set": glob_stats[1],
+                "node_init_time": glob_stats[3] - glob_stats[2],
+                "worker_threads_init_time": glob_stats[4] - glob_stats[3],
+                "processing_time": glob_stats[5] - glob_stats[4],
+                "worker_threads_fini_time": glob_stats[6] - glob_stats[5],
+                "node_fini_time": glob_stats[7] - glob_stats[6]
+            }
+
+            mem = []
+            for i, (gvt, crs_mem) in enumerate(node_stats):
+                if len(self._gvts) <= i:
                     self._gvts.append(gvt)
-            # else TODO sanity check that stuff is equal
+                elif self._gvts[i] != gvt:
+                    raise RuntimeWarning("Parsing failed, incosistent GVTs across nodes and/or threads")
+
+                mem.append(crs_mem)
+
+            this_measures["resident_set"] = mem
+            self.global_measures.append(this_measures)
 
             for j, metric_name in enumerate(self.metric_names):
                 metric_n_stat = []
@@ -113,6 +131,10 @@ class RSStats:
     @property
     def metrics(self):
         return list(self._metrics)
+
+    @property
+    def node_stats(self):
+        return self.global_measures
 
     def thread_metric_get(self, metric, aggregate_gvts=False,
                           aggregate_resources=False, aggregate_nodes=False):

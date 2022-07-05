@@ -13,8 +13,10 @@
 #include <datatypes/array.h>
 #include <lp/msg.h>
 
-extern _Thread_local bool silent_processing;
-
+extern __thread bool silent_processing;
+#if LOG_LEVEL <= LOG_DEBUG
+extern __thread simtime_t actual_gvt;
+#endif
 /// The message processing data produced by the LP
 struct process_data {
 	/// The messages processed in the past by the owner LP
@@ -26,7 +28,7 @@ struct process_data {
 #define is_msg_remote(msg_p) (((uintptr_t)(msg_p)) & 2U)
 #define is_msg_local_sent(msg_p) (((uintptr_t)(msg_p)) & 1U)
 #define is_msg_past(msg_p) (!(((uintptr_t)(msg_p)) & 3U))
-#define unmark_msg(msg_p) \
+#define unmark_msg(msg_p)                                                      \
 	((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
 
 extern void process_global_init(void);
@@ -39,4 +41,5 @@ extern void process_lp_init(void);
 extern void process_lp_deinit(void);
 extern void process_lp_fini(void);
 
-extern void process_msg(void);
+extern void process_next_msg(void);
+extern void process_msg(struct lp_msg *msg);

@@ -67,7 +67,10 @@ const char * const s_names[] = {
 	[STATS_CKPT_TIME] = "checkpoints time",
 	[STATS_MSG_SILENT_TIME] = "silent messages time",
 	[STATS_MSG_PROCESSED] = "processed messages",
-	[STATS_REAL_TIME_GVT] = "gvt real time"
+    [STATS_REAL_TIME_GVT] = "gvt real time",
+    [STATS_MSG_PUBSUB] = "pubsub messages",
+    [STATS_MSG_PUBSUB_COMMITTED] = "committed pubsubs",
+    [STATS_MSG_PUBSUB_ANTI] = "pubsub antimessages",
 };
 
 static timer_uint sim_start_ts;

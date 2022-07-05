@@ -33,7 +33,10 @@ enum stats_thread_type {
 	STATS_MSG_SILENT_TIME,
 	STATS_MSG_REMOTE_RECEIVED,
 	STATS_REAL_TIME_GVT, // used internally, don't use elsewhere
-	STATS_COUNT
+	STATS_MSG_PUBSUB,
+	STATS_MSG_PUBSUB_ANTI,
+	STATS_MSG_PUBSUB_COMMITTED,
+	STATS_COUNT,
 };
 
 extern void stats_global_time_start(void);

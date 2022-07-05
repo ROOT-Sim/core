@@ -28,6 +28,10 @@
 #include <modules/publish_subscribe/pubsub.h>
 #endif
 
+#if LOG_LEVEL <= LOG_DEBUG
+__thread simtime_t actual_gvt = -1;
+#endif
+
 static void worker_thread_init(rid_t this_rid)
 {
 	rid = this_rid;
@@ -37,14 +41,21 @@ static void worker_thread_init(rid_t this_rid)
 	msg_queue_init();
 	model_allocator_init();
 	sync_thread_barrier();
+#ifdef PUBSUB
+	pubsub_module_init();
+#endif
 	lp_init();
 	process_init();
 
+#if LOG_LEVEL <= LOG_DEBUG && defined(PUBSUB)
+	print_pubsub_topology_to_file();
+#endif
+
 #ifdef ROOTSIM_MPI
-	if (sync_thread_barrier())
+	if(sync_thread_barrier())
 		mpi_node_barrier();
 #endif
-	if (sync_thread_barrier()) {
+	if(sync_thread_barrier()) {
 		log_log(LOG_INFO, "Starting simulation");
 		stats_global_time_take(STATS_GLOBAL_EVENTS_START);
 	}
@@ -54,7 +65,7 @@ static void worker_thread_fini(void)
 {
 	gvt_msg_drain();
 
-	if (sync_thread_barrier()) {
+	if(sync_thread_barrier()) {
 		stats_dump();
 		stats_global_time_take(STATS_GLOBAL_EVENTS_END);
 		log_log(LOG_INFO, "Finalizing simulation");
@@ -64,6 +75,9 @@ static void worker_thread_fini(void)
 
 	process_fini();
 	lp_fini();
+#ifdef PUBSUB
+	pubsub_module_fini();
+#endif
 	model_allocator_fini();
 	msg_queue_fini();
 	sync_thread_barrier();
@@ -72,18 +86,18 @@ static void worker_thread_fini(void)
 
 static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
-	worker_thread_init((uintptr_t) rid_arg);
+	worker_thread_init((uintptr_t)rid_arg);
 
-	while (likely(termination_cant_end())) {
+	while(likely(termination_cant_end())) {
 		mpi_remote_msg_handle();
 
 		unsigned i = 64;
-		while (i--) {
-			process_msg();
+		while(i--) {
+			process_next_msg();
 		}
 
 		simtime_t current_gvt;
-		if (unlikely(current_gvt = gvt_phase_run())) {
+		if(unlikely(current_gvt = gvt_phase_run())) {
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
 			lp_on_gvt(current_gvt);
@@ -91,6 +105,9 @@ static thr_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 			pubsub_on_gvt(current_gvt);
 #endif
 			stats_on_gvt(current_gvt);
+#if LOG_LEVEL <= LOG_DEBUG
+			actual_gvt = current_gvt;
+#endif
 		}
 	}
 
@@ -109,8 +126,8 @@ static void parallel_global_init(void)
 	pubsub_module_global_init();
 #endif
 
-	process_global_init();
 	lp_global_init();
+	process_global_init();
 	msg_queue_global_init();
 	termination_global_init();
 	gvt_global_init();
@@ -119,6 +136,9 @@ static void parallel_global_init(void)
 static void parallel_global_fini(void)
 {
 	msg_queue_global_fini();
+#ifdef PUBSUB
+	pubsub_module_global_fini();
+#endif
 	lp_global_fini();
 	process_global_fini();
 	lib_global_fini();
@@ -133,19 +153,21 @@ void parallel_simulation(void)
 
 	thr_id_t thrs[n_threads];
 	rid_t i = n_threads;
-	while (i--) {
-		if (thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
+	while(i--) {
+		if(thread_start(&thrs[i], parallel_thread_run,
+		       (void *)(uintptr_t)i)) {
 			log_log(LOG_FATAL, "Unable to create a thread!");
 			abort();
 		}
-		if (global_config.core_binding && thread_affinity_set(thrs[i], i)) {
+		if(global_config.core_binding &&
+		    thread_affinity_set(thrs[i], i)) {
 			log_log(LOG_FATAL, "Unable to set a thread affinity!");
 			abort();
 		}
 	}
 
 	i = n_threads;
-	while (i--)
+	while(i--)
 		thread_wait(thrs[i], NULL);
 
 	stats_global_time_take(STATS_GLOBAL_FINI_START);

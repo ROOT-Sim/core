@@ -78,7 +78,7 @@ static void serial_simulation_init(void)
 	s_lps = mm_alloc(sizeof(*s_lps) * n_lps);
 	memset(s_lps, 0, sizeof(*s_lps) * n_lps);
 
-	for (uint64_t i = 0; i < n_lps; ++i) {
+	for(uint64_t i = 0; i < n_lps; ++i) {
 		s_current_lp = &s_lps[i];
 		lib_lp_init();
 
@@ -99,7 +99,7 @@ static void serial_simulation_init(void)
  */
 static void serial_simulation_fini(void)
 {
-	for (uint64_t i = 0; i < n_lps; ++i) {
+	for(uint64_t i = 0; i < n_lps; ++i) {
 		s_current_lp = &s_lps[i];
 		ProcessEvent(i, 0, LP_FINI, NULL, 0, s_lps[i].lib_ctx.state_s);
 		lib_lp_fini();
@@ -107,7 +107,7 @@ static void serial_simulation_fini(void)
 
 	ProcessEvent(0, 0, MODEL_FINI, NULL, 0, NULL);
 
-	for (array_count_t i = 0; i < array_count(queue); ++i) {
+	for(array_count_t i = 0; i < array_count(queue); ++i) {
 		msg_allocator_free(array_get_at(queue, i));
 	}
 
@@ -127,73 +127,66 @@ static void serial_simulation_run(void)
 	timer_uint last_vt = timer_new();
 	uint64_t to_terminate = n_lps;
 
-	while (likely(!heap_is_empty(queue))) {
+	while(likely(!heap_is_empty(queue))) {
 		const struct lp_msg *cur_msg = heap_min(queue);
 		struct s_lp_ctx *this_lp = &s_lps[cur_msg->dest];
 		s_current_lp = this_lp;
 
 #if LOG_DEBUG >= LOG_LEVEL
-		if (log_can_log(LOG_DEBUG)) {
+		if(log_can_log(LOG_DEBUG)) {
 			if(cur_msg->dest_t == s_current_lp->last_evt_time)
-				log_log(
-					LOG_DEBUG,
-					"LP %u got two consecutive events with same timestamp %lf",
-					cur_msg->dest,
-					cur_msg->dest_t
-				);
+				log_log(LOG_DEBUG,
+				    "LP %u got two consecutive events with same timestamp %lf",
+				    cur_msg->dest, cur_msg->dest_t);
 			s_current_lp->last_evt_time = cur_msg->dest_t;
 			current_evt_time = cur_msg->dest_t;
 		}
 #endif
 
-		ProcessEvent(
-			cur_msg->dest,
-			cur_msg->dest_t,
-			cur_msg->m_type,
-			cur_msg->pl,
-			cur_msg->pl_size,
-			s_current_lp->lib_ctx.state_s
-		);
+		ProcessEvent(cur_msg->dest, cur_msg->dest_t, cur_msg->m_type,
+		    cur_msg->pl, cur_msg->pl_size,
+		    s_current_lp->lib_ctx.state_s);
 		stats_take(STATS_MSG_PROCESSED, 1);
 
-		bool can_end = CanEnd(cur_msg->dest, s_current_lp->lib_ctx.state_s);
+		bool can_end =
+		    CanEnd(cur_msg->dest, s_current_lp->lib_ctx.state_s);
 
-		if (can_end != s_current_lp->terminating) {
+		if(can_end != s_current_lp->terminating) {
 			s_current_lp->terminating = can_end;
 			to_terminate += 1 - ((int)can_end * 2);
 
-			if (unlikely(!to_terminate)) {
+			if(unlikely(!to_terminate)) {
 				stats_on_gvt(cur_msg->dest_t);
 				break;
 			}
 		}
 
-		if (global_config.gvt_period <= timer_value(last_vt)) {
+		if(global_config.gvt_period <= timer_value(last_vt)) {
 			stats_on_gvt(cur_msg->dest_t);
-			if (unlikely(cur_msg->dest_t >=
-				global_config.termination_time))
+			if(unlikely(cur_msg->dest_t >=
+				    global_config.termination_time))
 				break;
 			last_vt = timer_new();
 		}
 
-		msg_allocator_free(heap_extract(queue, msg_is_before_serial));
+		msg_allocator_free(heap_extract(queue, msg_is_before));
 	}
 
 	stats_dump();
 }
 
 void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp,
-	unsigned event_type, const void *payload, unsigned payload_size)
+    unsigned event_type, const void *payload, unsigned payload_size)
 {
 #if LOG_DEBUG >= LOG_LEVEL
-	if (log_can_log(LOG_DEBUG) && current_evt_time > timestamp)
+	if(log_can_log(LOG_DEBUG) && current_evt_time > timestamp)
 		log_log(LOG_DEBUG, "Sending a message in the PAST!");
 #endif
 
-	struct lp_msg *msg = msg_allocator_pack(
-		receiver, timestamp, event_type, payload, payload_size);
+	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type,
+	    payload, payload_size);
 
-	heap_insert(queue, msg_is_before_serial, msg);
+	heap_insert(queue, msg_is_before, msg);
 }
 
 /**

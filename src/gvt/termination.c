@@ -34,6 +34,7 @@ void termination_lp_init(void)
 
 void termination_on_msg_process(simtime_t msg_time)
 {
+    return;
 	struct lp_ctx *this_lp = current_lp;
 	if (this_lp->t_d) return;
 
@@ -69,6 +70,7 @@ void termination_force(void)
 
 void termination_on_lp_rollback(simtime_t msg_time)
 {
+    return;
 	struct lp_ctx *this_lp = current_lp;
 	simtime_t old_t = this_lp->t_d;
 	bool keep = old_t < msg_time || old_t == SIMTIME_MAX;

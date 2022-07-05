@@ -125,6 +125,9 @@ void lp_fini(void)
 		process_lp_fini();
 		lib_lp_fini_pr();
 		model_allocator_lp_fini();
+#ifdef PUBSUB
+        pubsub_module_lp_fini();
+#endif
 	}
 
 	current_lp = NULL;
