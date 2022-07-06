@@ -85,6 +85,7 @@ static inline void checkpoint_take(struct process_data *proc_p)
 {
 	timer_uint t = timer_hr_new();
 	model_allocator_checkpoint_take(array_count(proc_p->p_msgs));
+	stats_take(STATS_CKPT_STATE_SIZE, current_lp->mm_state.used_mem);
 	stats_take(STATS_CKPT, 1);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 }

@@ -238,6 +238,8 @@ if __name__ == "__main__":
     rollback_msgs = stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
     silent_msgs = stats.thread_metric_get("silent messages", aggregate_nodes=True, aggregate_gvts=True)
     rollbacks = stats.thread_metric_get("rollbacks", aggregate_nodes=True, aggregate_gvts=True)
+    avg_log_size = stats.thread_metric_get("checkpoints state size", aggregate_nodes=True, aggregate_gvts=True) /\
+                   stats.thread_metric_get("checkpoints", aggregate_nodes=True, aggregate_gvts=True)
 
     peak_memory_usage = sum(stats.nodes_stats["maximum_resident_set"])
     avg_memory_usage = sum([sum(t) for t in stats.nodes_stats["resident_set"]]) / len(stats.gvts)
@@ -269,7 +271,7 @@ if __name__ == "__main__":
         f.write(f"AVERAGE EVENT COST (EMA)... : TODO\n")  # TODO do we want this?
         f.write(f"AVERAGE CHECKPOINT COST.... : TODO\n")  # TODO do we want this?
         f.write(f"AVERAGE RECOVERY COST...... : TODO\n")  # TODO do we want this?
-        f.write(f"AVERAGE LOG SIZE........... : TODO\n")  # TODO add log size to stats in ROOT-Sim!
+        f.write(f"AVERAGE LOGGED STATE SIZE.. : {fmt_size(avg_log_size)}\n")
         f.write(f"LAST COMMITTED GVT ........ : {stats.gvts[-1]}\n")
         f.write(f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n")
         f.write(f"SIMULATION TIME SPEED...... : {stats.gvts[-1] / len(stats.gvts)}\n")
