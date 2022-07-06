@@ -270,12 +270,8 @@ if __name__ == "__main__":
         f.write(f"AVERAGE CHECKPOINT COST.... : TODO\n")  # TODO do we want this?
         f.write(f"AVERAGE RECOVERY COST...... : TODO\n")  # TODO do we want this?
         f.write(f"AVERAGE LOG SIZE........... : TODO\n")  # TODO add log size to stats in ROOT-Sim!
-        f.write(f"IDLE CYCLES................ : TODO\n")  # TODO do we want this?
         f.write(f"LAST COMMITTED GVT ........ : {stats.gvts[-1]}\n")
         f.write(f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n")
-        f.write(f"MIN GVT ROUND TIME......... : TODO\n")  # TODO do we want this?
-        f.write(f"MAX GVT ROUND TIME......... : TODO\n")  # TODO do we want this?
-        f.write(f"AVERAGE GVT ROUND TIME..... : TODO\n")  # TODO do we want this?
         f.write(f"SIMULATION TIME SPEED...... : {stats.gvts[-1] / len(stats.gvts)}\n")
         f.write(f"AVERAGE MEMORY USAGE....... : {fmt_size(avg_memory_usage)}\n")
         f.write(f"PEAK MEMORY USAGE.......... : {fmt_size(peak_memory_usage)}\n")
