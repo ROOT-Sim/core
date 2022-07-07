@@ -42,7 +42,8 @@ void test_init(unsigned n_th)
 
 __attribute__((noreturn)) void fail(void)
 {
-	fprintf(stderr, "Failing explicitly\n");
+	printf("failed explicitly.\n");
+	test_unit.failed++;
 	longjmp(test_unit.fail_buffer, 1);
 }
 

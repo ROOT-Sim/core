@@ -1,5 +1,5 @@
 /**
- * @file test/self-tests/fail_assert.c
+ * @file test/self-tests/fail_assert1.c
  *
  * @brief Test: Test core functions of the testing framework
  *
