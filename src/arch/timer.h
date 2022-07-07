@@ -19,22 +19,22 @@
 typedef uint_fast64_t timer_uint;
 
 /**
- * @fn timer_new(void)
  * @brief Get a new starting point for an time interval measure
  * @return a timer_uint value, a not meaningful value by itself
  *
  * The returned value can be used in conjunction with timer_value() to measure a time interval with microsecond
  * resolution
  */
+static inline timer_uint timer_new(void);
 
 /**
- * @fn timer_value(timer_uint start)
  * @brief Compute a time interval measure using a previous timer_uint value
  * @param start a timer_uint value obtained from a previous timer_new() call
  * @return a timer_uint value, the count of microseconds of the time interval
  */
+static inline timer_uint timer_value(timer_uint start);
 
-#if defined(__POSIX)
+#ifdef __POSIX
 #include <sys/time.h>
 
 static inline timer_uint timer_new(void)
@@ -49,7 +49,9 @@ static inline timer_uint timer_value(timer_uint start)
 	return timer_new() - start;
 }
 
-#elif defined(__WINDOWS)
+#endif
+
+#ifdef __WINDOWS
 #include <windows.h>
 
 static timer_uint timer_perf_freq = 0;
@@ -70,18 +72,6 @@ static inline timer_uint timer_value(timer_uint start)
 		timer_perf_freq = perf.QuadPart;
 	}
 	return (timer_new() - start) * 1000000U / timer_perf_freq;
-}
-
-#else
-
-static inline timer_uint timer_new(void)
-{
-	return 0;
-}
-
-static inline timer_uint timer_value(timer_uint start)
-{
-	return 0;
 }
 
 #endif
