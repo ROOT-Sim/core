@@ -12,6 +12,8 @@
  */
 #pragma once
 
+#include <assert.h>
+
 /**
  * @brief Counts the trailing zeros in a base 2 number
  * @param x the number on which to compute this operation
@@ -23,6 +25,7 @@
  */
 #define intrinsics_ctz(x)                                                                                              \
 	__extension__({                                                                                                \
+		assert((x) != 0);                                                                                      \
 		__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned), __builtin_ctz(x),         \
 		    __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned long),                  \
 			__builtin_ctzl(x),                                                                             \
@@ -41,6 +44,7 @@
  */
 #define intrinsics_clz(x)                                                                                              \
 	__extension__({                                                                                                \
+		assert((x) != 0);                                                                                      \
 		__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned), __builtin_clz(x),         \
 		    __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(x), unsigned long),                  \
 			__builtin_clzl(x),                                                                             \

@@ -19,7 +19,6 @@
 #define B_TOTAL_EXP 16U
 #define B_BLOCK_EXP 6U
 
-// doesn't work correctly for 0 values!
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
 #define buddy_allocation_block_compute(req_size) next_exp_of_2(max(req_size, 1U << B_BLOCK_EXP) - 1);
 
