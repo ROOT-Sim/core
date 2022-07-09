@@ -31,7 +31,7 @@ struct mm_log {
 	struct mm_checkpoint *c;
 };
 
-/// The checkpoint-able memory context assigned to a single LP
+/// The checkpointable memory context assigned to a single LP
 struct mm_state {
 	/// The array of pointers to the allocated buddy systems for the LP
 	dyn_array(struct buddy_state *) buddies;
