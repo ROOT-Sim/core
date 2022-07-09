@@ -109,6 +109,7 @@ class RSStats:
             "processing_time": [],
             "worker_threads_fini_time": [],
             "node_fini_time": [],
+            "node_total_time": [],
             "resident_set": []
         }
         for triple in self.all_stats:
@@ -120,6 +121,7 @@ class RSStats:
             self._global_measures["processing_time"].append(glob_stats[5] - glob_stats[4])
             self._global_measures["worker_threads_fini_time"].append(glob_stats[6] - glob_stats[5])
             self._global_measures["node_fini_time"].append(glob_stats[7] - glob_stats[6])
+            self._global_measures["node_total_time"].append(glob_stats[7] - glob_stats[2])
 
             mem = []
             for i, (gvt, crs_mem) in enumerate(node_stats):
@@ -244,6 +246,8 @@ if __name__ == "__main__":
     peak_memory_usage = sum(stats.nodes_stats["maximum_resident_set"])
     avg_memory_usage = sum([sum(t) for t in stats.nodes_stats["resident_set"]]) / len(stats.gvts)
 
+    simulation_time = stats.nodes_stats["node_total_time"][0]/1000000
+
     out_name = sys.argv[1][:-4] if sys.argv[1].endswith(".bin") else sys.argv[1]
     out_name = out_name + ".txt"
 
@@ -255,6 +259,7 @@ if __name__ == "__main__":
         return f"{num:.1f}Yi{suffix}"
 
     with open(out_name, "w+") as f:
+        f.write(f"TOTAL SIMULATION TIME ..... : {simulation_time}s\n")
         f.write(f"TOTAL KERNELS ............. : {stats.nodes_count}\n")
         f.write(f"TOTAL_THREADS ............. : {sum(stats.threads_count)}\n")
         f.write(f"TOTAL_LPs ................. : TODO\n")  # TODO add number of LPs to stats in ROOT-Sim!
