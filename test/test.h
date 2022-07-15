@@ -101,7 +101,7 @@ extern void lcg_init(test_rng_state *rng_state, test_rng_state initseq);
 extern uint64_t test_random_range(uint64_t n);
 extern uint64_t test_random_u(void);
 extern double test_random_double(void);
-extern void test_random_init(void);
+extern void test_random_init(unsigned th_id);
 
 
 extern struct lp_ctx *mock_lp();

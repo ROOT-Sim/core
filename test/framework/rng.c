@@ -110,9 +110,9 @@ uint64_t test_random_u(void)
 /**
  * @brief Initialize per-thread random number generator
  */
-void test_random_init(void)
+void test_random_init(unsigned th_id)
 {
-	lcg_init(&seed, 0x1234567890abcdefULL);
+	lcg_init(&seed, (th_id + 1) * 0x1234567890abcdefULL);
 }
 
 /**

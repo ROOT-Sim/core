@@ -62,7 +62,7 @@ thrd_ret_t test_worker(void *args)
 
 	rid = (unsigned)worker->rid;
 
-	test_random_init();
+	test_random_init(rid);
 
 	while(true) {
 		sema_wait(work, 1);
