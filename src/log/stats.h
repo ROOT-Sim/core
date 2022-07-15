@@ -20,6 +20,7 @@ enum stats_global_type {
 	STATS_GLOBAL_EVENTS_END,
 	STATS_GLOBAL_FINI_START,
 	STATS_GLOBAL_END, // used internally, don't use elsewhere
+	STATS_GLOBAL_HR_TOTAL,
 	STATS_GLOBAL_COUNT
 };
 

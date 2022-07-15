@@ -69,6 +69,7 @@ const char *const stats_names[] = {
 
 /// The first timestamp ever collected for this simulation run
 static timer_uint sim_start_ts;
+static timer_uint sim_start_ts_hr;
 /// The global stats
 static struct stats_global stats_glob_cur;
 /// A pointer to the temporary file used to save #stats_node structs produced during simulation
@@ -84,6 +85,7 @@ static __thread struct stats_thread stats_cur;
 void stats_global_time_start(void)
 {
 	sim_start_ts = timer_new();
+	sim_start_ts_hr = timer_hr_new();
 }
 
 /**
@@ -174,6 +176,7 @@ static void stats_files_send(void)
 {
 	stats_glob_cur.max_rss = mem_stat_rss_max_get();
 	stats_glob_cur.timestamps[STATS_GLOBAL_END] = timer_value(sim_start_ts);
+	stats_glob_cur.timestamps[STATS_GLOBAL_HR_TOTAL] = timer_hr_value(sim_start_ts_hr);
 	mpi_blocking_data_send(&stats_glob_cur, sizeof(stats_glob_cur), 0);
 
 	int64_t f_size;
@@ -268,6 +271,7 @@ static void stats_file_final_write(FILE *out_f)
 
 	stats_glob_cur.max_rss = mem_stat_rss_max_get();
 	stats_glob_cur.timestamps[STATS_GLOBAL_END] = timer_value(sim_start_ts);
+	stats_glob_cur.timestamps[STATS_GLOBAL_HR_TOTAL] = timer_hr_value(sim_start_ts_hr);
 	file_write_chunk(out_f, &stats_glob_cur, sizeof(stats_glob_cur));
 
 	int64_t buf_size;
