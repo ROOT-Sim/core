@@ -227,6 +227,7 @@ static void stats_files_send(void)
  * | 1          | 8    | uint             | t_cnt | Count of threads for the this node                                 |
  * | 1          | 8    | uint             | --    | Maximum resident set size of this node (in bytes)                  |
  * | 6          | 8    | uint             | --    | Some timestamps in us (see enum #stats_global_type)                |
+ * | 1          | 8    | uint             | --    | High resolution time end to end value (see enum #stats_global_type)|
  * | 1          | 8    | int              | n_siz | Size of the node GVT stats array                                   |
  * | n_siz / 16 | 16   | Node GVT entry   | --    | The node-wide statistics produced at each GVT by this node         |
  * | t_cnt      | *    | Thread GVT stats | --    | The statistics produced by each thread on this node                |
