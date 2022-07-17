@@ -25,6 +25,7 @@ set(srcs
         mm/auto_ckpt.c
         mm/buddy/buddy.c
         mm/buddy/ckpt.c
+        mm/buddy/multi.c
         mm/msg_allocator.c
         parallel/parallel.c
         serial/serial.c)

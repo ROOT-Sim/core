@@ -9,11 +9,11 @@
 * SPDX-License-Identifier: GPL-3.0-only
 */
 
-#include "test.h"
+#include <test.h>
 
-
-#include "mm/mm.h"
-#include "lp/lp.h"
+#include <lp/lp.h>
+#include <mm/buddy/buddy.h>
+#include <mm/mm.h>
 
 #include <string.h>
 

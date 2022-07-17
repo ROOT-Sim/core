@@ -61,6 +61,7 @@ const char *const stats_names[] = {
     [STATS_MSG_SILENT] = "silent messages",
     [STATS_CKPT] = "checkpoints",
     [STATS_CKPT_TIME] = "checkpoints time",
+    [STATS_CKPT_STATE_SIZE] = "checkpoints state size",
     [STATS_MSG_SILENT_TIME] = "silent messages time",
     [STATS_MSG_PROCESSED] = "processed messages",
     [STATS_REAL_TIME_GVT] = "gvt real time"

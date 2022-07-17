@@ -36,7 +36,7 @@ void finish(void)
 void test_init(unsigned n_th)
 {
 	test_random_init();
-	global_config.n_threads = (n_th);
+	global_config.n_threads = n_th;
 	spawn_worker_pool(n_th);
 }
 
