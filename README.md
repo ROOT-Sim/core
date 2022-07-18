@@ -36,7 +36,8 @@ This repository keeps the sources of the ROOT-Sim core: this is the lowest-level
 significant part of the simulation algorithms used in the simulation framework.
 
 The core can be built and used as a stand-alone low-level library writing C code, or it can be used within other
-projects, such as [cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim), i.e. the C/C++ packaging of the simulation library.
+projects, such as [cROOT-Sim](https://github.com/ROOT-Sim/cROOT-Sim), i.e. the C/C++ packaging of the simulation
+library.
 
 ## Dependencies and platforms
 
@@ -75,7 +76,7 @@ ctest
 ## Compiling and running a model
 
 The ROOT-Sim core is not expected to be used directly to run models (see, for example,
-[cROOT-Sim](https://gihub.com/ROOT-Sim/cROOT-Sim)). Nevertheless, an implementation of "low-level" models
+[cROOT-Sim](https://github.com/ROOT-Sim/cROOT-Sim)). Nevertheless, an implementation of "low-level" models
 can be located in `test\integration`.
 The tests can be compiled using the standard `mpicc` compiler, linking against `librscore` and launching
 locally, or using `mpiexec` to run on multiple nodes.
