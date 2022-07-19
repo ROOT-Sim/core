@@ -10,7 +10,7 @@
  * a simulation model. All function prototypes exposed to the application
  * developer are exposed and defined here.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -80,11 +80,12 @@ enum rootsim_event {LP_RETRACTABLE = 65533, LP_INIT, LP_FINI};
  * @param receiver The ID of the LP that should receive the newly-injected message
  * @param timestamp The simulation time at which the event should be delivered at the recipient LP
  * @param event_type Numerical event type to be passed to the model's dispatcher
- * @param payload The event content
- * @param payload_size the size (in bytes) of the event content
+ * @param event_content The event content
+ * @param event_size The size (in bytes) of the event content
  */
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
     unsigned event_size);
+
 extern void SetState(void *new_state);
 
 extern void *rs_malloc(size_t req_size);
@@ -210,7 +211,7 @@ extern struct topology *vInitializeTopology(enum topology_geometry geometry, int
 struct simulation_configuration {
 	/// The number of LPs to be used in the simulation
 	lp_id_t lps;
-	/// The number of threads to be used in the simulation
+	/// The number of threads to be used in the simulation. If zero, it defaults to the amount of available cores
 	unsigned n_threads;
 	/// The target termination logical time. Setting this value to zero means that LVT-based termination is disabled
 	simtime_t termination_time;
@@ -236,5 +237,5 @@ struct simulation_configuration {
 	CanEnd_t committed;
 };
 
-extern int RootsimInit(struct simulation_configuration *conf);
+extern int RootsimInit(const struct simulation_configuration *conf);
 extern int RootsimRun(void);

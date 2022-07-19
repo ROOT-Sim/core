@@ -3,7 +3,7 @@
  *
  * @brief Termination detection module
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -14,6 +14,10 @@
 
 extern _Atomic nid_t nodes_to_end;
 
+/**
+ * @brief Get the termination status of this simulation
+ * @return true if the simulation must go on, false otherwise
+ */
 #define termination_cant_end() (atomic_load_explicit(&nodes_to_end, memory_order_relaxed) > 0)
 
 extern void termination_global_init(void);

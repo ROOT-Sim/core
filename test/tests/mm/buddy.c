@@ -5,16 +5,16 @@
  *
  * A test of the buddy system allocator used to handle model's memory
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <stdlib.h>
-#include "test.h"
+#include <test.h>
 
-#include "ROOT-Sim.h"
-#include "lp/lp.h"
-#include "mm/model_allocator.h"
-#include "mm/buddy/buddy.h"
+#include <lp/lp.h>
+#include <mm/buddy/buddy.h>
+#include <mm/model_allocator.h>
+
+#include <stdlib.h>
 
 #define BUDDY_TEST_SEED 0x5E550UL
 

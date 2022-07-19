@@ -3,18 +3,19 @@
 *
 * @brief Custom minimalistic testing framework
 *
-* SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
 * SPDX-License-Identifier: GPL-3.0-only
 */
 #pragma once
 
-#include "arch/platform.h"
+#include <arch/platform.h>
 
 #include <assert.h>
 #include <limits.h>
+#include <setjmp.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <setjmp.h>
 
 #ifdef __WINDOWS
 #define WIN32_LEAN_AND_MEAN
@@ -30,7 +31,7 @@ typedef HANDLE thr_id_t;
 #ifdef __POSIX
 #include <pthread.h>
 #define THREAD_CALL_CONV
-typedef void * thrd_ret_t;
+typedef void *thrd_ret_t;
 typedef pthread_t thr_id_t;
 #define THREAD_RET_SUCCESS (NULL)
 #endif
@@ -43,14 +44,14 @@ typedef semaphore_t os_semaphore;
 #ifdef __LINUX
 #include <errno.h>
 #include <semaphore.h>
-typedef sem_t * os_semaphore;
+typedef sem_t *os_semaphore;
 #endif
 
 #ifndef __unused
 #define __unused __attribute__((unused))
 #endif
 
-typedef thrd_ret_t(*thr_run_fnc)(void *);
+typedef thrd_ret_t (*thr_run_fnc)(void *);
 
 struct worker {
 	thr_id_t tid;
@@ -59,12 +60,13 @@ struct worker {
 };
 
 typedef int test_ret_t;
-typedef test_ret_t(*test_fn)(void *);
+typedef test_ret_t (*test_fn)(void *);
 
 struct test_unit {
 	unsigned n_th;
 	struct worker *pool;
 	jmp_buf fail_buffer;
+	test_ret_t last_test_result;
 	test_ret_t ret;
 	unsigned passed;
 	unsigned failed;
@@ -111,22 +113,30 @@ extern struct lp_ctx *mock_lp();
 		if(!(condition)) {                                                                                     \
 			fprintf(stderr, "assertion failed: " #condition " at %s:%d\n", __FILE__, __LINE__);            \
 			fflush(stderr);                                                                                \
-			test_unit.ret = -1;                                                                            \
+			test_unit.last_test_result = -1;                                                               \
 		}                                                                                                      \
 	} while(0)
 
 #define check_passed_asserts()                                                                                         \
-        do {                                                                                                           \
-                test_ret_t ret = test_unit.ret;                                                                        \
-                test_unit.ret = 0;                                                                                     \
-                return ret;                                                                                            \
-        } while(0)
+	do {                                                                                                           \
+		test_ret_t ret = test_unit.last_test_result;                                                           \
+		return ret;                                                                                            \
+	} while(0)
 
 #define test_thread_pool_size() (test_unit.n_th)
 
 extern void finish(void);
-extern void init(unsigned n_th);
-extern void fail(void);
+extern __attribute__((noreturn)) void fail(void);
+extern void test_init(unsigned n_th);
 extern void test(char *desc, test_fn test_fn, void *arg);
 extern void test_xf(char *desc, test_fn test_fn, void *arg);
 extern void parallel_test(char *desc, test_fn test_fn, void *args);
+
+#define init(n_th)                                                                                                     \
+	do {                                                                                                           \
+		if(setjmp(test_unit.fail_buffer)) {                                                                    \
+			test_unit.ret = -1; /* getting here from fail()*/                                              \
+			finish();                                                                                      \
+		}                                                                                                      \
+		test_init(n_th);                                                                                       \
+	} while(0)

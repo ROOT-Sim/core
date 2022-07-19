@@ -3,7 +3,7 @@
  *
  * @brief A Buddy System implementation
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -16,10 +16,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define B_TOTAL_EXP 23U
-#define B_BLOCK_EXP 10U
+#define B_TOTAL_EXP 16U
+#define B_BLOCK_EXP 6U
 
-// doesn't work correctly for 0 values!
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
 #define buddy_allocation_block_compute(req_size) next_exp_of_2(max(req_size, 1U << B_BLOCK_EXP) - 1);
 
@@ -27,7 +26,7 @@
 #define buddy_right_child(i) (((i) << 1U) + 2U)
 #define buddy_parent(i) ((((i) + 1) >> 1U) - 1U)
 
-/// The checkpointable memory context assigned to a single LP
+/// The checkpointable memory context of a single buddy system
 struct buddy_state {
 	/// The checkpointed binary tree representing the buddy system
 	/** the last char is actually unused */

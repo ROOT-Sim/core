@@ -5,7 +5,7 @@
  *
  * This module defines synchronization primitives for the parallel runtime.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -13,6 +13,10 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#if defined(__x86_64__) || defined(__i386__)
+#include <immintrin.h>
+#endif
 
 /// The type of a spinlock, an efficient lock primitive in contended scenarios
 typedef atomic_flag spinlock_t;
@@ -28,7 +32,7 @@ typedef atomic_flag spinlock_t;
  * @brief Tells the compiler that we are inside a spin loop
  */
 #if defined(__x86_64__) || defined(__i386__)
-#define spin_pause() __builtin_ia32_pause()
+#define spin_pause() _mm_pause()
 #else
 #define spin_pause()
 #endif

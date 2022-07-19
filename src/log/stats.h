@@ -3,16 +3,16 @@
  *
  * @brief Statistics module
  *
- * All the facilities to collect, gather, and dump statistics are implemented
- * in this module.
+ * All the facilities to collect, gather, and dump statistics are implemented in this module.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
 #include <core/core.h>
 
+/// The kind of timestamps collected during the simulation execution lifetime
 enum stats_global_type {
 	STATS_GLOBAL_START, // used internally, don't use elsewhere
 	STATS_GLOBAL_INIT_END,
@@ -29,6 +29,7 @@ enum stats_thread_type {
 	STATS_MSG_ROLLBACK,
 	STATS_CKPT,
 	STATS_CKPT_TIME,
+	STATS_CKPT_STATE_SIZE,
 	STATS_MSG_SILENT,
 	STATS_MSG_SILENT_TIME,
 	STATS_MSG_REMOTE_RECEIVED,

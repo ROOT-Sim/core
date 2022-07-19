@@ -5,18 +5,15 @@
  *
  * A test of the buddy system allocator used to handle model's memory
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include "test.h"
+#include <test.h>
 
-#include "lp/lp.h"
-#include "mm/model_allocator.h"
+#include <lp/lp.h>
+#include <mm/model_allocator.h>
 
 #include <stdlib.h>
-
-
-
 
 #define MAX_ALLOC_CNT 100
 #define MAX_ALLOC_S 1000
@@ -131,7 +128,7 @@ static bool allocation_check(struct alc *alc, unsigned p)
 				return true;
 			}
 		} else {
-			if(memcmp(alc[i].ptr, alc[i].data, alc[i].c * sizeof(unsigned))) {
+			if(memcmp(alc[i].ptr, alc[i].data, alc[i].c * sizeof(unsigned)) != 0) {
 				return true;
 			}
 		}

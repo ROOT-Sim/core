@@ -5,15 +5,15 @@
 *
 * Multiple stress tests of the model memory allocator. Based on t-test1 by Wolfram Glager
 *
-* SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
 * SPDX-License-Identifier: GPL-3.0-only
 */
 
-#include "test.h"
+#include <test.h>
 
-#include "mm/buddy/buddy.h"
-#include "mm/mm.h"
-#include "lp/lp.h"
+#include <lp/lp.h>
+#include <mm/buddy/buddy.h>
+#include <mm/mm.h>
 
 #include <string.h>
 

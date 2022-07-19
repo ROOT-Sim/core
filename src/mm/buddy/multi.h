@@ -15,12 +15,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define buddy_left_child(i) (((i) << 1U) + 1U)
-#define buddy_right_child(i) (((i) << 1U) + 2U)
-#define buddy_parent(i) ((((i) + 1) >> 1U) - 1U)
-
+/// The checkpoint for the multiple buddy system allocator
 struct mm_checkpoint {
+	/// The total count of allocated bytes at the moment of the checkpoint
 	uint32_t used_mem;
+	/// The sequence of checkpoints of the allocated buddy systems (see @a buddy_checkpoint)
 	unsigned char chkps[];
 };
 
@@ -28,16 +27,17 @@ struct mm_checkpoint {
 struct mm_log {
 	/// The reference index, used to identify this checkpoint
 	array_count_t ref_i;
-	/// A pointer to the actual checkpoints (contiguous array)
+	/// A pointer to the actual checkpoint
 	struct mm_checkpoint *c;
 };
 
 /// The checkpointable memory context assigned to a single LP
 struct mm_state {
+	/// The array of pointers to the allocated buddy systems for the LP
 	dyn_array(struct buddy_state *) buddies;
 	/// The array of checkpoints
 	dyn_array(struct mm_log) logs;
-	/// The count of allocated bytes
+	/// The total count of allocated bytes
 	uint_fast32_t used_mem;
 };
 

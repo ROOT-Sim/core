@@ -10,7 +10,7 @@
  * of these can be used by worker threads without coordination when relying
  * on this module.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <distributed/mpi.h>
@@ -28,11 +28,15 @@ enum {
 	RS_DATA_TAG
 };
 
+/// Array of control codes values to be able to get their address for MPI_Send()
 static const enum msg_ctrl_code ctrl_msgs[] = {
 	[MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
 	[MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
 	[MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
 };
+
+static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
+static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
 
 /**
  * @brief Handles a MPI error
@@ -115,7 +119,7 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	gvt_remote_msg_send(msg, dest_nid);
 
 	MPI_Request req;
-	MPI_Isend(msg, msg_bare_size(msg), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
+	MPI_Isend(msg_remote_data(msg), msg_remote_size(msg), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 }
 
@@ -136,7 +140,7 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	gvt_remote_anti_msg_send(msg, dest_nid);
 
 	MPI_Request req;
-	MPI_Isend(msg, msg_anti_size(), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
+	MPI_Isend(msg_remote_data(msg), msg_remote_anti_size(), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 }
 
@@ -189,8 +193,8 @@ void mpi_remote_msg_handle(void)
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		struct lp_msg *msg;
-		if(unlikely(size <= (int)msg_anti_size())) {
-			if (unlikely(size == sizeof(enum msg_ctrl_code))) {
+		if(unlikely(size <= (int)msg_remote_anti_size())) {
+			if(unlikely(size == sizeof(enum msg_ctrl_code))) {
 				enum msg_ctrl_code c;
 				MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 				control_msg_process(c);
@@ -200,12 +204,12 @@ void mpi_remote_msg_handle(void)
 			// make sure the deterministic tie-breaking doesn't read uninitialized data
 			msg->m_type = 0;
 			msg->pl_size = 0;
-			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
 			gvt_remote_anti_msg_receive(msg);
 		} else {
-			msg = msg_allocator_alloc(size - offsetof(struct lp_msg, pl));
-			MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			msg = msg_allocator_alloc(size - offsetof(struct lp_msg, pl) + msg_preamble_size());
+			MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
 			gvt_remote_msg_receive(msg);
 		}
@@ -237,28 +241,27 @@ void mpi_remote_msg_drain(void)
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 
+		if(unlikely(size == sizeof(enum msg_ctrl_code))) {
+			enum msg_ctrl_code c;
+			MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			control_msg_process(c);
+			continue;
+		}
+
 		if(size > msg_size) {
-			msg = mm_realloc(msg, size);
+			msg = mm_realloc(msg, size + msg_preamble_size());
 			msg_size = size;
 		}
-		MPI_Mrecv(msg, size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+		MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
-		switch(size) {
-			case sizeof(enum msg_ctrl_code):
-				control_msg_process(*(enum msg_ctrl_code *)msg);
-				break;
-			case msg_anti_size():
-				gvt_remote_anti_msg_receive(msg);
-				break;
-			default:
-				gvt_remote_msg_receive(msg);
-		}
+		if(size == msg_remote_anti_size())
+			gvt_remote_anti_msg_receive(msg);
+		else
+			gvt_remote_msg_receive(msg);
 	}
 
 	mm_free(msg);
 }
-
-static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
 
 /**
  * @brief Computes the sum-reduction-scatter operation across all nodes.
@@ -288,8 +291,6 @@ bool mpi_reduce_sum_scatter_done(void)
 	MPI_Test(&reduce_sum_scatter_req, &flag, MPI_STATUS_IGNORE);
 	return flag;
 }
-
-static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
 
 /**
  * @brief Computes the min-reduction operation across all nodes.

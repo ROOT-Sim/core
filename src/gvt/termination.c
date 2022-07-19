@@ -3,7 +3,7 @@
  *
  * @brief Termination detection module
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <gvt/termination.h>
@@ -11,9 +11,14 @@
 #include <distributed/mpi.h>
 #include <lp/lp.h>
 
+/// The number of nodes that still need to continue running the simulation
 _Atomic nid_t nodes_to_end;
+/// The number of local threads that still need to continue running the simulation
 static _Atomic rid_t thr_to_end;
+/// The number of thread-locally bounded LPs that still need to continue running the simulation
 static __thread uint64_t lps_to_end;
+/// The maximum speculative time at which a thread-local LP declared its intention to terminate
+/** FIXME: a wrong high termination time during a speculative trajectory forces the simulation to uselessly continue */
 static __thread simtime_t max_t;
 
 /**
@@ -61,7 +66,11 @@ void termination_on_ctrl_msg(void)
 }
 
 /**
- * @brief Compute termination operations after the receipt of a termination control message
+ * @brief Update the termination module state after a GVT computation
+ *
+ * Here we check if the simulation, from the point of view of the current thread, can be terminated. If also all the
+ * other processing threads on the node are willing to end the simulation, a termination control message is broadcast to
+ * the other nodes.
  */
 void termination_on_gvt(simtime_t current_gvt)
 {

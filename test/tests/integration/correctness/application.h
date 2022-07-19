@@ -1,9 +1,9 @@
 /**
- * @file test/tests/integration/model/application.h
+ * @file test/tests/integration/correctness/application.h
  *
  * @brief Header of the model used to verify the runtime correctness
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once

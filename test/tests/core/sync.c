@@ -3,7 +3,7 @@
  *
  * @brief Test: synchronization primitives test
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <stdatomic.h>
@@ -47,7 +47,6 @@ static test_ret_t spinlock_test(__unused void *_)
 		spin_lock(&spin);
 		switch(k % 5) {
 			case 0:
-				__attribute__((fallthrough));
 			case 2:
 				k += 1;
 				__attribute__((fallthrough));
@@ -55,7 +54,6 @@ static test_ret_t spinlock_test(__unused void *_)
 				k += 1;
 				break;
 			case 3:
-				__attribute__((fallthrough));
 			case 1:
 				k += 5;
 				break;
@@ -80,7 +78,6 @@ static test_ret_t mrswlock_test(__unused void *_)
 		mrswlock_wlock(&rw_lock, (int)n_threads);
 		switch(d % 5) {
 			case 0:
-				__attribute__((fallthrough));
 			case 2:
 				d += 1;
 				__attribute__((fallthrough));
@@ -88,7 +85,6 @@ static test_ret_t mrswlock_test(__unused void *_)
 				d += 1;
 				break;
 			case 3:
-				__attribute__((fallthrough));
 			case 1:
 				d += 5;
 				break;

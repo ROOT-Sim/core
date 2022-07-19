@@ -5,7 +5,7 @@
  *
  * Memory management functions for messages
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <mm/msg_allocator.h>
@@ -44,21 +44,22 @@ void msg_allocator_fini(void)
  * @brief Allocate a new message with given payload size
  * @param payload_size the size in bytes of the requested message payload
  * @return a new message with at least the requested amount of payload space
+ *
+ * Since this module relies on the member lp_msg.pl_size (see @a msg_allocator_free()), it has writing responsibility
+ * on it.
  */
 struct lp_msg *msg_allocator_alloc(unsigned payload_size)
 {
 	struct lp_msg *ret;
-	if(unlikely(payload_size > BASE_PAYLOAD_SIZE)) {
-		ret = mm_alloc(offsetof(struct lp_msg, extra_pl) + (payload_size - BASE_PAYLOAD_SIZE));
-		ret->pl_size = payload_size;
-		return ret;
-	}
-	if(unlikely(array_is_empty(free_list))) {
+	if(unlikely(payload_size > MSG_PAYLOAD_BASE_SIZE)) {
+		ret = mm_alloc(offsetof(struct lp_msg, extra_pl) + (payload_size - MSG_PAYLOAD_BASE_SIZE));
+	} else if(unlikely(array_is_empty(free_list))) {
 		ret = mm_alloc(sizeof(struct lp_msg));
-		ret->pl_size = payload_size;
-		return ret;
+	} else {
+		ret = array_pop(free_list);
 	}
-	return array_pop(free_list);
+	ret->pl_size = payload_size;
+	return ret;
 }
 
 /**
@@ -67,7 +68,7 @@ struct lp_msg *msg_allocator_alloc(unsigned payload_size)
  */
 void msg_allocator_free(struct lp_msg *msg)
 {
-	if(likely(msg->pl_size <= BASE_PAYLOAD_SIZE))
+	if(likely(msg->pl_size <= MSG_PAYLOAD_BASE_SIZE))
 		array_push(free_list, msg);
 	else
 		mm_free(msg);

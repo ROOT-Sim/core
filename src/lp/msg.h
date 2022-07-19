@@ -5,7 +5,7 @@
  *
  * Message management functions
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -17,15 +17,48 @@
 #include <stddef.h>
 #include <string.h>
 
-#define BASE_PAYLOAD_SIZE 32
+/// The minimum size of the payload to which message allocations are snapped to
+#define MSG_PAYLOAD_BASE_SIZE 32
 
+/**
+ * @brief Compute the value of the happens-before relation between two messages
+ * @param[in] a a pointer to the first message to compare
+ * @param[in] b a pointer to the second message to compare
+ * @return true if the message pointed by @p a happens-before the message pointed by @p b, false otherwise
+ */
 #define msg_is_before(a, b) ((a)->dest_t < (b)->dest_t || ((a)->dest_t == (b)->dest_t && msg_is_before_extended(a, b)))
 
-#define msg_bare_size(msg) (offsetof(struct lp_msg, pl) + (msg)->pl_size)
-#define msg_anti_size() (offsetof(struct lp_msg, m_seq) + sizeof(uint32_t))
+/**
+ * @brief Get the size of the message preamble
+ * @return the size in bytes of the message preamble
+ * The preamble is the initial part of the message which doesn't need to be transmitted over MPI
+ */
+#define msg_preamble_size() (offsetof(struct lp_msg, dest))
+
+/**
+ * @brief Get the address of the remote message data, i.e. the part of the message to be transmitted over MPI
+ * @param[in] msg a pointer to the message
+ * @return the address of the message data
+ */
+#define msg_remote_data(msg) (&(msg)->dest)
+
+/**
+ * @brief Get the size of the message data, i.e. the part of the message to be transmitted over MPI
+ * @param[in] msg a pointer to the message
+ * @return the size in bytes of the message data
+ */
+#define msg_remote_size(msg) (offsetof(struct lp_msg, pl) - msg_preamble_size() + (msg)->pl_size)
+
+/**
+ * @brief Get the size of the a anti-message data, i.e. the part of the anti-message to be transmitted over MPI
+ * @return the size in bytes of the anti-message data
+ */
+#define msg_remote_anti_size() (offsetof(struct lp_msg, m_seq) - msg_preamble_size() + sizeof(uint32_t))
 
 /// A model simulation message
 struct lp_msg {
+	/// The next element in the message list (used in the message queue)
+	struct lp_msg *next;
 	/// The id of the recipient LP
 	lp_id_t dest;
 	/// The intended destination logical time of this message
@@ -49,7 +82,7 @@ struct lp_msg {
 	/// The message payload size
 	uint32_t pl_size;
 	/// The initial part of the payload
-	unsigned char pl[BASE_PAYLOAD_SIZE];
+	unsigned char pl[MSG_PAYLOAD_BASE_SIZE];
 	/// The continuation of the payload
 	unsigned char extra_pl[];
 };

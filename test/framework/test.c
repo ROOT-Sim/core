@@ -3,7 +3,7 @@
  *
  * @brief Custom minimalistic testing framework
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -29,29 +29,27 @@ void finish(void)
 	printf("FAILED.............: %u\n", test_unit.failed);
 	printf("UNEXPECTED PASS....: %u\n", test_unit.uxpassed);
 	printf("%.*s\n", d, "============================================================================");
+
 	exit(test_unit.ret);
 }
 
-void init(unsigned n_th)
+void test_init(unsigned n_th)
 {
-	if(setjmp(test_unit.fail_buffer)) {
-		test_unit.ret = -1; // getting here from fail()
-		finish();
-	}
-
 	test_random_init();
 	global_config.n_threads = n_th;
 	spawn_worker_pool(n_th);
 }
 
-void fail(void)
+__attribute__((noreturn)) void fail(void)
 {
-	fprintf(stderr, "Failing explicitly\n");                                                               \
-        longjmp(test_unit.fail_buffer, 1);                                                                     \
+	printf("failed explicitly.\n");
+	test_unit.failed++;
+	longjmp(test_unit.fail_buffer, 1);
 }
 
 void test(char *desc, test_fn test_fn, void *arg)
 {
+	test_unit.last_test_result = 0;
 	test_unit.should_pass++;
 	printf("%s... ", desc);
 	if(test_fn(arg) != 0) {
@@ -69,6 +67,7 @@ void test(char *desc, test_fn test_fn, void *arg)
 
 void test_xf(char *desc, test_fn test_fn, void *arg)
 {
+	test_unit.last_test_result = 0;
 	test_unit.should_fail++;
 	printf("%s... ", desc);
 	if(test_fn(arg) == 0) {
@@ -85,6 +84,7 @@ void test_xf(char *desc, test_fn test_fn, void *arg)
 
 void parallel_test(char *desc, test_fn test_fn, void *args)
 {
+	test_unit.last_test_result = 0;
 	int res = 0;
 	test_unit.should_pass++;
 	printf("%s... ", desc);
