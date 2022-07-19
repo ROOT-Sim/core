@@ -12,7 +12,10 @@
 #include <test.h>
 #include <string.h>
 
-extern test_ret_t test_explicit_fail(__unused void *_);
+test_ret_t test_explicit_fail(__unused void *_)
+{
+	fail();
+}
 
 int main(void)
 {

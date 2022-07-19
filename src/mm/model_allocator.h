@@ -11,7 +11,7 @@
 #pragma once
 
 #include <datatypes/array.h>
-#include <mm/buddy/buddy.h>
+#include <mm/buddy/multi.h>
 
 extern void model_allocator_lp_init(void);
 extern void model_allocator_lp_fini(void);

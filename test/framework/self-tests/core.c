@@ -8,7 +8,6 @@
  */
 
 #include <test.h>
-#include <string.h>
 
 test_ret_t test_pass(__unused void *_)
 {
@@ -32,7 +31,3 @@ test_ret_t test_fail_assert(__unused void *_)
 	check_passed_asserts();
 }
 
-test_ret_t test_explicit_fail(__unused void *_)
-{
-	fail();
-}

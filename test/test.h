@@ -8,14 +8,14 @@
 */
 #pragma once
 
-#include "arch/platform.h"
+#include <arch/platform.h>
 
 #include <assert.h>
 #include <limits.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <setjmp.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #ifdef __WINDOWS
 #define WIN32_LEAN_AND_MEAN

@@ -32,9 +32,9 @@ static __thread struct lp_msg *current_msg;
 #define unmark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) - 1U))
 
 void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
-    unsigned payload_size) {
-
-	if (unlikely(global_config.serial)) {
+    unsigned payload_size)
+{
+	if(unlikely(global_config.serial)) {
 		ScheduleNewEvent_serial(receiver, timestamp, event_type, payload, payload_size);
 		return;
 	}
@@ -87,7 +87,9 @@ static inline void checkpoint_take(struct process_data *proc_p)
 	model_allocator_checkpoint_take(array_count(proc_p->p_msgs));
 	stats_take(STATS_CKPT_STATE_SIZE, current_lp->mm_state.used_mem);
 	stats_take(STATS_CKPT, 1);
+	stats_take(STATS_CKPT_STATE_SIZE, current_lp->mm_state.used_mem);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
+
 }
 
 /**
@@ -178,7 +180,8 @@ static inline void send_anti_messages(struct process_data *proc_p, array_count_t
 				msg_allocator_free_at_gvt(msg);
 			} else {
 				msg = unmark_msg_sent(msg);
-				int f = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
+				uint32_t f =
+				    atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
 				if(f & MSG_FLAG_PROCESSED)
 					msg_queue_insert(msg);
 			}
@@ -186,7 +189,7 @@ static inline void send_anti_messages(struct process_data *proc_p, array_count_t
 			msg = array_get_at(proc_p->p_msgs, ++i);
 		}
 
-		int f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
+		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(f & MSG_FLAG_ANTI)) {
 			msg_queue_insert(msg);
 			stats_take(STATS_MSG_ROLLBACK, 1);
@@ -203,8 +206,7 @@ static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 	stats_take(STATS_ROLLBACK, 1);
 }
 
-static inline array_count_t match_straggler_msg(
-		const struct process_data *proc_p, const struct lp_msg *s_msg)
+static inline array_count_t match_straggler_msg(const struct process_data *proc_p, const struct lp_msg *s_msg)
 {
 	array_count_t i = array_count(proc_p->p_msgs) - 1;
 	const struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);

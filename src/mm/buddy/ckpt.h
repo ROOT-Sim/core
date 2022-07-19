@@ -1,19 +1,19 @@
 /**
-* @file mm/buddy/ckpt.h
-*
-* @brief Checkpointing capabilities
-*
-* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
-* SPDX-License-Identifier: GPL-3.0-only
+ * @file mm/buddy/ckpt.h
+ *
+ * @brief Checkpointing capabilities
+ *
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
 #include <mm/buddy/buddy.h>
 
-/// A restorable checkpoint of the memory context assigned to a single LP
-struct mm_checkpoint { // todo only log longest[] if changed, or incrementally
-	/// A flag discriminating whether this is an incremental checkpoint or not
-	_Bool is_incremental;
+/// A restorable checkpoint of the memory context of a single buddy system
+struct buddy_checkpoint { // todo only log longest[] if changed, or incrementally
+	/// The buddy system to which this checkpoint applies. TODO: reengineer the multi-checkpointing approach
+	const struct buddy_state *orig;
 	/// The checkpoint of the dirty bitmap
 	block_bitmap dirty [
 		bitmap_required_size(
@@ -23,8 +23,6 @@ struct mm_checkpoint { // todo only log longest[] if changed, or incrementally
 			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
 		)
 	];
-	/// The used memory in bytes when this checkpoint was taken
-	uint_fast32_t used_mem;
 	/// The checkpointed binary tree representing the buddy system
 	uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
 	/// The checkpointed memory buffer assigned to the model
@@ -32,13 +30,12 @@ struct mm_checkpoint { // todo only log longest[] if changed, or incrementally
 };
 
 static_assert(
-	offsetof(struct mm_checkpoint, longest) ==
-	offsetof(struct mm_checkpoint, base_mem) -
-	sizeof(((struct mm_checkpoint *)0)->longest),
+	offsetof(struct buddy_checkpoint, longest) ==
+	offsetof(struct buddy_checkpoint, base_mem) -
+	sizeof(((struct buddy_checkpoint *)0)->longest),
 	"longest and base_mem are not contiguous, this will break incremental checkpointing");
 
-#define checkpoint_free(x) mm_free(x)
-extern struct mm_checkpoint *checkpoint_full_take(const struct mm_state *self);
-extern void checkpoint_full_restore(struct mm_state *self, const struct mm_checkpoint *ckp);
-extern struct mm_checkpoint *checkpoint_incremental_take(const struct mm_state *self);
-extern void checkpoint_incremental_restore(struct mm_state *self, const struct mm_checkpoint *ckp);
+extern struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *data);
+extern const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *data);
+extern struct buddy_checkpoint *checkpoint_incremental_take(const struct buddy_state *self, struct buddy_checkpoint *data);
+extern const struct buddy_checkpoint * checkpoint_incremental_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp);
