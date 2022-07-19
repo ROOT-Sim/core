@@ -242,45 +242,75 @@ if __name__ == "__main__":
     rollback_msgs = stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
     silent_msgs = stats.thread_metric_get("silent messages", aggregate_nodes=True, aggregate_gvts=True)
     rollbacks = stats.thread_metric_get("rollbacks", aggregate_nodes=True, aggregate_gvts=True)
-    avg_log_size = stats.thread_metric_get("checkpoints state size", aggregate_nodes=True, aggregate_gvts=True) /\
-                   stats.thread_metric_get("checkpoints", aggregate_nodes=True, aggregate_gvts=True)
+    checkpoints = stats.thread_metric_get("checkpoints", aggregate_nodes=True, aggregate_gvts=True)
+    avg_log_size = stats.thread_metric_get("checkpoints state size", aggregate_nodes=True, aggregate_gvts=True) / \
+                   checkpoints if checkpoints != 0 else 0
+
+    rollback_freq = 100 * rollbacks / processed_msgs if processed_msgs != 0 else 0
+    rollback_len = rollback_msgs / rollbacks if rollbacks != 0 else 0
+    efficiency = 100 * (processed_msgs - rollback_msgs) / processed_msgs if processed_msgs else 100
 
     peak_memory_usage = sum(stats.nodes_stats["maximum_resident_set"])
-    avg_memory_usage = sum([sum(t) for t in stats.nodes_stats["resident_set"]]) / len(stats.gvts)
 
-    simulation_time = stats.nodes_stats["node_total_time"][0]/1000000
+    if len(stats.gvts) == 0:
+        avg_memory_usage = 0
+        sim_speed = 0.0
+        last_gvt = 0.0
+    else:
+        avg_memory_usage = sum([sum(t) for t in stats.nodes_stats["resident_set"]]) / len(stats.gvts)
+        last_gvt = stats.gvts[-1]
+        sim_speed = last_gvt / len(stats.gvts)
+
+    simulation_time = stats.nodes_stats["node_total_time"][0] / 1000000
 
     out_name = sys.argv[1][:-4] if sys.argv[1].endswith(".bin") else sys.argv[1]
     out_name = out_name + ".txt"
 
-    def fmt_size(num, suffix="B"):
-        for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
-            if abs(num) < 1024.0:
-                return f"{num:3.1f}{unit}{suffix}"
-            num /= 1024.0
-        return f"{num:.1f}Yi{suffix}"
+
+    def fmt_size(num, is_binary=True):
+        div = 1024.0 if is_binary else 1000.0
+        post_unit = "i" if is_binary else ""
+
+        if num == 0:
+            return f"0"
+
+        if abs(num) < div:
+            for unit in ["", "m", "u", "n"]:
+                if abs(num) > 1:
+                    return f"{num:3.1f}{unit}{post_unit}"
+                num *= div
+            return f"{num:3.1f}p{post_unit}"
+
+        num /= div
+        for unit in ["K", "M", "G", "T", "P", "E", "Z"]:
+            if abs(num) < div:
+                return f"{num:.1f}{unit}{post_unit}"
+            num /= div
+
+        return f"{num:.1f}Y{post_unit}"
+
 
     with open(out_name, "w+") as f:
-        f.write(f"TOTAL SIMULATION TIME ..... : {simulation_time}s\n")
+        f.write(f"TOTAL SIMULATION TIME ..... : {fmt_size(simulation_time, False)}s\n")
         f.write(f"TOTAL KERNELS ............. : {stats.nodes_count}\n")
         f.write(f"TOTAL_THREADS ............. : {sum(stats.threads_count)}\n")
-        f.write(f"TOTAL_LPs ................. : TODO\n")  # TODO add number of LPs to stats in ROOT-Sim!
+        f.write(f"TOTAL_LPs ................. : 0\n")  # TODO add number of LPs to stats in ROOT-Sim!
         f.write(f"TOTAL EXECUTED EVENTS ..... : {processed_msgs + silent_msgs}\n")
         f.write(f"TOTAL COMMITTED EVENTS..... : {processed_msgs - rollback_msgs}\n")
         f.write(f"TOTAL REPROCESSED EVENTS... : {rollback_msgs}\n")
         f.write(f"TOTAL SILENT EVENTS........ : {silent_msgs}\n")
         f.write(f"TOTAL ROLLBACKS EXECUTED... : {rollbacks}\n")
-        f.write(f"TOTAL ANTIMESSAGES......... : TODO\n")  # TODO add antimessages to stats in ROOT-Sim!
-        f.write(f"ROLLBACK FREQUENCY......... : {100 * rollbacks / processed_msgs:.2f}%\n")
-        f.write(f"ROLLBACK LENGTH............ : {rollback_msgs / rollbacks:.2f}\n")
-        f.write(f"EFFICIENCY................. : {100 * (processed_msgs - rollback_msgs) / processed_msgs:.2f}%\n")
-        f.write(f"AVERAGE EVENT COST......... : TODO\n")  # TODO do we want this?
-        f.write(f"AVERAGE EVENT COST (EMA)... : TODO\n")  # TODO do we want this?
-        f.write(f"AVERAGE CHECKPOINT COST.... : TODO\n")  # TODO do we want this?
-        f.write(f"AVERAGE RECOVERY COST...... : TODO\n")  # TODO do we want this?
-        f.write(f"AVERAGE LOGGED STATE SIZE.. : {fmt_size(avg_log_size)}\n")
-        f.write(f"LAST COMMITTED GVT ........ : {stats.gvts[-1]}\n")
+        f.write(f"TOTAL ANTIMESSAGES......... : 0\n")  # TODO add antimessages to stats in ROOT-Sim!
+        f.write(f"ROLLBACK FREQUENCY......... : {rollback_freq:.2f}%\n")
+        f.write(f"ROLLBACK LENGTH............ : {rollback_len:.2f}\n")
+        f.write(f"EFFICIENCY................. : {efficiency:.2f}%\n")
+        f.write(f"AVERAGE EVENT COST......... : 0s\n")  # TODO do we want this?
+        f.write(f"AVERAGE EVENT COST (EMA)... : 0s\n")  # TODO do we want this?
+        f.write(f"AVERAGE CHECKPOINT COST.... : 0s\n")  # TODO do we want this?
+        f.write(f"AVERAGE RECOVERY COST...... : 0s\n")  # TODO do we want this?
+        f.write(f"AVERAGE LOGGED STATE SIZE.. : {fmt_size(avg_log_size)}B\n")
+        f.write(f"LAST COMMITTED GVT ........ : {last_gvt}\n")
         f.write(f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n")
-        f.write(f"SIMULATION TIME SPEED...... : {stats.gvts[-1] / len(stats.gvts)}\n")
-        f.write(f"AVERAGE MEMORY USAGE....... : {fmt_size(avg_memory_usage)}\n")
-        f.write(f"PEAK MEMORY USAGE.......... : {fmt_size(peak_memory_usage)}\n")
+        f.write(f"SIMULATION TIME SPEED...... : {sim_speed}\n")
+        f.write(f"AVERAGE MEMORY USAGE....... : {fmt_size(avg_memory_usage)}B\n")
+        f.write(f"PEAK MEMORY USAGE.......... : {fmt_size(peak_memory_usage)}B\n")

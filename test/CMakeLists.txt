@@ -24,7 +24,7 @@ endfunction()
 
 # Test framework tests
 test_program(testing_framework framework/self-tests/core.c framework/self-tests/rng.c framework/self-tests/threads.c framework/self-tests/semaphores.c framework/self-tests/main.c)
-test_program_xf(testing_framework_fail framework/self-tests/core.c framework/self-tests/fail.c)
+test_program_xf(testing_framework_fail framework/self-tests/fail.c)
 test_program_xf(testing_framework_assert1 framework/self-tests/core.c framework/self-tests/fail_assert1.c)
 test_program_xf(testing_framework_assert2 framework/self-tests/core.c framework/self-tests/fail_assert2.c)
 
@@ -38,6 +38,9 @@ test_program(load tests/core/load.c)
 # Test data structures and subsystems
 #test_program(msg_queue tests/datatypes/msg_queue.c)
 test_program(stats tests/log/stats.c)
+target_compile_definitions(test_stats PRIVATE STATS_SCRIPT_PATH=\"${CMAKE_SOURCE_DIR}/src/log/parse/rootsim_stats.py\")
+target_compile_definitions(test_stats PRIVATE STATS_TEST_SCRIPT_PATH=\"${CMAKE_SOURCE_DIR}/test/tests/log/parse_test.py\")
+
 test_program(bitmap tests/datatypes/bitmap.c)
 test_program(mm tests/mm/buddy.c tests/mm/buddy_hard.c tests/mm/parallel.c tests/mm/main.c)
 
