@@ -319,7 +319,7 @@ void stats_global_fini(void)
  * @param this_stat the statistics type to add the sample to
  * @param c the sample to sum
  */
-void stats_take(enum stats_thread_type this_stat, unsigned c)
+void stats_take(enum stats_thread_type this_stat, uint_fast64_t c)
 {
 	stats_cur.s[this_stat] += c;
 }

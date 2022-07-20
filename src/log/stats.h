@@ -43,7 +43,7 @@ extern void stats_global_init(void);
 extern void stats_global_fini(void);
 extern void stats_init(void);
 
-extern void stats_take(enum stats_thread_type this_stat, unsigned c);
+extern void stats_take(enum stats_thread_type this_stat, uint_fast64_t c);
 extern uint64_t stats_retrieve(enum stats_thread_type this_stat);
 extern void stats_on_gvt(simtime_t current_gvt);
 extern void stats_dump(void);
