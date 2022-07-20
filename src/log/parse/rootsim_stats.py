@@ -238,13 +238,19 @@ if __name__ == "__main__":
 
     stats = RSStats(sys.argv[1])
 
+    simulation_time = stats.nodes_stats["node_total_time"][0] / 1000000
+    hr_ticks_per_second = stats.nodes_stats["node_total_hr_time"][0] / simulation_time
+
     processed_msgs = stats.thread_metric_get("processed messages", aggregate_nodes=True, aggregate_gvts=True)
     rollback_msgs = stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
     silent_msgs = stats.thread_metric_get("silent messages", aggregate_nodes=True, aggregate_gvts=True)
     rollbacks = stats.thread_metric_get("rollbacks", aggregate_nodes=True, aggregate_gvts=True)
     checkpoints = stats.thread_metric_get("checkpoints", aggregate_nodes=True, aggregate_gvts=True)
+    checkpoints_cost = stats.thread_metric_get("checkpoints time", aggregate_nodes=True, aggregate_gvts=True)
     avg_log_size = stats.thread_metric_get("checkpoints state size", aggregate_nodes=True, aggregate_gvts=True) / \
                    checkpoints if checkpoints != 0 else 0
+
+    avg_checkpoint_cost = 0 if checkpoints == 0 else checkpoints_cost / (checkpoints * hr_ticks_per_second)
 
     rollback_freq = 100 * rollbacks / processed_msgs if processed_msgs != 0 else 0
     rollback_len = rollback_msgs / rollbacks if rollbacks != 0 else 0
@@ -260,8 +266,6 @@ if __name__ == "__main__":
         avg_memory_usage = sum([sum(t) for t in stats.nodes_stats["resident_set"]]) / len(stats.gvts)
         last_gvt = stats.gvts[-1]
         sim_speed = last_gvt / len(stats.gvts)
-
-    simulation_time = stats.nodes_stats["node_total_time"][0] / 1000000
 
     out_name = sys.argv[1][:-4] if sys.argv[1].endswith(".bin") else sys.argv[1]
     out_name = out_name + ".txt"
@@ -306,7 +310,7 @@ if __name__ == "__main__":
         f.write(f"EFFICIENCY................. : {efficiency:.2f}%\n")
         f.write(f"AVERAGE EVENT COST......... : 0s\n")  # TODO do we want this?
         f.write(f"AVERAGE EVENT COST (EMA)... : 0s\n")  # TODO do we want this?
-        f.write(f"AVERAGE CHECKPOINT COST.... : 0s\n")  # TODO do we want this?
+        f.write(f"AVERAGE CHECKPOINT COST.... : {fmt_size(avg_checkpoint_cost, False)}s\n")
         f.write(f"AVERAGE RECOVERY COST...... : 0s\n")  # TODO do we want this?
         f.write(f"AVERAGE LOGGED STATE SIZE.. : {fmt_size(avg_log_size)}B\n")
         f.write(f"LAST COMMITTED GVT ........ : {last_gvt}\n")
