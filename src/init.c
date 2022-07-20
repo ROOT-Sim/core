@@ -147,8 +147,6 @@ int RootsimRun(void)
 		print_config();
 	}
 
-	stats_global_time_start();
-
 	if(global_config.serial) {
 		ret = serial_simulation();
 	} else {

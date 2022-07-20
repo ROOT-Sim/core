@@ -80,15 +80,6 @@ static FILE **stats_tmps;
 static __thread struct stats_thread stats_cur;
 
 /**
- * @brief Initialize the internal timer used to take accurate measurements
- */
-void stats_global_time_start(void)
-{
-	sim_start_ts = timer_new();
-	sim_start_ts_hr = timer_hr_new();
-}
-
-/**
  * @brief Take a lifetime event time value
  * @param this_stat The type of event just occurred
  */
@@ -102,10 +93,11 @@ void stats_global_time_take(enum stats_global_type this_stat)
  */
 void stats_global_init(void)
 {
+	sim_start_ts = timer_new();
+	sim_start_ts_hr = timer_hr_new();
+
 	if(global_config.stats_file == NULL)
 		return;
-
-	stats_glob_cur.timestamps[STATS_GLOBAL_START] = timer_value(sim_start_ts);
 
 	stats_node_tmp = io_file_tmp_get();
 	if(unlikely(stats_node_tmp == NULL)) {
@@ -373,11 +365,11 @@ void stats_on_gvt(simtime_t gvt)
 void stats_dump(void)
 {
 	if(nid == 0) {
-		double t = timer_value(sim_start_ts) / 1000000.0;
 		if(global_config.log_level != LOG_SILENT) {
 			puts("");
 			fflush(stdout);
 		}
+		double t = (double)timer_value(sim_start_ts) / 1000000.0;
 		logger(LOG_INFO, "Simulation completed in %.3lf seconds", t);
 	}
 }

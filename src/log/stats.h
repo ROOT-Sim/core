@@ -14,7 +14,6 @@
 
 /// The kind of timestamps collected during the simulation execution lifetime
 enum stats_global_type {
-	STATS_GLOBAL_START, // used internally, don't use elsewhere
 	STATS_GLOBAL_INIT_END,
 	STATS_GLOBAL_EVENTS_START,
 	STATS_GLOBAL_EVENTS_END,
@@ -38,7 +37,6 @@ enum stats_thread_type {
 	STATS_COUNT
 };
 
-extern void stats_global_time_start(void);
 extern void stats_global_time_take(enum stats_global_type this_stat);
 
 extern void stats_global_init(void);

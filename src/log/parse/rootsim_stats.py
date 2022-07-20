@@ -42,7 +42,7 @@ class RSStats:
     def _nodes_stats_load(self):
         nodes_count = self._pattern_unpack("q")[0]
         for _ in range(nodes_count):
-            glob_stats = self._pattern_unpack("9Q")
+            glob_stats = self._pattern_unpack("8Q")
             n_threads = glob_stats[0]
             self.threads_count.append(n_threads)
             n_stats = self._pattern_unpack("q")[0] // 16
@@ -110,20 +110,20 @@ class RSStats:
             "worker_threads_fini_time": [],
             "node_fini_time": [],
             "node_total_time": [],
-            "node_total_time_hr": [],
+            "node_total_hr_time": [],
             "resident_set": []
         }
         for triple in self.all_stats:
             glob_stats, node_stats, threads_stats = triple
 
             self._global_measures["maximum_resident_set"].append(glob_stats[1])
-            self._global_measures["node_init_time"].append(glob_stats[3] - glob_stats[2])
-            self._global_measures["worker_threads_init_time"].append(glob_stats[4] - glob_stats[3])
-            self._global_measures["processing_time"].append(glob_stats[5] - glob_stats[4])
-            self._global_measures["worker_threads_fini_time"].append(glob_stats[6] - glob_stats[5])
-            self._global_measures["node_fini_time"].append(glob_stats[7] - glob_stats[6])
-            self._global_measures["node_total_time"].append(glob_stats[7] - glob_stats[2])
-            self._global_measures["node_total_time_hr"].append(glob_stats[8])
+            self._global_measures["node_init_time"].append(glob_stats[2])
+            self._global_measures["worker_threads_init_time"].append(glob_stats[3] - glob_stats[2])
+            self._global_measures["processing_time"].append(glob_stats[4] - glob_stats[3])
+            self._global_measures["worker_threads_fini_time"].append(glob_stats[5] - glob_stats[4])
+            self._global_measures["node_fini_time"].append(glob_stats[6] - glob_stats[5])
+            self._global_measures["node_total_time"].append(glob_stats[6] - glob_stats[2])
+            self._global_measures["node_total_hr_time"].append(glob_stats[7])
 
             mem = []
             for i, (gvt, crs_mem) in enumerate(node_stats):
