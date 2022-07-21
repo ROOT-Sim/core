@@ -1,3 +1,11 @@
+/**
+* @file test/tests/log/stats.c
+*
+* @brief Test: statistics module test
+*
+* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-License-Identifier: GPL-3.0-only
+*/
 #include <log/stats.h>
 
 #include <test.h>
@@ -72,7 +80,12 @@ test_ret_t stats_measure_test(__unused void *arg)
 	stats_init();
 
 	stats_take(STATS_ROLLBACK, 10);
+	stats_take(STATS_MSG_PROCESSED, rid ? 53 : 73);
+	stats_take(STATS_MSG_ROLLBACK, 12);
 	stats_take(STATS_MSG_ANTI, 30);
+	stats_take(STATS_MSG_SILENT, 15);
+
+	stats_on_gvt(0.0);
 	return 0;
 }
 
@@ -101,14 +114,17 @@ int main(void)
 	init(N_THREADS);
 
 	stats_subsystem_test(&empty_conf, stats_empty_test,
-	    "I 1 " TOSTRING(N_THREADS) " 0 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 0 0.0 0 I");
+	    "NZ 1 " TOSTRING(N_THREADS) " 0 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 0 0.0 0 NZ");
 
 	n_lps_node = 16;
 	stats_subsystem_test(&empty_conf, stats_single_gvt_test,
-	    "I 1 " TOSTRING(N_THREADS) " 0 0 0 16 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 1 0.0 I I");
+	    "NZ 1 " TOSTRING(N_THREADS) " 16 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 1 0.0 NZ NZ");
 
 	stats_subsystem_test(&empty_conf, stats_multi_gvt_test,
-	    "I 1 " TOSTRING(N_THREADS) " 0 0 0 16 0 0 0 0.00 0.00 100.00 0 0 0 0 0 48.56 4 12.14 I I");
+	    "NZ 1 " TOSTRING(N_THREADS) " 16 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 48.56 4 12.14 NZ NZ");
+
+	stats_subsystem_test(&empty_conf, stats_measure_test,
+	    "NZ 1 " TOSTRING(N_THREADS) " 16 156 102 24 30 20 60 15.87 1.20 80.95 0 0 0 0 0 0.0 1 0.0 NZ NZ");
 
 	// TODO: stress test the sample aggregation system
 

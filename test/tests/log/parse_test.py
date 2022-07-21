@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-License-Identifier: GPL-3.0-only
 import re
 import sys
 
@@ -43,6 +46,8 @@ if m is None:
     exit(-1)
 
 for i, arg in enumerate(sys.argv[2:]):
-    if arg != 'I' and arg != m[i + 1]:
-        print(m[i + 1])
+    if arg == 'NZ':
+        if float(m[i + 1]) == 0:
+            exit(-1)
+    elif arg != m[i + 1]:
         exit(-1)
