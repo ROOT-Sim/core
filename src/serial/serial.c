@@ -86,8 +86,10 @@ static int serial_simulation_run(void)
 		struct lp_ctx *this_lp = &lps[cur_msg->dest];
 		current_lp = this_lp;
 
+		timer_uint t = timer_hr_new();
 		global_config.dispatcher(cur_msg->dest, cur_msg->dest_t, cur_msg->m_type, cur_msg->pl, cur_msg->pl_size,
 		    this_lp->lib_ctx->state_s);
+		stats_take(STATS_MSG_PROCESSED_TIME, timer_hr_value(t));
 		stats_take(STATS_MSG_PROCESSED, 1);
 
 		if(unlikely(this_lp->termination_t < 0 &&

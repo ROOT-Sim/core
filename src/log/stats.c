@@ -57,15 +57,17 @@ static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct st
 
 /// The statistics names, used to fill in the preamble of the final statistics binary file
 const char *const stats_names[] = {
+    [STATS_MSG_PROCESSED] = "processed messages",
+    [STATS_MSG_PROCESSED_TIME] = "processed messages time",
     [STATS_ROLLBACK] = "rollbacks",
+    [STATS_RECOVERY_TIME] = "recovery time",
     [STATS_MSG_ROLLBACK] = "rolled back messages",
-    [STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
-    [STATS_MSG_SILENT] = "silent messages",
     [STATS_CKPT] = "checkpoints",
     [STATS_CKPT_TIME] = "checkpoints time",
     [STATS_CKPT_STATE_SIZE] = "checkpoints state size",
+    [STATS_MSG_SILENT] = "silent messages",
     [STATS_MSG_SILENT_TIME] = "silent messages time",
-    [STATS_MSG_PROCESSED] = "processed messages",
+    [STATS_MSG_ANTI] = "anti messages",
     [STATS_REAL_TIME_GVT] = "gvt real time"
 };
 

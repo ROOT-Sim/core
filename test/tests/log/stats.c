@@ -29,7 +29,7 @@ bool DummyCanEnd(lp_id_t lid, const void *state)
 }
 
 static const struct simulation_configuration empty_conf = {
-    .lps = 16,
+    .lps = 123,
     .n_threads = N_THREADS,
     .termination_time = 0,
     .gvt_period = 0,
@@ -48,20 +48,32 @@ static simtime_t gvt_tests[] = {0.0, 12.12, 23.4, 48.56};
 test_ret_t stats_empty_test(__unused void *arg)
 {
 	stats_init();
+	return 0;
 }
 
 test_ret_t stats_single_gvt_test(__unused void *arg)
 {
 	stats_init();
 	stats_on_gvt(0.0);
+	return 0;
 }
 
 test_ret_t stats_multi_gvt_test(__unused void *arg)
 {
 	stats_init();
-	for(unsigned i = 0; i < sizeof(gvt_tests)/sizeof(*gvt_tests); ++i) {
+	for(unsigned i = 0; i < sizeof(gvt_tests) / sizeof(*gvt_tests); ++i) {
 		stats_on_gvt(gvt_tests[i]);
 	}
+	return 0;
+}
+
+test_ret_t stats_measure_test(__unused void *arg)
+{
+	stats_init();
+
+	stats_take(STATS_ROLLBACK, 10);
+	stats_take(STATS_MSG_ANTI, 30);
+	return 0;
 }
 
 static void stats_subsystem_test(const struct simulation_configuration *conf, test_fn thread_fn, const char *check_str)
@@ -73,14 +85,13 @@ static void stats_subsystem_test(const struct simulation_configuration *conf, te
 
 	char cmd[512] = {0};
 	int ret;
-	ret = snprintf(cmd, sizeof(cmd) - 1, "python3 " STATS_SCRIPT_PATH " %s.bin", conf->stats_file);
-	test_assert(ret < (int)sizeof(cmd)); // assure correct snprintf operations
+	ret = snprintf(cmd, sizeof(cmd), "python3 " STATS_SCRIPT_PATH " %s.bin", conf->stats_file);
+	test_assert(ret >= 0 && ret < (int)sizeof(cmd)); // assure correct snprintf operations
 	ret = system(cmd);
 	test_assert(ret == 0);
 
-	ret =
-	    snprintf(cmd, sizeof(cmd) - 1, "python3 " STATS_TEST_SCRIPT_PATH " %s.txt %s", conf->stats_file, check_str);
-	test_assert(ret < (int)sizeof(cmd)); // assure correct snprintf operations
+	ret = snprintf(cmd, sizeof(cmd), "python3 " STATS_TEST_SCRIPT_PATH " %s.txt %s", conf->stats_file, check_str);
+	test_assert(ret >= 0 && ret < (int)sizeof(cmd)); // assure correct snprintf operations
 	ret = system(cmd);
 	test_assert(ret == 0);
 }
@@ -90,13 +101,14 @@ int main(void)
 	init(N_THREADS);
 
 	stats_subsystem_test(&empty_conf, stats_empty_test,
-	    "I 1 " TOSTRING(N_THREADS) " 0 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 0 0.0 I I");
+	    "I 1 " TOSTRING(N_THREADS) " 0 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 0 0.0 0 I");
 
+	n_lps_node = 16;
 	stats_subsystem_test(&empty_conf, stats_single_gvt_test,
-	    "I 1 " TOSTRING(N_THREADS) " 0 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 1 0.0 I I");
+	    "I 1 " TOSTRING(N_THREADS) " 0 0 0 16 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 1 0.0 I I");
 
 	stats_subsystem_test(&empty_conf, stats_multi_gvt_test,
-	    "I 1 " TOSTRING(N_THREADS) " 0 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 48.56 4 12.14 I I");
+	    "I 1 " TOSTRING(N_THREADS) " 0 0 0 16 0 0 0 0.00 0.00 100.00 0 0 0 0 0 48.56 4 12.14 I I");
 
 	// TODO: stress test the sample aggregation system
 

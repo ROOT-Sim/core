@@ -244,15 +244,20 @@ if __name__ == "__main__":
     hr_ticks_per_second = stats.nodes_stats["node_total_hr_time"][0] / simulation_time
 
     processed_msgs = stats.thread_metric_get("processed messages", aggregate_nodes=True, aggregate_gvts=True)
+    anti_msgs = stats.thread_metric_get("anti messages", aggregate_nodes=True, aggregate_gvts=True)
     rollback_msgs = stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
     silent_msgs = stats.thread_metric_get("silent messages", aggregate_nodes=True, aggregate_gvts=True)
     rollbacks = stats.thread_metric_get("rollbacks", aggregate_nodes=True, aggregate_gvts=True)
     checkpoints = stats.thread_metric_get("checkpoints", aggregate_nodes=True, aggregate_gvts=True)
+    msgs_cost = stats.thread_metric_get("processed messages time", aggregate_nodes=True, aggregate_gvts=True)
     checkpoints_cost = stats.thread_metric_get("checkpoints time", aggregate_nodes=True, aggregate_gvts=True)
+    recoveries_cost = stats.thread_metric_get("recovery time", aggregate_nodes=True, aggregate_gvts=True)
     avg_log_size = stats.thread_metric_get("checkpoints state size", aggregate_nodes=True, aggregate_gvts=True) / \
                    checkpoints if checkpoints != 0 else 0
 
+    avg_msg_cost = 0 if processed_msgs == 0 else msgs_cost / (processed_msgs * hr_ticks_per_second)
     avg_checkpoint_cost = 0 if checkpoints == 0 else checkpoints_cost / (checkpoints * hr_ticks_per_second)
+    avg_recovery_cost = 0 if rollbacks == 0 else recoveries_cost / (rollbacks * hr_ticks_per_second)
 
     rollback_freq = 100 * rollbacks / processed_msgs if processed_msgs != 0 else 0
     rollback_len = rollback_msgs / rollbacks if rollbacks != 0 else 0
@@ -262,7 +267,7 @@ if __name__ == "__main__":
     lps_count = sum(stats.nodes_stats["lps"])
 
     if len(stats.gvts) == 0:
-        avg_memory_usage = 0
+        avg_memory_usage = 0.0
         sim_speed = 0.0
         last_gvt = 0.0
     else:
@@ -282,19 +287,22 @@ if __name__ == "__main__":
             return f"0"
 
         if abs(num) < div:
-            for unit in ["", "m", "u", "n"]:
+            if abs(num) > 1:
+                return f"{num:3.1f}"
+            num *= div
+            for unit in ["m", "u", "n"]:
                 if abs(num) > 1:
                     return f"{num:3.1f}{unit}{post_unit}"
                 num *= div
             return f"{num:3.1f}p{post_unit}"
 
         num /= div
-        for unit in ["K", "M", "G", "T", "P", "E", "Z"]:
+        for unit in ["K", "M", "G", "T", "P"]:
             if abs(num) < div:
                 return f"{num:.1f}{unit}{post_unit}"
             num /= div
 
-        return f"{num:.1f}Y{post_unit}"
+        return f"{num:.1f}P{post_unit}"
 
 
     with open(out_name, "w+") as f:
@@ -307,14 +315,14 @@ if __name__ == "__main__":
         f.write(f"TOTAL REPROCESSED EVENTS... : {rollback_msgs}\n")
         f.write(f"TOTAL SILENT EVENTS........ : {silent_msgs}\n")
         f.write(f"TOTAL ROLLBACKS EXECUTED... : {rollbacks}\n")
-        f.write(f"TOTAL ANTIMESSAGES......... : 0\n")  # TODO add antimessages to stats in ROOT-Sim!
+        f.write(f"TOTAL ANTIMESSAGES......... : {anti_msgs}\n")
         f.write(f"ROLLBACK FREQUENCY......... : {rollback_freq:.2f}%\n")
         f.write(f"ROLLBACK LENGTH............ : {rollback_len:.2f}\n")
         f.write(f"EFFICIENCY................. : {efficiency:.2f}%\n")
-        f.write(f"AVERAGE EVENT COST......... : 0s\n")  # TODO do we want this?
+        f.write(f"AVERAGE EVENT COST......... : {fmt_size(avg_msg_cost, False)}s\n")  # TODO do we want this?
         f.write(f"AVERAGE EVENT COST (EMA)... : 0s\n")  # TODO do we want this?
         f.write(f"AVERAGE CHECKPOINT COST.... : {fmt_size(avg_checkpoint_cost, False)}s\n")
-        f.write(f"AVERAGE RECOVERY COST...... : 0s\n")  # TODO do we want this?
+        f.write(f"AVERAGE RECOVERY COST...... : {fmt_size(avg_recovery_cost, False)}s\n")
         f.write(f"AVERAGE LOGGED STATE SIZE.. : {fmt_size(avg_log_size)}B\n")
         f.write(f"LAST COMMITTED GVT ........ : {last_gvt}\n")
         f.write(f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n")
