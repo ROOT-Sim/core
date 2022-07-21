@@ -44,21 +44,22 @@ void msg_allocator_fini(void)
  * @brief Allocate a new message with given payload size
  * @param payload_size the size in bytes of the requested message payload
  * @return a new message with at least the requested amount of payload space
+ *
+ * Since this module relies on the member lp_msg.pl_size (see @a msg_allocator_free()), it has writing responsibility
+ * on it.
  */
 struct lp_msg *msg_allocator_alloc(unsigned payload_size)
 {
 	struct lp_msg *ret;
 	if(unlikely(payload_size > MSG_PAYLOAD_BASE_SIZE)) {
 		ret = mm_alloc(offsetof(struct lp_msg, extra_pl) + (payload_size - MSG_PAYLOAD_BASE_SIZE));
-		ret->pl_size = payload_size;
-		return ret;
-	}
-	if(unlikely(array_is_empty(free_list))) {
+	} else if(unlikely(array_is_empty(free_list))) {
 		ret = mm_alloc(sizeof(struct lp_msg));
-		ret->pl_size = payload_size;
-		return ret;
+	} else {
+		ret = array_pop(free_list);
 	}
-	return array_pop(free_list);
+	ret->pl_size = payload_size;
+	return ret;
 }
 
 /**
@@ -88,9 +89,9 @@ void msg_allocator_free_at_gvt(struct lp_msg *msg)
  */
 void msg_allocator_on_gvt(simtime_t current_gvt)
 {
-	for (array_count_t i = array_count(at_gvt_list); i-- > 0;) {
+	for(array_count_t i = array_count(at_gvt_list); i-- > 0;) {
 		struct lp_msg *msg = array_get_at(at_gvt_list, i);
-		if (msg->dest_t < current_gvt) {
+		if(msg->dest_t < current_gvt) {
 			msg_allocator_free(msg);
 			array_lazy_remove_at(at_gvt_list, i);
 		}

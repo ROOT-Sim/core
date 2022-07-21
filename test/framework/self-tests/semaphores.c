@@ -35,12 +35,12 @@ thr_id_t tids[N_THREAD];
 // Using yet another thread implementation to decouple testing
 // semaphores from testing thread pools
 #if defined(__unix__) || defined(__unix) || defined(__APPLE__) && defined(__MACH__)
-test_ret_t sem_test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
+static test_ret_t sem_test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 {
 	return (pthread_create(thr_p, NULL, t_fnc, t_fnc_arg) != 0);
 }
 
-test_ret_t sem_test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
+static test_ret_t sem_test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 {
 	return (pthread_join(thr, ret) != 0);
 }
@@ -65,14 +65,20 @@ test_ret_t sem_test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 #error Unsupported operating system
 #endif
 
-thrd_ret_t phase1(void *id)
+__attribute__((noinline)) static void loop(unsigned int iterations)
+{
+	for(unsigned int i = 0; i < iterations; i++) {
+		__asm__ volatile("" : "+g"(i) : :);
+	}
+}
+
+static thrd_ret_t phase1(void *id)
 {
 	uintptr_t tid = (uintptr_t)id;
-	uint64_t r = test_random_range(RAND_DELAY_MAX);
-	for(uint64_t i = 0; i < r; i++); // FIXME: this would get for sure optimized away
+	loop(test_random_range(RAND_DELAY_MAX));
 
 	if(tid < N_PROD) {
-		sema_signal(producer, N_CONS/N_PROD);
+		sema_signal(producer, N_CONS / N_PROD);
 		prod_exec_1++;
 	} else {
 		sema_wait(producer, 1);
@@ -81,14 +87,13 @@ thrd_ret_t phase1(void *id)
 	return 0;
 }
 
-thrd_ret_t phase2(void *id)
+static thrd_ret_t phase2(void *id)
 {
 	uintptr_t tid = (uintptr_t)id;
-	uint64_t r = test_random_range(RAND_DELAY_MAX);
-	for(uint64_t i = 0; i < r; i++); // FIXME: this would get for sure optimized away
+	loop(test_random_range(RAND_DELAY_MAX));
 
 	if(tid < N_PROD) {
-		sema_wait(consumer, N_CONS/N_PROD);
+		sema_wait(consumer, N_CONS / N_PROD);
 		prod_exec_2++;
 	} else {
 		sema_signal(consumer, 1);
