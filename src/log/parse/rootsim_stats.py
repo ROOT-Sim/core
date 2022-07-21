@@ -42,7 +42,7 @@ class RSStats:
     def _nodes_stats_load(self):
         nodes_count = self._pattern_unpack("q")[0]
         for _ in range(nodes_count):
-            glob_stats = self._pattern_unpack("8Q")
+            glob_stats = self._pattern_unpack("9Q")
             n_threads = glob_stats[0]
             self.threads_count.append(n_threads)
             n_stats = self._pattern_unpack("q")[0] // 16
@@ -103,6 +103,7 @@ class RSStats:
         self._truncate_to_last_gvt()
 
         self._global_measures = {
+            "lps": [],
             "maximum_resident_set": [],
             "node_init_time": [],
             "worker_threads_init_time": [],
@@ -116,14 +117,15 @@ class RSStats:
         for triple in self.all_stats:
             glob_stats, node_stats, threads_stats = triple
 
-            self._global_measures["maximum_resident_set"].append(glob_stats[1])
-            self._global_measures["node_init_time"].append(glob_stats[2])
-            self._global_measures["worker_threads_init_time"].append(glob_stats[3] - glob_stats[2])
-            self._global_measures["processing_time"].append(glob_stats[4] - glob_stats[3])
-            self._global_measures["worker_threads_fini_time"].append(glob_stats[5] - glob_stats[4])
-            self._global_measures["node_fini_time"].append(glob_stats[6] - glob_stats[5])
-            self._global_measures["node_total_time"].append(glob_stats[6] - glob_stats[2])
-            self._global_measures["node_total_hr_time"].append(glob_stats[7])
+            self._global_measures["lps"].append(glob_stats[1])
+            self._global_measures["maximum_resident_set"].append(glob_stats[2])
+            self._global_measures["node_init_time"].append(glob_stats[3])
+            self._global_measures["worker_threads_init_time"].append(glob_stats[4] - glob_stats[3])
+            self._global_measures["processing_time"].append(glob_stats[5] - glob_stats[4])
+            self._global_measures["worker_threads_fini_time"].append(glob_stats[6] - glob_stats[5])
+            self._global_measures["node_fini_time"].append(glob_stats[7] - glob_stats[6])
+            self._global_measures["node_total_time"].append(glob_stats[7] - glob_stats[3])
+            self._global_measures["node_total_hr_time"].append(glob_stats[8])
 
             mem = []
             for i, (gvt, crs_mem) in enumerate(node_stats):
@@ -257,6 +259,7 @@ if __name__ == "__main__":
     efficiency = 100 * (processed_msgs - rollback_msgs) / processed_msgs if processed_msgs else 100
 
     peak_memory_usage = sum(stats.nodes_stats["maximum_resident_set"])
+    lps_count = sum(stats.nodes_stats["lps"])
 
     if len(stats.gvts) == 0:
         avg_memory_usage = 0
@@ -298,7 +301,7 @@ if __name__ == "__main__":
         f.write(f"TOTAL SIMULATION TIME ..... : {fmt_size(simulation_time, False)}s\n")
         f.write(f"TOTAL KERNELS ............. : {stats.nodes_count}\n")
         f.write(f"TOTAL_THREADS ............. : {sum(stats.threads_count)}\n")
-        f.write(f"TOTAL_LPs ................. : 0\n")  # TODO add number of LPs to stats in ROOT-Sim!
+        f.write(f"TOTAL_LPs ................. : {lps_count}\n")  # TODO add number of LPs to stats in ROOT-Sim!
         f.write(f"TOTAL EXECUTED EVENTS ..... : {processed_msgs + silent_msgs}\n")
         f.write(f"TOTAL COMMITTED EVENTS..... : {processed_msgs - rollback_msgs}\n")
         f.write(f"TOTAL REPROCESSED EVENTS... : {rollback_msgs}\n")

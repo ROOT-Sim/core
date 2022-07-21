@@ -43,6 +43,8 @@ struct stats_node {
 struct stats_global {
 	/// The number of threads in this node
 	uint64_t threads_count;
+	/// The number of LPs in this node
+	uint64_t lps_count; // todo: make it a per-thread count
 	/// The maximum size in bytes of the resident set
 	uint64_t max_rss;
 	/// The timestamps of the relevant simulation life-cycle events
@@ -50,7 +52,7 @@ struct stats_global {
 };
 
 static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct stats_node) == 16 &&
-		  sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
+		  sizeof(struct stats_global) == 24 + 8 * (STATS_GLOBAL_COUNT),
     "structs aren't properly packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the preamble of the final statistics binary file
@@ -111,7 +113,6 @@ void stats_global_init(void)
 	if(mem_stat_setup() < 0)
 		logger(LOG_ERROR, "Unable to extract memory statistics!");
 	stats_tmps = mm_alloc(global_config.n_threads * sizeof(*stats_tmps));
-	stats_glob_cur.threads_count = global_config.n_threads;
 }
 
 /**
@@ -291,6 +292,9 @@ void stats_global_fini(void)
 {
 	if(global_config.stats_file == NULL)
 		return;
+
+	stats_glob_cur.threads_count = global_config.n_threads;
+	stats_glob_cur.lps_count = n_lps_node;
 
 	if(nid) {
 		stats_files_send();
