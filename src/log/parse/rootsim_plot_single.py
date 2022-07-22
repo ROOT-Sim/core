@@ -13,7 +13,8 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Please, supply the name of a raw statistics file!", file=sys.stderr)
         exit(-1)
-    plt.rcParams['font.family'] = ['sans']
+    plt.rcParams['font.family'] = ['monospace']
+    plt.rcParams["axes.unicode_minus"] = False
 
     def compute_avg(l):
         return sum(l) / len(l)
@@ -54,7 +55,7 @@ if __name__ == "__main__":
 
     gvt_advancement = compute_diffs(stats.gvts)
     for i, o in enumerate(time_diff):
-        gvt_advancement[i] *= 1000000 / o
+        gvt_advancement[i] /= o
     plot_data(figxs[2], gvt_advancement, "GVT advancement")
 
     plt.show()

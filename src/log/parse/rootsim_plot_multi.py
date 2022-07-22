@@ -27,6 +27,9 @@ if __name__ == "__main__":
         print("Please, supply the name of at least a raw statistics file!", file=sys.stderr)
         exit(-1)
 
+    plt.rcParams['font.family'] = ['monospace']
+    plt.rcParams["axes.unicode_minus"] = False
+
     def compute_avg(l):
         return sum(l) / len(l)
 
