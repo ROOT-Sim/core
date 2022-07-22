@@ -16,6 +16,8 @@
 
 #include <distributed/mpi.h>
 
+#include <assert.h>
+
 void mpi_global_init(int *argc_p, char ***argv_p)
 {
 	(void)argc_p;
@@ -28,6 +30,7 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	(void)msg;
 	(void)dest_nid;
+	assert(0);
 	__builtin_unreachable();
 }
 
@@ -35,6 +38,7 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	(void)msg;
 	(void)dest_nid;
+	assert(0);
 	__builtin_unreachable();
 }
 
@@ -45,6 +49,7 @@ void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
 
 void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
 {
+	assert(dest == 0);
 	if(dest)
 		__builtin_unreachable();
 
