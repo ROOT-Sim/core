@@ -157,7 +157,7 @@ class RSStats:
 
     ##
     # @brief Get the real time values
-    # @return a list containing the computed GVTs (Global Virtual Times) in ascending order
+    # @return a list containing the computed real times in ascending order
     def rts(self, reduction=min):
         real_times = self._metrics["gvt real time"]
         ret = []
@@ -309,7 +309,7 @@ if __name__ == "__main__":
         f.write(f"TOTAL SIMULATION TIME ..... : {fmt_size(simulation_time, False)}s\n")
         f.write(f"TOTAL KERNELS ............. : {stats.nodes_count}\n")
         f.write(f"TOTAL_THREADS ............. : {sum(stats.threads_count)}\n")
-        f.write(f"TOTAL_LPs ................. : {lps_count}\n")  # TODO add number of LPs to stats in ROOT-Sim!
+        f.write(f"TOTAL_LPs ................. : {lps_count}\n")
         f.write(f"TOTAL EXECUTED EVENTS ..... : {processed_msgs + silent_msgs}\n")
         f.write(f"TOTAL COMMITTED EVENTS..... : {processed_msgs - rollback_msgs}\n")
         f.write(f"TOTAL REPROCESSED EVENTS... : {rollback_msgs}\n")
@@ -319,7 +319,7 @@ if __name__ == "__main__":
         f.write(f"ROLLBACK FREQUENCY......... : {rollback_freq:.2f}%\n")
         f.write(f"ROLLBACK LENGTH............ : {rollback_len:.2f}\n")
         f.write(f"EFFICIENCY................. : {efficiency:.2f}%\n")
-        f.write(f"AVERAGE EVENT COST......... : {fmt_size(avg_msg_cost, False)}s\n")  # TODO do we want this?
+        f.write(f"AVERAGE EVENT COST......... : {fmt_size(avg_msg_cost, False)}s\n")
         f.write(f"AVERAGE EVENT COST (EMA)... : 0s\n")  # TODO do we want this?
         f.write(f"AVERAGE CHECKPOINT COST.... : {fmt_size(avg_checkpoint_cost, False)}s\n")
         f.write(f"AVERAGE RECOVERY COST...... : {fmt_size(avg_recovery_cost, False)}s\n")
