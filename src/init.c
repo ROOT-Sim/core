@@ -141,7 +141,7 @@ int RootsimRun(void)
 	if(!global_config.serial)
 		mpi_global_init(NULL, NULL);
 
-	if(global_config.log_level < LOG_SILENT) {
+	if(global_config.log_level < LOG_SILENT && !rid) {
 		print_logo();
 		print_config();
 	}
