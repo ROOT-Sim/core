@@ -25,7 +25,9 @@ if(MSVC)
 endif()
 
 find_package(Threads REQUIRED)
-find_package(MPI REQUIRED)
+if(NOT DISABLE_MPI)
+    find_package(MPI REQUIRED)
+endif()
 
 add_compile_options(-Wall -Wextra -pedantic)
 
