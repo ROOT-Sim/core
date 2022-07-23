@@ -4,11 +4,10 @@
  * @brief Message queue datatype
  *
  * This is the message queue for the parallel runtime.
- * The design is pretty simple. A queue for n threads is composed of a vector of
- * n simpler private thread queues plus n public buffers. If thread t1 wants to
- * send a message to thread t2 it puts a message in its buffer. Insertions are
- * then cheap, while extractions simply empty the buffer into the private queue.
- * This way the critically thread locked code is minimal.
+ * The design is pretty simple. A queue for n threads is composed of a vector of n simpler private thread queues plus n
+ * public buffers. If thread t1 wants to send a message to thread t2 it puts a message in its buffer. Insertions are
+ * then cheap, while extractions simply empty the buffer into the private queue. This way the critically thread locked
+ * code is minimal.
  *
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -102,6 +101,9 @@ void msg_queue_global_fini(void)
 	mm_aligned_free(queues);
 }
 
+/**
+ * @brief Move the messages from the thread specific list into the thread private queue
+ */
 static inline void msg_queue_insert_queued(void)
 {
 	struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
@@ -116,9 +118,8 @@ static inline void msg_queue_insert_queued(void)
  * @brief Extracts the next message from the queue
  * @returns a pointer to the message to be processed or NULL if there isn't one
  *
- * The extracted message is a best effort lowest timestamp for the current
- * thread. Guaranteeing the lowest timestamp may increase the contention on the
- * queues.
+ * The extracted message is a best effort lowest timestamp for the current thread. Guaranteeing the lowest timestamp may
+ * increase the contention on the queues.
  */
 struct lp_msg *msg_queue_extract(void)
 {
@@ -130,9 +131,8 @@ struct lp_msg *msg_queue_extract(void)
  * @brief Peeks the timestamp of the next message from the queue
  * @returns the lowest timestamp of the next message to be processed or SIMTIME_MAX is there's no message to process
  *
- * This returns the lowest timestamp of the next message to be processed for the
- * current thread. This is calculated in a precise fashion since this value is
- * used in the gvt calculation.
+ * This returns the lowest timestamp of the next message to be processed for the current thread. This is calculated in a
+ * precise fashion since this value is used in the gvt calculation.
  */
 simtime_t msg_queue_time_peek(void)
 {
