@@ -43,20 +43,18 @@ const struct simulation_configuration valid_conf = {
     .committed = DummyCanEnd,
 };
 
-static test_ret_t run_rootsim(__unused void *_)
+static int run_rootsim(_unused void *_)
 {
 	return RootsimRun();
 }
 
-static test_ret_t init_rootsim(void *config)
+static int init_rootsim(void *config)
 {
 	return RootsimInit((struct simulation_configuration *)config);
 }
 
 int main(void)
 {
-	init(0);
-
 	test_xf("Start simulation with no configuration", run_rootsim, NULL);
 
 	memcpy(&conf, &valid_conf, sizeof(conf));
@@ -75,5 +73,4 @@ int main(void)
 	test("Initialization", init_rootsim, &conf);
 
 	test("Dummy simulation", run_rootsim, NULL);
-	finish();
 }

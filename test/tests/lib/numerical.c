@@ -8,28 +8,30 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
 */
-#include <stdlib.h>
-#include <stdio.h>
-#include <limits.h>
-
 #include <test.h>
-#include <ROOT-Sim.h>
+#include <framework/rng.h>
 
-#include "lib/lib.h"
-#include "lp/lp.h"
+#include <lib/lib.h>
+#include <lp/lp.h>
 
-static test_ret_t aux_ks_test(__unused void *_) {
-	test_assert(ks_test(100000000, 1000, Random) == 0);
-	test_assert(ks_test(1000000, 1000, Random) == 0);
-	test_assert(ks_test(100000, 1000, Random) == 0);
-	test_assert(ks_test(10000, 100, Random) == 0);
-	test_assert(ks_test(1000, 10, Random) == 0);
-	test_assert(ks_test(100, 10, Random) == 0);
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-	check_passed_asserts();
+
+static int aux_ks_test(_unused void *_)
+{
+	test_assert(rng_ks_test(100000000, 1000, Random) == 0);
+	test_assert(rng_ks_test(1000000, 1000, Random) == 0);
+	test_assert(rng_ks_test(100000, 1000, Random) == 0);
+	test_assert(rng_ks_test(10000, 100, Random) == 0);
+	test_assert(rng_ks_test(1000, 10, Random) == 0);
+	test_assert(rng_ks_test(100, 10, Random) == 0);
+
+	return 0;
 }
 
-static test_ret_t random_range_non_uniform_test(__unused void *_) {
+static int random_range_non_uniform_test(_unused void *_) {
 	int passed = 0;
 	int x, min, max, r, i;
 
@@ -46,7 +48,7 @@ static test_ret_t random_range_non_uniform_test(__unused void *_) {
 	return passed;
 }
 
-static test_ret_t random_range_test(__unused void *_) {
+static int random_range_test(_unused void *_) {
 	int passed = 0;
 	int min, max, r, i;
 
@@ -65,13 +67,9 @@ static test_ret_t random_range_test(__unused void *_) {
 
 int main(void)
 {
-	init(0);
-
-	current_lp = mock_lp();
+	current_lp = test_lp_mock_get();
 
 	test("Kolmogorov-Smirnov test on Random()", aux_ks_test, NULL);
 	test("Functional test on RandomRange()", random_range_test, NULL);
 	test("Functional test on RandomRangeNonUniform()", random_range_non_uniform_test, NULL);
-
-	finish();
 }

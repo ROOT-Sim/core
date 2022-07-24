@@ -12,19 +12,15 @@
 
 #include <log/log.h>
 
-extern test_ret_t model_allocator_test(void *);
-extern test_ret_t model_allocator_test_hard(void *);
-extern test_ret_t parallel_malloc_test(void *);
+extern int model_allocator_test(void *);
+extern int model_allocator_test_hard(void *);
+extern int parallel_malloc_test(void *);
 
 int main(void)
 {
-	init(0);
-
 	log_init(stdout);
 
 	test("Testing buddy system", model_allocator_test, NULL);
 	test("Testing buddy system (hard test)", model_allocator_test_hard, NULL);
 	test("Testing parallel memory operations", parallel_malloc_test, NULL);
-
-	finish();
 }

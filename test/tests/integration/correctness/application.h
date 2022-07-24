@@ -9,6 +9,8 @@
 #pragma once
 
 #include <test.h>
+#include <framework/rng.h>
+
 #include <ROOT-Sim.h>
 
 #define N_LPS 256

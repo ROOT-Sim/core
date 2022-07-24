@@ -6,101 +6,189 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
+#include <test.h>
 
+#include <framework/thread.h>
+#include <framework/rng.h>
+
+#include <setjmp.h>
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-#include "test.h"
-#include "core/core.h"
+struct test_ctx {
+	jmp_buf jmp_buf;
+	test_rng_state rng;
+	bool assertion_failed;
+};
 
-struct test_unit test_unit = {0};
+struct test_case {
+	test_fn fn;
+	void *arg;
+};
 
-void finish(void)
+static atomic_flag test_setup_done = ATOMIC_FLAG_INIT;
+static atomic_uint test_success_count;
+static atomic_uint test_total_count;
+static _Thread_local struct test_ctx test_ctx = {0};
+
+__attribute__((noreturn)) void test_fail(void)
 {
-	tear_down_worker_pool();
+	longjmp(test_ctx.jmp_buf, 1);
+}
 
-	int d1 = snprintf(NULL, 0, "PASSED.............: %u / %u\n", test_unit.passed, test_unit.should_pass);
-	int d2 = snprintf(NULL, 0, "EXPECTED FAIL......: %u / %u\n", test_unit.xfailed, test_unit.should_fail);
-	int d3 = snprintf(NULL, 0, "FAILED.............: %u\n", test_unit.failed);
-	int d4 = snprintf(NULL, 0, "UNEXPECTED PASS....: %u\n", test_unit.uxpassed);
-	int d = ((d1 > d2 && d1 > d3 && d1 > d4) ? d1 : ((d2 > d3 && d2 > d4) ? d2 : (d3 > d4 ? d3 : d4)));
+static void test_at_exit()
+{
+	unsigned tot = atomic_load_explicit(&test_total_count, memory_order_relaxed);
+	unsigned succ = atomic_load_explicit(&test_success_count, memory_order_relaxed);
+
+	int d = snprintf(NULL, 0, "PASSED.............: %u / %u\n", succ, tot);
 	printf("%.*s\n", d, "============================================================================");
-	printf("PASSED.............: %u / %u\n", test_unit.passed, test_unit.should_pass);
-	printf("EXPECTED FAIL......: %u / %u\n", test_unit.xfailed, test_unit.should_fail);
-	printf("FAILED.............: %u\n", test_unit.failed);
-	printf("UNEXPECTED PASS....: %u\n", test_unit.uxpassed);
+	printf("PASSED.............: %u / %u\n", succ, tot);
 	printf("%.*s\n", d, "============================================================================");
+	fflush(stdout);
 
-	exit(test_unit.ret);
+	if(tot != succ)
+		_exit(EXIT_FAILURE);
 }
 
-void test_init(unsigned n_th)
+static void test_init(const char *desc)
 {
-	test_random_init();
-	global_config.n_threads = n_th;
-	spawn_worker_pool(n_th);
-}
-
-__attribute__((noreturn)) void fail(void)
-{
-	printf("failed explicitly.\n");
-	test_unit.failed++;
-	longjmp(test_unit.fail_buffer, 1);
-}
-
-void test(char *desc, test_fn test_fn, void *arg)
-{
-	test_unit.last_test_result = 0;
-	test_unit.should_pass++;
-	printf("%s... ", desc);
-	if(test_fn(arg) != 0) {
-		test_unit.ret = -1;
-		test_unit.failed++;
-		printf("FAIL.\n");
-		fflush(stdout);
-	} else {
-		test_unit.passed++;
-		printf("passed.\n");
-		fflush(stdout);
-	}
-}
-
-
-void test_xf(char *desc, test_fn test_fn, void *arg)
-{
-	test_unit.last_test_result = 0;
-	test_unit.should_fail++;
-	printf("%s... ", desc);
-	if(test_fn(arg) == 0) {
-		test_unit.ret = -1;
-		test_unit.uxpassed++;
-		printf("UNEXPECTED PASS.\n");
-		fflush(stdout);
-	} else {
-		test_unit.xfailed++;
-		printf("expected fail.\n");
-		fflush(stdout);
-	}
-}
-
-void parallel_test(char *desc, test_fn test_fn, void *args)
-{
-	test_unit.last_test_result = 0;
-	int res = 0;
-	test_unit.should_pass++;
+	if(!atomic_flag_test_and_set_explicit(&test_setup_done, memory_order_relaxed))
+		atexit(test_at_exit);
+	atomic_fetch_add_explicit(&test_total_count, 1U, memory_order_relaxed);
 	printf("%s... ", desc);
 	fflush(stdout);
-	signal_new_thread_action(test_fn, args);
-	for(unsigned i = 0; i < test_unit.n_th; i++)
-		res -= test_unit.pool[i].ret;
+}
 
-	if(res != 0) {
-		test_unit.ret = -1;
-		test_unit.failed++;
-		printf("FAIL.\n");
-		fflush(stdout);
+static thrd_ret_t test_run(void *args)
+{
+	struct test_case *t = args;
+
+	struct test_ctx old_ctx = test_ctx;
+	test_ctx.assertion_failed = false;
+
+	test_ctx.rng = clock();
+
+	bool has_failed;
+	if(setjmp(test_ctx.jmp_buf)) {
+		has_failed = true;
 	} else {
-		test_unit.passed++;
-		printf("passed.\n");
-		fflush(stdout);
+		has_failed = t->fn(t->arg) != 0;
 	}
+
+	has_failed |= test_ctx.assertion_failed;
+	test_ctx = old_ctx;
+
+	return has_failed ? THREAD_RET_FAILURE : THREAD_RET_SUCCESS;
+}
+
+static int test_fini(bool has_failed, bool expected_fail)
+{
+	if(has_failed == expected_fail) {
+		if(expected_fail)
+			puts("expected fail.");
+		else
+			puts("passed.");
+
+		atomic_fetch_add_explicit(&test_success_count, 1U, memory_order_relaxed);
+		fflush(stdout);
+		return 0;
+	} else {
+		if(expected_fail)
+			puts("UNEXPECTED PASS.");
+		else
+			puts("FAILED.");
+		fflush(stdout);
+		return -1;
+	}
+}
+
+int test(const char *desc, test_fn test_fn, void *arg)
+{
+	test_init(desc);
+
+	struct test_case t = {.fn = test_fn, .arg = arg};
+	bool test_failed = test_run(&t);
+
+	return test_fini(test_failed, false);
+}
+
+int test_xf(const char *desc, test_fn test_fn, void *arg)
+{
+	test_init(desc);
+
+	struct test_case t = {.fn = test_fn, .arg = arg};
+	bool test_failed = test_run(&t);
+
+	return test_fini(test_failed, true);
+}
+
+int test_parallel(const char *desc, test_fn test_fn, void *arg, unsigned thread_count)
+{
+	test_init(desc);
+
+	if(!thread_count)
+		thread_count = test_thread_cores_count();
+
+	thr_id_t threads[thread_count];
+	struct test_case t = {.fn = test_fn, .arg = arg};
+
+	for(unsigned i = 0; i < thread_count; ++i)
+		test_thread_start(&threads[i], test_run, &t);
+
+	thrd_ret_t threads_ret[thread_count];
+	for(unsigned i = 0; i < thread_count; ++i)
+		test_thread_wait(threads[i], &threads_ret[i]);
+
+	bool test_failed = false;
+	for(unsigned i = 0; i < thread_count; ++i)
+		test_failed |= threads_ret[i] == THREAD_RET_FAILURE;
+
+	return test_fini(test_failed, false);
+}
+
+void test_assert_internal(_Bool condition, const char *file_name, unsigned line_count)
+{
+	if(condition)
+		return;
+
+	test_ctx.assertion_failed = true;
+}
+
+/**
+ * @brief Computes a pseudo random number in the [0, 1] range
+ * @param rng_state a test_rng_state object
+ * @return a uniformly distributed pseudo random double value in [0, 1]
+ *
+ * This is the per-thread version of lcg_random()
+ */
+double test_random_double()
+{
+	return rng_random(&test_ctx.rng);
+}
+
+/**
+ * @brief Computes a pseudo random number in the [0, n] range
+ * @param n
+ * @return a uniformly distributed pseudo random double value in [0, n]
+ *
+ * This is the per-thread version of lcg_random_range()
+ */
+uint64_t test_random_range(uint64_t n)
+{
+	return rng_random_range(&test_ctx.rng, n);
+}
+
+/**
+ * @brief Computes a pseudo random 64 bit number
+ * @return a uniformly distributed 64 bit pseudo random number
+ *
+ * This is the per-thread version of lcg_random_u()
+ */
+uint64_t test_random_u(void)
+{
+	return rng_random_u(&test_ctx.rng);
 }

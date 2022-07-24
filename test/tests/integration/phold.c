@@ -30,8 +30,8 @@ static simtime_t mean = 1.0;
 static simtime_t lookahead = 0.0;
 static int start_events = 1;
 
-void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, __unused const void *content, __unused unsigned size,
-    __unused void *s)
+void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, _unused const void *content, _unused unsigned size,
+    _unused void *s)
 {
 	struct phold_message new_event = {0};
 	lp_id_t dest;
@@ -59,7 +59,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, __unused const
 	}
 }
 
-bool CanEnd(__unused lp_id_t me, __unused const void *snapshot)
+bool CanEnd(_unused lp_id_t me, _unused const void *snapshot)
 {
 	return false;
 }
