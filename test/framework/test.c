@@ -16,7 +16,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 struct test_ctx {
 	jmp_buf jmp_buf;
