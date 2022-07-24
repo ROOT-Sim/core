@@ -37,12 +37,19 @@ test_program(load tests/core/load.c)
 
 # Test data structures and subsystems
 #test_program(msg_queue tests/datatypes/msg_queue.c)
-test_program(stats tests/log/stats.c)
-target_compile_definitions(test_stats PRIVATE STATS_SCRIPT_PATH=\"${CMAKE_SOURCE_DIR}/src/log/parse/rootsim_stats.py\")
-target_compile_definitions(test_stats PRIVATE STATS_TEST_SCRIPT_PATH=\"${CMAKE_SOURCE_DIR}/test/tests/log/parse_test.py\")
-
 test_program(bitmap tests/datatypes/bitmap.c)
 test_program(mm tests/mm/buddy.c tests/mm/buddy_hard.c tests/mm/parallel.c tests/mm/main.c)
+
+# Test the statistics subsystem
+test_program(stats tests/log/stats.c)
+add_test(test_stats_parser
+        ${Python_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/log/rootsim_stats_test.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/parse/rootsim_stats.py
+        ${CMAKE_CURRENT_BINARY_DIR})
+
+set_tests_properties(test_stats PROPERTIES FIXTURES_SETUP STATISTICS)
+set_tests_properties(test_stats_parser PROPERTIES FIXTURES_REQUIRED STATISTICS)
 
 # Test libraries
 test_program(sync tests/core/sync.c)

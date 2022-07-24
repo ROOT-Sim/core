@@ -36,13 +36,13 @@ bool DummyCanEnd(lp_id_t lid, const void *state)
 	return false;
 }
 
-static const struct simulation_configuration empty_conf = {
+static struct simulation_configuration conf = {
     .lps = 123,
     .n_threads = N_THREADS,
     .termination_time = 0,
     .gvt_period = 0,
     .log_level = LOG_SILENT,
-    .stats_file = "stats_test",
+    .stats_file = NULL,
     .ckpt_interval = 0,
     .prng_seed = 0,
     .core_binding = true,
@@ -69,13 +69,12 @@ test_ret_t stats_single_gvt_test(__unused void *arg)
 test_ret_t stats_multi_gvt_test(__unused void *arg)
 {
 	stats_init();
-	for(unsigned i = 0; i < sizeof(gvt_tests) / sizeof(*gvt_tests); ++i) {
+	for(unsigned i = 0; i < sizeof(gvt_tests) / sizeof(*gvt_tests); ++i)
 		stats_on_gvt(gvt_tests[i]);
-	}
 	return 0;
 }
 
-test_ret_t stats_measure_test(__unused void *arg)
+test_ret_t stats_measures_test(__unused void *arg)
 {
 	stats_init();
 
@@ -89,42 +88,24 @@ test_ret_t stats_measure_test(__unused void *arg)
 	return 0;
 }
 
-static void stats_subsystem_test(const struct simulation_configuration *conf, test_fn thread_fn, const char *check_str)
+static void stats_subsystem_test(const char *name, test_fn thread_fn)
 {
-	RootsimInit(conf);
+	conf.stats_file = name;
+	RootsimInit(&conf);
 	stats_global_init();
 	parallel_test("Testing statistics module", thread_fn, NULL);
 	stats_global_fini();
-
-	char cmd[512] = {0};
-	int ret;
-	ret = snprintf(cmd, sizeof(cmd), "python3 " STATS_SCRIPT_PATH " %s.bin", conf->stats_file);
-	test_assert(ret >= 0 && ret < (int)sizeof(cmd)); // assure correct snprintf operations
-	ret = system(cmd);
-	test_assert(ret == 0);
-
-	ret = snprintf(cmd, sizeof(cmd), "python3 " STATS_TEST_SCRIPT_PATH " %s.txt %s", conf->stats_file, check_str);
-	test_assert(ret >= 0 && ret < (int)sizeof(cmd)); // assure correct snprintf operations
-	ret = system(cmd);
-	test_assert(ret == 0);
 }
 
 int main(void)
 {
 	init(N_THREADS);
 
-	stats_subsystem_test(&empty_conf, stats_empty_test,
-	    "NZ 1 " TOSTRING(N_THREADS) " 0 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 0 0.0 0 NZ");
-
+	stats_subsystem_test("empty_stats", stats_empty_test);
 	n_lps_node = 16;
-	stats_subsystem_test(&empty_conf, stats_single_gvt_test,
-	    "NZ 1 " TOSTRING(N_THREADS) " 16 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 0.0 1 0.0 NZ NZ");
-
-	stats_subsystem_test(&empty_conf, stats_multi_gvt_test,
-	    "NZ 1 " TOSTRING(N_THREADS) " 16 0 0 0 0 0 0 0.00 0.00 100.00 0 0 0 0 0 48.56 4 12.14 NZ NZ");
-
-	stats_subsystem_test(&empty_conf, stats_measure_test,
-	    "NZ 1 " TOSTRING(N_THREADS) " 16 156 102 24 30 20 60 15.87 1.20 80.95 0 0 0 0 0 0.0 1 0.0 NZ NZ");
+	stats_subsystem_test("single_gvt_stats", stats_single_gvt_test);
+	stats_subsystem_test("multi_gvt_stats", stats_multi_gvt_test);
+	stats_subsystem_test("measures_stats", stats_measures_test);
 
 	// TODO: stress test the sample aggregation system
 
