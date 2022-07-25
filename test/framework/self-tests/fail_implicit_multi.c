@@ -1,5 +1,5 @@
 /**
- * @file test/self-tests/assert_fail.c
+ * @file test/framework/self-tests/fail_implicit_multi.c
  *
  * @brief Test: Test core functions of the testing framework
  *
@@ -10,6 +10,14 @@
  */
 #include <test.h>
 #include <framework/self-tests/stubs.h>
+
+#include <stdatomic.h>
+
+static int test_fail_once(_unused void *arg)
+{
+	static atomic_flag failed = ATOMIC_FLAG_INIT;
+	return !atomic_flag_test_and_set_explicit(&failed, memory_order_relaxed);
+}
 
 int main(void)
 {

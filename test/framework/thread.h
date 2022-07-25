@@ -1,15 +1,10 @@
 /**
- * @file arch/thread.h
+ * @file test/framework/thread.h
  *
- * @brief Generic architecture management facilities
+* @brief Test thread management facilities
  *
- * This module provides generic facilities for thread and core management.
- * In particular, helper functions to startup worker threads are exposed,
- * and a function to synchronize multiple threads on a software barrier.
- *
- * The software barrier also offers a leader election facility, so that
- * once all threads are synchronized on the barrier, the function returns
- * true to only one of them.
+ * This module provides generic facilities for thread and core management. In particular, helper functions to startup
+ * worker threads are exposed.and a function to synchronize multiple threads on a software barrier.
  *
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only

@@ -11,22 +11,20 @@
 #include <test.h>
 #include <framework/rng.h>
 
-#include <lib/lib.h>
 #include <lp/lp.h>
 
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
-
 
 static int aux_ks_test(_unused void *_)
 {
-	test_assert(rng_ks_test(100000000, 1000, Random) == 0);
-	test_assert(rng_ks_test(1000000, 1000, Random) == 0);
-	test_assert(rng_ks_test(100000, 1000, Random) == 0);
-	test_assert(rng_ks_test(10000, 100, Random) == 0);
-	test_assert(rng_ks_test(1000, 10, Random) == 0);
-	test_assert(rng_ks_test(100, 10, Random) == 0);
+	test_assert(rng_ks_test(100000000, Random) == 0);
+	test_assert(rng_ks_test(10000000, Random) == 0);
+	test_assert(rng_ks_test(1000000, Random) == 0);
+	test_assert(rng_ks_test(100000, Random) == 0);
+	test_assert(rng_ks_test(10000, Random) == 0);
+	test_assert(rng_ks_test(1000, Random) == 0);
+	test_assert(rng_ks_test(100, Random) == 0);
 
 	return 0;
 }

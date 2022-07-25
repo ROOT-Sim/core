@@ -1,5 +1,5 @@
 /**
- * @file test/self-tests/explicit_fail.c
+ * @file test/framework/self-tests/fail_explicit.c
  *
  * @brief Test: Test core functions of the testing framework
  *

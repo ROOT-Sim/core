@@ -23,18 +23,21 @@
 struct test_ctx {
 	jmp_buf jmp_buf;
 	test_rng_state rng;
+	unsigned tid;
 	bool assertion_failed;
 };
 
 struct test_case {
 	test_fn fn;
 	void *arg;
+	uint64_t rng_seed;
+	atomic_uint *tid_helper_p;
 };
 
 static atomic_flag test_setup_done = ATOMIC_FLAG_INIT;
 static atomic_uint test_success_count;
 static atomic_uint test_total_count;
-static _Thread_local struct test_ctx test_ctx = {0};
+static _Thread_local struct test_ctx test_ctx = {.rng = (((test_rng_state)12399196U) << 64) | (test_rng_state)3532456U};
 
 __attribute__((noreturn)) void test_fail(void)
 {
@@ -72,7 +75,10 @@ static thrd_ret_t test_run(void *args)
 	struct test_ctx old_ctx = test_ctx;
 	test_ctx.assertion_failed = false;
 
-	test_ctx.rng = clock();
+	if(t->tid_helper_p != NULL) {
+		test_ctx.tid = atomic_fetch_add_explicit(t->tid_helper_p, 1U, memory_order_relaxed);
+		rng_init(&test_ctx.rng, old_ctx.rng ^ ((__uint128_t)t->rng_seed * (test_ctx.tid + 1)));
+	}
 
 	bool has_failed;
 	if(setjmp(test_ctx.jmp_buf)) {
@@ -112,7 +118,7 @@ int test(const char *desc, test_fn test_fn, void *arg)
 {
 	test_init(desc);
 
-	struct test_case t = {.fn = test_fn, .arg = arg};
+	struct test_case t = {.fn = test_fn, .arg = arg, .tid_helper_p = NULL};
 	bool test_failed = test_run(&t);
 
 	return test_fini(test_failed, false);
@@ -122,7 +128,7 @@ int test_xf(const char *desc, test_fn test_fn, void *arg)
 {
 	test_init(desc);
 
-	struct test_case t = {.fn = test_fn, .arg = arg};
+	struct test_case t = {.fn = test_fn, .arg = arg, .tid_helper_p = NULL};
 	bool test_failed = test_run(&t);
 
 	return test_fini(test_failed, true);
@@ -135,9 +141,11 @@ int test_parallel(const char *desc, test_fn test_fn, void *arg, unsigned thread_
 	if(!thread_count)
 		thread_count = test_thread_cores_count();
 
-	thr_id_t threads[thread_count];
-	struct test_case t = {.fn = test_fn, .arg = arg};
+	atomic_uint tid_helper;
+	atomic_store_explicit(&tid_helper, 0, memory_order_relaxed);
+	struct test_case t = {.fn = test_fn, .arg = arg, .tid_helper_p = &tid_helper, .rng_seed = test_random_u()};
 
+	thr_id_t threads[thread_count];
 	for(unsigned i = 0; i < thread_count; ++i)
 		test_thread_start(&threads[i], test_run, &t);
 

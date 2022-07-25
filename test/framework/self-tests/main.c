@@ -1,5 +1,5 @@
 /**
- * @file test/self-tests/main.c
+ * @file test/framework/self-tests/main.c
  *
  * @brief Test: Main program of the self-tests tests for the testing framework
  *
@@ -13,6 +13,7 @@
 #include <framework/rng.h>
 #include <framework/thread.h>
 
+#include <math.h>
 #include <stdatomic.h>
 #include <stdio.h>
 
@@ -26,7 +27,7 @@ static int thread_fnc(_unused void *_)
 	return 0;
 }
 
-int thread_execution(_unused void *_)
+static int thread_execution(_unused void *_)
 {
 	char desc[128] = "Testing first thread execution phase";
 
@@ -42,14 +43,27 @@ int thread_execution(_unused void *_)
 	return 0;
 }
 
-int test_rng(_unused void *_)
+static int test_rng(_unused void *_)
 {
-	test_assert(rng_ks_test(10000000, 1000, test_random_double) == 0);
-	test_assert(rng_ks_test(1000000, 1000, test_random_double) == 0);
-	test_assert(rng_ks_test(100000, 1000, test_random_double) == 0);
-	test_assert(rng_ks_test(10000, 100, test_random_double) == 0);
-	test_assert(rng_ks_test(1000, 10, test_random_double) == 0);
-	test_assert(rng_ks_test(100, 10, test_random_double) == 0);
+	test_assert(rng_ks_test(10000000, test_random_double) == 0);
+	test_assert(rng_ks_test(1000000, test_random_double) == 0);
+	test_assert(rng_ks_test(100000, test_random_double) == 0);
+	test_assert(rng_ks_test(10000, test_random_double) == 0);
+	test_assert(rng_ks_test(1000, test_random_double) == 0);
+	test_assert(rng_ks_test(100, test_random_double) == 0);
+	return 0;
+}
+
+static double test_exponential_prng()
+{
+	double ret = log(1 - test_random_double());
+	ret = ret > 1 ? 1 : ret;
+	return ret;
+}
+
+static int test_fail_rng(_unused void *_)
+{
+	test_assert(rng_ks_test(1000, test_exponential_prng) == 0);
 	return 0;
 }
 
@@ -59,9 +73,9 @@ int main(void)
 	test("Test passing assert test", test_assert_arg_null, NULL);
 	test("Test passing fail test", test_fail_on_not_null, NULL);
 
-	test_xf("Test passing simple test", test_want_arg_null, (void *)1);
-	test_xf("Test passing assert test", test_assert_arg_null, (void *)1);
-	test_xf("Test passing fail test", test_fail_on_not_null, (void *)1);
+	test_xf("Test failing simple test", test_want_arg_null, (void *)1);
+	test_xf("Test failing assert test", test_assert_arg_null, (void *)1);
+	test_xf("Test failing fail test", test_fail_on_not_null, (void *)1);
 
 	test_parallel("Test pseudo multithread passing simple test", test_want_arg_null, NULL, 0);
 	test_parallel("Test pseudo multithread passing assert test", test_assert_arg_null, NULL, 0);
@@ -71,6 +85,7 @@ int main(void)
 	test_parallel("Test multithread passing assert test", test_assert_arg_null, NULL, 0);
 	test_parallel("Test multithread passing fail test", test_fail_on_not_null, NULL, 0);
 
-	test_parallel("Testing random number generator", test_rng, NULL, 0);
-	test("Testing threaded execution", thread_execution, NULL);
+	test_parallel("Test random number generator", test_rng, NULL, 0);
+	test_xf("Test random number generator fail test", test_fail_rng, NULL);
+	test("Test threaded execution", thread_execution, NULL);
 }
