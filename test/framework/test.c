@@ -114,24 +114,24 @@ static int test_fini(bool has_failed, bool expected_fail)
 	}
 }
 
-int test(const char *desc, test_fn test_fn, void *arg)
+static int test_single(const char *desc, test_fn test_fn, void *arg, bool should_fail)
 {
 	test_init(desc);
 
 	struct test_case t = {.fn = test_fn, .arg = arg, .tid_helper_p = NULL};
 	bool test_failed = test_run(&t);
 
-	return test_fini(test_failed, false);
+	return test_fini(test_failed, should_fail);
+}
+
+int test(const char *desc, test_fn test_fn, void *arg)
+{
+	return test_single(desc, test_fn, arg, false);
 }
 
 int test_xf(const char *desc, test_fn test_fn, void *arg)
 {
-	test_init(desc);
-
-	struct test_case t = {.fn = test_fn, .arg = arg, .tid_helper_p = NULL};
-	bool test_failed = test_run(&t);
-
-	return test_fini(test_failed, true);
+	return test_single(desc, test_fn, arg, true);
 }
 
 int test_parallel(const char *desc, test_fn test_fn, void *arg, unsigned thread_count)
@@ -166,6 +166,8 @@ void test_assert_internal(_Bool condition, const char *file_name, unsigned line_
 		return;
 
 	test_ctx.assertion_failed = true;
+	printf("assertion failed at line %u in file %s ", line_count, file_name);
+	fflush(stdout);
 }
 
 /**

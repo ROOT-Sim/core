@@ -35,7 +35,7 @@ static int thread_execution(_unused void *_)
 	test_assert(count == test_thread_cores_count());
 
 	for(unsigned i = 1; i < REP_COUNT; i++) {
-		snprintf(desc, sizeof(desc), "Testing thread execution phase %d", i);
+		snprintf(desc, sizeof(desc), "Testing thread execution phase %u", i);
 		atomic_store_explicit(&count, 0U, memory_order_relaxed);
 		test_parallel(desc, thread_fnc, NULL, i);
 		test_assert(count == i);
