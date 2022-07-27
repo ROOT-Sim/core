@@ -18,7 +18,7 @@
 #define THREAD_REPS 100000
 #define BITMAP_ENTRIES 10000
 
-static test_ret_t bitmap_test(__unused void *_)
+static int bitmap_test(_unused void *_)
 {
 	int ret = 0;
 
@@ -66,8 +66,5 @@ __extension__({			\
 
 int main(void)
 {
-	init(0);
-
 	test("Testing bitmap implementation", bitmap_test, NULL);
-	finish();
 }

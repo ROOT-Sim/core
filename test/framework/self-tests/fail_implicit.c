@@ -1,5 +1,5 @@
 /**
- * @file test/self-tests/fail.c
+ * @file test/framework/self-tests/fail_implicit.c
  *
  * @brief Test: Test core functions of the testing framework
  *
@@ -8,15 +8,10 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-
 #include <test.h>
-#include <string.h>
-
-extern test_ret_t test_explicit_fail(__unused void *_);
+#include <framework/self-tests/stubs.h>
 
 int main(void)
 {
-	init(0);
-	test("Test explicit fail", test_explicit_fail, NULL);
-	finish();
+	test("Test implicit fail", test_want_arg_null, (void *)1);
 }

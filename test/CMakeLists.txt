@@ -3,7 +3,6 @@
 add_library(test_framework_lib STATIC
         framework/lp.c
         framework/rng.c
-        framework/semaphore.c
         framework/test.c
         framework/thread.c
         )
@@ -23,14 +22,17 @@ function(test_program_xf name)
 endfunction()
 
 # Test framework tests
-test_program(testing_framework framework/self-tests/core.c framework/self-tests/rng.c framework/self-tests/threads.c framework/self-tests/semaphores.c framework/self-tests/main.c)
-test_program_xf(testing_framework_fail framework/self-tests/core.c framework/self-tests/fail.c)
-test_program_xf(testing_framework_assert1 framework/self-tests/core.c framework/self-tests/fail_assert1.c)
-test_program_xf(testing_framework_assert2 framework/self-tests/core.c framework/self-tests/fail_assert2.c)
+test_program(self_main framework/self-tests/stubs.c framework/self-tests/main.c)
+test_program_xf(self_fail_assert framework/self-tests/stubs.c framework/self-tests/fail_assert.c)
+test_program_xf(self_fail_explicit framework/self-tests/stubs.c framework/self-tests/fail_explicit.c)
+test_program_xf(self_fail_implicit framework/self-tests/stubs.c framework/self-tests/fail_implicit.c)
+test_program_xf(self_fail_implicit_multi framework/self-tests/stubs.c framework/self-tests/fail_implicit_multi.c)
+test_program_xf(self_unexp_pass_assert framework/self-tests/stubs.c framework/self-tests/unexp_pass_assert.c)
+test_program_xf(self_unexp_pass_plain framework/self-tests/stubs.c framework/self-tests/unexp_pass_plain.c)
 
 # Visibility tests
-test_program(visibility1 tests/visibility/visibility_weak.c)
-test_program(visibility2 tests/visibility/visibility_override.c)
+test_program(visibility_weak tests/visibility/visibility_weak.c)
+test_program(visibility_override tests/visibility/visibility_override.c)
 
 # Test the API
 test_program(load tests/core/load.c)
