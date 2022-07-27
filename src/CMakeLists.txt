@@ -48,3 +48,5 @@ if(NOT DISABLE_MPI)
     target_link_libraries(rscore ${MPI_C_LIBRARIES})
 endif()
 
+install(FILES ROOT-Sim.h DESTINATION include)
+install(TARGETS rscore LIBRARY DESTINATION lib)
