@@ -301,7 +301,7 @@ void stats_global_fini(void)
 	if(nid) {
 		stats_files_send();
 	} else {
-		FILE *o = file_open("w", "%s.bin", global_config.stats_file);
+		FILE *o = file_open("wb", "%s.bin", global_config.stats_file);
 		if(unlikely(o == NULL)) {
 			logger(LOG_WARN, "Unable to open statistics file for writing, statistics won't be saved.");
 			stats_files_receive(NULL);
