@@ -11,6 +11,7 @@
 #include <test.h>
 
 #include <memory.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 

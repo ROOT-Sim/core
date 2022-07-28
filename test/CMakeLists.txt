@@ -27,6 +27,7 @@ test_program_xf(self_fail_assert framework/self-tests/stubs.c framework/self-tes
 test_program_xf(self_fail_explicit framework/self-tests/stubs.c framework/self-tests/fail_explicit.c)
 test_program_xf(self_fail_implicit framework/self-tests/stubs.c framework/self-tests/fail_implicit.c)
 test_program_xf(self_fail_implicit_multi framework/self-tests/stubs.c framework/self-tests/fail_implicit_multi.c)
+test_program_xf(self_fail_top_level_assert framework/self-tests/stubs.c framework/self-tests/fail_top_level_assert.c)
 test_program_xf(self_unexp_pass_assert framework/self-tests/stubs.c framework/self-tests/unexp_pass_assert.c)
 test_program_xf(self_unexp_pass_plain framework/self-tests/stubs.c framework/self-tests/unexp_pass_plain.c)
 
