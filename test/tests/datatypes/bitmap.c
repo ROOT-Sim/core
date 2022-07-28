@@ -17,7 +17,7 @@
 #define THREAD_REPS 100000
 #define BITMAP_ENTRIES 10000
 
-static test_ret_t bitmap_test(__unused void *_)
+static int bitmap_test(_unused void *_)
 {
 	size_t b_size = bitmap_required_size(BITMAP_ENTRIES);
 	block_bitmap *b = malloc(b_size);
@@ -63,8 +63,5 @@ static test_ret_t bitmap_test(__unused void *_)
 
 int main(void)
 {
-	init(0);
-
 	test("Testing bitmap implementation", bitmap_test, NULL);
-	finish();
 }

@@ -18,7 +18,7 @@ const enum topology_direction LAST_DIRECTION_VALID_VALUE = DIRECTION_SE;
 
 #define RANDOM_TRIALS 100
 
-test_ret_t test_hexagon(__unused void *_)
+int test_hexagon(_unused void *_)
 {
 	struct topology *topology = InitializeTopology(TOPOLOGY_HEXAGON, 5, 4);
 
@@ -111,10 +111,11 @@ test_ret_t test_hexagon(__unused void *_)
 	test_assert(IsNeighbor(3, 1, topology) == false);
 
 	ReleaseTopology(topology);
-	check_passed_asserts();
+
+	return 0;
 }
 
-test_ret_t test_square(__unused void *_)
+int test_square(_unused void *_)
 {
 	struct topology *topology = InitializeTopology(TOPOLOGY_SQUARE, 3, 4);
 
@@ -203,10 +204,11 @@ test_ret_t test_square(__unused void *_)
 	test_assert(IsNeighbor(3, 1, topology) == false);
 
 	ReleaseTopology(topology);
-	check_passed_asserts();
+
+	return 0;
 }
 
-test_ret_t test_ring(__unused void *_)
+int test_ring(_unused void *_)
 {
 	struct topology *topology = InitializeTopology(TOPOLOGY_RING, 5);
 
@@ -248,10 +250,11 @@ test_ret_t test_ring(__unused void *_)
 	test_assert(IsNeighbor(4, 2, topology) == false);
 
 	ReleaseTopology(topology);
-	check_passed_asserts();
+
+	return 0;
 }
 
-test_ret_t test_bidring(__unused void *_)
+int test_bidring(_unused void *_)
 {
 	struct topology *topology = InitializeTopology(TOPOLOGY_BIDRING, 5);
 
@@ -297,10 +300,11 @@ test_ret_t test_bidring(__unused void *_)
 	test_assert(IsNeighbor(4, 2, topology) == false);
 
 	ReleaseTopology(topology);
-	check_passed_asserts();
+
+	return 0;
 }
 
-test_ret_t test_torus(__unused void *_)
+int test_torus(_unused void *_)
 {
 	struct topology *topology = InitializeTopology(TOPOLOGY_TORUS, 3, 4);
 
@@ -389,10 +393,11 @@ test_ret_t test_torus(__unused void *_)
 	test_assert(IsNeighbor(3, 1, topology) == false);
 
 	ReleaseTopology(topology);
-	check_passed_asserts();
+
+	return 0;
 }
 
-test_ret_t test_star(__unused void *_)
+int test_star(_unused void *_)
 {
 	struct topology *topology = InitializeTopology(TOPOLOGY_STAR, 5);
 
@@ -437,10 +442,11 @@ test_ret_t test_star(__unused void *_)
 	test_assert(IsNeighbor(4, 2, topology) == false);
 
 	ReleaseTopology(topology);
-	check_passed_asserts();
+
+	return 0;
 }
 
-test_ret_t test_mesh(__unused void *_)
+int test_mesh(_unused void *_)
 {
 	struct topology *topology = InitializeTopology(TOPOLOGY_FCMESH, 5);
 
@@ -483,12 +489,13 @@ test_ret_t test_mesh(__unused void *_)
 	test_assert(IsNeighbor(4, 2, topology) == true);
 
 	ReleaseTopology(topology);
-	check_passed_asserts();
+
+	return 0;
 }
 
 #define MAX_NODES_TEST 20
 #define NUM_QUERIES 50
-test_ret_t test_graph(__unused void *_)
+int test_graph(_unused void *_)
 {
 	struct topology *topology;
 	unsigned num_edges;
@@ -530,12 +537,12 @@ test_ret_t test_graph(__unused void *_)
 		test_assert(GetReceiver(0, topology, i) == INVALID_DIRECTION);
 	ReleaseTopology(topology);
 
-	check_passed_asserts();
+	return 0;
 }
 #undef NUM_QUERIES
 #undef MAX_NODES_TEST
 
-test_ret_t test_init_fini(__unused void *_)
+int test_init_fini(_unused void *_)
 {
 	struct topology *topology;
 	unsigned par1, par2; // Testing a variadic function, these are the two parameters
@@ -575,13 +582,12 @@ test_ret_t test_init_fini(__unused void *_)
 	// Test what happens if wrong geometry is passed to InitializeTopology()
 	test_assert(InitializeTopology(10 * TOPOLOGY_GRAPH, 1) == NULL);
 
-	check_passed_asserts();
+	return 0;
 }
 
-int main(void) {
-	init(0);
-
-	current_lp = mock_lp();
+int main(void)
+{
+	current_lp = test_lp_mock_get();
 
 	test("Topology initialization and release", test_init_fini, NULL);
 	test("Hexagon topology", test_hexagon, NULL);
@@ -592,6 +598,4 @@ int main(void) {
 	test("Star topology", test_star, NULL);
 	test("Fully Connected Mesh topology", test_mesh, NULL);
 	test("Graph topology", test_graph, NULL);
-
-	finish();
 }

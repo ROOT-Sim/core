@@ -1,13 +1,13 @@
 /**
-* @file lib/topology/topology.c
-*
-* @brief Topology library
-*
-* A library implementing commonly-required topologies in simulation models.
-*
-* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
-* SPDX-License-Identifier: GPL-3.0-only
-*/
+ * @file lib/topology/topology.c
+ *
+ * @brief Topology library
+ *
+ * A library implementing commonly-required topologies in simulation models.
+ *
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <assert.h>
 #include <stdlib.h>
 
@@ -18,24 +18,24 @@
 
 /// A node in the topology adjacency matrix
 struct graph_node {
-	lp_id_t	neighbor;        /**< The ID of the neighbor */
-	double probability;     /**< The probability to traverse this edge */
+	lp_id_t neighbor;        /**< The ID of the neighbor */
+	double probability;      /**< The probability to traverse this edge */
 	struct graph_node *next; /**< Next node in the adjacency list */
 	struct graph_node *prev; /**< Next node in the adjacency list */
 };
 
 /// The structure describing a topology
 struct topology {
-	lp_id_t regions;                          /**< the number of LPs involved in the topology */
-	uint32_t width;                           /**< the width of the grid */
-	uint32_t height;                          /**< the height of the grid */
-	enum topology_geometry geometry;          /**< the topology geometry */
-	list(struct graph_node) *adjacency; /**< Adjacency list for the graph topology */
+	lp_id_t regions;                     /**< the number of LPs involved in the topology */
+	uint32_t width;                      /**< the width of the grid */
+	uint32_t height;                     /**< the height of the grid */
+	enum topology_geometry geometry;     /**< the topology geometry */
+	list(struct graph_node) * adjacency; /**< Adjacency list for the graph topology */
 };
 
 /// Allowed directions to reach a neighbor in a TOPOLOGY_HEXAGON
-static enum topology_direction directions_hexagon[] =
-		{DIRECTION_E, DIRECTION_W, DIRECTION_NE, DIRECTION_NW, DIRECTION_SE, DIRECTION_SW};
+static enum topology_direction directions_hexagon[] = {DIRECTION_E, DIRECTION_W, DIRECTION_NE, DIRECTION_NW,
+    DIRECTION_SE, DIRECTION_SW};
 /// Allowed directions to reach a neighbor in either a TOPOLOGY_SQUARE or a TOPOLOGY_TORUS
 static enum topology_direction directions_square_torus[] = {DIRECTION_E, DIRECTION_W, DIRECTION_N, DIRECTION_S};
 
@@ -55,7 +55,8 @@ static enum topology_direction directions_square_torus[] = {DIRECTION_E, DIRECTI
  *
  * @return A random neighbor according to the specified topology
  */
-static lp_id_t get_random_neighbor(lp_id_t from, struct topology *topology, size_t n_directions, unsigned directions[n_directions])
+static lp_id_t get_random_neighbor(lp_id_t from, struct topology *topology, size_t n_directions,
+    enum topology_direction directions[n_directions])
 {
 	lp_id_t ret = INVALID_DIRECTION;
 
@@ -65,10 +66,10 @@ static lp_id_t get_random_neighbor(lp_id_t from, struct topology *topology, size
 	assert(topology->geometry != TOPOLOGY_FCMESH);
 	assert(topology->geometry != TOPOLOGY_GRAPH);
 
-	if (n_directions > 1) {
-		for (size_t i = 0; i < n_directions - 1; i++) {
+	if(n_directions > 1) {
+		for(size_t i = 0; i < n_directions - 1; i++) {
 			size_t j = RandomRange((int)i, (int)n_directions - 1);
-			unsigned t = directions[j];
+			enum topology_direction t = directions[j];
 			directions[j] = directions[i];
 			directions[i] = t;
 		}
@@ -136,7 +137,7 @@ static lp_id_t get_neighbor_hexagon(lp_id_t from, struct topology *topology, enu
 	y = from / topology->width;
 	x = from - y * topology->width;
 
-	switch (direction) {
+	switch(direction) {
 		case DIRECTION_NW:
 			x += (y & 1U) - 1;
 			y -= 1;
@@ -160,8 +161,8 @@ static lp_id_t get_neighbor_hexagon(lp_id_t from, struct topology *topology, enu
 			x -= 1;
 			break;
 		case DIRECTION_RANDOM:
-			return get_random_neighbor(from, topology, sizeof(directions_hexagon) / sizeof(enum topology_direction),
-						   directions_hexagon);
+			return get_random_neighbor(from, topology,
+			    sizeof(directions_hexagon) / sizeof(enum topology_direction), directions_hexagon);
 		default:
 			return INVALID_DIRECTION;
 	}
@@ -196,7 +197,7 @@ static lp_id_t get_neighbor_square(lp_id_t from, struct topology *topology, enum
 	y = from / topology->width;
 	x = from - y * topology->width;
 
-	switch (direction) {
+	switch(direction) {
 		case DIRECTION_N:
 			y -= 1;
 			break;
@@ -210,8 +211,8 @@ static lp_id_t get_neighbor_square(lp_id_t from, struct topology *topology, enum
 			x -= 1;
 			break;
 		case DIRECTION_RANDOM:
-			return get_random_neighbor(from, topology, sizeof(directions_square_torus) / sizeof(enum topology_direction),
-						   directions_square_torus);
+			return get_random_neighbor(from, topology,
+			    sizeof(directions_square_torus) / sizeof(enum topology_direction), directions_square_torus);
 		default:
 			return INVALID_DIRECTION;
 	}
@@ -246,7 +247,7 @@ static lp_id_t get_neighbor_torus(lp_id_t from, struct topology *topology, enum 
 	y = from / topology->width;
 	x = from - y * topology->width;
 
-	switch (direction) {
+	switch(direction) {
 		case DIRECTION_N:
 			y += topology->height - 1;
 			y %= topology->height;
@@ -264,8 +265,8 @@ static lp_id_t get_neighbor_torus(lp_id_t from, struct topology *topology, enum 
 			x %= topology->width;
 			break;
 		case DIRECTION_RANDOM:
-			return get_random_neighbor(from, topology, sizeof(directions_square_torus) / sizeof(enum topology_direction),
-						   directions_square_torus);
+			return get_random_neighbor(from, topology,
+			    sizeof(directions_square_torus) / sizeof(enum topology_direction), directions_square_torus);
 
 		default:
 			return INVALID_DIRECTION;
@@ -395,7 +396,7 @@ lp_id_t CountDirections(lp_id_t from, struct topology *topology)
 
 	assert(topology);
 
-	switch (topology->geometry) {
+	switch(topology->geometry) {
 		case TOPOLOGY_FCMESH:
 			assert(topology->geometry == TOPOLOGY_FCMESH);
 			return topology->regions - 1;
@@ -535,7 +536,7 @@ lp_id_t GetReceiver(lp_id_t from, struct topology *topology, enum topology_direc
 		return INVALID_DIRECTION;
 	}
 
-	switch (topology->geometry) {
+	switch(topology->geometry) {
 		case TOPOLOGY_HEXAGON:
 			return get_neighbor_hexagon(from, topology, direction);
 
@@ -651,17 +652,17 @@ struct topology *vInitializeTopology(enum topology_geometry geometry, int argc, 
 		}
 	}
 
-    out:
+out:
 	va_end(args);
 	return topology;
 
-    err2:
+err2:
 	// Free the memory that has been partially allocated
 	for(size_t k = 0; k < i; ++k)
 		free(topology->adjacency[k]);
 	free(topology->adjacency);
 
-    err1:
+err1:
 	free(topology);
 	topology = NULL;
 	goto out;

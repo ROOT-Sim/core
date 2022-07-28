@@ -1,5 +1,5 @@
 /**
- * @file test/self-tests/fail_assert2.c
+ * @file test/framework/self-tests/unexp_pass_plain.c
  *
  * @brief Test: Test core functions of the testing framework
  *
@@ -8,15 +8,11 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-
 #include <test.h>
-#include <string.h>
-
-extern test_ret_t test_pass(__unused void *_);
+#include <framework/self-tests/stubs.h>
+#include <stdlib.h>
 
 int main(void)
 {
-	init(0);
-	test_xf("Test unexpected pass", test_pass, NULL);
-	finish();
+	test_xf("Test unexpected pass", test_want_arg_null, NULL);
 }
