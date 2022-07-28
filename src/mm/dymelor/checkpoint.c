@@ -74,9 +74,11 @@ struct dymelor_ctx_checkpoint *checkpoint_full_take(const struct mm_state *ctx, 
 		}
 	}
 	if(approximated) {
+		stats_take(STATS_APPROX_CKPT_STATE_SIZE, ctx->approx_used_mem);
 		stats_take(STATS_APPROX_CKPT_TIME, timer_hr_value(t));
 		stats_take(STATS_APPROX_CKPT, 1);
 	} else {
+		stats_take(STATS_CKPT_STATE_SIZE, ctx->used_mem);
 		stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 		stats_take(STATS_CKPT, 1);
 	}

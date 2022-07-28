@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.10)
 project("ROOT-Sim core" LANGUAGES C DESCRIPTION "A General-Purpose Multi-threaded Parallel/Distributed Simulation Library")
 
-set(PROJECT_VERSION 3.0.0-alpha.3) # todo: use cmake project VERSION argument when we are out of the alpha
+set(PROJECT_VERSION 3.0.0-beta)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -25,7 +25,9 @@ if(MSVC)
 endif()
 
 find_package(Threads REQUIRED)
-find_package(MPI REQUIRED)
+if(NOT DISABLE_MPI)
+    find_package(MPI REQUIRED)
+endif()
 
 add_compile_options(-Wall -Wextra -pedantic)
 

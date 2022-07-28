@@ -43,9 +43,11 @@ void ApproximatedMemoryMark(const void *base, bool core)
 		if (core) {
 			bitmap_set(m_area->core_bitmap, i);
 			m_area->core_chunks++;
+			current_lp->mm_state.approx_used_mem += 1 << m_area->chk_size_exp;
 		} else {
 			bitmap_reset(m_area->core_bitmap, i);
 			m_area->core_chunks--;
+			current_lp->mm_state.approx_used_mem -= 1 << m_area->chk_size_exp;
 		}
 	}
 }

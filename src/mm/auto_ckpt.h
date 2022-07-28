@@ -5,18 +5,24 @@
  *
  * The module which attempts to select the best checkpoint interval
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
+#include <inttypes.h>
+
 /// Structure to keep data used for autonomic checkpointing selection
 struct auto_ckpt {
+	/// The inverse of the rollback probability
 	double inv_bad_p;
+	/// The count of straggler and anti-messages
 	unsigned m_bad;
+	/// The count of correctly processed forward messages
 	unsigned m_good;
 	unsigned approx_ckpt_interval;
 	unsigned ckpt_interval;
+	/// The count of remaining events to process until the next checkpoint
 	unsigned ckpt_rem;
 };
 
@@ -56,4 +62,4 @@ struct auto_ckpt {
 extern void auto_ckpt_init(void);
 extern void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt);
 extern void auto_ckpt_on_gvt(void);
-extern void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt);
+extern void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size, uint_fast32_t approx_state_size);

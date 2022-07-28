@@ -123,6 +123,8 @@ void *rs_malloc(size_t req_size)
 
 	req_size += sizeof(uint_least32_t);
 	unsigned size_exp = max(next_exp_of_2(req_size), MIN_CHUNK_EXP);
+	current_lp->mm_state.used_mem += 1 << size_exp;
+	current_lp->mm_state.approx_used_mem += 1 << size_exp;
 
 	uint_least32_t num_chunks = MIN_NUM_CHUNKS;
 	struct dymelor_area **m_area_p = &current_lp->mm_state.areas[size_exp - MIN_CHUNK_EXP];

@@ -5,7 +5,7 @@
  *
  * All facilities to collect, gather, and dump statistics are implemented in this module.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <log/stats.h>
@@ -62,8 +62,12 @@ const char *const stats_names[] = {
     [STATS_MSG_ROLLBACK] = "rolled back messages",
     [STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
     [STATS_MSG_SILENT] = "silent messages",
+    [STATS_APPROX_CKPT] = "approximated checkpoints",
+    [STATS_APPROX_CKPT_TIME] = "approximated checkpoints time",
+    [STATS_APPROX_CKPT_STATE_SIZE] = "approximated checkpoints state size",
     [STATS_CKPT] = "checkpoints",
     [STATS_CKPT_TIME] = "checkpoints time",
+    [STATS_CKPT_STATE_SIZE] = "checkpoints state size",
     [STATS_MSG_SILENT_TIME] = "silent messages time",
     [STATS_MSG_PROCESSED] = "processed messages",
     [STATS_REAL_TIME_GVT] = "gvt real time"

@@ -5,7 +5,7 @@
  *
  * This module defines synchronization primitives for the parallel runtime.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <core/sync.h>
@@ -22,7 +22,7 @@ bool sync_thread_barrier(void)
 	unsigned r;
 
 	static __thread unsigned phase;
-	static atomic_uint cs[2];
+	static atomic_uint cs[2]; // FIXME: this makes this barrier stateful with respect to the threads used
 	atomic_uint *c = cs + (phase & 1U);
 
 	if(phase & 2U) {

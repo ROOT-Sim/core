@@ -5,7 +5,7 @@
  *
  * LP construction functions
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <lp/lp.h>
@@ -139,7 +139,7 @@ void lp_on_gvt(simtime_t gvt)
 		struct lp_ctx *lp = &lps[i];
 		approximated_lp_on_gvt(lp);
 		fossil_lp_on_gvt(lp, gvt);
-		auto_ckpt_lp_on_gvt(&lp->auto_ckpt);
+		auto_ckpt_lp_on_gvt(&lp->auto_ckpt, lp->mm_state.used_mem, lp->mm_state.approx_used_mem);
 	}
 }
 

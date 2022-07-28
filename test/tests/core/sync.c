@@ -3,14 +3,16 @@
  *
  * @brief Test: synchronization primitives test
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <stdatomic.h>
-#include "test.h"
+#include <test.h>
+#include <framework/thread.h>
 
-#include "core/core.h"
-#include "core/sync.h"
+#include <core/core.h>
+#include <core/sync.h>
+
+#include <stdatomic.h>
 
 #define THREAD_REP 10000
 
@@ -23,7 +25,7 @@ static unsigned d = 0;
 
 _Static_assert(THREAD_REP % 5 == 0, "THREAD_REP must be a multiple of 5 for the spinlock test to work.");
 
-static test_ret_t sync_barrier_test(__unused void *_)
+static int sync_barrier_test(_unused void *_)
 {
 	int ret = 0;
 	unsigned j = THREAD_REP;
@@ -38,16 +40,15 @@ static test_ret_t sync_barrier_test(__unused void *_)
 	return ret;
 }
 
-static test_ret_t spinlock_test(__unused void *_)
+static int spinlock_test(_unused void *_)
 {
-	test_ret_t ret = 0;
+	int ret = 0;
 	unsigned j = THREAD_REP;
 
 	while(j--) {
 		spin_lock(&spin);
 		switch(k % 5) {
 			case 0:
-				__attribute__((fallthrough));
 			case 2:
 				k += 1;
 				__attribute__((fallthrough));
@@ -55,32 +56,34 @@ static test_ret_t spinlock_test(__unused void *_)
 				k += 1;
 				break;
 			case 3:
-				__attribute__((fallthrough));
 			case 1:
 				k += 5;
 				break;
 			default:
-				assert(false);
+				test_fail();
 		}
 		spin_unlock(&spin);
 	}
 
 	sync_thread_barrier();
 	ret += k != ((THREAD_REP * 5 * n_threads + 2) / 3);
+	// FIXME: these 3 barriers are necessary to reset the internal barriers counts before the next test
+	sync_thread_barrier();
+	sync_thread_barrier();
+	sync_thread_barrier();
 
 	return ret;
 }
 
-static test_ret_t mrswlock_test(__unused void *_)
+static int mrswlock_test(_unused void *_)
 {
-	test_ret_t ret = 0;
+	int ret = 0;
 	unsigned j = THREAD_REP;
 
 	while(j--) {
 		mrswlock_wlock(&rw_lock, (int)n_threads);
 		switch(d % 5) {
 			case 0:
-				__attribute__((fallthrough));
 			case 2:
 				d += 1;
 				__attribute__((fallthrough));
@@ -88,7 +91,6 @@ static test_ret_t mrswlock_test(__unused void *_)
 				d += 1;
 				break;
 			case 3:
-				__attribute__((fallthrough));
 			case 1:
 				d += 5;
 				break;
@@ -127,17 +129,12 @@ static test_ret_t mrswlock_test(__unused void *_)
 	return ret;
 }
 
-// fixme: in this test we are assuming (even if it is not strictly needed) that we are linking with rscore. Remove this.
-extern unsigned thread_cores_count(void);
-
 int main(void)
 {
-	n_threads = thread_cores_count();
-	init(n_threads);
-	parallel_test("Testing synchronization barrier", sync_barrier_test, NULL);
-	parallel_test("Testing spinlock", spinlock_test, NULL);
+	n_threads = test_thread_cores_count();
+	global_config.n_threads = n_threads;
+	test_parallel("Testing synchronization barrier", sync_barrier_test, NULL, n_threads);
+	test_parallel("Testing spinlock", spinlock_test, NULL, n_threads);
 	mrswlock_init(&rw_lock, n_threads);
-	parallel_test("Testing mrswlock", mrswlock_test, NULL);
-
-	finish();
+	test_parallel("Testing mrswlock", mrswlock_test, NULL, n_threads);
 }

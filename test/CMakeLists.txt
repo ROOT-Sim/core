@@ -1,12 +1,11 @@
 # SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 add_library(test_framework_lib STATIC
-    framework/lp.c
-    framework/rng.c
-    framework/semaphore.c
-    framework/test.c
-    framework/thread.c
-)
+        framework/lp.c
+        framework/rng.c
+        framework/test.c
+        framework/thread.c
+        )
 target_include_directories(test_framework_lib PRIVATE ../src .)
 
 function(test_program name)
@@ -17,12 +16,23 @@ function(test_program name)
     set_tests_properties(test_${name} PROPERTIES TIMEOUT 60)
 endfunction()
 
+function(test_program_xf name)
+    test_program(${name} ${ARGN})
+    set_tests_properties(test_${name} PROPERTIES WILL_FAIL TRUE)
+endfunction()
+
 # Test framework tests
-test_program(testing_framework framework/self-tests/rng.c framework/self-tests/threads.c framework/self-tests/semaphores.c framework/self-tests/main.c)
+test_program(self_main framework/self-tests/stubs.c framework/self-tests/main.c)
+test_program_xf(self_fail_assert framework/self-tests/stubs.c framework/self-tests/fail_assert.c)
+test_program_xf(self_fail_explicit framework/self-tests/stubs.c framework/self-tests/fail_explicit.c)
+test_program_xf(self_fail_implicit framework/self-tests/stubs.c framework/self-tests/fail_implicit.c)
+test_program_xf(self_fail_implicit_multi framework/self-tests/stubs.c framework/self-tests/fail_implicit_multi.c)
+test_program_xf(self_unexp_pass_assert framework/self-tests/stubs.c framework/self-tests/unexp_pass_assert.c)
+test_program_xf(self_unexp_pass_plain framework/self-tests/stubs.c framework/self-tests/unexp_pass_plain.c)
 
 # Visibility tests
-test_program(visibility1 tests/visibility/visibility_weak.c)
-test_program(visibility2 tests/visibility/visibility_override.c)
+test_program(visibility_weak tests/visibility/visibility_weak.c)
+test_program(visibility_override tests/visibility/visibility_override.c)
 
 # Test the API
 test_program(load tests/core/load.c)
@@ -37,6 +47,7 @@ test_program(sync tests/core/sync.c)
 test_program(numerical tests/lib/numerical.c)
 test_program(topology tests/lib/topology.c)
 
-# Correctness tests
-test_program(correctness_serial tests/integration/serial.c tests/integration/model/application.c tests/integration/model/functions.c tests/integration/model/output_256.c)
-test_program(correctness_parallel tests/integration/parallel.c tests/integration/model/application.c tests/integration/model/functions.c tests/integration/model/output_256.c)
+# Integration tests
+test_program(correctness_serial tests/integration/correctness/serial.c tests/integration/correctness/application.c tests/integration/correctness/functions.c tests/integration/correctness/output_256.c)
+test_program(correctness_parallel tests/integration/correctness/parallel.c tests/integration/correctness/application.c tests/integration/correctness/functions.c tests/integration/correctness/output_256.c)
+test_program(phold tests/integration/phold.c)

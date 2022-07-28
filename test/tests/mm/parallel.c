@@ -5,7 +5,7 @@
 *
 * Multiple stress tests of the model memory allocator. Based on t-test1 by Wolfram Glager
 *
-* SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
 * SPDX-License-Identifier: GPL-3.0-only
 */
 
@@ -140,11 +140,11 @@ static void bin_test(struct bin_info *p)
 	}
 }
 
-test_ret_t parallel_malloc_test(__unused void *_)
+int parallel_malloc_test(_unused void *_)
 {
 	unsigned i, b, j, actions, action;
 
-	current_lp = mock_lp();
+	current_lp = test_lp_mock_get();
 	model_allocator_lp_init();
 
 	struct bin_info p;
