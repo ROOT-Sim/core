@@ -68,7 +68,7 @@ typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, c
  */
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
-typedef bool (*RestoreApproximated_t)(lp_id_t me, void *snapshot);
+typedef void (*RestoreApproximated_t)(lp_id_t me, void *snapshot);
 
 enum rootsim_event {LP_INIT = 65534, LP_FINI};
 
