@@ -60,7 +60,7 @@ void mpi_remote_msg_handle(void) {}
 
 void mpi_remote_msg_drain(void) {}
 
-void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], unsigned *result)
+void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
 {
 	*result = values[0];
 }

@@ -73,6 +73,7 @@ const char *const stats_names[] = {
 
 /// The first timestamp ever collected for this simulation run
 static timer_uint sim_start_ts;
+/// The first high resolution timestamp of this simulation run: used to correlate high resolution and wall clock timers
 static timer_uint sim_start_ts_hr;
 /// The global stats
 static struct stats_global stats_glob_cur;
