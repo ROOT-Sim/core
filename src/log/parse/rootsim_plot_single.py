@@ -10,6 +10,12 @@ import sys
 # You can actually include this module in your code and use the object as it is done here
 if __name__ == "__main__":
 
+    dump_tsv = True
+    try:
+        sys.argv.remove('--tsv')
+    except ValueError:
+        dump_tsv = False
+
     if len(sys.argv) != 2:
         print("Please, supply the name of a raw statistics file!", file=sys.stderr)
         exit(-1)
@@ -36,12 +42,17 @@ if __name__ == "__main__":
     _, figxs = plt.subplots(3)
 
     def plot_data(sub_fig, data, data_label):
-        sub_fig.plot(rts, data, marker='.', markersize=3, markeredgecolor=(0.2, 0.3, 0.7), color=(0.4, 0.5, 0.7))
-        sub_fig.set_xlabel('Real Time (in s)')
-        sub_fig.set_ylabel(data_label)
-        sub_fig.label_outer()
-
-        sub_fig.grid(True)
+        if dump_tsv:
+            with open(data_label.replace(" ", "_").lower() + '.tsv', 'w') as f:
+                f.write(f'Real time\t{data_label}\n')
+                for i, sample in enumerate(data):
+                    f.write(f'{rts[i]}\t{sample}\n')
+        else:
+            sub_fig.plot(rts, data, marker='.', markersize=3, markeredgecolor=(0.2, 0.3, 0.7), color=(0.4, 0.5, 0.7))
+            sub_fig.set_xlabel('Real Time (in s)')
+            sub_fig.set_ylabel(data_label)
+            sub_fig.label_outer()
+            sub_fig.grid(True)
 
     def plot_metric(sub_fig, metric_name, metric_display):
         metrics = stats.thread_metric_get(metric_name, aggregate_threads=True, aggregate_nodes=True)
@@ -58,4 +69,5 @@ if __name__ == "__main__":
         gvt_advancement[i] /= o
     plot_data(figxs[2], gvt_advancement, "GVT advancement")
 
-    plt.show()
+    if not dump_tsv:
+        plt.show()
