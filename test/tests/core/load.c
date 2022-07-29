@@ -1,11 +1,11 @@
 /**
-* @file test/tests/core/load.c
-*
-* @brief Test: initialization of the core library
-*
-* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
-* SPDX-License-Identifier: GPL-3.0-only
-*/
+ * @file test/tests/core/load.c
+ *
+ * @brief Test: initialization of the core library
+ *
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include "test.h"
 
 #include "ROOT-Sim.h"
@@ -13,8 +13,8 @@
 #include <memory.h>
 #include <stdio.h>
 
-void DummyProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content,
-					  unsigned event_size, void *st)
+void DummyProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size,
+    void *st)
 {
 	(void)me;
 	(void)now;

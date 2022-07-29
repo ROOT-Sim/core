@@ -1,11 +1,11 @@
 /**
-* @file test/tests/log/stats.c
-*
-* @brief Test: statistics module test
-*
-* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
-* SPDX-License-Identifier: GPL-3.0-only
-*/
+ * @file test/tests/log/stats.c
+ *
+ * @brief Test: statistics module test
+ *
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <log/stats.h>
 
 #include <test.h>
