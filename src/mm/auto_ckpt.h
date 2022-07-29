@@ -12,6 +12,29 @@
 
 #include <inttypes.h>
 
+/**
+ * Compute a new value of the exponential moving average
+ * @param f the retention factor for old observations
+ * @param old_v the latest value of the moving average
+ * @param sample the new value to include in the average
+ * @return the new value of the exponential moving average
+ */
+#define EXP_AVG(f, old_v, sample)                                                                                      \
+	__extension__({                                                                                                \
+		double s = (sample);                                                                                   \
+		double o = (old_v);                                                                                    \
+		o *(((f)-1.0) / (f)) + s *(1.0 / (f));                                                                 \
+	})
+
+struct auto_ckpt_ctx {
+	double ckpt_avg_cost;
+	double inv_sil_avg_cost;
+	double rec_avg_cost;
+	double approx_handler_cost;
+};
+
+extern __thread struct auto_ckpt_ctx ackpt;
+
 /// Structure to keep data used for autonomic checkpointing selection
 struct auto_ckpt {
 	/// The inverse of the rollback probability

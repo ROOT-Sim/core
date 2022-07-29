@@ -55,16 +55,13 @@ static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct st
 
 /// The statistics names, used to fill in the preamble of the final statistics binary file
 const char *const stats_names[] = {
-    [STATS_RESTORE] = "restores",
+    [STATS_RESTORE_STATE_SIZE] = "restores state size",
     [STATS_RESTORE_TIME] = "restores time",
-    [STATS_APPROX_RESTORE] = "approx restores",
-    [STATS_APPROX_RESTORE_TIME] = "approx restores time",
+    [STATS_APPROX_HANDLER_STATE_SIZE] = "approx handler state size",
+    [STATS_APPROX_HANDLER_TIME] = "approx handler time",
     [STATS_MSG_ROLLBACK] = "rolled back messages",
     [STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
     [STATS_MSG_SILENT] = "silent messages",
-    [STATS_APPROX_CKPT] = "approximated checkpoints",
-    [STATS_APPROX_CKPT_TIME] = "approximated checkpoints time",
-    [STATS_APPROX_CKPT_STATE_SIZE] = "approximated checkpoints state size",
     [STATS_CKPT] = "checkpoints",
     [STATS_CKPT_TIME] = "checkpoints time",
     [STATS_CKPT_STATE_SIZE] = "checkpoints state size",

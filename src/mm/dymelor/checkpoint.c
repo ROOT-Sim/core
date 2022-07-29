@@ -11,14 +11,14 @@
 
 static size_t compute_log_size(const struct mm_state *ctx, bool approximated)
 {
-	size_t ret = sizeof(offsetof(struct dymelor_ctx_checkpoint, data));
+	size_t ret = sizeof(offsetof(struct dymelor_ctx_checkpoint, data)) + 2 * sizeof(uint_fast64_t);
 	for(unsigned i = 0; i < NUM_AREAS; ++i) {
 		const struct dymelor_area *area = ctx->areas[i];
 		uint_least32_t num_chunks = MIN_NUM_CHUNKS;
 		uint_least32_t chunk_size = (1U << (MIN_CHUNK_EXP + i)) - sizeof(uint_least32_t);
 		while(area != NULL) {
 			ret += offsetof(struct dymelor_area_checkpoint, data);
-			ret += 2 * bitmap_required_size(num_chunks);
+			ret += (2 - approximated) * bitmap_required_size(num_chunks);
 #ifdef ROOTSIM_INCREMENTAL
 			ret += bitmap_required_size(num_chunks); // maybe not needed in full checkpoints
 #endif
@@ -51,8 +51,6 @@ struct dymelor_ctx_checkpoint *checkpoint_full_take(const struct mm_state *ctx, 
 			ackpt->core_cnt = area->core_chunks;
 
 			size_t bitmap_size = bitmap_required_size(num_chunks);
-			memcpy(ackpt->data, area->use_bitmap, 2 * bitmap_size);
-			ptr = ackpt->data + 2 * bitmap_size;
 
 #define copy_from_area(x)                                                                                              \
 	({                                                                                                             \
@@ -61,11 +59,15 @@ struct dymelor_ctx_checkpoint *checkpoint_full_take(const struct mm_state *ctx, 
 	})
 
 			// Copy only the allocated chunks
-			if(approximated)
+			if(approximated) {
+				memcpy(ackpt->data, area->core_bitmap, bitmap_size);
+				ptr = ackpt->data + bitmap_size;
 				bitmap_foreach_set(area->core_bitmap, bitmap_size, copy_from_area);
-			else
+			} else {
+				memcpy(ackpt->data, area->use_bitmap, 2 * bitmap_size);
+				ptr = ackpt->data + 2 * bitmap_size;
 				bitmap_foreach_set(area->use_bitmap, bitmap_size, copy_from_area);
-
+			}
 #undef copy_from_area
 
 			++ckpt->area_cnt;
@@ -73,15 +75,13 @@ struct dymelor_ctx_checkpoint *checkpoint_full_take(const struct mm_state *ctx, 
 			area = area->next;
 		}
 	}
-	if(approximated) {
-		stats_take(STATS_APPROX_CKPT_STATE_SIZE, ctx->approx_used_mem);
-		stats_take(STATS_APPROX_CKPT_TIME, timer_hr_value(t));
-		stats_take(STATS_APPROX_CKPT, 1);
-	} else {
-		stats_take(STATS_CKPT_STATE_SIZE, ctx->used_mem);
-		stats_take(STATS_CKPT_TIME, timer_hr_value(t));
-		stats_take(STATS_CKPT, 1);
-	}
+
+	memcpy(ptr, &ctx->approx_used_mem, sizeof(ctx->approx_used_mem));
+	memcpy(ptr + sizeof(ctx->approx_used_mem), &ctx->used_mem, sizeof(ctx->used_mem));
+
+	stats_take(STATS_CKPT_STATE_SIZE, approximated ? ctx->approx_used_mem : ctx->used_mem);
+	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
+	stats_take(STATS_CKPT, 1);
 	return ckpt;
 }
 
@@ -93,11 +93,13 @@ void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_chec
 	uint_least32_t last_i = UINT_MAX;
 	struct dymelor_area *area = NULL;
 	uint_least32_t num_chunks, chunk_size;
+	//ctx->used_mem = approximated ? ckpt->approx_state_size : ckpt->state_size;
+	//ctx->approx_used_mem = ckpt->approx_state_size;
 	unsigned j = ckpt->area_cnt;
 	while(j--) {
-		const struct dymelor_area_checkpoint *ackpt = (struct dymelor_area_checkpoint *) ptr;
+		const struct dymelor_area_checkpoint *ackpt = (struct dymelor_area_checkpoint *)ptr;
 		if(last_i != ackpt->i) {
-			if (area != NULL)
+			if(area != NULL)
 				while(unlikely(area->next != NULL)) {
 					area = area->next;
 					num_chunks *= 2;
@@ -120,8 +122,7 @@ void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_chec
 		area->core_chunks = ackpt->core_cnt;
 
 		size_t bitmap_size = bitmap_required_size(num_chunks);
-		memcpy(area->use_bitmap, ackpt->data, 2 * bitmap_size);
-		ptr = ackpt->data + 2 * bitmap_size;
+
 
 #define copy_to_area(x)                                                                                                \
 	({                                                                                                             \
@@ -129,21 +130,35 @@ void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_chec
 		ptr += chunk_size;                                                                                     \
 	})
 		// Copy only the allocated chunks
-		if(approximated)
+		if(approximated) {
+			memcpy(area->use_bitmap, ackpt->data, bitmap_size);
+			memcpy(area->core_bitmap, ackpt->data, bitmap_size);
+			ptr = ackpt->data + bitmap_size;
 			bitmap_foreach_set(area->core_bitmap, bitmap_size, copy_to_area);
-		else
+		} else {
+			memcpy(area->use_bitmap, ackpt->data, 2 * bitmap_size);
+			ptr = ackpt->data + 2 * bitmap_size;
 			bitmap_foreach_set(area->use_bitmap, bitmap_size, copy_to_area);
-
-
+		}
 #undef copy_to_area
 	}
 
+	uint_fast32_t used_mem;
+	memcpy(&ctx->approx_used_mem, ptr, sizeof(ctx->approx_used_mem));
+	memcpy(&used_mem, ptr + sizeof(ctx->approx_used_mem), sizeof(ctx->used_mem));
+	if(approximated)
+		ctx->used_mem = ctx->approx_used_mem;
+	else
+		ctx->used_mem = used_mem;
+
+	stats_take(STATS_RESTORE_STATE_SIZE, ctx->used_mem);
+	timer_uint t2 = timer_hr_new();
+	stats_take(STATS_RESTORE_TIME, t2 - t);
+
+
 	if(approximated) {
 		global_config.restore(current_lp - lps, current_lp->lib_ctx->state_s);
-		stats_take(STATS_APPROX_RESTORE_TIME, timer_hr_value(t));
-		stats_take(STATS_APPROX_RESTORE, 1);
-	} else {
-		stats_take(STATS_RESTORE_TIME, timer_hr_value(t));
-		stats_take(STATS_RESTORE, 1);
+		stats_take(STATS_APPROX_HANDLER_STATE_SIZE, used_mem - ctx->approx_used_mem);
+		stats_take(STATS_APPROX_HANDLER_TIME, timer_hr_value(t2));
 	}
 }

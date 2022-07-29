@@ -14,6 +14,8 @@ void model_allocator_lp_init(void)
 	memset(self->areas, 0, sizeof(self->areas));
 	array_init(self->logs);
 	self->is_approximated = false;
+	self->used_mem = 0;
+	self->approx_used_mem = 0;
 }
 
 void model_allocator_lp_fini(void)

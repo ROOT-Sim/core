@@ -15,25 +15,7 @@
 
 #include <math.h>
 
-/**
- * Compute a new value of the exponential moving average
- * @param f the retention factor for old observations
- * @param old_v the latest value of the moving average
- * @param sample the new value to include in the average
- * @return the new value of the exponential moving average
- */
-#define EXP_AVG(f, old_v, sample)                                                                                      \
-	__extension__({                                                                                                \
-		double s = (sample);                                                                                   \
-		double o = (old_v);                                                                                    \
-		o *(((f)-1.0) / (f)) + s *(1.0 / (f));                                                                 \
-	})
-
-static __thread struct {
-	double ckpt_avg_cost;
-	double approx_ckpt_avg_cost;
-	double inv_sil_avg_cost;
-} ackpt;
+__thread struct auto_ckpt_ctx ackpt;
 
 /**
  * @brief Initialize the thread-local context for the auto checkpoint module
@@ -41,7 +23,8 @@ static __thread struct {
 void auto_ckpt_init(void)
 {
 	ackpt.ckpt_avg_cost = 1.0;
-	ackpt.approx_ckpt_avg_cost = 1.0;
+	ackpt.rec_avg_cost = 1.0;
+	ackpt.approx_handler_cost = 1.0;
 	ackpt.inv_sil_avg_cost = 1.0 / 4096.0;
 }
 
@@ -58,10 +41,12 @@ void auto_ckpt_on_gvt(void)
 
 	uint64_t ckpt_cost = stats_retrieve(STATS_CKPT_TIME);
 	uint64_t ckpt_state_size = stats_retrieve(STATS_CKPT_STATE_SIZE);
-	uint64_t approx_ckpt_cost = stats_retrieve(STATS_APPROX_CKPT_TIME);
-	uint64_t approx_ckpt_state_size = stats_retrieve(STATS_APPROX_CKPT_STATE_SIZE);
 	uint64_t sil_count = stats_retrieve(STATS_MSG_SILENT);
 	uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
+	uint64_t recovery_state_size = stats_retrieve(STATS_RESTORE_STATE_SIZE);
+	uint64_t recovery_cost = stats_retrieve(STATS_RESTORE_TIME);
+	uint64_t approx_handler_cost = stats_retrieve(STATS_APPROX_HANDLER_TIME);
+	uint64_t approx_handler_state_size = stats_retrieve(STATS_APPROX_HANDLER_STATE_SIZE);
 
 	if(likely(sil_count))
 		ackpt.inv_sil_avg_cost = EXP_AVG(16.0, ackpt.inv_sil_avg_cost, (double)sil_count / (double)sil_cost);
@@ -69,8 +54,11 @@ void auto_ckpt_on_gvt(void)
 	if(likely(ckpt_state_size))
 		ackpt.ckpt_avg_cost = EXP_AVG(16.0, ackpt.ckpt_avg_cost, (double)ckpt_cost / (double)ckpt_state_size);
 
-	if(likely(approx_ckpt_state_size))
-		ackpt.approx_ckpt_avg_cost = EXP_AVG(16.0, ackpt.approx_ckpt_avg_cost, (double)approx_ckpt_cost / (double)approx_ckpt_state_size);
+	if(likely(recovery_state_size))
+		ackpt.rec_avg_cost = EXP_AVG(16.0, ackpt.rec_avg_cost, (double)recovery_cost / (double)recovery_state_size);
+
+	if(likely(approx_handler_state_size))
+		ackpt.approx_handler_cost = EXP_AVG(16.0, ackpt.approx_handler_cost, (double)approx_handler_cost / (double)approx_handler_state_size);
 }
 
 /**
@@ -98,12 +86,11 @@ void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size, 
 	if(unlikely(!auto_ckpt->m_bad || global_config.ckpt_interval))
 		return;
 
-	auto_ckpt->inv_bad_p = EXP_AVG(8.0, auto_ckpt->inv_bad_p, 2.0 * auto_ckpt->m_good / auto_ckpt->m_bad);
+	auto_ckpt->inv_bad_p = EXP_AVG(8.0, auto_ckpt->inv_bad_p, auto_ckpt->m_good / auto_ckpt->m_bad);
 	auto_ckpt->m_bad = 0;
 	auto_ckpt->m_good = 0;
 	auto_ckpt->ckpt_interval =
-	    ceil(sqrt(auto_ckpt->inv_bad_p * ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost * (double)state_size));
-
+	    ceil(sqrt(2.0 * auto_ckpt->inv_bad_p * ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost * (double)state_size));
 	auto_ckpt->approx_ckpt_interval =
-	    ceil(sqrt(auto_ckpt->inv_bad_p * ackpt.approx_ckpt_avg_cost * ackpt.inv_sil_avg_cost * (double)approx_state_size));
+	    ceil(sqrt(2.0 * auto_ckpt->inv_bad_p * ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost * (double)approx_state_size));
 }
