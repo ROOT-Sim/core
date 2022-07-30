@@ -42,6 +42,7 @@ test_program(load tests/core/load.c)
 #test_program(msg_queue tests/datatypes/msg_queue.c)
 test_program(bitmap tests/datatypes/bitmap.c)
 test_program(mm tests/mm/buddy.c tests/mm/buddy_hard.c tests/mm/parallel.c tests/mm/main.c)
+test_program(termination tests/gvt/termination.c)
 
 # Test the statistics subsystem
 test_program(stats tests/log/stats.c)

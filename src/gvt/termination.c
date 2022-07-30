@@ -84,12 +84,15 @@ void termination_on_gvt(simtime_t current_gvt)
 
 /**
  * @brief Force termination of the simulation
- *
- * FIXME this doesn't actually work: concurrent termination messages will break this
  */
-void termination_force(void)
+void RootsimStop(void)
 {
-	nid_t i = atomic_load_explicit(&nodes_to_end, memory_order_relaxed);
+	if(global_config.serial) {
+		global_config.termination_time = -1.0;
+		return;
+	}
+
+	nid_t i = n_nodes + 1;
 	while(i--)
 		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
 }

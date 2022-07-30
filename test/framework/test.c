@@ -45,7 +45,7 @@ __attribute__((noreturn)) void test_fail(void)
 	longjmp(test_ctx.jmp_buf, 1);
 }
 
-static void test_at_exit()
+static void test_at_exit(void)
 {
 	unsigned tot = atomic_load_explicit(&test_total_count, memory_order_relaxed);
 	unsigned succ = atomic_load_explicit(&test_success_count, memory_order_relaxed);
@@ -187,7 +187,7 @@ void test_assert_internal(_Bool condition, const char *file_name, unsigned line_
  *
  * This is the per-thread version of lcg_random()
  */
-double test_random_double()
+double test_random_double(void)
 {
 	return rng_random(&test_ctx.rng);
 }

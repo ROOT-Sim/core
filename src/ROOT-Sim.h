@@ -238,3 +238,4 @@ struct simulation_configuration {
 
 extern int RootsimInit(const struct simulation_configuration *conf);
 extern int RootsimRun(void);
+extern void RootsimStop(void);

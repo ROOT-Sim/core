@@ -56,7 +56,7 @@ static int test_rng(_unused void *_)
 	return 0;
 }
 
-static double test_exponential_prng()
+static double test_exponential_prng(void)
 {
 	double ret = log(1 - test_random_double());
 	ret = ret > 1 ? 1 : ret;
@@ -83,6 +83,16 @@ static int test_multi_thread_id(_unused void *_)
 	return 0;
 }
 
+static int test_sleep(_unused void *_)
+{
+	static atomic_flag flag = ATOMIC_FLAG_INIT;
+	if(test_parallel_thread_id()) {
+		test_thread_sleep(500);
+		return !atomic_flag_test_and_set(&flag);
+	}
+	return atomic_flag_test_and_set(&flag);
+}
+
 int main(void)
 {
 	test("Test passing simple test", test_want_arg_null, NULL);
@@ -101,7 +111,7 @@ int main(void)
 	test_parallel("Test multithread passing assert test", test_assert_arg_null, NULL, 0);
 	test_parallel("Test multithread passing fail test", test_fail_on_not_null, NULL, 0);
 
-	test_parallel("Test random number generator", test_rng, NULL, 0);
+	test_parallel("Test random number generator", test_rng, NULL, 12);
 	test_xf("Test random number generator fail test", test_fail_rng, NULL);
 
 	test_parallel("Test pseudo multithread thread id", test_single_thread_id, NULL, 1);
@@ -111,6 +121,7 @@ int main(void)
 		test_assert(presence[i]);
 
 	test("Test threaded execution", thread_execution, NULL);
+	test("Test thread sleep", test_sleep, NULL);
 
 	test_assert(1);
 }
