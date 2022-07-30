@@ -27,7 +27,6 @@ def regex_get():
         ROLLBACK LENGTH............ : {float_regex}
         EFFICIENCY................. : {float_regex}%
         AVERAGE EVENT COST......... : {measure_regex}s
-        AVERAGE EVENT COST \\(EMA\\)... : {measure_regex}s
         AVERAGE CHECKPOINT COST.... : {measure_regex}s
         AVERAGE RECOVERY COST...... : {measure_regex}s
         AVERAGE LOGGED STATE SIZE.. : {measure_regex}B
@@ -75,12 +74,12 @@ if __name__ == "__main__":
     rs_script_path, bin_folder = test_init()
     stats_regex = regex_get()
     test_stats_file("empty_stats", ["NZ", "1", "2", "0", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00", "0",
-                                    "0", "0", "0", "0", "0.0", "0", "0.0", "0", "NZ"])
+                                    "0", "0", "0", "0.0", "0", "0.0", "0", "NZ"])
     test_stats_file("single_gvt_stats", ["NZ", "1", "2", "16", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00",
-                                         "0", "0", "0", "0", "0", "0.0", "1", "0.0", "NZ", "NZ"])
+                                         "0", "0", "0", "0", "0.0", "1", "0.0", "NZ", "NZ"])
     test_stats_file("multi_gvt_stats", ["NZ", "1", "2", "16", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00",
-                                        "0", "0", "0", "0", "0", "48.56", "4", "12.14", "NZ", "NZ"])
+                                        "0", "0", "0", "0", "48.56", "4", "12.14", "NZ", "NZ"])
     test_stats_file("measures_stats", ["NZ", "1", "2", "16", "156", "102", "24", "30", "20", "60", "15.87", "1.20",
-                                       "80.95", "0", "0", "0", "0", "0", "0.0", "1", "0.0", "NZ", "NZ"])
+                                       "80.95", "0", "0", "0", "0", "0.0", "1", "0.0", "NZ", "NZ"])
 
     # TODO: test the actual RSStats python object
