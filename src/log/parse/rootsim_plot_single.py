@@ -19,25 +19,24 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Please, supply the name of a raw statistics file!", file=sys.stderr)
         exit(-1)
+
     plt.rcParams['font.family'] = ['monospace']
     plt.rcParams["axes.unicode_minus"] = False
 
-    def compute_avg(l):
-        return sum(l) / len(l)
-
     def compute_diffs(d):
         ret = []
-        for i, v in enumerate(d):
-            if i == 0:
-                ret.append(v)
-            else:
-                ret.append(d[i] - d[i - 1])
+        iter_d = iter(d)
+        ret.append(next(iter_d))
+        for i, v in enumerate(iter_d):
+            ret.append(v - d[i])
         return ret
 
     stats = RSStats(sys.argv[1])
-    rts = stats.rts(reduction=compute_avg)
+    rts = stats.rts(reduction=lambda x: sum(x) / len(x))
     rts = [v / 1000000 for v in rts]
     time_diff = compute_diffs(rts)
+    gvt_advancement = compute_diffs(stats.gvts)
+    gvt_advancement = [gvt_advancement[i] / time_diff[i] for i in range(len(time_diff))]
 
     _, figxs = plt.subplots(3)
 
@@ -56,17 +55,12 @@ if __name__ == "__main__":
 
     def plot_metric(sub_fig, metric_name, metric_display):
         metrics = stats.thread_metric_get(metric_name, aggregate_threads=True, aggregate_nodes=True)
-        for i, o in enumerate(time_diff):
-            metrics[i] /= o
+        metrics = [metrics[i] / time_diff[i] for i in range(len(time_diff))]
 
         plot_data(sub_fig, metrics, metric_display)
 
     plot_metric(figxs[0], "processed messages", "Processed messages")
     plot_metric(figxs[1], "rollbacks", "Rollbacks")
-
-    gvt_advancement = compute_diffs(stats.gvts)
-    for i, o in enumerate(time_diff):
-        gvt_advancement[i] /= o
     plot_data(figxs[2], gvt_advancement, "GVT advancement")
 
     if not dump_tsv:

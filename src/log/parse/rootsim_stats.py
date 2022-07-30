@@ -284,7 +284,7 @@ if __name__ == "__main__":
         post_unit = "i" if is_binary else ""
 
         if num == 0:
-            return f"0"
+            return "0"
 
         if abs(num) < div:
             if abs(num) > 1:
@@ -320,7 +320,6 @@ if __name__ == "__main__":
         f.write(f"ROLLBACK LENGTH............ : {rollback_len:.2f}\n")
         f.write(f"EFFICIENCY................. : {efficiency:.2f}%\n")
         f.write(f"AVERAGE EVENT COST......... : {fmt_size(avg_msg_cost, False)}s\n")
-        f.write(f"AVERAGE EVENT COST (EMA)... : 0s\n")  # TODO do we want this?
         f.write(f"AVERAGE CHECKPOINT COST.... : {fmt_size(avg_checkpoint_cost, False)}s\n")
         f.write(f"AVERAGE RECOVERY COST...... : {fmt_size(avg_recovery_cost, False)}s\n")
         f.write(f"AVERAGE LOGGED STATE SIZE.. : {fmt_size(avg_log_size)}B\n")
