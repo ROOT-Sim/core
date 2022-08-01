@@ -12,6 +12,7 @@ struct dymelor_ctx_checkpoint {
 
 struct dymelor_area_checkpoint {
 	unsigned i;
+	uint_least32_t last_chunk;
 	uint_least32_t chunk_cnt;
 	uint_least32_t core_cnt;
 	unsigned char data[];

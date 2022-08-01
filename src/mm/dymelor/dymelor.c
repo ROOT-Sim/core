@@ -260,3 +260,22 @@ void clean_buffers_on_gvt(struct mm_state *state, simtime_t time_barrier)
 		// todo: free this stuff if empty and safe to delete; requires last_access timestamps
 	}
 }
+
+void ApproximatedMemoryMark(const void *base, bool is_core)
+{
+	// FIXME: check base belongs to the LP memory allocator
+	const unsigned char *p = base;
+	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
+	uint_least32_t i = (p - m_area->area) >> m_area->chk_size_exp;
+	if(bitmap_check(m_area->core_bitmap, i) != is_core) {
+		if (is_core) {
+			bitmap_set(m_area->core_bitmap, i);
+			m_area->core_chunks++;
+			current_lp->mm_state.approx_used_mem += 1 << m_area->chk_size_exp;
+		} else {
+			bitmap_reset(m_area->core_bitmap, i);
+			m_area->core_chunks--;
+			current_lp->mm_state.approx_used_mem -= 1 << m_area->chk_size_exp;
+		}
+	}
+}

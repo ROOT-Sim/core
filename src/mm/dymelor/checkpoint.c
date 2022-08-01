@@ -1,11 +1,8 @@
 #include <mm/dymelor/checkpoint.h>
 
 #include <arch/timer.h>
-#include <core/core.h>
 #include <log/stats.h>
 #include <lp/lp.h>
-#include <mm/dymelor/dymelor.h>
-#include <mm/mm.h>
 
 #include <stdio.h>
 
@@ -49,6 +46,7 @@ struct dymelor_ctx_checkpoint *checkpoint_full_take(const struct mm_state *ctx, 
 			ackpt->i = i;
 			ackpt->chunk_cnt = area->alloc_chunks;
 			ackpt->core_cnt = area->core_chunks;
+			ackpt->last_chunk = area->last_chunk;
 
 			size_t bitmap_size = bitmap_required_size(num_chunks);
 
@@ -107,6 +105,7 @@ void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_chec
 					memset(area->core_bitmap, 0, bitmap_required_size(num_chunks));
 					area->core_chunks = 0;
 					area->alloc_chunks = 0;
+					area->last_chunk = 0;
 				}
 
 			num_chunks = MIN_NUM_CHUNKS;
@@ -120,6 +119,7 @@ void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_chec
 
 		area->alloc_chunks = ackpt->chunk_cnt;
 		area->core_chunks = ackpt->core_cnt;
+		area->last_chunk = ackpt->last_chunk;
 
 		size_t bitmap_size = bitmap_required_size(num_chunks);
 

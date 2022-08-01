@@ -4,7 +4,6 @@
 #include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/auto_ckpt.h>
-#include <mm/dymelor/dymelor.h>
 
 #define ALPHA_PREF 1.2
 
@@ -60,21 +59,3 @@ void ApproximatedModeSwitch(enum approximated_mode mode)
 		current_lp->mm_state.is_approximated = mode == APPROXIMATED_MODE_APPROXIMATED;
 }
 
-void ApproximatedMemoryMark(const void *base, bool core)
-{
-	// FIXME: check base belongs to the LP memory allocator
-	const unsigned char *p = base;
-	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
-	uint_least32_t i = (p - m_area->area) >> m_area->chk_size_exp;
-	if(bitmap_check(m_area->core_bitmap, i) != core) {
-		if (core) {
-			bitmap_set(m_area->core_bitmap, i);
-			m_area->core_chunks++;
-			current_lp->mm_state.approx_used_mem += 1 << m_area->chk_size_exp;
-		} else {
-			bitmap_reset(m_area->core_bitmap, i);
-			m_area->core_chunks--;
-			current_lp->mm_state.approx_used_mem -= 1 << m_area->chk_size_exp;
-		}
-	}
-}

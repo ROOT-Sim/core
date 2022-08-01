@@ -214,7 +214,7 @@ enum approximated_mode {
 	APPROXIMATED_MODE_AUTONOMIC
 };
 extern void ApproximatedModeSwitch(enum approximated_mode mode);
-extern void ApproximatedMemoryMark(const void *ptr, bool is_approximated);
+extern void ApproximatedMemoryMark(const void *ptr, bool is_core);
 
 /// A set of configurable values used by other modules
 struct simulation_configuration {
