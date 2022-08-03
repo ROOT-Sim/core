@@ -91,8 +91,6 @@ void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_chec
 	uint_least32_t last_i = UINT_MAX;
 	struct dymelor_area *area = NULL;
 	uint_least32_t num_chunks, chunk_size;
-	//ctx->used_mem = approximated ? ckpt->approx_state_size : ckpt->state_size;
-	//ctx->approx_used_mem = ckpt->approx_state_size;
 	unsigned j = ckpt->area_cnt;
 	while(j--) {
 		const struct dymelor_area_checkpoint *ackpt = (struct dymelor_area_checkpoint *)ptr;
@@ -117,9 +115,7 @@ void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_chec
 			area = area->next;
 		}
 
-		area->alloc_chunks = ackpt->chunk_cnt;
 		area->core_chunks = ackpt->core_cnt;
-		area->last_chunk = ackpt->last_chunk;
 
 		size_t bitmap_size = bitmap_required_size(num_chunks);
 
@@ -133,11 +129,17 @@ void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_chec
 		if(approximated) {
 			memcpy(area->use_bitmap, ackpt->data, bitmap_size);
 			memcpy(area->core_bitmap, ackpt->data, bitmap_size);
+			area->last_chunk = 0;
+			while(bitmap_check(area->use_bitmap, area->last_chunk))
+				area->last_chunk++;
 			ptr = ackpt->data + bitmap_size;
+			area->alloc_chunks = area->core_chunks;
 			bitmap_foreach_set(area->core_bitmap, bitmap_size, copy_to_area);
 		} else {
 			memcpy(area->use_bitmap, ackpt->data, 2 * bitmap_size);
 			ptr = ackpt->data + 2 * bitmap_size;
+			area->last_chunk = ackpt->last_chunk;
+			area->alloc_chunks = ackpt->chunk_cnt;
 			bitmap_foreach_set(area->use_bitmap, bitmap_size, copy_to_area);
 		}
 #undef copy_to_area
