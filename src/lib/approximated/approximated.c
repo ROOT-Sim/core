@@ -1,14 +1,27 @@
 #include <lib/approximated/approximated.h>
 
+#include <ROOT-Sim.h>
+
 #include <lib/lib.h>
+#include <log/file.h>
 #include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/auto_ckpt.h>
 
 #define ALPHA_PREF 1.2
 
+static unsigned *phase_cnt;
+
+void approximated_global_init(void)
+{
+	phase_cnt = mm_alloc(sizeof(*phase_cnt) * global_config.lps);
+	memset(phase_cnt, 0, sizeof(*phase_cnt) * global_config.lps);
+}
+
 void approximated_lp_on_gvt(struct lp_ctx *ctx)
 {
+	phase_cnt[ctx - lps] += ctx->mm_state.is_approximated;
+
 	if (ctx->lib_ctx->approximated_mode != APPROXIMATED_MODE_AUTONOMIC)
 		return;
 
@@ -36,7 +49,8 @@ void approximated_lp_on_gvt(struct lp_ctx *ctx)
 	approx_cost *= rb_probability;
 	approx_cost += state_size * ckpt_cost / ckpt_interval;
 
-	ctx->mm_state.is_approximated = ALPHA_PREF * approx_cost < precise_cost;
+	bool is_approx = ALPHA_PREF * approx_cost < precise_cost;
+	ctx->mm_state.is_approximated = is_approx;
 }
 
 void approximated_lp_on_rollback(void)
@@ -59,3 +73,13 @@ void ApproximatedModeSwitch(enum approximated_mode mode)
 		current_lp->mm_state.is_approximated = mode == APPROXIMATED_MODE_APPROXIMATED;
 }
 
+void approximated_global_fini(void)
+{
+	if(!global_config.stats_file)
+		return;
+	FILE *f = file_open("w", "%s_phases.txt", global_config.stats_file);
+	for(lp_id_t i = 0; i < global_config.lps; ++i) {
+		fprintf(f, "%u\n", phase_cnt[i]);
+	}
+	fclose(f);
+}
