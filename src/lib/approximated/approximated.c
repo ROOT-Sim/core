@@ -46,8 +46,8 @@ void approximated_lp_on_gvt(struct lp_ctx *ctx)
 	double precise_cost =
 	    state_size * rec_cost +
 	    (ckpt_interval - 1) * half_silent_cost;
-	approx_cost *= rb_probability;
-	approx_cost += state_size * ckpt_cost / ckpt_interval;
+	precise_cost *= rb_probability;
+	precise_cost += state_size * ckpt_cost / ckpt_interval;
 
 	bool is_approx = ALPHA_PREF * approx_cost < precise_cost;
 	ctx->mm_state.is_approximated = is_approx;
