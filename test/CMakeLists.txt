@@ -46,6 +46,7 @@ test_program(mm tests/mm/buddy.c tests/mm/buddy_hard.c tests/mm/parallel.c tests
 test_program(sync tests/core/sync.c)
 test_program(numerical tests/lib/numerical.c)
 test_program(topology tests/lib/topology.c)
+test_program(xxtea tests/lib/xxtea.c)
 
 # Integration tests
 test_program(correctness_serial tests/integration/correctness/serial.c tests/integration/correctness/application.c tests/integration/correctness/functions.c tests/integration/correctness/output_256.c)

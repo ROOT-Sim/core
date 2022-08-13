@@ -13,22 +13,27 @@
 #include <core/core.h>
 #include <core/intrinsics.h>
 #include <lib/random/xoroshiro.h>
+#include <lib/random/xxtea.h>
+#include <lp/lp.h>
 
 #include <math.h>
-#include "lp/lp.h"
+
+static const uint32_t xxtea_seeding_key[4] = {UINT32_C(0xd0a8f58a), UINT32_C(0x33359424), UINT32_C(0x09baa55b),
+    UINT32_C(0x80e1bdb0)};
 
 /**
- * @brief Initalize the rollbackable RNG library of the current LP
- * @todo Implement a scheme to support deterministic seed automatic selection
- * @bug if global_config.prng_seed is zero, automatic seed initialization should be performed.
+ * @brief Initialize the rollbackable RNG library of the current LP
  */
 void random_lib_lp_init(void)
 {
 	uint64_t seed = global_config.prng_seed;
-	lp_id_t lid = lp_id_get();
-	struct lib_ctx *ctx = lib_ctx_get();
-	random_init(ctx->rng_s, lid, seed);
-	ctx->has_normal = false;
+	uint64_t lid = current_lp - lps;
+	struct lib_ctx *ctx = current_lp->lib_ctx;
+	ctx->rng_s[0] = lid;
+	ctx->rng_s[1] = seed;
+	ctx->rng_s[2] = lid;
+	ctx->rng_s[3] = seed;
+	xxtea_encode((uint32_t *)ctx->rng_s, 8, xxtea_seeding_key);
 }
 
 /**
@@ -37,7 +42,7 @@ void random_lib_lp_init(void)
  */
 double Random(void)
 {
-	struct lib_ctx *ctx = lib_ctx_get();
+	struct lib_ctx *ctx = current_lp->lib_ctx;
 	uint64_t u_val = random_u64(ctx->rng_s);
 	if(unlikely(!u_val))
 		return 0.0;
@@ -60,7 +65,7 @@ double Random(void)
  */
 uint64_t RandomU64(void)
 {
-	struct lib_ctx *ctx = lib_ctx_get();
+	struct lib_ctx *ctx = current_lp->lib_ctx;
 	return random_u64(ctx->rng_s);
 }
 

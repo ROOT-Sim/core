@@ -14,6 +14,7 @@ set(rscore_srcs
         gvt/termination.c
         lib/lib.c
         lib/random/random.c
+        lib/random/xxtea.c
         lib/state/state.c
         lib/topology/topology.c
         log/file.c
