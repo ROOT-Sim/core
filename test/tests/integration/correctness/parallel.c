@@ -26,7 +26,7 @@ struct simulation_configuration conf = {
     .committed = CanEnd,
 };
 
-static test_ret_t correctness(void *config)
+static int correctness(void *config)
 {
 	RootsimInit((struct simulation_configuration *)config);
 	return RootsimRun();
@@ -34,8 +34,6 @@ static test_ret_t correctness(void *config)
 
 int main(void)
 {
-	init(0);
 	crc_table_init();
 	test("Correctness test (parallel)", correctness, &conf);
-	finish();
 }

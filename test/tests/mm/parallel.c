@@ -141,11 +141,11 @@ static void bin_test(struct bin_info *p)
 	}
 }
 
-test_ret_t parallel_malloc_test(__unused void *_)
+int parallel_malloc_test(_unused void *_)
 {
 	unsigned i, b, j, actions, action;
 
-	current_lp = mock_lp();
+	current_lp = test_lp_mock_get();
 	model_allocator_lp_init();
 
 	struct bin_info p;
