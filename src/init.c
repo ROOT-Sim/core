@@ -120,6 +120,8 @@ int RootsimInit(const struct simulation_configuration *conf)
 	if(global_config.termination_time == 0)
 		global_config.termination_time = SIMTIME_MAX;
 
+	msg_queue_set(MESSAGE_QUEUE_HEAP, MESSAGE_QUEUE_PER_THREAD);
+
 	configuration_done = true;
 
 	return 0;
@@ -149,8 +151,6 @@ int RootsimRun(void)
 	}
 
 	stats_global_time_start();
-
-	msg_queue_set(MESSAGE_QUEUE_HEAP, MESSAGE_QUEUE_PER_LP);
 
 	if(global_config.serial) {
 		ret = serial_simulation();
