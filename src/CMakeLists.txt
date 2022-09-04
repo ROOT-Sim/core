@@ -7,6 +7,11 @@ set(rscore_srcs
         core/core.c
         init.c
         core/sync.c
+        datatypes/queue_policies/msg_queue_per_lp.c
+        datatypes/queue_policies/msg_queue_per_node.c
+        datatypes/queue_policies/msg_queue_per_thread.c
+        datatypes/queues/msg_queue_heap.c
+        datatypes/queues/msg_queue_list.c
         datatypes/msg_queue.c
         distributed/control_msg.c
         gvt/fossil.c

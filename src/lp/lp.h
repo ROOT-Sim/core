@@ -12,6 +12,7 @@
 
 #include <arch/platform.h>
 #include <core/core.h>
+#include <core/sync.h>
 #include <lib/lib.h>
 #include <lp/msg.h>
 #include <lp/process.h>
@@ -20,8 +21,7 @@
 
 /// A complete LP context
 struct lp_ctx {
-	/// ID of the current LP
-	lp_id_t id;
+	spinlock_t lock;
 	/// The termination time of this LP, handled by the termination module
 	simtime_t termination_t;
 	/// The additional libraries context of this LP

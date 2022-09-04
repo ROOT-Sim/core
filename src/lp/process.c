@@ -98,6 +98,7 @@ void process_lp_init(void)
 {
 	struct lp_ctx *lp = current_lp;
 	struct process_data *proc_p = &lp->p;
+	spin_init(&lp->lock);
 
 	array_init(proc_p->p_msgs);
 
@@ -301,6 +302,7 @@ void process_msg(void)
 	struct lp_ctx *this_lp = &lps[msg->dest];
 	struct process_data *proc_p = &this_lp->p;
 	current_lp = this_lp;
+	spin_lock(&this_lp->lock);
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 
@@ -314,13 +316,15 @@ void process_msg(void)
 			termination_on_lp_rollback(msg->dest_t);
 			auto_ckpt_register_bad(&this_lp->auto_ckpt);
 		}
+		spin_unlock(&this_lp->lock);
 		msg_allocator_free(msg);
-
 		return;
 	}
 
-	if(unlikely(check_early_anti_messages(msg)))
+	if(unlikely(check_early_anti_messages(msg))) {
+		spin_unlock(&this_lp->lock);
 		return;
+	}
 
 	if(unlikely(array_count(proc_p->p_msgs) && msg_is_before(msg, array_peek(proc_p->p_msgs)))) {
 		array_count_t past_i = match_straggler_msg(proc_p, msg);
@@ -339,5 +343,6 @@ void process_msg(void)
 	if(auto_ckpt_is_needed(&this_lp->auto_ckpt))
 		checkpoint_take(proc_p);
 
+	spin_unlock(&this_lp->lock);
 	termination_on_msg_process(msg->dest_t);
 }

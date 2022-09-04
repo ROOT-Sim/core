@@ -21,6 +21,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include "datatypes/msg_queue.h"
 
 /// A flag to check if the core library has been initialized correctly
 static bool configuration_done = false;
@@ -148,6 +149,8 @@ int RootsimRun(void)
 	}
 
 	stats_global_time_start();
+
+	msg_queue_set(MESSAGE_QUEUE_HEAP, MESSAGE_QUEUE_PER_LP);
 
 	if(global_config.serial) {
 		ret = serial_simulation();
