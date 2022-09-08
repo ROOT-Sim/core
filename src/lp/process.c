@@ -151,13 +151,13 @@ static inline void silent_execution(const struct process_data *proc_p, array_cou
 	timer_uint t = timer_hr_new();
 	silent_processing = true;
 
-	void *state_p = current_lp->lib_ctx->state_s;
+	void **state_p = &current_lp->lib_ctx->state_s;
 	do {
 		const struct lp_msg *msg = array_get_at(proc_p->p_msgs, last_i);
 		while(is_msg_sent(msg))
 			msg = array_get_at(proc_p->p_msgs, ++last_i);
 
-		global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, state_p);
+		global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, *state_p);
 		stats_take(STATS_MSG_SILENT, 1);
 	} while(++last_i < past_i);
 
