@@ -20,23 +20,24 @@ int xxtea_test(_unused void *args)
 {
 	uint32_t key[4] = {test_random_u() >> 32, test_random_u() >> 32, test_random_u() >> 32, test_random_u() >> 32};
 
-	uint32_t *data = malloc(MAX_BLOCKS * sizeof(*data));
-	uint32_t *data_enc = malloc(MAX_BLOCKS * sizeof(*data_enc));
+	uint32_t(*data)[MAX_BLOCKS] = malloc(MAX_BLOCKS * sizeof(*data));
+	uint32_t(*data_enc)[MAX_BLOCKS] = malloc(MAX_BLOCKS * sizeof(*data_enc));
 	if(data == NULL || data_enc == NULL)
 		return -1;
 
+	memset(data, 0, sizeof(*data));
 	for(unsigned i = TRIES; i; --i) {
 		unsigned s = test_random_range(MAX_BLOCKS - 1) + 2;
 		for(unsigned j = 0; j < s; ++j)
-			data[j] = test_random_u() >> 32;
+			(*data)[j] = test_random_u() >> 32;
 
-		memcpy(data_enc, data, s * sizeof(*data));
-		xxtea_encode(data_enc, s, key);
-		if(memcmp(data_enc, data, s * sizeof(*data)) == 0)
+		memcpy(data_enc, data, sizeof(*data_enc));
+		xxtea_encode(*data_enc, s, key);
+		if(memcmp(data_enc, data, sizeof(*data_enc)) == 0)
 			return -2;
 
-		xxtea_decode(data_enc, s, key);
-		if(memcmp(data_enc, data, s * sizeof(*data)) != 0)
+		xxtea_decode(*data_enc, s, key);
+		if(memcmp(data_enc, data, sizeof(*data_enc)) != 0)
 			return -3;
 	}
 
