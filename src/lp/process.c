@@ -85,6 +85,7 @@ static inline void checkpoint_take(struct process_data *proc_p)
 {
 	timer_uint t = timer_hr_new();
 	model_allocator_checkpoint_take(array_count(proc_p->p_msgs));
+	stats_take(STATS_CKPT_STATE_SIZE, current_lp->mm_state.used_mem);
 	stats_take(STATS_CKPT, 1);
 	stats_take(STATS_CKPT_STATE_SIZE, current_lp->mm_state.used_mem);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
@@ -151,13 +152,13 @@ static inline void silent_execution(const struct process_data *proc_p, array_cou
 	timer_uint t = timer_hr_new();
 	silent_processing = true;
 
-	void *state_p = current_lp->lib_ctx->state_s;
+	void **state_p = &current_lp->lib_ctx->state_s;
 	do {
 		const struct lp_msg *msg = array_get_at(proc_p->p_msgs, last_i);
 		while(is_msg_sent(msg))
 			msg = array_get_at(proc_p->p_msgs, ++last_i);
 
-		global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, state_p);
+		global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, *state_p);
 		stats_take(STATS_MSG_SILENT, 1);
 	} while(++last_i < past_i);
 
@@ -168,6 +169,7 @@ static inline void silent_execution(const struct process_data *proc_p, array_cou
 static inline void send_anti_messages(struct process_data *proc_p, array_count_t past_i)
 {
 	array_count_t p_cnt = array_count(proc_p->p_msgs);
+	stats_take(STATS_MSG_ANTI, p_cnt - past_i);
 	for(array_count_t i = past_i; i < p_cnt; ++i) {
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
 
@@ -199,10 +201,12 @@ static inline void send_anti_messages(struct process_data *proc_p, array_count_t
 
 static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 {
+	timer_uint t = timer_hr_new();
 	send_anti_messages(proc_p, past_i);
 	array_count_t last_i = model_allocator_checkpoint_restore(past_i);
-	silent_execution(proc_p, last_i, past_i);
+	stats_take(STATS_RECOVERY_TIME, timer_hr_value(t));
 	stats_take(STATS_ROLLBACK, 1);
+	silent_execution(proc_p, last_i, past_i);
 }
 
 static inline array_count_t match_straggler_msg(const struct process_data *proc_p, const struct lp_msg *s_msg)
@@ -331,7 +335,9 @@ void process_msg(void)
 #ifndef NDEBUG
 	current_msg = msg;
 #endif
+	timer_uint t = timer_hr_new();
 	global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, this_lp->lib_ctx->state_s);
+	stats_take(STATS_MSG_PROCESSED_TIME, timer_hr_value(t));
 	stats_take(STATS_MSG_PROCESSED, 1);
 	array_push(proc_p->p_msgs, msg);
 

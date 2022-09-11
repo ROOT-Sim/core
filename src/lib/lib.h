@@ -17,14 +17,13 @@
 
 /// Per-LP structure for core libraries
 struct lib_ctx {
-	// random library
 	/// The current PRNG state
 	uint64_t rng_s[4];
-	/// Normal deviates are computed in pairs. This member keeps the second generated pair.
+	/// Normal deviates are computed in pairs; this member keeps the second generated pair
 	double unif;
-	/// This flag tells whether unif member is keeping a valid deviate.
+	/// This flag tells whether unif member is keeping a valid deviate
 	bool has_normal;
-	// todo remove
+	/// The pointer set by the model with the SetState() API call
 	void *state_s;
 };
 

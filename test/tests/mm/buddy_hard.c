@@ -186,7 +186,6 @@ int model_allocator_test_hard(_unused void *_)
 
 	unsigned c = 0;
 	for(unsigned j = 0; j < ALLOC_OSCILLATIONS; ++j) {
-
 		unsigned u = test_random_range(MAX_ALLOC_PHASES - 1) + 1;
 		unsigned d = test_random_range(u);
 

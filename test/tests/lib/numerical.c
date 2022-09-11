@@ -28,7 +28,8 @@ static int aux_ks_test(_unused void *_)
 	return 0;
 }
 
-static int random_range_non_uniform_test(_unused void *_) {
+static int random_range_non_uniform_test(_unused void *_)
+{
 	int passed = 0;
 	int x, min, max, r, i;
 
@@ -45,7 +46,8 @@ static int random_range_non_uniform_test(_unused void *_) {
 	return passed;
 }
 
-static int random_range_test(_unused void *_) {
+static int random_range_test(_unused void *_)
+{
 	int passed = 0;
 	int min, max, r, i;
 
