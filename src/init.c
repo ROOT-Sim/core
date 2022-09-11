@@ -8,12 +8,10 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <arch/io.h>
 #include <arch/thread.h>
 #include <core/core.h>
 #include <distributed/mpi.h>
 #include <log/log.h>
-#include <log/stats.h>
 #include <parallel/parallel.h>
 #include <serial/serial.h>
 
@@ -112,9 +110,10 @@ int RootsimInit(const struct simulation_configuration *conf)
 
 	log_init(global_config.logfile);
 
-	if (global_config.n_threads == 0) {
-		global_config.n_threads = global_config.serial ? 1 : thread_cores_count();
-	}
+	if (global_config.serial)
+		global_config.n_threads = 1;
+	else if (global_config.n_threads == 0)
+		global_config.n_threads = thread_cores_count();
 
 	if(global_config.termination_time == 0)
 		global_config.termination_time = SIMTIME_MAX;
@@ -146,8 +145,6 @@ int RootsimRun(void)
 		print_logo();
 		print_config();
 	}
-
-	stats_global_time_start();
 
 	if(global_config.serial) {
 		ret = serial_simulation();

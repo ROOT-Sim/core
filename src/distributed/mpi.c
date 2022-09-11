@@ -3,12 +3,8 @@
  *
  * @brief MPI Support Module
  *
- * This module implements all basic MPI facilities to let the distributed
- * execution of a simulation model take place consistently.
- *
- * Several facilities are thread-safe, others are not. Check carefully which
- * of these can be used by worker threads without coordination when relying
- * on this module.
+ * This module implements all basic MPI facilities to let the distributed execution of a simulation model take place
+ * consistently.
  *
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -35,7 +31,9 @@ static const enum msg_ctrl_code ctrl_msgs[] = {
 	[MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
 };
 
+/// The MPI request associated with the non blocking scatter gather collective
 static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
+/// The MPI request associated with the non blocking all reduce collective
 static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
 
 /**
@@ -107,11 +105,9 @@ void mpi_global_fini(void)
  * @param msg the message to send
  * @param dest_nid the id of the node where the targeted LP resides
  *
- * This function also calls the relevant handlers in order to keep, for example,
- * the non blocking gvt algorithm running.
- * Note that when this function returns, the message may have not been actually
- * sent. We don't need to actively check for sending completion: the platform,
- * during the fossil collection, leverages the gvt to make sure the message has
+ * This function also calls the relevant handlers in order to keep, for example, the non blocking gvt algorithm running.
+ * Note that when this function returns, the message may have not been actually sent. We don't need to actively check
+ * for sending completion: the platform, during the fossil collection, leverages the gvt to make sure the message has
  * been indeed sent and processed before freeing it.
  */
 void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
@@ -128,11 +124,9 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
  * @param msg the message to rollback
  * @param dest_nid the id of the node where the targeted LP resides
  *
- * This function also calls the relevant handlers in order to keep, for example,
- * the non blocking gvt algorithm running.
- * Note that when this function returns, the anti-message may have not been sent
- * yet. We don't need to actively check for sending completion: the platform,
- * during the fossil collection, leverages the gvt to make sure the message has
+ * This function also calls the relevant handlers in order to keep, for example, the non blocking gvt algorithm running.
+ * Note that when this function returns, the anti-message may have not been sent yet. We don't need to actively check
+ * for sending completion: the platform, during the fossil collection, leverages the gvt to make sure the message has
  * been indeed sent and processed before freeing it.
  */
 void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
@@ -172,11 +166,9 @@ void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
  * @brief Empties the queue of incoming MPI messages, doing the right thing for
  *        each one of them.
  *
- * This routine checks, using the MPI probing mechanism, for new remote messages
- * and it handles them accordingly.
- * Control messages are handled by the respective platform handler.
- * Simulation messages are unpacked and put in the queue.
- * Anti-messages are matched and accordingly processed by the message map.
+ * This routine checks, using the MPI probing mechanism, for new remote messages and it handles them accordingly.
+ * Control messages are handled by the respective platform handler. Simulation messages are unpacked and put in the
+ * queue. Anti-messages are matched and accordingly processed by the message map.
  */
 void mpi_remote_msg_handle(void)
 {
@@ -220,8 +212,8 @@ void mpi_remote_msg_handle(void)
 /**
  * @brief Empties the queue of incoming MPI messages, ignoring them
  *
- * This routine checks, using the MPI probing mechanism, for new remote messages
- * and it discards them. It is used at simulation completion to clear MPI state.
+ * This routine checks, using the MPI probing mechanism, for new remote messages and it discards them. It is used at
+ * simulation completion to clear MPI state.
  */
 void mpi_remote_msg_drain(void)
 {
@@ -268,13 +260,11 @@ void mpi_remote_msg_drain(void)
  * @param values a flexible array implementing the addendum vector from the calling node.
  * @param result a pointer where the nid-th component of the sum will be stored.
  *
- * Each node supplies a n_nodes components vector. The sum of all these vector
- * is computed and the nid-th component of this vector is stored in @a result.
- * It is expected that only a single thread calls this function at a time.
- * Each node has to call this function else the result can't be computed.
- * It is possible to have a single mpi_reduce_sum_scatter() operation pending at
- * a time. Both arguments must point to valid memory regions until
- * mpi_reduce_sum_scatter_done() returns true.
+ * Each node supplies a n_nodes components vector. The sum of all these vector is computed and the nid-th component of
+ * this vector is stored in @a result. It is expected that only a single thread calls this function at a time. Each node
+ * has to call this function else the result can't be computed. It is possible to have a single mpi_reduce_sum_scatter()
+ * operation pending at a time. Both arguments must point to valid memory regions until mpi_reduce_sum_scatter_done()
+ * returns true.
  */
 void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
 {
@@ -297,13 +287,10 @@ bool mpi_reduce_sum_scatter_done(void)
  * @param node_min_p a pointer to the value from the calling node which will
  *                   also be used to store the computed minimum.
  *
- * Each node supplies a single simtime_t value. The minimum of all these values
- * is computed and stored in @a node_min_p itself.
- * It is expected that only a single thread calls this function at a time.
- * Each node has to call this function else the result can't be computed.
- * It is possible to have a single mpi_reduce_min() operation pending at a time.
- * Both arguments must point to valid memory regions until mpi_reduce_min_done()
- * returns true.
+ * Each node supplies a single simtime_t value. The minimum of all these values is computed and stored in @a node_min_p
+ * itself. It is expected that only a single thread calls this function at a time. Each node has to call this function
+ * else the result can't be computed. It is possible to have a single mpi_reduce_min() operation pending at a time.
+ * Both arguments must point to valid memory regions until mpi_reduce_min_done() returns true.
  */
 void mpi_reduce_min(double *node_min_p)
 {
@@ -351,8 +338,7 @@ void mpi_blocking_data_send(const void *data, int data_size, nid_t dest)
  * @param src the id of the sender node
  * @return the buffer allocated with mm_alloc() containing the received data
  *
- * This operation blocks the execution flow until the sender node actually sends
- * the data with mpi_raw_data_blocking_send().
+ * This operation blocks the execution until the sender node actually sends the data with mpi_raw_data_blocking_send().
  */
 void *mpi_blocking_data_rcv(int *data_size_p, nid_t src)
 {
