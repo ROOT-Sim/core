@@ -7,7 +7,7 @@
  *
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
-*/
+ */
 #include <test.h>
 #include <framework/rng.h>
 
@@ -29,7 +29,8 @@ static int aux_ks_test(_unused void *_)
 	return 0;
 }
 
-static int random_range_non_uniform_test(_unused void *_) {
+static int random_range_non_uniform_test(_unused void *_)
+{
 	int passed = 0;
 	int x, min, max, r, i;
 
@@ -46,7 +47,8 @@ static int random_range_non_uniform_test(_unused void *_) {
 	return passed;
 }
 
-static int random_range_test(_unused void *_) {
+static int random_range_test(_unused void *_)
+{
 	int passed = 0;
 	int min, max, r, i;
 

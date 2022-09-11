@@ -65,23 +65,20 @@ uint64_t RandomU64(void)
 }
 
 /**
- * Return a random number according to an Exponential distribution.
- * The mean value of the distribution must be passed as the mean value.
- *
+ * @brief Return a random number according to an Exponential distribution.
  * @param mean Mean value of the distribution
  * @return A random number
  */
 double Expent(double mean)
 {
-	if(unlikely(mean < 0)) {
+	if(unlikely(mean < 0))
 		logger(LOG_WARN, "Passed a negative mean into Expent()");
-	}
+
 	return -mean * log(1 - Random());
 }
 
 /**
- * Return a random number according to a Standard Normal Distribution
- *
+ * @brief Return a random number according to a Standard Normal Distribution
  * @return A random number
  */
 double Normal(void)
@@ -131,38 +128,36 @@ int RandomRangeNonUniform(int x, int min, int max)
 double Gamma(unsigned ia)
 {
 	if(unlikely(ia < 1)) {
-		logger(LOG_WARN, "Gamma distribution must have a ia "
-				 "value >= 1. Defaulting to 1...");
+		logger(LOG_WARN, "Gamma distribution must have a ia value >= 1. Defaulting to 1...");
 		ia = 1;
 	}
 
-	double x;
-
 	if(ia < 6) {
 		// Use direct method, adding waiting times
-		x = 1.0;
+		double x = 1.0;
 		while(ia--)
 			x *= 1 - Random();
-		x = -log(x);
-	} else {
-		double am = ia - 1;
-		double v1, v2, e, y, s;
-		// Use rejection method
+		return -log(x);
+	}
+
+	double x;
+	double am = ia - 1;
+	double v1, v2, e, y, s;
+	// Use rejection method
+	do {
 		do {
 			do {
-				do {
-					v1 = Random();
-					v2 = 2.0 * Random() - 1.0;
-				} while(v1 * v1 + v2 * v2 > 1.0);
+				v1 = Random();
+				v2 = 2.0 * Random() - 1.0;
+			} while(v1 * v1 + v2 * v2 > 1.0);
 
-				y = v2 / v1;
-				s = sqrt(2.0 * am + 1.0);
-				x = s * y + am;
-			} while(x < 0.0);
+			y = v2 / v1;
+			s = sqrt(2.0 * am + 1.0);
+			x = s * y + am;
+		} while(x < 0.0);
 
-			e = (1.0 + y * y) * exp(am * log(x / am) - s * y);
-		} while(Random() > e);
-	}
+		e = (1.0 + y * y) * exp(am * log(x / am) - s * y);
+	} while(Random() > e);
 
 	return x;
 }

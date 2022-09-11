@@ -1,11 +1,11 @@
 /**
-* @file test/tests/lib/topology.c
-*
-* @brief Test: topology library
-*
-* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
-* SPDX-License-Identifier: GPL-3.0-only
-*/
+ * @file test/tests/lib/topology.c
+ *
+ * @brief Test: topology library
+ *
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <time.h>
 
 #include <test.h>

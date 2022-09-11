@@ -44,3 +44,4 @@ typedef thrd_ret_t(THREAD_CALL_CONV *thr_run_fnc)(void *);
 extern int test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg);
 extern int test_thread_wait(thr_id_t thr, thrd_ret_t *ret);
 extern unsigned test_thread_cores_count(void);
+extern void test_thread_sleep(unsigned milliseconds);

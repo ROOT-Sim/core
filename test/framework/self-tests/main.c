@@ -18,8 +18,10 @@
 #include <stdio.h>
 
 #define REP_COUNT 25
+#define THREAD_COUNT_ID_TEST 100
 
-_Atomic unsigned count = 0;
+static _Bool presence[THREAD_COUNT_ID_TEST] = {0};
+static _Atomic unsigned count = 0;
 
 static int thread_fnc(_unused void *_)
 {
@@ -54,7 +56,7 @@ static int test_rng(_unused void *_)
 	return 0;
 }
 
-static double test_exponential_prng()
+static double test_exponential_prng(void)
 {
 	double ret = log(1 - test_random_double());
 	ret = ret > 1 ? 1 : ret;
@@ -67,6 +69,30 @@ static int test_fail_rng(_unused void *_)
 	return 0;
 }
 
+static int test_single_thread_id(_unused void *_)
+{
+	return test_parallel_thread_id() != 0;
+}
+
+static int test_multi_thread_id(_unused void *_)
+{
+	if(presence[test_parallel_thread_id()])
+		return -1;
+
+	presence[test_parallel_thread_id()] = 1;
+	return 0;
+}
+
+static int test_sleep(_unused void *_)
+{
+	static atomic_flag flag = ATOMIC_FLAG_INIT;
+	if(test_parallel_thread_id()) {
+		test_thread_sleep(500);
+		return !atomic_flag_test_and_set(&flag);
+	}
+	return atomic_flag_test_and_set(&flag);
+}
+
 int main(void)
 {
 	test("Test passing simple test", test_want_arg_null, NULL);
@@ -77,15 +103,25 @@ int main(void)
 	test_xf("Test failing assert test", test_assert_arg_null, (void *)1);
 	test_xf("Test failing fail test", test_fail_on_not_null, (void *)1);
 
-	test_parallel("Test pseudo multithread passing simple test", test_want_arg_null, NULL, 0);
-	test_parallel("Test pseudo multithread passing assert test", test_assert_arg_null, NULL, 0);
-	test_parallel("Test pseudo multithread passing fail test", test_fail_on_not_null, NULL, 0);
+	test_parallel("Test pseudo multithread passing simple test", test_want_arg_null, NULL, 1);
+	test_parallel("Test pseudo multithread passing assert test", test_assert_arg_null, NULL, 1);
+	test_parallel("Test pseudo multithread passing fail test", test_fail_on_not_null, NULL, 1);
 
 	test_parallel("Test multithread passing simple test", test_want_arg_null, NULL, 0);
 	test_parallel("Test multithread passing assert test", test_assert_arg_null, NULL, 0);
 	test_parallel("Test multithread passing fail test", test_fail_on_not_null, NULL, 0);
 
-	test_parallel("Test random number generator", test_rng, NULL, 0);
+	test_parallel("Test random number generator", test_rng, NULL, 12);
 	test_xf("Test random number generator fail test", test_fail_rng, NULL);
+
+	test_parallel("Test pseudo multithread thread id", test_single_thread_id, NULL, 1);
+	test_parallel("Test multithread thread id", test_multi_thread_id, NULL, THREAD_COUNT_ID_TEST);
+
+	for(unsigned i = 0; i < THREAD_COUNT_ID_TEST; ++i)
+		test_assert(presence[i]);
+
 	test("Test threaded execution", thread_execution, NULL);
+	test("Test thread sleep", test_sleep, NULL);
+
+	test_assert(1);
 }
