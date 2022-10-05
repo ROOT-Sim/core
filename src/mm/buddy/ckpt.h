@@ -3,14 +3,14 @@
  *
  * @brief Checkpointing capabilities
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
 #include <mm/buddy/buddy.h>
 
-/// A restorable checkpoint of the memory context assigned to a single LP
+/// A restorable checkpoint of the memory context of a single buddy system
 struct buddy_checkpoint { // todo only log longest[] if changed, or incrementally
 	/// The buddy system to which this checkpoint applies. TODO: reengineer the multi-checkpointing approach
 	const struct buddy_state *orig;

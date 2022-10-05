@@ -1,9 +1,9 @@
 /**
- * @file test/tests/integration/model/functions.c
+ * @file test/tests/integration/correctness/functions.c
  *
  * @brief Helper functions of the model used to verify the runtime correctness
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include "application.h"
@@ -37,7 +37,7 @@ buffer *allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
 		memcpy(new->data, data, count * sizeof(uint64_t));
 	else
 		for(unsigned i = 0; i < count; i++)
-			new->data[i] = lcg_random_u(&state->rng_state);
+			new->data[i] = rng_random_u(&state->rng_state);
 
 	return new;
 }

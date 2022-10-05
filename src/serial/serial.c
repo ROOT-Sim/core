@@ -3,7 +3,7 @@
  *
  * @brief Sequential simulation engine
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <serial/serial.h>
@@ -32,6 +32,8 @@ static void serial_simulation_init(void)
 
 	lps = mm_alloc(sizeof(*lps) * global_config.lps);
 	memset(lps, 0, sizeof(*lps) * global_config.lps);
+
+	n_lps_node = global_config.lps;
 
 	for(uint64_t i = 0; i < global_config.lps; ++i) {
 		current_lp = &lps[i];
@@ -84,13 +86,15 @@ static int serial_simulation_run(void)
 		struct lp_ctx *this_lp = &lps[cur_msg->dest];
 		current_lp = this_lp;
 
+		timer_uint t = timer_hr_new();
 		global_config.dispatcher(cur_msg->dest, cur_msg->dest_t, cur_msg->m_type, cur_msg->pl, cur_msg->pl_size,
-		    current_lp->lib_ctx->state_s);
+		    this_lp->lib_ctx->state_s);
+		stats_take(STATS_MSG_PROCESSED_TIME, timer_hr_value(t));
 		stats_take(STATS_MSG_PROCESSED, 1);
 
-		if(unlikely(current_lp->termination_t < 0 &&
-			    global_config.committed(cur_msg->dest, current_lp->lib_ctx->state_s))) {
-			current_lp->termination_t = cur_msg->dest_t;
+		if(unlikely(this_lp->termination_t < 0 &&
+			    global_config.committed(cur_msg->dest, this_lp->lib_ctx->state_s))) {
+			this_lp->termination_t = cur_msg->dest_t;
 			if(unlikely(!--to_terminate)) {
 				stats_on_gvt(cur_msg->dest_t);
 				break;
@@ -126,7 +130,7 @@ void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned eve
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 	msg->raw_flags = 0;
 
-	if (!msg_is_before(heap_min(queue), msg))
+	if(unlikely(!msg_is_before(heap_min(queue), msg)))
 		logger(LOG_WARN, "Sending a contemporaneous message or worse, in the PAST!");
 
 	heap_insert(queue, msg_is_before, msg);

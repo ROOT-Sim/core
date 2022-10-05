@@ -10,7 +10,7 @@
  * a simulation model. All function prototypes exposed to the application
  * developer are exposed and defined here.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -238,3 +238,4 @@ struct simulation_configuration {
 
 extern int RootsimInit(const struct simulation_configuration *conf);
 extern int RootsimRun(void);
+extern void RootsimStop(void);

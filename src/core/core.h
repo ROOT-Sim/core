@@ -5,7 +5,7 @@
  *
  * Core ROOT-Sim functionalities
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -76,7 +76,7 @@ extern lp_id_t n_lps_node;
 /// The identifier of the thread
 extern __thread rid_t rid;
 
-/// The total __de of MPI nodes in the simulation
+/// The total number of MPI nodes in the simulation
 extern nid_t n_nodes;
 /// The node identifier of the node
 extern nid_t nid;

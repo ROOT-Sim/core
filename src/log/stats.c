@@ -5,7 +5,7 @@
  *
  * All facilities to collect, gather, and dump statistics are implemented in this module.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <log/stats.h>
@@ -43,6 +43,8 @@ struct stats_node {
 struct stats_global {
 	/// The number of threads in this node
 	uint64_t threads_count;
+	/// The number of LPs in this node
+	uint64_t lps_count; // todo: make it a per-thread count
 	/// The maximum size in bytes of the resident set
 	uint64_t max_rss;
 	/// The timestamps of the relevant simulation life-cycle events
@@ -50,24 +52,29 @@ struct stats_global {
 };
 
 static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct stats_node) == 16 &&
-		  sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
+		  sizeof(struct stats_global) == 24 + 8 * (STATS_GLOBAL_COUNT),
     "structs aren't properly packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the preamble of the final statistics binary file
 const char *const stats_names[] = {
+    [STATS_MSG_PROCESSED] = "processed messages",
+    [STATS_MSG_PROCESSED_TIME] = "processed messages time",
     [STATS_ROLLBACK] = "rollbacks",
+    [STATS_RECOVERY_TIME] = "recovery time",
     [STATS_MSG_ROLLBACK] = "rolled back messages",
-    [STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
-    [STATS_MSG_SILENT] = "silent messages",
     [STATS_CKPT] = "checkpoints",
     [STATS_CKPT_TIME] = "checkpoints time",
+    [STATS_CKPT_STATE_SIZE] = "checkpoints state size",
+    [STATS_MSG_SILENT] = "silent messages",
     [STATS_MSG_SILENT_TIME] = "silent messages time",
-    [STATS_MSG_PROCESSED] = "processed messages",
+    [STATS_MSG_ANTI] = "anti messages",
     [STATS_REAL_TIME_GVT] = "gvt real time"
 };
 
 /// The first timestamp ever collected for this simulation run
 static timer_uint sim_start_ts;
+/// The first high resolution timestamp of this simulation run: used to correlate high resolution and wall clock timers
+static timer_uint sim_start_ts_hr;
 /// The global stats
 static struct stats_global stats_glob_cur;
 /// A pointer to the temporary file used to save #stats_node structs produced during simulation
@@ -76,14 +83,6 @@ static FILE *stats_node_tmp;
 static FILE **stats_tmps;
 /// The current values of thread statistics for this logical time period (from the previous GVT to the next one)
 static __thread struct stats_thread stats_cur;
-
-/**
- * @brief Initialize the internal timer used to take accurate measurements
- */
-void stats_global_time_start(void)
-{
-	sim_start_ts = timer_new();
-}
 
 /**
  * @brief Take a lifetime event time value
@@ -99,10 +98,11 @@ void stats_global_time_take(enum stats_global_type this_stat)
  */
 void stats_global_init(void)
 {
+	sim_start_ts = timer_new();
+	sim_start_ts_hr = timer_hr_new();
+
 	if(global_config.stats_file == NULL)
 		return;
-
-	stats_glob_cur.timestamps[STATS_GLOBAL_START] = timer_value(sim_start_ts);
 
 	stats_node_tmp = io_file_tmp_get();
 	if(unlikely(stats_node_tmp == NULL)) {
@@ -116,7 +116,6 @@ void stats_global_init(void)
 	if(mem_stat_setup() < 0)
 		logger(LOG_ERROR, "Unable to extract memory statistics!");
 	stats_tmps = mm_alloc(global_config.n_threads * sizeof(*stats_tmps));
-	stats_glob_cur.threads_count = global_config.n_threads;
 }
 
 /**
@@ -173,6 +172,7 @@ static void stats_files_send(void)
 {
 	stats_glob_cur.max_rss = mem_stat_rss_max_get();
 	stats_glob_cur.timestamps[STATS_GLOBAL_END] = timer_value(sim_start_ts);
+	stats_glob_cur.timestamps[STATS_GLOBAL_HR_TOTAL] = timer_hr_value(sim_start_ts_hr);
 	mpi_blocking_data_send(&stats_glob_cur, sizeof(stats_glob_cur), 0);
 
 	int64_t f_size;
@@ -223,6 +223,7 @@ static void stats_files_send(void)
  * | 1          | 8    | uint             | t_cnt | Count of threads for the this node                                 |
  * | 1          | 8    | uint             | --    | Maximum resident set size of this node (in bytes)                  |
  * | 6          | 8    | uint             | --    | Some timestamps in us (see enum #stats_global_type)                |
+ * | 1          | 8    | uint             | --    | High resolution time end to end value (see enum #stats_global_type)|
  * | 1          | 8    | int              | n_siz | Size of the node GVT stats array                                   |
  * | n_siz / 16 | 16   | Node GVT entry   | --    | The node-wide statistics produced at each GVT by this node         |
  * | t_cnt      | *    | Thread GVT stats | --    | The statistics produced by each thread on this node                |
@@ -267,6 +268,7 @@ static void stats_file_final_write(FILE *out_f)
 
 	stats_glob_cur.max_rss = mem_stat_rss_max_get();
 	stats_glob_cur.timestamps[STATS_GLOBAL_END] = timer_value(sim_start_ts);
+	stats_glob_cur.timestamps[STATS_GLOBAL_HR_TOTAL] = timer_hr_value(sim_start_ts_hr);
 	file_write_chunk(out_f, &stats_glob_cur, sizeof(stats_glob_cur));
 
 	int64_t buf_size;
@@ -294,10 +296,13 @@ void stats_global_fini(void)
 	if(global_config.stats_file == NULL)
 		return;
 
+	stats_glob_cur.threads_count = global_config.n_threads;
+	stats_glob_cur.lps_count = n_lps_node;
+
 	if(nid) {
 		stats_files_send();
 	} else {
-		FILE *o = file_open("w", "%s.bin", global_config.stats_file);
+		FILE *o = file_open("wb", "%s.bin", global_config.stats_file);
 		if(unlikely(o == NULL)) {
 			logger(LOG_WARN, "Unable to open statistics file for writing, statistics won't be saved.");
 			stats_files_receive(NULL);
@@ -321,7 +326,7 @@ void stats_global_fini(void)
  * @param this_stat the statistics type to add the sample to
  * @param c the sample to sum
  */
-void stats_take(enum stats_thread_type this_stat, unsigned c)
+void stats_take(enum stats_thread_type this_stat, uint_fast64_t c)
 {
 	stats_cur.s[this_stat] += c;
 }
@@ -367,11 +372,11 @@ void stats_on_gvt(simtime_t gvt)
 void stats_dump(void)
 {
 	if(nid == 0) {
-		double t = timer_value(sim_start_ts) / 1000000.0;
 		if(global_config.log_level != LOG_SILENT) {
 			puts("");
 			fflush(stdout);
 		}
+		double t = (double)timer_value(sim_start_ts) / 1000000.0;
 		logger(LOG_INFO, "Simulation completed in %.3lf seconds", t);
 	}
 }

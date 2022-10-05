@@ -5,14 +5,14 @@
  *
  * This library can be used to produce logs during simulation runs.
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
-#include <stdio.h>
+#include <ROOT-Sim.h>
 
-void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...);
+extern void vlogger(enum log_level level, char *file, unsigned line, const char *fmt, ...);
 
 /**
  * @brief Produce a log message

@@ -5,7 +5,7 @@
  *
  * A test of the buddy system allocator used to handle model's memory
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>
@@ -170,9 +170,9 @@ static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned 
 	return allocation_check(alc, down);
 }
 
-test_ret_t model_allocator_test_hard(__unused void *_)
+int model_allocator_test_hard(_unused void *_)
 {
-	current_lp = mock_lp();
+	current_lp = test_lp_mock_get();
 	model_allocator_lp_init();
 
 	struct alc *alc = allocation_all_init();
@@ -186,7 +186,6 @@ test_ret_t model_allocator_test_hard(__unused void *_)
 
 	unsigned c = 0;
 	for(unsigned j = 0; j < ALLOC_OSCILLATIONS; ++j) {
-
 		unsigned u = test_random_range(MAX_ALLOC_PHASES - 1) + 1;
 		unsigned d = test_random_range(u);
 

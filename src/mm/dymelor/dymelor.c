@@ -12,6 +12,7 @@ void model_allocator_lp_init(void)
 {
 	struct mm_state *self = &current_lp->mm_state;
 	memset(self->areas, 0, sizeof(self->areas));
+	self->used_mem = 0;
 	array_init(self->logs);
 }
 
@@ -137,6 +138,7 @@ void *rs_malloc(size_t req_size)
 	bitmap_set(m_area->use_bitmap, m_area->last_chunk);
 	// m_area->last_access = lvt(current);
 	++m_area->alloc_chunks;
+	current_lp->mm_state.used_mem += 1U << size_exp;
 	uint_least32_t offset = m_area->last_chunk << size_exp;
 	m_area->last_chunk++;
 
@@ -193,6 +195,7 @@ void rs_free(void *ptr)
 	}
 	bitmap_reset(m_area->use_bitmap, idx);
 	--m_area->alloc_chunks;
+	current_lp->mm_state.used_mem -= 1U << m_area->chk_size_exp;
 
 #ifdef ROOTSIM_INCREMENTAL
 	if(bitmap_check(m_area->dirty_bitmap, idx)) {

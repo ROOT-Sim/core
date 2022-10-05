@@ -3,7 +3,7 @@
  *
  * @brief Concurrent simulation engine
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <parallel/parallel.h>
@@ -73,8 +73,8 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 			process_msg();
 		}
 
-		simtime_t current_gvt;
-		if(unlikely(current_gvt = gvt_phase_run())) {
+		simtime_t current_gvt = gvt_phase_run();
+		if(unlikely(current_gvt != 0.0)) {
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
 			lp_on_gvt(current_gvt);

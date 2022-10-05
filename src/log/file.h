@@ -5,7 +5,7 @@
 *
 * Some file utility functions
 *
-* SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
 * SPDX-License-Identifier: GPL-3.0-only
 */
 #pragma once
@@ -28,6 +28,6 @@ FILE *file_open(const char *open_type, const char *fmt, ...);
  */
 static inline void file_write_chunk(FILE *f, const void *data, size_t data_size)
 {
-	if(unlikely(fwrite(data, data_size, 1, f) != 1))
+	if(unlikely(fwrite(data, data_size, 1, f) != 1 && data_size))
 		logger(LOG_ERROR, "Error during disk write!");
 }

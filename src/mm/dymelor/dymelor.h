@@ -43,6 +43,7 @@ struct dymelor_log {
 /// Definition of the memory map
 struct mm_state {
 	struct dymelor_area *areas[NUM_AREAS];
+	uint_fast32_t used_mem;
 	/// The array of checkpoints
 	dyn_array(struct dymelor_log) logs;
 };

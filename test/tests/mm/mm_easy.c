@@ -5,10 +5,12 @@
  *
  * A test of the buddy system allocator used to handle model's memory
  *
- * SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>
+
+#include <framework/rng.h>
 
 #include <lp/lp.h>
 #include <mm/model_allocator.h>
@@ -17,13 +19,13 @@
 
 #define BUDDY_TEST_SEED 0x5E550UL
 
-static test_ret_t block_size_test(unsigned b_exp)
+static int block_size_test(unsigned b_exp)
 {
-	test_ret_t errs = 0;
+	int errs = 0;
 	unsigned block_size = 1 << b_exp;
 	unsigned allocations_cnt = 1 << (24 - b_exp);
 	test_rng_state b_rng, b_chk;
-	lcg_init(&b_rng, BUDDY_TEST_SEED);
+	rng_init(&b_rng, BUDDY_TEST_SEED);
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
@@ -35,7 +37,7 @@ static test_ret_t block_size_test(unsigned b_exp)
 		}
 
 		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = lcg_random_u(&b_rng);
+			allocations[i][j] = rng_random_u(&b_rng);
 			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
@@ -46,7 +48,7 @@ static test_ret_t block_size_test(unsigned b_exp)
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
 		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = lcg_random_u(&b_rng);
+			allocations[i][j] = rng_random_u(&b_rng);
 			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
@@ -55,7 +57,7 @@ static test_ret_t block_size_test(unsigned b_exp)
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
 		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = lcg_random_u(&b_rng);
+			allocations[i][j] = rng_random_u(&b_rng);
 			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
@@ -67,18 +69,18 @@ static test_ret_t block_size_test(unsigned b_exp)
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
 		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			errs += allocations[i][j] != lcg_random_u(&b_rng);
+			errs += allocations[i][j] != rng_random_u(&b_rng);
 		}
 
 		rs_free(allocations[i]);
 	}
 
 	model_allocator_checkpoint_restore(0);
-	lcg_init(&b_rng, BUDDY_TEST_SEED);
+	rng_init(&b_rng, BUDDY_TEST_SEED);
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
 		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			errs += allocations[i][j] != lcg_random_u(&b_rng);
+			errs += allocations[i][j] != rng_random_u(&b_rng);
 		}
 
 		rs_free(allocations[i]);
@@ -88,11 +90,11 @@ static test_ret_t block_size_test(unsigned b_exp)
 	return errs > 0;
 }
 
-test_ret_t model_allocator_test(__unused void *_)
+int model_allocator_test(_unused void *_)
 {
-	test_ret_t errs = 0;
+	int errs = 0;
 
-	current_lp = mock_lp();
+	current_lp = test_lp_mock_get();
 	model_allocator_lp_init();
 
 	for(unsigned j = 6; j < 16; ++j) {
