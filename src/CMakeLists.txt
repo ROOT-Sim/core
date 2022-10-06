@@ -21,21 +21,16 @@ set(rscore_srcs
         log/stats.c
         lp/lp.c
         lp/process.c
+        mm/buddy/buddy.c
+        mm/buddy/ckpt.c
+        mm/buddy/multi_buddy.c
+        mm/dymelor/checkpoint.c
+        mm/dymelor/dymelor.c
         mm/auto_ckpt.c
+        mm/model_allocator.c
         mm/msg_allocator.c
         parallel/parallel.c
         serial/serial.c)
-
-if(${want_dymelor}) # FIXME: super bad way of selecting dymelor at build time
-    set(rscore_srcs ${rscore_srcs}
-            mm/dymelor/checkpoint.c
-            mm/dymelor/dymelor.c)
-else()
-    set(rscore_srcs ${rscore_srcs}
-        mm/buddy/buddy.c
-        mm/buddy/ckpt.c
-        mm/buddy/multi.c)
-endif()
 
 if(NOT DISABLE_MPI)
     set(rscore_srcs ${rscore_srcs} distributed/mpi.c)

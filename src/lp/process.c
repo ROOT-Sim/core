@@ -81,17 +81,6 @@ void process_fini(void)
 	array_fini(early_antis);
 }
 
-static inline void checkpoint_take(struct process_data *proc_p)
-{
-	timer_uint t = timer_hr_new();
-	model_allocator_checkpoint_take(array_count(proc_p->p_msgs));
-	stats_take(STATS_CKPT_STATE_SIZE, current_lp->mm_state.used_mem);
-	stats_take(STATS_CKPT, 1);
-	stats_take(STATS_CKPT_STATE_SIZE, current_lp->mm_state.used_mem);
-	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
-
-}
-
 /**
  * @brief Initializes the processing module in the current LP
  */
@@ -111,8 +100,8 @@ void process_lp_init(void)
 	stats_take(STATS_MSG_PROCESSED, 1);
 
 	array_push(proc_p->p_msgs, msg);
-	model_allocator_checkpoint_next_force_full();
-	checkpoint_take(proc_p);
+	model_allocator_checkpoint_next_force_full(&lp->mm_state);
+	model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.p_msgs));
 }
 
 /**
@@ -199,14 +188,14 @@ static inline void send_anti_messages(struct process_data *proc_p, array_count_t
 	array_count(proc_p->p_msgs) = past_i;
 }
 
-static void do_rollback(struct process_data *proc_p, array_count_t past_i)
+static void do_rollback(struct lp_ctx *lp, array_count_t past_i)
 {
 	timer_uint t = timer_hr_new();
-	send_anti_messages(proc_p, past_i);
-	array_count_t last_i = model_allocator_checkpoint_restore(past_i);
+	send_anti_messages(&lp->p, past_i);
+	array_count_t last_i = model_allocator_checkpoint_restore(&lp->mm_state, past_i);
 	stats_take(STATS_RECOVERY_TIME, timer_hr_value(t));
 	stats_take(STATS_ROLLBACK, 1);
-	silent_execution(proc_p, last_i, past_i);
+	silent_execution(&lp->p, last_i, past_i);
 }
 
 static inline array_count_t match_straggler_msg(const struct process_data *proc_p, const struct lp_msg *s_msg)
@@ -242,20 +231,20 @@ static inline array_count_t match_anti_msg(const struct process_data *proc_p, co
 	} while(1);
 }
 
-static inline void handle_remote_anti_msg(struct process_data *proc_p, const struct lp_msg *msg)
+static inline void handle_remote_anti_msg(struct lp_ctx *lp, const struct lp_msg *msg)
 {
 	uint32_t m_id = msg->raw_flags >> 2, m_seq = msg->m_seq;
-	array_count_t p_cnt = array_count(proc_p->p_msgs), past_i = 0;
+	array_count_t p_cnt = array_count(lp->p.p_msgs), past_i = 0;
 	while(likely(past_i < p_cnt)) {
 		array_count_t j = past_i;
-		struct lp_msg *amsg = array_get_at(proc_p->p_msgs, j);
+		struct lp_msg *amsg = array_get_at(lp->p.p_msgs, j);
 		while(is_msg_sent(amsg))
-			amsg = array_get_at(proc_p->p_msgs, ++j);
+			amsg = array_get_at(lp->p.p_msgs, ++j);
 
 		if(amsg->raw_flags >> 2 == m_id && amsg->m_seq == m_seq) {
 			// suppresses the re-insertion in the processing queue
 			amsg->raw_flags |= MSG_FLAG_ANTI;
-			do_rollback(proc_p, past_i);
+			do_rollback(lp, past_i);
 			termination_on_lp_rollback(msg->dest_t);
 			msg_allocator_free(amsg);
 			return;
@@ -302,48 +291,46 @@ void process_msg(void)
 
 	gvt_on_msg_extraction(msg->dest_t);
 
-	struct lp_ctx *this_lp = &lps[msg->dest];
-	struct process_data *proc_p = &this_lp->p;
-	current_lp = this_lp;
+	struct lp_ctx *lp = &lps[msg->dest];
+	current_lp = lp;
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
 		if(flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
-			handle_remote_anti_msg(proc_p, msg);
-			auto_ckpt_register_bad(&this_lp->auto_ckpt);
+			handle_remote_anti_msg(lp, msg);
+			auto_ckpt_register_bad(&lp->auto_ckpt);
 		} else if(flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
-			array_count_t past_i = match_anti_msg(proc_p, msg);
-			do_rollback(proc_p, past_i);
+			array_count_t past_i = match_anti_msg(&lp->p, msg);
+			do_rollback(lp, past_i);
 			termination_on_lp_rollback(msg->dest_t);
-			auto_ckpt_register_bad(&this_lp->auto_ckpt);
+			auto_ckpt_register_bad(&lp->auto_ckpt);
 		}
 		msg_allocator_free(msg);
-
 		return;
 	}
 
 	if(unlikely(check_early_anti_messages(msg)))
 		return;
 
-	if(unlikely(array_count(proc_p->p_msgs) && msg_is_before(msg, array_peek(proc_p->p_msgs)))) {
-		array_count_t past_i = match_straggler_msg(proc_p, msg);
-		do_rollback(proc_p, past_i);
+	if(unlikely(array_count(lp->p.p_msgs) && msg_is_before(msg, array_peek(lp->p.p_msgs)))) {
+		array_count_t past_i = match_straggler_msg(&lp->p, msg);
+		do_rollback(lp, past_i);
 		termination_on_lp_rollback(msg->dest_t);
-		auto_ckpt_register_bad(&this_lp->auto_ckpt);
+		auto_ckpt_register_bad(&lp->auto_ckpt);
 	}
 #ifndef NDEBUG
 	current_msg = msg;
 #endif
 	timer_uint t = timer_hr_new();
-	global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, this_lp->lib_ctx->state_s);
+	global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, lp->lib_ctx->state_s);
 	stats_take(STATS_MSG_PROCESSED_TIME, timer_hr_value(t));
 	stats_take(STATS_MSG_PROCESSED, 1);
-	array_push(proc_p->p_msgs, msg);
+	array_push(lp->p.p_msgs, msg);
 
-	auto_ckpt_register_good(&this_lp->auto_ckpt);
-	if(auto_ckpt_is_needed(&this_lp->auto_ckpt))
-		checkpoint_take(proc_p);
+	auto_ckpt_register_good(&lp->auto_ckpt);
+	if(auto_ckpt_is_needed(&lp->auto_ckpt))
+		model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.p_msgs));
 
 	termination_on_msg_process(msg->dest_t);
 }

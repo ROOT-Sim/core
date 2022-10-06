@@ -140,40 +140,35 @@ static void bin_test(struct bin_info *p)
 	}
 }
 
-int parallel_malloc_test(_unused void *_)
+static void bins_full_test(void)
 {
-	unsigned i, b, j, actions, action;
-
-	current_lp = test_lp_mock_get();
-	model_allocator_lp_init();
-
 	struct bin_info p;
 	p.size = 512;
 	p.bins = 10000;
 	p.m = malloc(p.bins * sizeof(*p.m));
 
-	for(b = 0; b < p.bins; b++) {
+	for(unsigned b = 0; b < p.bins; b++) {
 		p.m[b].size = 0;
 		p.m[b].ptr = NULL;
 		if(!test_random_range(2))
 			bin_alloc(&p.m[b], test_random_range(p.size) + 1, test_random_u());
 	}
 
-	for(i = 0; i <= I_MAX;) {
+	for(unsigned i = 0; i <= I_MAX;) {
 		bin_test(&p);
 
-		actions = test_random_range(ACTIONS_MAX);
+		unsigned actions = test_random_range(ACTIONS_MAX);
 
-		for(j = 0; j < actions; j++) {
-			b = test_random_range(p.bins);
+		for(unsigned j = 0; j < actions; j++) {
+			unsigned b = test_random_range(p.bins);
 			bin_free(&p.m[b]);
 		}
 		i += actions;
 		actions = test_random_range(ACTIONS_MAX);
 
-		for(j = 0; j < actions; j++) {
-			b = test_random_range(p.bins);
-			action = test_random_u();
+		for(unsigned j = 0; j < actions; j++) {
+			unsigned b = test_random_range(p.bins);
+			unsigned action = test_random_u();
 			bin_alloc(&p.m[b], test_random_range(p.size) + 1, action);
 			bin_test(&p);
 		}
@@ -181,12 +176,20 @@ int parallel_malloc_test(_unused void *_)
 		i += actions;
 	}
 
-	for(b = 0; b < p.bins; b++)
+	for(unsigned b = 0; b < p.bins; b++)
 		bin_free(&p.m[b]);
 
 	free(p.m);
+}
 
-	model_allocator_lp_fini();
-
+int parallel_malloc_test(_unused void *_)
+{
+	current_lp = test_lp_mock_get();
+	for(enum mm_allocator_choice mm = MM_MULTI_BUDDY; mm <= MM_DYMELOR; ++mm) {
+		global_config.mm = mm;
+		model_allocator_lp_init(&current_lp->mm_state);
+		bins_full_test();
+		model_allocator_lp_fini(&current_lp->mm_state);
+	}
 	return 0;
 }

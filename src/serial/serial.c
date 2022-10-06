@@ -36,11 +36,12 @@ static void serial_simulation_init(void)
 	n_lps_node = global_config.lps;
 
 	for(uint64_t i = 0; i < global_config.lps; ++i) {
-		current_lp = &lps[i];
-		current_lp->termination_t = -1;
+		struct lp_ctx *lp = &lps[i];
+		current_lp = lp;
+		lp->termination_t = -1;
 
-		model_allocator_lp_init();
-		current_lp->lib_ctx = rs_malloc(sizeof(*current_lp->lib_ctx));
+		model_allocator_lp_init(&lp->mm_state);
+		lp->lib_ctx = rs_malloc(sizeof(*lp->lib_ctx));
 		lib_lp_init();
 
 		struct lp_msg *msg = msg_allocator_pack(i, 0.0, LP_INIT, NULL, 0);
@@ -55,10 +56,11 @@ static void serial_simulation_init(void)
 static void serial_simulation_fini(void)
 {
 	for(uint64_t i = 0; i < global_config.lps; ++i) {
-		current_lp = &lps[i];
+		struct lp_ctx *lp = &lps[i];
+		current_lp = lp;
 		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lps[i].lib_ctx->state_s);
 		lib_lp_fini();
-		model_allocator_lp_fini();
+		model_allocator_lp_fini(&lp->mm_state);
 	}
 
 	for(array_count_t i = 0; i < array_count(queue); ++i) {

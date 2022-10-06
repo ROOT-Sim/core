@@ -15,5 +15,5 @@ struct dymelor_area_checkpoint {
 	unsigned char data[];
 };
 
-extern struct dymelor_ctx_checkpoint *checkpoint_full_take(const struct mm_state *ctx);
-extern void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_checkpoint *ckpt);
+extern struct dymelor_ctx_checkpoint *dymelor_checkpoint_full_take(const struct dymelor_state *ctx);
+extern void dymelor_checkpoint_full_restore(struct dymelor_state *ctx, const struct dymelor_ctx_checkpoint *ckpt);

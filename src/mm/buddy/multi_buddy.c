@@ -6,7 +6,7 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <mm/buddy/multi.h>
+#include <mm/buddy/multi_buddy.h>
 
 #include <core/core.h>
 #include <core/intrinsics.h>
@@ -22,18 +22,15 @@
 #define is_log_incremental(l) false
 #endif
 
-void model_allocator_lp_init(void)
+void multi_buddy_lp_init(struct multi_buddy_state *self)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	array_init(self->buddies);
 	array_init(self->logs);
 	self->used_mem = 0;
 }
 
-void model_allocator_lp_fini(void)
+void multi_buddy_lp_fini(struct multi_buddy_state *self)
 {
-	struct mm_state *self = &current_lp->mm_state;
-
 	array_count_t i = array_count(self->logs);
 	while(i--)
 		mm_free(array_get_at(self->logs, i).c);
@@ -47,11 +44,8 @@ void model_allocator_lp_fini(void)
 	array_fini(self->buddies);
 }
 
-void *rs_malloc(size_t req_size)
+void *multi_buddy_alloc(struct multi_buddy_state *self, size_t req_size)
 {
-	if(unlikely(!req_size))
-		return NULL;
-
 	uint_fast8_t req_blks_exp = buddy_allocation_block_compute(req_size);
 	if(unlikely(req_blks_exp > B_TOTAL_EXP)) {
 		errno = ENOMEM;
@@ -59,7 +53,6 @@ void *rs_malloc(size_t req_size)
 		return NULL;
 	}
 
-	struct mm_state *self = &current_lp->mm_state;
 	self->used_mem += 1 << req_blks_exp;
 
 	array_count_t i = array_count(self->buddies);
@@ -80,18 +73,7 @@ void *rs_malloc(size_t req_size)
 	return buddy_malloc(new_buddy, req_blks_exp);
 }
 
-void *rs_calloc(size_t nmemb, size_t size)
-{
-	size_t tot = nmemb * size;
-	void *ret = rs_malloc(tot);
-
-	if(likely(ret))
-		memset(ret, 0, tot);
-
-	return ret;
-}
-
-static inline struct buddy_state *buddy_find_by_address(struct mm_state *self, const void *ptr)
+static inline struct buddy_state *buddy_find_by_address(struct multi_buddy_state *self, const void *ptr)
 {
 	array_count_t l = 0, h = array_count(self->buddies) - 1;
 	while(1) {
@@ -106,27 +88,14 @@ static inline struct buddy_state *buddy_find_by_address(struct mm_state *self, c
 	}
 }
 
-void rs_free(void *ptr)
+void multi_buddy_free(struct multi_buddy_state *self, void *ptr)
 {
-	if(unlikely(!ptr))
-		return;
-
-	struct mm_state *self = &current_lp->mm_state;
 	struct buddy_state *b = buddy_find_by_address(self, ptr);
 	self->used_mem -= buddy_free(b, ptr);
 }
 
-void *rs_realloc(void *ptr, size_t req_size)
+void *multi_buddy_realloc(struct multi_buddy_state *self, void *ptr, size_t req_size)
 {
-	if(!req_size) { // Adhering to C11 standard §7.20.3.1
-		if(!ptr)
-			errno = EINVAL;
-		return NULL;
-	}
-	if(!ptr)
-		return rs_malloc(req_size);
-
-	struct mm_state *self = &current_lp->mm_state;
 	struct buddy_state *b = buddy_find_by_address(self, ptr);
 	struct buddy_realloc_res ret = buddy_best_effort_realloc(b, ptr, req_size);
 	if (ret.handled) {
@@ -144,9 +113,8 @@ void *rs_realloc(void *ptr, size_t req_size)
 	return new_buffer;
 }
 
-void __write_mem(const void *ptr, size_t s)
+void multi_buddy_dirty_mark(struct multi_buddy_state *self, const void *ptr, size_t s)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	if(unlikely(!s || array_is_empty(self->buddies)))
 		return;
 
@@ -159,9 +127,8 @@ void __write_mem(const void *ptr, size_t s)
 }
 
 // todo: incremental
-void model_allocator_checkpoint_take(array_count_t ref_i)
+void multi_buddy_checkpoint_take(struct multi_buddy_state *self, array_count_t ref_i)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	size_t buddies_size = offsetof(struct buddy_checkpoint, base_mem) * array_count(self->buddies);
 	struct mm_checkpoint *ckp = mm_alloc(offsetof(struct mm_checkpoint, chkps) + buddies_size + self->used_mem);
 	ckp->used_mem = self->used_mem;
@@ -175,14 +142,14 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 		buddy_ckp = checkpoint_full_take(array_get_at(self->buddies, i), buddy_ckp);
 }
 
-void model_allocator_checkpoint_next_force_full(void)
+void multi_buddy_checkpoint_next_force_full(struct multi_buddy_state *self)
 {
 	// TODO: force full checkpointing when incremental state saving is enabled
+	(void) self;
 }
 
-array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
+array_count_t multi_buddy_checkpoint_restore(struct multi_buddy_state *self, array_count_t ref_i)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	array_count_t i = array_count(self->logs) - 1;
 	while(array_get_at(self->logs, i).ref_i > ref_i)
 		i--;
@@ -208,7 +175,7 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 	return array_get_at(self->logs, i).ref_i;
 }
 
-array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_count_t tgt_ref_i)
+array_count_t multi_buddy_fossil_lp_collect(struct multi_buddy_state *self, array_count_t tgt_ref_i)
 {
 	array_count_t log_i = array_count(self->logs) - 1;
 	array_count_t ref_i = array_get_at(self->logs, log_i).ref_i;

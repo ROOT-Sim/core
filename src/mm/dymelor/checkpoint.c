@@ -4,9 +4,7 @@
 #include <mm/dymelor/dymelor.h>
 #include <mm/mm.h>
 
-#include <stdio.h>
-
-static size_t compute_log_size(const struct mm_state *ctx)
+static size_t compute_log_size(const struct dymelor_state *ctx)
 {
 	size_t ret = sizeof(offsetof(struct dymelor_ctx_checkpoint, data));
 	for(unsigned i = 0; i < NUM_AREAS; ++i) {
@@ -27,7 +25,7 @@ static size_t compute_log_size(const struct mm_state *ctx)
 	return ret;
 }
 
-struct dymelor_ctx_checkpoint *checkpoint_full_take(const struct mm_state *ctx)
+struct dymelor_ctx_checkpoint *dymelor_checkpoint_full_take(const struct dymelor_state *ctx)
 {
 	struct dymelor_ctx_checkpoint *ckpt = mm_alloc(compute_log_size(ctx));
 	unsigned char * restrict ptr = ckpt->data;
@@ -64,7 +62,7 @@ struct dymelor_ctx_checkpoint *checkpoint_full_take(const struct mm_state *ctx)
 	return ckpt;
 }
 
-void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_checkpoint *ckpt)
+void dymelor_checkpoint_full_restore(struct dymelor_state *ctx, const struct dymelor_ctx_checkpoint *ckpt)
 {
 	const unsigned char *ptr = ckpt->data;
 	unsigned last_i = UINT_MAX;

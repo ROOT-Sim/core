@@ -8,18 +8,15 @@
 
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
 
-void model_allocator_lp_init(void)
+void dymelor_lp_init(struct dymelor_state *self)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	memset(self->areas, 0, sizeof(self->areas));
 	self->used_mem = 0;
 	array_init(self->logs);
 }
 
-void model_allocator_lp_fini(void)
+void dymelor_lp_fini(struct dymelor_state *self)
 {
-	struct mm_state *self = &current_lp->mm_state;
-
 	for(array_count_t i = 0; i < array_count(self->logs); ++i)
 		mm_free(array_get_at(self->logs, i).c);
 
@@ -35,26 +32,25 @@ void model_allocator_lp_fini(void)
 	}
 }
 
-void model_allocator_checkpoint_take(array_count_t ref_i)
+void dymelor_checkpoint_take(struct dymelor_state *self, array_count_t ref_i)
 {
-	struct mm_state *self = &current_lp->mm_state;
-	struct dymelor_log mm_log = {.ref_i = ref_i, .c = checkpoint_full_take(self)};
+	struct dymelor_log mm_log = {.ref_i = ref_i, .c = dymelor_checkpoint_full_take(self)};
 	array_push(self->logs, mm_log);
 }
 
-void model_allocator_checkpoint_next_force_full(void)
+void dymelor_checkpoint_next_force_full(struct dymelor_state *self)
 {
+	(void) self;
 	// todo: support incremental checkpointing properly
 }
 
-array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
+array_count_t dymelor_checkpoint_restore(struct dymelor_state *self, array_count_t ref_i)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	array_count_t i = array_count(self->logs) - 1;
 	while(array_get_at(self->logs, i).ref_i > ref_i)
 		i--;
 
-	checkpoint_full_restore(self, array_get_at(self->logs, i).c);
+	dymelor_checkpoint_full_restore(self, array_get_at(self->logs, i).c);
 
 	for(array_count_t j = array_count(self->logs) - 1; j > i; --j)
 		mm_free(array_get_at(self->logs, j).c);
@@ -63,7 +59,7 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 	return array_get_at(self->logs, i).ref_i;
 }
 
-array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_count_t tgt_ref_i)
+array_count_t dymelor_fossil_lp_collect(struct dymelor_state *self, array_count_t tgt_ref_i)
 {
 	array_count_t log_i = array_count(self->logs) - 1;
 	array_count_t ref_i = array_get_at(self->logs, log_i).ref_i;
@@ -102,11 +98,8 @@ static struct dymelor_area *malloc_area_new(unsigned chunk_size_exp, uint_least3
 	return area;
 }
 
-void *rs_malloc(size_t req_size)
+void *dymelor_alloc(struct dymelor_state *self, size_t req_size)
 {
-	if(unlikely(req_size == 0))
-		return NULL;
-
 	if(unlikely(req_size > MAX_CHUNK_SIZE)) {
 		logger(LOG_ERROR,
 		    "Requested a memory allocation of %d but the limit is %d. Reconfigure MAX_CHUNK_SIZE. Returning NULL",
@@ -118,7 +111,7 @@ void *rs_malloc(size_t req_size)
 	unsigned size_exp = max(next_exp_of_2(req_size), MIN_CHUNK_EXP);
 
 	uint_least32_t num_chunks = MIN_NUM_CHUNKS;
-	struct dymelor_area **m_area_p = &current_lp->mm_state.areas[size_exp - MIN_CHUNK_EXP];
+	struct dymelor_area **m_area_p = &self->areas[size_exp - MIN_CHUNK_EXP];
 	struct dymelor_area *m_area = *m_area_p;
 	while(m_area != NULL && m_area->alloc_chunks >= num_chunks) {
 		m_area_p = &m_area->next;
@@ -138,7 +131,7 @@ void *rs_malloc(size_t req_size)
 	bitmap_set(m_area->use_bitmap, m_area->last_chunk);
 	// m_area->last_access = lvt(current);
 	++m_area->alloc_chunks;
-	current_lp->mm_state.used_mem += 1U << size_exp;
+	self->used_mem += 1U << size_exp;
 	uint_least32_t offset = m_area->last_chunk << size_exp;
 	m_area->last_chunk++;
 
@@ -147,18 +140,7 @@ void *rs_malloc(size_t req_size)
 	return ptr;
 }
 
-void *rs_calloc(size_t nmemb, size_t size)
-{
-	size_t tot = nmemb * size;
-	void *ret = rs_malloc(tot);
-
-	if(likely(ret))
-		memset(ret, 0, tot);
-
-	return ret;
-}
-
-void *rs_realloc(void *ptr, size_t req_size)
+void *dymelor_realloc(struct dymelor_state *self, void *ptr, size_t req_size)
 {
 	if(!req_size) { // Adhering to C11 standard §7.20.3.1
 		if(!ptr)
@@ -170,7 +152,7 @@ void *rs_realloc(void *ptr, size_t req_size)
 
 	unsigned char *p = ptr;
 	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
-	void *new_buffer = rs_malloc(req_size);
+	void *new_buffer = dymelor_alloc(self, req_size);
 	if(unlikely(new_buffer == NULL))
 		return NULL;
 
@@ -180,11 +162,8 @@ void *rs_realloc(void *ptr, size_t req_size)
 	return new_buffer;
 }
 
-void rs_free(void *ptr)
+void dymelor_free(struct dymelor_state *self, void *ptr)
 {
-	if(unlikely(ptr == NULL))
-		return;
-
 	unsigned char *p = ptr;
 	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
 
@@ -195,7 +174,7 @@ void rs_free(void *ptr)
 	}
 	bitmap_reset(m_area->use_bitmap, idx);
 	--m_area->alloc_chunks;
-	current_lp->mm_state.used_mem -= 1U << m_area->chk_size_exp;
+	self->used_mem -= 1U << m_area->chk_size_exp;
 
 #ifdef ROOTSIM_INCREMENTAL
 	if(bitmap_check(m_area->dirty_bitmap, idx)) {
@@ -210,8 +189,9 @@ void rs_free(void *ptr)
 		m_area->last_chunk = idx;
 }
 
-void dirty_mem(void *base, int size)
+void dymelor_dirty_mark(struct dymelor_state *self, void *base, int size)
 {
+	(void)self, (void) size;
 	// FIXME: check base belongs to the LP memory allocator
 	unsigned char *p = base;
 	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
@@ -222,10 +202,11 @@ void dirty_mem(void *base, int size)
 	}
 }
 
-void clean_buffers_on_gvt(struct mm_state *state, simtime_t time_barrier)
+void clean_buffers_on_gvt(struct dymelor_state *state, simtime_t time_barrier)
 {
 	// The first NUM_AREAS malloc_areas are placed according to their chunks' sizes. The exceeding malloc_areas can
 	// be compacted
+	(void) time_barrier;
 	for(unsigned i = 0; i < NUM_AREAS; ++i) {
 		struct dymelor_area *m_area = state->areas[i];
 		if(m_area == NULL)

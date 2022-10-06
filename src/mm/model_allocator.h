@@ -10,17 +10,26 @@
  */
 #pragma once
 
-#include <datatypes/array.h>
+#include <stddef.h>
 
-#ifdef ROOTSIM_DYMELOR
+#include <mm/buddy/multi_buddy.h>
 #include <mm/dymelor/dymelor.h>
-#else
-#include <mm/buddy/multi.h>
-#endif
 
-extern void model_allocator_lp_init(void);
-extern void model_allocator_lp_fini(void);
-extern void model_allocator_checkpoint_take(array_count_t ref_i);
-extern void model_allocator_checkpoint_next_force_full(void);
-extern array_count_t model_allocator_checkpoint_restore(array_count_t ref_i);
+struct mm_state {
+	union {
+		struct multi_buddy_state m_mb;
+		struct dymelor_state m_dy;
+	};
+};
+
+_Static_assert(offsetof(struct multi_buddy_state, used_mem) == offsetof(struct dymelor_state, used_mem),
+    "Can't access used memory field in an homogeneous way!");
+
+#define model_allocator_state_size(self) ((self)->m_mb.used_mem)
+
+extern void model_allocator_lp_init(struct mm_state *self);
+extern void model_allocator_lp_fini(struct mm_state *self);
+extern void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i);
+extern void model_allocator_checkpoint_next_force_full(struct mm_state *self);
+extern array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_count_t ref_i);
 extern array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_count_t tgt_ref_i);

@@ -11,7 +11,6 @@
 #include <lp/lp.h>
 
 #include <datatypes/msg_queue.h>
-#include <mm/mm.h>
 #include <core/sync.h>
 #include <gvt/fossil.h>
 #include <gvt/termination.h>
@@ -91,8 +90,8 @@ void lp_init(void)
 		struct lp_ctx *lp = &lps[i];
 		current_lp = lp;
 
-		model_allocator_lp_init();
-		lp->lib_ctx = rs_malloc(sizeof(*current_lp->lib_ctx));
+		model_allocator_lp_init(&lp->mm_state);
+		lp->lib_ctx = rs_malloc(sizeof(*lp->lib_ctx));
 
 		msg_queue_lp_init();
 		lib_lp_init();
@@ -117,12 +116,13 @@ void lp_fini(void)
 	sync_thread_barrier();
 
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
-		current_lp = &lps[i];
+		struct lp_ctx *lp = &lps[i];
+		current_lp = lp;
 
 		process_lp_fini();
 		lib_lp_fini();
 		msg_queue_lp_fini();
-		model_allocator_lp_fini();
+		model_allocator_lp_fini(&lp->mm_state);
 	}
 
 	current_lp = NULL;
@@ -137,7 +137,7 @@ void lp_on_gvt(simtime_t gvt)
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
 		fossil_lp_on_gvt(lp, gvt);
-		auto_ckpt_lp_on_gvt(&lp->auto_ckpt, lp->mm_state.used_mem);
+		auto_ckpt_lp_on_gvt(&lp->auto_ckpt, model_allocator_state_size(&lp->mm_state));
 	}
 }
 

@@ -41,9 +41,19 @@ struct dymelor_log {
 };
 
 /// Definition of the memory map
-struct mm_state {
-	struct dymelor_area *areas[NUM_AREAS];
+struct dymelor_state {
 	uint_fast32_t used_mem;
+	struct dymelor_area *areas[NUM_AREAS];
 	/// The array of checkpoints
 	dyn_array(struct dymelor_log) logs;
 };
+
+extern void dymelor_lp_init(struct dymelor_state *m);
+extern void dymelor_lp_fini(struct dymelor_state *m);
+extern void *dymelor_alloc(struct dymelor_state *m, size_t s);
+extern void dymelor_free(struct dymelor_state *m, void *ptr);
+extern void *dymelor_realloc(struct dymelor_state *m, void *ptr, size_t s);
+extern void dymelor_checkpoint_take(struct dymelor_state *m, array_count_t ref_i);
+extern void dymelor_checkpoint_next_force_full(struct dymelor_state *m);
+extern array_count_t dymelor_checkpoint_restore(struct dymelor_state *m, array_count_t ref_i);
+extern array_count_t dymelor_fossil_lp_collect(struct dymelor_state *m, array_count_t tgt_ref_i);
