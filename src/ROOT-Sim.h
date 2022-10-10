@@ -94,6 +94,7 @@ extern void *rs_malloc(size_t req_size);
 extern void *rs_calloc(size_t nmemb, size_t size);
 extern void rs_free(void *ptr);
 extern void *rs_realloc(void *ptr, size_t req_size);
+extern bool rs_is_alloced(const void *);
 
 extern double Random(void);
 extern uint64_t RandomU64(void);

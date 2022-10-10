@@ -268,7 +268,7 @@ void ApproximatedMemoryMark(const void *base, bool is_core)
 	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
 	uint_least32_t i = (p - m_area->area) >> m_area->chk_size_exp;
 	if(bitmap_check(m_area->core_bitmap, i) != is_core) {
-		if (is_core) {
+		if(is_core) {
 			bitmap_set(m_area->core_bitmap, i);
 			m_area->core_chunks++;
 			current_lp->mm_state.approx_used_mem += 1 << m_area->chk_size_exp;
@@ -278,4 +278,13 @@ void ApproximatedMemoryMark(const void *base, bool is_core)
 			current_lp->mm_state.approx_used_mem -= 1 << m_area->chk_size_exp;
 		}
 	}
+}
+
+bool rs_is_alloced(const void *ptr)
+{
+	const unsigned char *p = ptr;
+	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
+
+	uint_least32_t idx = (p - m_area->area) >> m_area->chk_size_exp;
+	return bitmap_check(m_area->use_bitmap, idx);
 }
