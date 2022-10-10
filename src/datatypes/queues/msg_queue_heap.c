@@ -4,7 +4,7 @@
 #include <mm/msg_allocator.h>
 
 /// Determine an ordering between two elements in a queue
-#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended(ma.m, mb.m)))
+#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended((ma).m, (mb).m)))
 
 /// An element in the heap message queue
 struct q_elem {
@@ -16,51 +16,49 @@ struct q_elem {
 
 typedef heap_declare(struct q_elem) heap_queue_t;
 
-static void *msg_queue_heap_context_alloc(void)
+static void msg_queue_heap_context_alloc(queue_mem_block *ctx)
 {
-	return NULL;
+	(void)ctx;
 }
 
-static void msg_queue_heap_context_free(void *unused)
+static void msg_queue_heap_context_free(queue_mem_block *ctx)
 {
-	(void)unused;
+	(void)ctx;
 }
 
-static void *msg_queue_heap_alloc(void *unused)
+static void msg_queue_heap_alloc(queue_mem_block *ctx, queue_mem_block *q)
 {
-	(void)unused;
-	heap_queue_t *ret = mm_alloc(sizeof(heap_queue_t));
-	heap_init(*ret);
-	return ret;
+	(void)ctx;
+	heap_init(*(heap_queue_t *)q);
 }
 
-static void msg_queue_heap_free(void *q)
+static void msg_queue_heap_free(queue_mem_block *ctx, queue_mem_block *q)
 {
-	heap_queue_t *h = q;
+	(void)ctx;
+	heap_queue_t *h = (heap_queue_t *)q;
 	while(!array_is_empty(*h))
 		msg_allocator_free(array_pop(*h).m);
 	heap_fini(*h);
-	mm_free(h);
 }
 
-static simtime_t msg_queue_heap_time_peek(void *q)
+static simtime_t msg_queue_heap_time_peek(queue_mem_block *q)
 {
-	heap_queue_t *h = q;
+	heap_queue_t *h = (heap_queue_t *)q;
 	return likely(heap_count(*h)) ? heap_min(*h).t : SIMTIME_MAX;
 }
 
-static void msg_queue_heap_insert(void *unused, void *q, struct lp_msg *m)
+static void msg_queue_heap_insert(queue_mem_block *unused, queue_mem_block *q, struct lp_msg *m)
 {
 	(void) unused;
-	heap_queue_t *h = q;
+	heap_queue_t *h = (heap_queue_t *)q;
 	struct q_elem e = {.t = m->dest_t, .m = m};
 	heap_insert(*h, q_elem_is_before, e);
 }
 
-static struct lp_msg *msg_queue_heap_extract(void *unused, void *q)
+static struct lp_msg *msg_queue_heap_extract(queue_mem_block *unused, queue_mem_block *q)
 {
 	(void) unused;
-	heap_queue_t *h = q;
+	heap_queue_t *h = (heap_queue_t *)q;
 	return likely(heap_count(*h)) ? heap_extract(*h, q_elem_is_before).m : NULL;
 }
 

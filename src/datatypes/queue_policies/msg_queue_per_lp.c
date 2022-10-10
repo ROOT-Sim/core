@@ -10,29 +10,21 @@
 /// The multi-threaded message buffer, implemented as a non-blocking list
 struct msg_queue_per_lp {
 	/// The head of the messages list
-	alignas(CACHE_LINE_SIZE) spinlock_t lock;
-	void *queue;
+	alignas(CACHE_LINE_SIZE) queue_mem_block b;
+	spinlock_t lock;
 };
 
 /// The buffers vector
-static union {
-	struct msg_queue_per_lp *non_thread_safe;
-	void **thread_safe;
-} lp_queues;
+struct msg_queue_per_lp *lp_queues;
 
-static __thread void *lp_queue_ctx;
+static __thread queue_mem_block lp_queue_ctx;
 
 /**
  * @brief Initializes the message queue at the node level
  */
 void msg_queue_per_lp_global_init(void)
 {
-	if(msg_queue_current.is_thread_safe)
-		lp_queues.thread_safe =
-		    mm_aligned_alloc(CACHE_LINE_SIZE, global_config.lps * sizeof(*lp_queues.thread_safe));
-	else
-		lp_queues.non_thread_safe =
-		    mm_aligned_alloc(CACHE_LINE_SIZE, global_config.lps * sizeof(*lp_queues.non_thread_safe));
+	lp_queues = mm_aligned_alloc(CACHE_LINE_SIZE, global_config.lps * sizeof(*lp_queues));
 }
 
 /**
@@ -40,7 +32,7 @@ void msg_queue_per_lp_global_init(void)
  */
 void msg_queue_per_lp_init(void)
 {
-	lp_queue_ctx = msg_queue_current.context_alloc();
+	msg_queue_current.context_alloc(&lp_queue_ctx);
 }
 
 /**
@@ -52,12 +44,8 @@ void msg_queue_per_lp_lp_init(void)
 {
 	lp_id_t lp_id = current_lp - lps;
 
-	if(msg_queue_current.is_thread_safe) {
-		lp_queues.thread_safe[lp_id] = msg_queue_current.queue_alloc(lp_queue_ctx);
-	} else {
-		lp_queues.non_thread_safe[lp_id].queue = msg_queue_current.queue_alloc(lp_queue_ctx);
-		spin_init(&lp_queues.non_thread_safe[lp_id].lock);
-	}
+	spin_init(&lp_queues[lp_id].lock);
+	msg_queue_current.queue_alloc(&lp_queue_ctx, &lp_queues[lp_id].b);
 }
 
 /**
@@ -68,12 +56,7 @@ void msg_queue_per_lp_lp_init(void)
 void msg_queue_per_lp_lp_fini(void)
 {
 	lp_id_t lp_id = current_lp - lps;
-
-	if(msg_queue_current.is_thread_safe) {
-		msg_queue_current.queue_free(lp_queues.thread_safe[lp_id]);
-	} else {
-		msg_queue_current.queue_free(lp_queues.non_thread_safe[lp_id].queue);
-	}
+	msg_queue_current.queue_free(&lp_queue_ctx, &lp_queues[lp_id].b);
 }
 
 /**
@@ -81,7 +64,7 @@ void msg_queue_per_lp_lp_fini(void)
  */
 void msg_queue_per_lp_fini(void)
 {
-	msg_queue_current.context_free(lp_queue_ctx);
+	msg_queue_current.context_free(&lp_queue_ctx);
 }
 
 /**
@@ -89,10 +72,7 @@ void msg_queue_per_lp_fini(void)
  */
 void msg_queue_per_lp_global_fini(void)
 {
-	if(msg_queue_current.is_thread_safe)
-		mm_aligned_free(lp_queues.thread_safe);
-	else
-		mm_aligned_free(lp_queues.non_thread_safe);
+	mm_aligned_free(lp_queues);
 }
 
 /**
@@ -107,34 +87,34 @@ struct lp_msg *msg_queue_per_lp_extract(void)
 {
 	lp_id_t min_lp = lid_thread_first;
 	if(msg_queue_current.is_thread_safe) {
-		simtime_t min_t = msg_queue_current.queue_time_peek(lp_queues.thread_safe[min_lp]);
+		simtime_t min_t = msg_queue_current.queue_time_peek(&lp_queues[min_lp].b);
 		for(uint64_t i = lid_thread_first + 1; i < lid_thread_end; ++i) {
-			simtime_t this_t = msg_queue_current.queue_time_peek(lp_queues.thread_safe[i]);
+			simtime_t this_t = msg_queue_current.queue_time_peek(&lp_queues[i].b);
 			if (this_t < min_t) {
 				min_t = this_t;
 				min_lp = i;
 			}
 		}
 
-		return msg_queue_current.message_extract(lp_queue_ctx, lp_queues.thread_safe[min_lp]);
+		return msg_queue_current.message_extract(&lp_queue_ctx, &lp_queues[min_lp].b);
 	} else {
 		simtime_t min_t = SIMTIME_MAX;
 		for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
-			if (!spin_trylock(&lp_queues.non_thread_safe[i].lock))
+			if (!spin_trylock(&lp_queues[i].lock))
 			    continue;
 
-			simtime_t this_t = msg_queue_current.queue_time_peek(lp_queues.non_thread_safe[i].queue);
+			simtime_t this_t = msg_queue_current.queue_time_peek(&lp_queues[i].b);
 			if (this_t < min_t) {
 				min_t = this_t;
 				min_lp = i;
 			}
 
-			spin_unlock(&lp_queues.non_thread_safe[i].lock);
+			spin_unlock(&lp_queues[i].lock);
 		}
 
-		spin_lock(&lp_queues.non_thread_safe[min_lp].lock);
-		struct lp_msg *ret = msg_queue_current.message_extract(lp_queue_ctx, lp_queues.non_thread_safe[min_lp].queue);
-		spin_unlock(&lp_queues.non_thread_safe[min_lp].lock);
+		spin_lock(&lp_queues[min_lp].b);
+		struct lp_msg *ret = msg_queue_current.message_extract(&lp_queue_ctx, &lp_queues[min_lp].b);
+		spin_unlock(&lp_queues[min_lp].b);
 		return ret;
 	}
 }
@@ -145,12 +125,13 @@ struct lp_msg *msg_queue_per_lp_extract(void)
  */
 void msg_queue_per_lp_insert(struct lp_msg *msg)
 {
+	lp_id_t lp_id = msg->dest;
 	if(msg_queue_current.is_thread_safe) {
-		msg_queue_current.message_insert(lp_queue_ctx, lp_queues.thread_safe[msg->dest], msg);
+		msg_queue_current.message_insert(&lp_queue_ctx, &lp_queues[lp_id].b, msg);
 		return;
 	}
 
-	spin_lock(&lp_queues.non_thread_safe[msg->dest].lock);
-	msg_queue_current.message_insert(lp_queue_ctx, lp_queues.non_thread_safe[msg->dest].queue, msg);
-	spin_unlock(&lp_queues.non_thread_safe[msg->dest].lock);
+	spin_lock(&lp_queues[lp_id].lock);
+	msg_queue_current.message_insert(&lp_queue_ctx, &lp_queues[lp_id].b, msg);
+	spin_unlock(&lp_queues[lp_id].lock);
 }

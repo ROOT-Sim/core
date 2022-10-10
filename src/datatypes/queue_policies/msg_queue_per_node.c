@@ -7,8 +7,8 @@
 #include <stdalign.h>
 
 /// The private thread queue
-static void *node_queue;
-static void *node_queue_ctx;
+static queue_mem_block node_queue;
+static queue_mem_block node_queue_ctx;
 static alignas(CACHE_LINE_SIZE) spinlock_t node_queue_lock;
 static alignas(CACHE_LINE_SIZE) _Atomic(struct lp_msg *) node_list;
 /**
@@ -16,8 +16,8 @@ static alignas(CACHE_LINE_SIZE) _Atomic(struct lp_msg *) node_list;
  */
 void msg_queue_per_node_global_init(void)
 {
-	node_queue_ctx = msg_queue_current.context_alloc();
-	node_queue = msg_queue_current.queue_alloc(node_queue_ctx);
+	msg_queue_current.context_alloc(&node_queue_ctx);
+	msg_queue_current.queue_alloc(&node_queue_ctx, &node_queue);
 	spin_init(&node_queue_lock);
 	atomic_store_explicit(&node_list, NULL, memory_order_relaxed);
 }
@@ -51,8 +51,8 @@ void msg_queue_per_node_fini(void) {}
  */
 void msg_queue_per_node_global_fini(void)
 {
-	msg_queue_current.queue_free(node_queue);
-	msg_queue_current.context_free(node_queue_ctx);
+	msg_queue_current.queue_free(&node_queue_ctx, &node_queue);
+	msg_queue_current.context_free(&node_queue_ctx);
 
 	struct lp_msg *m = atomic_load_explicit(&node_list, memory_order_relaxed);
 	while(m != NULL) {
@@ -72,16 +72,16 @@ void msg_queue_per_node_global_fini(void)
 struct lp_msg *msg_queue_per_node_extract(void)
 {
 	if(msg_queue_current.is_thread_safe)
-		return msg_queue_current.message_extract(node_queue_ctx, node_queue);
+		return msg_queue_current.message_extract(&node_queue_ctx, &node_queue);
 
 	struct lp_msg *m = atomic_exchange_explicit(&node_list, NULL, memory_order_acquire);
 
 	spin_lock(&node_queue_lock);
 	while(m != NULL) {
-		msg_queue_current.message_insert(node_queue_ctx, node_queue, m);
+		msg_queue_current.message_insert(&node_queue_ctx, &node_queue, m);
 		m = m->next;
 	}
-	struct lp_msg *ret = msg_queue_current.message_extract(node_queue_ctx, node_queue);
+	struct lp_msg *ret = msg_queue_current.message_extract(&node_queue_ctx, &node_queue);
 	spin_unlock(&node_queue_lock);
 	return ret;
 }
@@ -93,7 +93,7 @@ struct lp_msg *msg_queue_per_node_extract(void)
 void msg_queue_per_node_insert(struct lp_msg *msg)
 {
 	if(msg_queue_current.is_thread_safe) {
-		msg_queue_current.message_insert(node_queue_ctx, node_queue, msg);
+		msg_queue_current.message_insert(&node_queue_ctx, &node_queue, msg);
 		return;
 	}
 

@@ -17,8 +17,8 @@ struct msg_buffer {
 /// The buffers vector
 static struct msg_buffer *queues;
 /// The private thread queue
-static __thread void *thread_queue;
-static __thread void *thread_queue_ctx;
+static __thread queue_mem_block thread_queue;
+static __thread queue_mem_block thread_queue_ctx;
 
 /**
  * @brief Initializes the message queue at the node level
@@ -33,8 +33,8 @@ void msg_queue_per_thread_global_init(void)
  */
 void msg_queue_per_thread_init(void)
 {
-	thread_queue_ctx = msg_queue_current.context_alloc();
-	thread_queue = msg_queue_current.queue_alloc(thread_queue_ctx);
+	msg_queue_current.context_alloc(&thread_queue_ctx);
+	msg_queue_current.queue_alloc(&thread_queue_ctx, &thread_queue);
 	atomic_store_explicit(&queues[rid].list, NULL, memory_order_relaxed);
 }
 
@@ -57,13 +57,14 @@ void msg_queue_per_thread_lp_fini(void) {}
  */
 void msg_queue_per_thread_fini(void)
 {
-	msg_queue_current.queue_free(thread_queue);
-	msg_queue_current.context_free(thread_queue_ctx);
+	msg_queue_current.queue_free(&thread_queue_ctx, &thread_queue);
+	msg_queue_current.context_free(&thread_queue_ctx);
 
 	struct lp_msg *m = atomic_load_explicit(&queues[rid].list, memory_order_relaxed);
 	while(m != NULL) {
+		struct lp_msg *n = m->next;
 		msg_allocator_free(m);
-		m = m->next;
+		m = n;
 	}
 }
 
@@ -88,11 +89,11 @@ struct lp_msg *msg_queue_per_thread_extract(void)
 	if (!msg_queue_current.is_thread_safe) {
 		struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
 		while(m != NULL) {
-			msg_queue_current.message_insert(thread_queue_ctx, thread_queue, m);
+			msg_queue_current.message_insert(&thread_queue_ctx, &thread_queue, m);
 			m = m->next;
 		}
 	}
-	return msg_queue_current.message_extract(thread_queue_ctx, thread_queue);
+	return msg_queue_current.message_extract(&thread_queue_ctx, &thread_queue);
 }
 
 /**
@@ -102,7 +103,7 @@ struct lp_msg *msg_queue_per_thread_extract(void)
 void msg_queue_per_thread_insert(struct lp_msg *msg)
 {
 	if (msg_queue_current.is_thread_safe) {
-		msg_queue_current.message_insert(thread_queue_ctx, thread_queue, msg);
+		msg_queue_current.message_insert(&thread_queue_ctx, &thread_queue, msg);
 		return;
 	}
 
