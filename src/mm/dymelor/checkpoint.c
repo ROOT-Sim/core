@@ -10,14 +10,13 @@ static size_t compute_log_size(const struct dymelor_state *ctx)
 	for(unsigned i = 0; i < NUM_AREAS; ++i) {
 		const struct dymelor_area *area = ctx->areas[i];
 		uint_least32_t num_chunks = MIN_NUM_CHUNKS;
-		uint_least32_t chunk_size = (1U << (MIN_CHUNK_EXP + i)) - sizeof(uint_least32_t);
 		while(area != NULL) {
 			ret += sizeof(offsetof(struct dymelor_area_checkpoint, data));
 			ret += bitmap_required_size(num_chunks);
 #ifdef ROOTSIM_INCREMENTAL
 			ret += bitmap_required_size(num_chunks); // maybe not needed in full checkpoints
 #endif
-			ret += chunk_size * area->alloc_chunks;
+			ret += area->alloc_chunks << area->chk_size_exp;
 			num_chunks *= 2;
 			area = area->next;
 		}
