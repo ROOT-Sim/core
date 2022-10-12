@@ -1,3 +1,11 @@
+/**
+ * @file mm/dymelor/checkpoint.h
+ *
+ * @brief Checkpointing capabilities for DyMeLoR
+ *
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <mm/dymelor/checkpoint.h>
 
 #include <core/core.h>
@@ -27,7 +35,7 @@ static size_t compute_log_size(const struct dymelor_state *ctx)
 struct dymelor_ctx_checkpoint *dymelor_checkpoint_full_take(const struct dymelor_state *ctx)
 {
 	struct dymelor_ctx_checkpoint *ckpt = mm_alloc(compute_log_size(ctx));
-	unsigned char * restrict ptr = ckpt->data;
+	unsigned char *restrict ptr = ckpt->data;
 	ckpt->area_cnt = 0;
 	for(unsigned i = 0; i < NUM_AREAS; ++i) {
 		const struct dymelor_area *area = ctx->areas[i];
@@ -71,7 +79,7 @@ void dymelor_checkpoint_full_restore(struct dymelor_state *ctx, const struct dym
 	while(j--) {
 		struct dymelor_area_checkpoint *ackpt = (struct dymelor_area_checkpoint *)ptr;
 		if(last_i != ackpt->i) {
-			if (area != NULL)
+			if(area != NULL)
 				while(unlikely(area->next != NULL)) {
 					area = area->next;
 					num_chunks *= 2;

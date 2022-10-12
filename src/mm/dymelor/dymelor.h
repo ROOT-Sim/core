@@ -1,3 +1,13 @@
+/**
+ * @file mm/dymelor/dymelor.h
+ *
+ * @brief Dynamic Memory Logger and Restorer Library
+ *
+ * Implementation of the DyMeLoR memory allocator
+ *
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <core/core.h>
@@ -7,16 +17,15 @@
 #include <stdalign.h>
 #include <string.h>
 
-#define MIN_CHUNK_EXP 7U	// Size (in bytes) of the smallest chunk provideable by DyMeLoR
-#define MAX_CHUNK_EXP 22U	// Size (in bytes) of the biggest one. Notice that if this number
-			       // is too large, performance (and memory usage) might be affected.
-                               // If it is too small, large amount of memory requests by the
-                               // application level software (i.e, larger than this number)
-                               // will fail, as DyMeLoR will not be able to handle them!
+#define MIN_CHUNK_EXP 7U  // Size (in bytes) of the smallest chunk provideable by DyMeLoR
+#define MAX_CHUNK_EXP 22U // Size (in bytes) of the biggest one. Notice that if this number is too large, performance
+			  // (and memory usage) might be affected. If it is too small, large amount of memory requests
+                          // by the application level software (i.e, larger than this number) will fail, as DyMeLoR
+                          // will not be able to handle them!
 
 #define MAX_CHUNK_SIZE ((1U << MAX_CHUNK_EXP) - sizeof(uint_least32_t))
 #define NUM_AREAS (MAX_CHUNK_EXP - MIN_CHUNK_EXP + 1)
-#define MIN_NUM_CHUNKS 512	// Minimum number of chunks per malloc_area
+#define MIN_NUM_CHUNKS 512 // Minimum number of chunks per malloc_area
 
 
 /// This structure let DyMeLoR handle one malloc area (for serving given-size memory requests)

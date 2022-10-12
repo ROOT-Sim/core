@@ -1,7 +1,7 @@
 /**
  * @file mm/buddy/multi.h
  *
- * @brief Handling of multiple buddy systems
+ * @brief Handling of multiple rollbackable buddy systems
  *
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only

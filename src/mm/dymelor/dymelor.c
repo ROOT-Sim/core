@@ -1,3 +1,13 @@
+/**
+ * @file mm/dymelor/dymelor.h
+ *
+ * @brief Dynamic Memory Logger and Restorer Library
+ *
+ * Implementation of the DyMeLoR memory allocator
+ *
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <mm/dymelor/dymelor.h>
 
 #include <lp/lp.h>
@@ -40,7 +50,7 @@ void dymelor_checkpoint_take(struct dymelor_state *self, array_count_t ref_i)
 
 void dymelor_checkpoint_next_force_full(struct dymelor_state *self)
 {
-	(void) self;
+	(void)self;
 	// todo: support incremental checkpointing properly
 }
 
@@ -191,7 +201,7 @@ void dymelor_free(struct dymelor_state *self, void *ptr)
 
 void dymelor_dirty_mark(struct dymelor_state *self, void *base, int size)
 {
-	(void)self, (void) size;
+	(void)self, (void)size;
 	// FIXME: check base belongs to the LP memory allocator
 	unsigned char *p = base;
 	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
@@ -206,7 +216,7 @@ void clean_buffers_on_gvt(struct dymelor_state *state, simtime_t time_barrier)
 {
 	// The first NUM_AREAS malloc_areas are placed according to their chunks' sizes. The exceeding malloc_areas can
 	// be compacted
-	(void) time_barrier;
+	(void)time_barrier;
 	for(unsigned i = 0; i < NUM_AREAS; ++i) {
 		struct dymelor_area *m_area = state->areas[i];
 		if(m_area == NULL)

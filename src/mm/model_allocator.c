@@ -1,3 +1,13 @@
+/**
+ * @file mm/model_allocator.c
+ *
+ * @brief Memory management functions for simulation models
+ *
+ * Memory management functions for simulation models
+ *
+ * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <mm/model_allocator.h>
 
 #include <arch/timer.h>
