@@ -21,7 +21,6 @@
 
 /// This structure let DyMeLoR handle one malloc area (for serving given-size memory requests)
 struct dymelor_area {
-	simtime_t last_access;
 	struct dymelor_area *next;
 	block_bitmap *use_bitmap;
 	block_bitmap *core_bitmap;

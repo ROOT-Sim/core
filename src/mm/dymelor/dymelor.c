@@ -98,7 +98,6 @@ static struct dymelor_area *malloc_area_new(unsigned chunk_size_exp, uint_least3
 	area->alloc_chunks = 0;
 	area->core_chunks = 0;
 	area->last_chunk = 0;
-	area->last_access = -1;
 	area->chk_size_exp = chunk_size_exp;
 	area->use_bitmap = area->area + (num_chunks << chunk_size_exp);
 	area->core_bitmap = area->use_bitmap + bitmap_required_size(num_chunks);
@@ -148,7 +147,6 @@ void *rs_malloc(size_t req_size)
 
 	bitmap_set(m_area->use_bitmap, m_area->last_chunk);
 	bitmap_set(m_area->core_bitmap, m_area->last_chunk);
-	// m_area->last_access = lvt(current);
 	++m_area->alloc_chunks;
 	++m_area->core_chunks;
 	uint_least32_t offset = m_area->last_chunk << size_exp;
@@ -220,8 +218,6 @@ void rs_free(void *ptr)
 		m_area->dirty_chunks--;
 	}
 #endif
-
-	// m_area->last_access = lvt(current);
 
 	if(idx < m_area->last_chunk)
 		m_area->last_chunk = idx;

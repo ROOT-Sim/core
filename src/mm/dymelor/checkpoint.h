@@ -5,8 +5,9 @@
 #include <stdint.h>
 
 struct dymelor_ctx_checkpoint {
+	uint_least32_t used_mem;
+	uint_least32_t approx_mem;
 	bool approximated;
-	unsigned area_cnt;
 	unsigned char data[];
 };
 
