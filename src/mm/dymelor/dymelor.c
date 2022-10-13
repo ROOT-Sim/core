@@ -99,7 +99,6 @@ static struct dymelor_area *malloc_area_new(unsigned chunk_size_exp, uint_least3
 	area->alloc_chunks = 0;
 	area->dirty_chunks = 0;
 	area->last_chunk = 0;
-	area->last_access = -1;
 	area->chk_size_exp = chunk_size_exp;
 	area->use_bitmap = area->area + (num_chunks << chunk_size_exp);
 	area->dirty_bitmap = area->use_bitmap + bitmap_size;
@@ -130,7 +129,6 @@ void *dymelor_alloc(struct dymelor_state *self, size_t req_size)
 	}
 
 	if(unlikely(m_area == NULL)) {
-		// Allocate a new malloc area
 		*m_area_p = malloc_area_new(size_exp, num_chunks);
 		m_area = *m_area_p;
 	}
@@ -139,7 +137,6 @@ void *dymelor_alloc(struct dymelor_state *self, size_t req_size)
 		m_area->last_chunk++;
 
 	bitmap_set(m_area->use_bitmap, m_area->last_chunk);
-	// m_area->last_access = lvt(current);
 	++m_area->alloc_chunks;
 	self->used_mem += 1U << size_exp;
 	uint_least32_t offset = m_area->last_chunk << size_exp;
@@ -193,8 +190,6 @@ void dymelor_free(struct dymelor_state *self, void *ptr)
 	}
 #endif
 
-	// m_area->last_access = lvt(current);
-
 	if(idx < m_area->last_chunk)
 		m_area->last_chunk = idx;
 }
@@ -202,33 +197,13 @@ void dymelor_free(struct dymelor_state *self, void *ptr)
 void dymelor_dirty_mark(struct dymelor_state *self, void *base, int size)
 {
 	(void)self, (void)size;
-	// FIXME: check base belongs to the LP memory allocator
+	// FIXME: check base belongs to the LP memory allocator; doing this efficiently requires DyMeLoR memory areas to
+	//        come from the same underlying allocator (maybe use a large grained buddy system underneath)
 	unsigned char *p = base;
 	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
 	uint_least32_t i = (p - m_area->area) >> m_area->chk_size_exp;
 	if(!bitmap_check(m_area->dirty_bitmap, i)) {
 		bitmap_set(m_area->dirty_bitmap, i);
 		m_area->dirty_chunks++;
-	}
-}
-
-void clean_buffers_on_gvt(struct dymelor_state *state, simtime_t time_barrier)
-{
-	// The first NUM_AREAS malloc_areas are placed according to their chunks' sizes. The exceeding malloc_areas can
-	// be compacted
-	(void)time_barrier;
-	for(unsigned i = 0; i < NUM_AREAS; ++i) {
-		struct dymelor_area *m_area = state->areas[i];
-		if(m_area == NULL)
-			continue;
-
-		struct dymelor_area **m_area_p = &state->areas[i];
-
-		while(m_area->next != NULL) {
-			m_area_p = &m_area->next;
-			m_area = *m_area_p;
-		}
-
-		// todo: free this stuff if empty and safe to delete; requires last_access timestamps
 	}
 }

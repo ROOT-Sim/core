@@ -14,7 +14,7 @@
 
 static size_t compute_log_size(const struct dymelor_state *ctx)
 {
-	size_t ret = sizeof(offsetof(struct dymelor_ctx_checkpoint, data));
+	size_t ret = sizeof(unsigned) + offsetof(struct dymelor_state_checkpoint, data);
 	for(unsigned i = 0; i < NUM_AREAS; ++i) {
 		const struct dymelor_area *area = ctx->areas[i];
 		uint_least32_t num_chunks = MIN_NUM_CHUNKS;
@@ -25,6 +25,8 @@ static size_t compute_log_size(const struct dymelor_state *ctx)
 			ret += bitmap_required_size(num_chunks); // maybe not needed in full checkpoints
 #endif
 			ret += area->alloc_chunks << area->chk_size_exp;
+			ret -= area->alloc_chunks * sizeof(uint_least32_t);
+
 			num_chunks *= 2;
 			area = area->next;
 		}
@@ -32,22 +34,21 @@ static size_t compute_log_size(const struct dymelor_state *ctx)
 	return ret;
 }
 
-struct dymelor_ctx_checkpoint *dymelor_checkpoint_full_take(const struct dymelor_state *ctx)
+struct dymelor_state_checkpoint *dymelor_checkpoint_full_take(const struct dymelor_state *ctx)
 {
-	struct dymelor_ctx_checkpoint *ckpt = mm_alloc(compute_log_size(ctx));
-	unsigned char *restrict ptr = ckpt->data;
-	ckpt->area_cnt = 0;
+	struct dymelor_state_checkpoint *ret = mm_alloc(compute_log_size(ctx));
+	ret->used_mem = ctx->used_mem;
+	struct dymelor_area_checkpoint *ckpt = (struct dymelor_area_checkpoint *)ret->data;
 	for(unsigned i = 0; i < NUM_AREAS; ++i) {
 		const struct dymelor_area *area = ctx->areas[i];
 		uint_least32_t num_chunks = MIN_NUM_CHUNKS;
-		uint_least32_t chunk_size = (1U << (MIN_CHUNK_EXP + i)) - sizeof(uint_least32_t);
+		uint_least32_t chunk_size = (((uint_least32_t)1U) << (MIN_CHUNK_EXP + i)) - sizeof(uint_least32_t);
 		while(area != NULL) {
-			struct dymelor_area_checkpoint *ackpt = (struct dymelor_area_checkpoint *)ptr;
-			ackpt->i = i;
-			ackpt->chunk_cnt = area->alloc_chunks;
+			ckpt->i = i;
+			ckpt->chunk_cnt = area->alloc_chunks;
 			size_t bitmap_size = bitmap_required_size(num_chunks);
-			memcpy(ackpt->data, area->use_bitmap, bitmap_size);
-			ptr = ackpt->data + bitmap_size;
+			memcpy(ckpt->data, area->use_bitmap, bitmap_size);
+			unsigned char *ptr = ckpt->data + bitmap_size;
 
 #define copy_from_area(x)                                                                                              \
 	({                                                                                                             \
@@ -60,46 +61,30 @@ struct dymelor_ctx_checkpoint *dymelor_checkpoint_full_take(const struct dymelor
 
 #undef copy_from_area
 
-			++ckpt->area_cnt;
 			num_chunks *= 2;
 			area = area->next;
+			ckpt = (struct dymelor_area_checkpoint *)ptr;
 		}
 	}
+	ckpt->i = UINT_MAX;
 
-	return ckpt;
+	return ret;
 }
 
-void dymelor_checkpoint_full_restore(struct dymelor_state *ctx, const struct dymelor_ctx_checkpoint *ckpt)
+void dymelor_checkpoint_full_restore(struct dymelor_state *ctx, const struct dymelor_state_checkpoint *state_ckpt)
 {
-	const unsigned char *ptr = ckpt->data;
-	unsigned last_i = UINT_MAX;
-	struct dymelor_area *area = NULL;
-	uint_least32_t num_chunks, chunk_size;
-	unsigned j = ckpt->area_cnt;
-	while(j--) {
-		struct dymelor_area_checkpoint *ackpt = (struct dymelor_area_checkpoint *)ptr;
-		if(last_i != ackpt->i) {
-			if(area != NULL)
-				while(unlikely(area->next != NULL)) {
-					area = area->next;
-					num_chunks *= 2;
-					memset(area->use_bitmap, 0, bitmap_required_size(num_chunks));
-					area->alloc_chunks = 0;
-				}
-
-			num_chunks = MIN_NUM_CHUNKS;
-			last_i = ackpt->i;
-			chunk_size = (1U << (MIN_CHUNK_EXP + last_i)) - sizeof(uint_least32_t);
-			area = ctx->areas[last_i];
-		} else {
-			num_chunks *= 2;
-			area = area->next;
-		}
-
-		area->alloc_chunks = ackpt->chunk_cnt;
-		size_t bitmap_size = bitmap_required_size(num_chunks);
-		memcpy(area->use_bitmap, ackpt->data, bitmap_size);
-		ptr = ackpt->data + bitmap_size;
+	ctx->used_mem = state_ckpt->used_mem;
+	const struct dymelor_area_checkpoint *ckpt = (const struct dymelor_area_checkpoint *)state_ckpt->data;
+	for(unsigned i = 0; i < sizeof(ctx->areas) / sizeof(*ctx->areas); ++i) {
+		struct dymelor_area *area = ctx->areas[i];
+		uint_least32_t num_chunks = MIN_NUM_CHUNKS;
+		if(i == ckpt->i) {
+			uint_least32_t chunk_size = (1U << (MIN_CHUNK_EXP + i)) - sizeof(uint_least32_t);
+			do {
+				area->alloc_chunks = ckpt->chunk_cnt;
+				size_t bitmap_size = bitmap_required_size(num_chunks);
+				memcpy(area->use_bitmap, ckpt->data, bitmap_size);
+				const unsigned char *ptr = ckpt->data + bitmap_size;
 
 #define copy_to_area(x)                                                                                                \
 	({                                                                                                             \
@@ -107,8 +92,51 @@ void dymelor_checkpoint_full_restore(struct dymelor_state *ctx, const struct dym
 		ptr += chunk_size;                                                                                     \
 	})
 
-		bitmap_foreach_set(area->use_bitmap, bitmap_size, copy_to_area);
-
+				bitmap_foreach_set(area->use_bitmap, bitmap_size, copy_to_area);
 #undef copy_to_area
+				num_chunks *= 2;
+				area = area->next;
+				ckpt = (const struct dymelor_area_checkpoint *)ptr;
+			} while(i == ckpt->i);
+		}
+
+		while(area != NULL) {
+			area->alloc_chunks = 0;
+			memset(area->use_bitmap, 0, bitmap_required_size(num_chunks));
+			num_chunks *= 2;
+			area = area->next;
+		}
+	}
+}
+
+void dymelor_checkpoint_trim_to(struct dymelor_state *ctx, const struct dymelor_state_checkpoint *state_ckpt)
+{
+	const struct dymelor_area_checkpoint *ckpt = (const struct dymelor_area_checkpoint *)state_ckpt->data;
+	for(unsigned i = 0; i < sizeof(ctx->areas) / sizeof(*ctx->areas); ++i) {
+		struct dymelor_area **next_area_p = &ctx->areas[i];
+		if(i == ckpt->i) {
+			uint_least32_t chunk_size = (1U << (MIN_CHUNK_EXP + i)) - sizeof(uint_least32_t);
+			uint_least32_t num_chunks = MIN_NUM_CHUNKS;
+			do {
+				struct dymelor_area *area = *next_area_p;
+				area->alloc_chunks = ckpt->chunk_cnt;
+				size_t bitmap_size = bitmap_required_size(num_chunks);
+				memcpy(area->use_bitmap, ckpt->data, bitmap_size);
+				const unsigned char *ptr = ckpt->data + bitmap_size;
+				uint_least32_t set = bitmap_count_set(area->use_bitmap, bitmap_size);
+				ptr += set * chunk_size;
+				num_chunks *= 2;
+				next_area_p = &area->next;
+				ckpt = (const struct dymelor_area_checkpoint *)ptr;
+			} while(i == ckpt->i);
+		}
+
+		struct dymelor_area *area = *next_area_p;
+		*next_area_p = NULL;
+		while(area != NULL) {
+			struct dymelor_area *next_area = area->next;
+			mm_free(area);
+			area = next_area;
+		}
 	}
 }

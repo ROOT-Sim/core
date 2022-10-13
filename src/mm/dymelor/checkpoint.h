@@ -12,8 +12,8 @@
 
 #include <stdint.h>
 
-struct dymelor_ctx_checkpoint {
-	unsigned area_cnt;
+struct dymelor_state_checkpoint {
+	uint_fast32_t used_mem;
 	unsigned char data[];
 };
 
@@ -23,5 +23,9 @@ struct dymelor_area_checkpoint {
 	unsigned char data[];
 };
 
-extern struct dymelor_ctx_checkpoint *dymelor_checkpoint_full_take(const struct dymelor_state *ctx);
-extern void dymelor_checkpoint_full_restore(struct dymelor_state *ctx, const struct dymelor_ctx_checkpoint *ckpt);
+_Static_assert(alignof(struct dymelor_area_checkpoint) <= sizeof(uint_least32_t),
+    "Adjacent checkpoints may not satisfy memory access alignment requirements");
+
+extern struct dymelor_state_checkpoint *dymelor_checkpoint_full_take(const struct dymelor_state *ctx);
+extern void dymelor_checkpoint_full_restore(struct dymelor_state *ctx, const struct dymelor_state_checkpoint *ckpt);
+extern void dymelor_checkpoint_trim_to(struct dymelor_state *ctx, const struct dymelor_state_checkpoint *state_ckpt);

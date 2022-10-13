@@ -117,8 +117,8 @@ typedef unsigned char block_bitmap;
  */
 #define bitmap_count_set(bitmap, bitmap_size)                                                                          \
 	__extension__({                                                                                                \
-		unsigned __i = (bitmap_size) / B_BLOCK_SIZE;                                                           \
-		unsigned __ret = 0;                                                                                    \
+		uint_least32_t __i = (bitmap_size) / B_BLOCK_SIZE;                                                     \
+		uint_least32_t __ret = 0;                                                                              \
 		B_BLOCK_TYPE *__block_b = B_UNION_CAST(bitmap);                                                        \
 		while(__i--) {                                                                                         \
 			__ret += intrinsics_popcount(__block_b[__i]);                                                  \
@@ -149,8 +149,8 @@ typedef unsigned char block_bitmap;
  */
 #define bitmap_first_reset(bitmap, bitmap_size)                                                                        \
 	__extension__({                                                                                                \
-		unsigned __i, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                                 \
-		unsigned __ret = UINT_MAX;                                                                             \
+		uint_least32_t __i, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                           \
+		uint_least32_t __ret = UINT_MAX;                                                                       \
 		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);                                           \
 		for(__i = 0; __i < __blocks; ++__i) {                                                                  \
 			if((__cur_block = ~__block_b[__i])) {                                                          \
@@ -172,7 +172,7 @@ typedef unsigned char block_bitmap;
  */
 #define bitmap_foreach_set(bitmap, bitmap_size, func)                                                                  \
 	__extension__({                                                                                                \
-		unsigned __i, __fnd, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                          \
+		uint_least32_t __i, __fnd, __blocks = (bitmap_size) / B_BLOCK_SIZE;                                    \
 		B_BLOCK_TYPE __cur_block, *__block_b = B_UNION_CAST(bitmap);                                           \
 		for(__i = 0; __i < __blocks; ++__i) {                                                                  \
 			if((__cur_block = __block_b[__i])) {                                                           \

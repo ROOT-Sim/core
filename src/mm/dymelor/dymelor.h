@@ -34,7 +34,6 @@ struct dymelor_area {
 	uint_least32_t dirty_chunks;
 	uint_least32_t last_chunk;
 	unsigned chk_size_exp;
-	simtime_t last_access;
 	block_bitmap *use_bitmap;
 	block_bitmap *dirty_bitmap;
 	struct dymelor_area *next;
@@ -46,7 +45,7 @@ struct dymelor_log {
 	/// The reference index, used to identify this checkpoint
 	array_count_t ref_i;
 	/// A pointer to the actual checkpoint
-	struct dymelor_ctx_checkpoint *c;
+	struct dymelor_state_checkpoint *c;
 };
 
 /// Definition of the memory map
