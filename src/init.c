@@ -120,7 +120,7 @@ int RootsimInit(const struct simulation_configuration *conf)
 	if(global_config.termination_time == 0)
 		global_config.termination_time = SIMTIME_MAX;
 
-	msg_queue_set(MESSAGE_QUEUE_HEAP, MESSAGE_QUEUE_PER_THREAD);
+	msg_queue_set(MESSAGE_QUEUE_NB_SKIP_LIST, MESSAGE_QUEUE_PER_THREAD);
 
 	configuration_done = true;
 

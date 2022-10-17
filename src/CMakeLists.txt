@@ -11,6 +11,11 @@ set(rscore_srcs
         datatypes/queue_policies/msg_queue_per_node.c
         datatypes/queue_policies/msg_queue_per_thread.c
         datatypes/queues/msg_queue_heap.c
+        datatypes/queues/msg_queue_nb_skip_list.c
+        datatypes/queues/msg_queue_nb_skip_list/prioq.c
+        datatypes/queues/msg_queue_nb_skip_list/common.c
+        datatypes/queues/msg_queue_nb_skip_list/gc/gc.c
+        datatypes/queues/msg_queue_nb_skip_list/gc/ptst.c
         datatypes/msg_queue.c
         distributed/control_msg.c
         gvt/fossil.c
