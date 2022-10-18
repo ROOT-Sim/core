@@ -53,6 +53,32 @@
 #include "prioq.h"
 
 
+#define DISABLE_GC 1
+
+#if DISABLE_GC == 1
+#undef critical_exit
+#undef get_marked_ref
+#undef get_unmarked_ref
+#undef is_marked_ref
+#include "gc/portable_defns.h"
+#include "gc/random.h"
+
+#define critical_enter() do{\
+    if ( ptst == NULL ) \
+    {\
+        ptst = (ptst_t *) ALIGNED_ALLOC(sizeof(ptst_t));\
+        if ( ptst == NULL ) exit(1);    \
+        memset(ptst, 0, sizeof(ptst_t));\
+        ptst->gc = NULL;\
+        ptst->count = 1;\
+        ptst->id = __sync_fetch_and_add(&next_id, 1);\
+        rand_init(ptst);\
+    }\
+}while(0)
+#define critical_exit() do{}while(0)
+
+#endif
+
 /* thread state. */
 __thread ptst_t *ptst;
 
@@ -72,8 +98,11 @@ alloc_node()
     int level = __builtin_ctz(r) + 1;
     assert(1 <= level && level <= 32);
 
+  #if DISABLE_GC == 0
     n = gc_alloc(ptst, gc_id[level - 1]);
-    //n = malloc(sizeof(node_t) + (level-1) * sizeof(node_t *));
+  #else
+    n = malloc(sizeof(node_t) + (level-1) * sizeof(node_t *));
+  #endif
     n->level = level;
     n->inserting = 1;
     memset(n->next, 0, level * sizeof(node_t *));
@@ -85,8 +114,11 @@ alloc_node()
 static void 
 free_node(node_t *n)
 {
-    //return;
+  #if DISABLE_GC == 0
     gc_free(ptst, (void *)n, gc_id[(n->level) - 1]);
+  #else
+    (void)n;
+  #endif
 }
 
 
@@ -137,7 +169,7 @@ locate_preds(pq_t * restrict pq, pkey_t k, node_t ** restrict preds, node_t ** r
         assert(x_next != NULL);
 	
         while (
-                x_next->k < k 
+                x_next->k <= k 
                 || is_marked_ref(x_next->next[0])
                 || ((i == 0) && (d) )
                 ) {
@@ -188,9 +220,10 @@ insert(pq_t *pq, pkey_t k, pval_t v)
 
     /* return if key already exists, i.e., is present in a non-deleted
      * node */
-    if (0 && succs[0]->k == k && !is_marked_ref(preds[0]->next[0]) && preds[0]->next[0] == succs[0]) {
+    if (succs[0]->k == k && !is_marked_ref(preds[0]->next[0]) && preds[0]->next[0] == succs[0]) {
         new->inserting = 0;
         free_node(new);
+        printf("SAME K\n");
         goto out;
     }
     new->next[0] = succs[0];
@@ -295,8 +328,58 @@ restructure(pq_t *pq)
 }
 
 
+/*
+ *
+ * PEEK
+ *
+ */
 
 
+pval_t
+peek(pq_t *pq)
+{
+    pval_t   v = NULL;
+    node_t *x, *nxt, *obs_head = NULL, *newhead, *cur;
+    int offset, lvl;
+    
+    newhead = NULL;
+    offset = lvl = 0;
+
+    critical_enter();
+
+    x = pq->head;
+    obs_head = x->next[0];
+
+    do {
+        offset++;
+
+        /* expensive, high probability that this cache line has
+         * been modified */
+        nxt = x->next[0];
+
+        // tail cannot be deleted
+        if (get_unmarked_ref(nxt) == pq->tail) {
+            break;
+        }
+
+        /* Do not allow head to point past a node currently being
+         * inserted. This makes the lock-freedom quite a theoretic
+         * matter. */
+        if (newhead == NULL && x->inserting) newhead = x;
+
+        /* optimization */
+        if (is_marked_ref(nxt)) continue;
+        /* the marker is on the preceding pointer */
+        /* linearisation point deletemin */
+        break;
+    }
+    while ( (x = get_unmarked_ref(nxt)) && is_marked_ref(nxt) );
+
+    v = x->v;
+
+    critical_exit();
+    return v;
+}
 
 
 /* deletemin

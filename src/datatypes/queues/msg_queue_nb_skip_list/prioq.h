@@ -47,9 +47,9 @@ extern void pq_destroy(pq_t *pq);
 extern void insert(pq_t *pq, pkey_t k, pval_t v);
 
 extern pval_t deletemin(pq_t *pq);
+extern pval_t peek(pq_t *pq);
 
 extern void sequential_length(pq_t *pq);
-
 
 extern void _init_allocators(void);
 
