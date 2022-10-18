@@ -81,13 +81,12 @@ void process_fini(void)
 	array_fini(early_antis);
 }
 
-static inline void checkpoint_take(struct process_data *proc_p)
+static inline void checkpoint_take(struct lp_ctx *this_lp)
 {
 	timer_uint t = timer_hr_new();
-	model_allocator_checkpoint_take(array_count(proc_p->p_msgs));
-	stats_take(STATS_CKPT_STATE_SIZE, current_lp->mm_state.used_mem);
+	model_allocator_checkpoint_take(array_count(this_lp->p.p_msgs));
+	stats_take(STATS_CKPT_STATE_SIZE, this_lp->mm_state.used_mem);
 	stats_take(STATS_CKPT, 1);
-	stats_take(STATS_CKPT_STATE_SIZE, current_lp->mm_state.used_mem);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 
 }
@@ -112,7 +111,7 @@ void process_lp_init(void)
 
 	array_push(proc_p->p_msgs, msg);
 	model_allocator_checkpoint_next_force_full();
-	checkpoint_take(proc_p);
+	checkpoint_take(lp);
 }
 
 /**
@@ -343,7 +342,7 @@ void process_msg(void)
 
 	auto_ckpt_register_good(&this_lp->auto_ckpt);
 	if(auto_ckpt_is_needed(&this_lp->auto_ckpt))
-		checkpoint_take(proc_p);
+		checkpoint_take(this_lp);
 
 	termination_on_msg_process(msg->dest_t);
 }
