@@ -5,8 +5,6 @@
 #include <core/core.h>
 #define INTEL
 
-#define MAX_THREADS 128 /* Nobody will ever have more! */
-
 #if defined(SPARC)
 #include "sparc_defns.h"
 #elif defined(INTEL)
