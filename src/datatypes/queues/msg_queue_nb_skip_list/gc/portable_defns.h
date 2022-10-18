@@ -57,6 +57,7 @@ do {                                                                    \
 /*
  * POINTER MARKING
  */
+
 #define get_marked_ref(_p)      ((void *)(((unsigned long)(_p)) | 1))
 #define get_unmarked_ref(_p)    ((void *)(((unsigned long)(_p)) & ~1))
 #define is_marked_ref(_p)       (((unsigned long)(_p)) & 1)

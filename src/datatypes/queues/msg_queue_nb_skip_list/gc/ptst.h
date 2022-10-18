@@ -40,6 +40,7 @@ void critical_enter(void );
 
 /* Iterators */
 extern ptst_t *ptst_list;
+extern unsigned int next_id;
 
 #define ptst_first()  (ptst_list)
 #define ptst_next(_p) ((_p)->next)

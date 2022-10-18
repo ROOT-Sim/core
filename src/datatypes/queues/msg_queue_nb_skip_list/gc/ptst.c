@@ -48,7 +48,7 @@
 
 ptst_t *ptst_list = NULL;
 extern __thread ptst_t *ptst;
-static unsigned int next_id = 0;
+unsigned int next_id = 0;
 
 void
 critical_enter()
