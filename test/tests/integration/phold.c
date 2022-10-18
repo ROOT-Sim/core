@@ -42,7 +42,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, _unused const 
 
 		case LP_INIT:
 			for(int i = 0; i < start_events; i++)
-				ScheduleNewEvent(me, Expent(mean) + lookahead, EVENT, &new_event, sizeof(new_event));
+				ScheduleNewEvent(me, mean * Expent() + lookahead, EVENT, &new_event, sizeof(new_event));
 			break;
 
 		case EVENT:
@@ -50,7 +50,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, _unused const 
 			if(Random() <= p_remote)
 				dest = (lp_id_t)(Random() * NUM_LPS);
 
-			ScheduleNewEvent(dest, now + Expent(mean) + lookahead, EVENT, &new_event, sizeof(new_event));
+			ScheduleNewEvent(dest, now + mean * Expent() + lookahead, EVENT, &new_event, sizeof(new_event));
 			break;
 
 		default:

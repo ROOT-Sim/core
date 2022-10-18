@@ -19,10 +19,6 @@
 struct lib_ctx {
 	/// The current PRNG state
 	uint64_t rng_s[4];
-	/// Normal deviates are computed in pairs; this member keeps the second generated pair
-	double unif;
-	/// This flag tells whether unif member is keeping a valid deviate
-	bool has_normal;
 	/// The pointer set by the model with the SetState() API call
 	void *state_s;
 };

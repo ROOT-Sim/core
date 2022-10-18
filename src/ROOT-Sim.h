@@ -95,12 +95,14 @@ extern void *rs_realloc(void *ptr, size_t req_size);
 
 extern double Random(void);
 extern uint64_t RandomU64(void);
-extern double Expent(double mean);
-extern double Normal(void);
+extern double Expent(void);
+struct normal_deviates {
+	double d1, d2;
+};
+extern struct normal_deviates Normal(void);
 extern int RandomRange(int min, int max);
 extern int RandomRangeNonUniform(int x, int min, int max);
 extern double Gamma(unsigned ia);
-extern double Poisson(void);
 extern unsigned Zipf(double skew, unsigned limit);
 
 
