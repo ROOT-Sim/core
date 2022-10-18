@@ -13,7 +13,6 @@
 
 #include <lp/lp.h>
 
-#include <limits.h>
 #include <stdio.h>
 
 static int aux_ks_test(_unused void *_)

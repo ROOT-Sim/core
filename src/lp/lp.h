@@ -20,8 +20,6 @@
 
 /// A complete LP context
 struct lp_ctx {
-	/// ID of the current LP
-	lp_id_t id;
 	/// The termination time of this LP, handled by the termination module
 	simtime_t termination_t;
 	/// The additional libraries context of this LP
