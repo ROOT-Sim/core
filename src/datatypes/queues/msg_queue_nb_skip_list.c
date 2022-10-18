@@ -28,15 +28,14 @@ static void msg_queue_nb_skip_list_alloc(queue_mem_block *ctx, queue_mem_block *
 static void msg_queue_nb_skip_list_free(queue_mem_block *ctx, queue_mem_block *q)
 {
 	(void)ctx;
-	//pq_destroy((pq_t*)q);
+	pq_destroy((pq_t*)q);
 
 }
 
 static simtime_t msg_queue_nb_skip_list_time_peek(queue_mem_block *q)
 {
-	struct lp_msg *m = deletemin((pq_t*)q);
+	struct lp_msg *m = peek((pq_t*)q);
 	simtime_t res = likely(m != NULL) ? m->dest_t : SIMTIME_MAX;
-	if(m)	insert((pq_t*)q, m->dest_t, m);
 	return res;
 }
 
@@ -49,11 +48,12 @@ static void msg_queue_nb_skip_list_insert(queue_mem_block *unused, queue_mem_blo
 static struct lp_msg *msg_queue_nb_skip_list_extract(queue_mem_block *unused, queue_mem_block *q)
 {
 	(void) unused;
-	return deletemin((pq_t*)q);
+	struct lp_msg *res	= deletemin((pq_t*)q);
+	return res;
 }
 
 struct message_queue_datatype nb_skip_list_datatype = {
-    .is_thread_safe = false,
+    .is_thread_safe = true,
     .message_extract = msg_queue_nb_skip_list_extract,
     .queue_time_peek = msg_queue_nb_skip_list_time_peek,
     .message_insert = msg_queue_nb_skip_list_insert,
