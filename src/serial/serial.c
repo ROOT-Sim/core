@@ -10,7 +10,7 @@
 #include <arch/timer.h>
 #include <core/core.h>
 #include <datatypes/heap.h>
-#include <lib/lib.h>
+#include <lib/random/random.h>
 #include <log/stats.h>
 #include <lp/msg.h>
 #include <mm/msg_allocator.h>
@@ -28,7 +28,6 @@ static void serial_simulation_init(void)
 	stats_init();
 	msg_allocator_init();
 	heap_init(queue);
-	lib_global_init();
 
 	lps = mm_alloc(sizeof(*lps) * global_config.lps);
 	memset(lps, 0, sizeof(*lps) * global_config.lps);
@@ -36,12 +35,14 @@ static void serial_simulation_init(void)
 	n_lps_node = global_config.lps;
 
 	for(uint64_t i = 0; i < global_config.lps; ++i) {
-		current_lp = &lps[i];
-		current_lp->termination_t = -1;
+		struct lp_ctx *lp = &lps[i];
+		current_lp = lp;
+		lp->termination_t = -1;
 
 		model_allocator_lp_init();
-		current_lp->lib_ctx = rs_malloc(sizeof(*current_lp->lib_ctx));
-		lib_lp_init();
+		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
+		random_lib_lp_init();
+		lp->state_pointer = NULL;
 
 		struct lp_msg *msg = msg_allocator_pack(i, 0.0, LP_INIT, NULL, 0);
 		msg->raw_flags = 0;
@@ -56,8 +57,7 @@ static void serial_simulation_fini(void)
 {
 	for(uint64_t i = 0; i < global_config.lps; ++i) {
 		current_lp = &lps[i];
-		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lps[i].lib_ctx->state_s);
-		lib_lp_fini();
+		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lps[i].state_pointer);
 		model_allocator_lp_fini();
 	}
 
@@ -67,7 +67,6 @@ static void serial_simulation_fini(void)
 
 	mm_free(lps);
 
-	lib_global_fini();
 	heap_fini(queue);
 	msg_allocator_fini();
 	stats_global_fini();
@@ -88,12 +87,12 @@ static int serial_simulation_run(void)
 
 		timer_uint t = timer_hr_new();
 		global_config.dispatcher(cur_msg->dest, cur_msg->dest_t, cur_msg->m_type, cur_msg->pl, cur_msg->pl_size,
-		    this_lp->lib_ctx->state_s);
+		    this_lp->state_pointer);
 		stats_take(STATS_MSG_PROCESSED_TIME, timer_hr_value(t));
 		stats_take(STATS_MSG_PROCESSED, 1);
 
 		if(unlikely(this_lp->termination_t < 0 &&
-			    global_config.committed(cur_msg->dest, this_lp->lib_ctx->state_s))) {
+			    global_config.committed(cur_msg->dest, this_lp->state_pointer))) {
 			this_lp->termination_t = cur_msg->dest_t;
 			if(unlikely(!--to_terminate)) {
 				stats_on_gvt(cur_msg->dest_t);

@@ -15,7 +15,6 @@
 #include <distributed/mpi.h>
 #include <gvt/gvt.h>
 #include <gvt/termination.h>
-#include <lib/lib.h>
 #include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/auto_ckpt.h>
@@ -91,7 +90,6 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 static void parallel_global_init(void)
 {
 	stats_global_init();
-	lib_global_init();
 	lp_global_init();
 	msg_queue_global_init();
 	termination_global_init();
@@ -102,7 +100,6 @@ static void parallel_global_fini(void)
 {
 	msg_queue_global_fini();
 	lp_global_fini();
-	lib_global_fini();
 	stats_global_fini();
 }
 

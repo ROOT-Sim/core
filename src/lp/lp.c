@@ -92,10 +92,11 @@ void lp_init(void)
 		current_lp = lp;
 
 		model_allocator_lp_init();
-		lp->lib_ctx = rs_malloc(sizeof(*current_lp->lib_ctx));
+		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
+		random_lib_lp_init();
+		lp->state_pointer = NULL;
 
 		msg_queue_lp_init();
-		lib_lp_init();
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init();
 		termination_lp_init();
@@ -120,7 +121,6 @@ void lp_fini(void)
 		current_lp = &lps[i];
 
 		process_lp_fini();
-		lib_lp_fini();
 		msg_queue_lp_fini();
 		model_allocator_lp_fini();
 	}
@@ -142,10 +142,10 @@ void lp_on_gvt(simtime_t gvt)
 }
 
 /**
- * @brief Retrieve the user libraries dynamic state of the current LP
- * @return a pointer to the user libraries dynamic state of the current LP
+ * @brief Set the LP simulation state main pointer
+ * @param state The state pointer to be passed to ProcessEvent() for the invoker LP
  */
-struct lib_ctx *lib_ctx_get(void)
+void SetState(void *state)
 {
-	return current_lp->lib_ctx;
+	current_lp->state_pointer = state;
 }

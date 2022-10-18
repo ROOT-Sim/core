@@ -28,12 +28,22 @@ void random_lib_lp_init(void)
 {
 	uint64_t seed = global_config.prng_seed;
 	uint64_t lid = current_lp - lps;
-	struct lib_ctx *ctx = current_lp->lib_ctx;
-	ctx->rng_s[0] = lid;
-	ctx->rng_s[1] = seed;
-	ctx->rng_s[2] = lid;
-	ctx->rng_s[3] = seed;
-	xxtea_encode((uint32_t *)ctx->rng_s, 8, xxtea_seeding_key);
+	struct rng_ctx *ctx = current_lp->rng_ctx;
+	ctx->state[0] = lid;
+	ctx->state[1] = seed;
+	ctx->state[2] = lid;
+	ctx->state[3] = seed;
+	xxtea_encode((uint32_t *)ctx->state, 8, xxtea_seeding_key);
+}
+
+/**
+ * @brief Return a random 64-bit value
+ * @return The random number
+ */
+uint64_t RandomU64(void)
+{
+	struct rng_ctx *ctx = current_lp->rng_ctx;
+	return random_u64(ctx->state);
 }
 
 /**
@@ -42,8 +52,7 @@ void random_lib_lp_init(void)
  */
 double Random(void)
 {
-	struct lib_ctx *ctx = current_lp->lib_ctx;
-	uint64_t u_val = random_u64(ctx->rng_s);
+	uint64_t u_val = RandomU64();
 	if(unlikely(!u_val))
 		return 0.0;
 
@@ -57,16 +66,6 @@ double Random(void)
 
 	memcpy(&ret, &u_val, sizeof(double));
 	return ret;
-}
-
-/**
- * @brief Return a random 64-bit value
- * @return The random number
- */
-uint64_t RandomU64(void)
-{
-	struct lib_ctx *ctx = current_lp->lib_ctx;
-	return random_u64(ctx->rng_s);
 }
 
 /**
