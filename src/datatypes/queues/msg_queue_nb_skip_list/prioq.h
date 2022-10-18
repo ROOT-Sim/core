@@ -3,6 +3,7 @@
 
 #include <core/core.h>
 #include "common.h"
+#include <pthread.h>
 
 typedef simtime_t   pkey_t;
 typedef void         *pval_t;
@@ -13,6 +14,9 @@ typedef void         *pval_t;
 #define SENTINEL_KEYMIN ( 0.0) /* Key value of first dummy node. */
 #define SENTINEL_KEYMAX ( SIMTIME_MAX   ) /* Key value of last dummy node.  */
 
+
+#define DISABLE_GC 1
+#define DEBUG_LOCK 1
 
 typedef struct node_s
 {
@@ -30,6 +34,9 @@ typedef struct
     int    nthreads;
     node_t *head;
     node_t *tail;
+  #if DEBUG_LOCK == 1
+    pthread_spinlock_t debug_lock;
+  #endif 
     char   pad[128];
 } pq_t;
 

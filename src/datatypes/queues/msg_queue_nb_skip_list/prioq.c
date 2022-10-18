@@ -53,7 +53,6 @@
 #include "prioq.h"
 
 
-#define DISABLE_GC 1
 
 #if DISABLE_GC == 1
 #undef critical_exit
@@ -207,6 +206,9 @@ insert(pq_t *pq, pkey_t k, pval_t v)
     node_t *new = NULL, *del = NULL;
     
     assert(SENTINEL_KEYMIN < k && k < SENTINEL_KEYMAX);
+  #if DEBUG_LOCK == 1
+    pthread_spin_lock(&pq->debug_lock);
+  #endif
     critical_enter();
     
     /* Initialise a new node for insertion. */
@@ -272,6 +274,9 @@ insert(pq_t *pq, pkey_t k, pval_t v)
     }
     
  out:
+  #if DEBUG_LOCK == 1
+    pthread_spin_unlock(&pq->debug_lock);
+  #endif
     critical_exit();
 }
 
@@ -344,7 +349,9 @@ peek(pq_t *pq)
     
     newhead = NULL;
     offset = lvl = 0;
-
+  #if DEBUG_LOCK == 1
+    pthread_spin_lock(&pq->debug_lock);
+  #endif
     critical_enter();
 
     x = pq->head;
@@ -377,6 +384,9 @@ peek(pq_t *pq)
 
     v = x->v;
 
+  #if DEBUG_LOCK == 1
+    pthread_spin_unlock(&pq->debug_lock);
+  #endif
     critical_exit();
     return v;
 }
@@ -399,7 +409,9 @@ deletemin(pq_t *pq)
     
     newhead = NULL;
     offset = lvl = 0;
-
+  #if DEBUG_LOCK == 1
+    pthread_spin_lock(&pq->debug_lock);
+  #endif
     critical_enter();
 
     x = pq->head;
@@ -468,6 +480,10 @@ deletemin(pq_t *pq)
         }
     }
  out:
+
+  #if DEBUG_LOCK == 1
+    pthread_spin_unlock(&pq->debug_lock);
+  #endif
     critical_exit();
     return v;
 }
@@ -493,7 +509,7 @@ pq_init(int max_offset)
     h->k = SENTINEL_KEYMIN;
     h->level = NUM_LEVELS;
     t->level = NUM_LEVELS;
-    
+
     for ( i = 0; i < NUM_LEVELS; i++ )
         h->next[i] = t;
 
@@ -501,7 +517,9 @@ pq_init(int max_offset)
     pq->head = h;
     pq->tail = t;
     pq->max_offset = max_offset;
-
+  #if DEBUG_LOCK == 1
+    pthread_spin_init(&pq->debug_lock, PTHREAD_PROCESS_PRIVATE);
+  #endif
     return pq;
 }
 
