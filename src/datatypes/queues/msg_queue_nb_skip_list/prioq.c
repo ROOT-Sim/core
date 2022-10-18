@@ -56,7 +56,7 @@ static int gc_id[NUM_LEVELS];
 
 
 /* initialize new node */
-static node_t *alloc_node(pq_t *q)
+static node_t *alloc_node(void)
 {
 	node_t *n;
 	int level = 1;
@@ -114,7 +114,7 @@ static void free_node(node_t *n)
 static node_t *locate_preds(pq_t *pq, pkey_t k, node_t **preds, node_t **succs)
 {
 	node_t *x, *x_next, *del = NULL;
-	int d = 0, i;
+	int d, i;
 
 	x = pq->head;
 	i = NUM_LEVELS - 1;
@@ -161,7 +161,7 @@ void insert(pq_t *pq, pkey_t k, pval_t v)
 	critical_enter();
 
 	/* Initialise a new node for insertion. */
-	new = alloc_node(pq);
+	new = alloc_node();
 	new->k = k;
 	new->v = v;
 
@@ -408,8 +408,10 @@ void pq_init(pq_t *pq, int max_offset)
 	h->level = NUM_LEVELS;
 	t->level = NUM_LEVELS;
 
-	for(i = 0; i < NUM_LEVELS; i++)
+	for(i = 0; i < NUM_LEVELS; i++) {
 		h->next[i] = t;
+		t->next[i] = NULL;
+	}
 
 	pq->head = h;
 	pq->tail = t;
