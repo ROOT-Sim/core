@@ -14,7 +14,6 @@
  */
 #include <datatypes/msg_queue.h>
 
-#include <core/core.h>
 #include <core/sync.h>
 #include <datatypes/heap.h>
 #include <lp/lp.h>
