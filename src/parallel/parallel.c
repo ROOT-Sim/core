@@ -31,7 +31,6 @@ static void worker_thread_init(rid_t this_rid)
 	msg_queue_init();
 	sync_thread_barrier();
 	lp_init();
-	process_init();
 
 	if(sync_thread_barrier())
 		mpi_node_barrier();
@@ -54,7 +53,6 @@ static void worker_thread_fini(void)
 		mpi_node_barrier();
 	}
 
-	process_fini();
 	lp_fini();
 	msg_queue_fini();
 	sync_thread_barrier();

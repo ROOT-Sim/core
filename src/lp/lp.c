@@ -11,9 +11,7 @@
 #include <lp/lp.h>
 
 #include <datatypes/msg_queue.h>
-#include <mm/mm.h>
 #include <core/sync.h>
-#include <gvt/fossil.h>
 #include <gvt/termination.h>
 
 /// The lowest LP id between the ones hosted on this node
