@@ -286,6 +286,28 @@ static inline bool check_early_anti_messages(struct lp_msg *msg)
 	return false;
 }
 
+static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint32_t last_flags)
+{
+	if(last_flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
+		handle_remote_anti_msg(&lp->p, msg);
+		auto_ckpt_register_bad(&lp->auto_ckpt);
+	} else if(last_flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
+		array_count_t past_i = match_anti_msg(&lp->p, msg);
+		do_rollback(&lp->p, past_i);
+		termination_on_lp_rollback(msg->dest_t);
+		auto_ckpt_register_bad(&lp->auto_ckpt);
+	}
+	msg_allocator_free(msg);
+}
+
+static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
+{
+	array_count_t past_i = match_straggler_msg(&lp->p, msg);
+	do_rollback(&lp->p, past_i);
+	termination_on_lp_rollback(msg->dest_t);
+	auto_ckpt_register_bad(&lp->auto_ckpt);
+}
+
 /**
  * @brief Extract and process a message, if available
  *
@@ -301,53 +323,38 @@ void process_msg(void)
 
 	gvt_on_msg_extraction(msg->dest_t);
 
-	struct lp_ctx *this_lp = &lps[msg->dest];
-	struct process_data *proc_p = &this_lp->p;
-	current_lp = this_lp;
+	struct lp_ctx *lp = &lps[msg->dest];
+	current_lp = lp;
 
-	if(unlikely(fossil_is_needed(this_lp))) {
-		auto_ckpt_lp_on_gvt(&this_lp->auto_ckpt, this_lp->mm_state.used_mem);
-		fossil_lp_collect(this_lp);
+	if(unlikely(fossil_is_needed(lp))) {
+		auto_ckpt_lp_on_gvt(&lp->auto_ckpt, lp->mm_state.used_mem);
+		fossil_lp_collect(lp);
 	}
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
-
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
-		if(flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
-			handle_remote_anti_msg(proc_p, msg);
-			auto_ckpt_register_bad(&this_lp->auto_ckpt);
-		} else if(flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
-			array_count_t past_i = match_anti_msg(proc_p, msg);
-			do_rollback(proc_p, past_i);
-			termination_on_lp_rollback(msg->dest_t);
-			auto_ckpt_register_bad(&this_lp->auto_ckpt);
-		}
-		msg_allocator_free(msg);
-
+		handle_anti_msg(lp, msg, flags);
 		return;
 	}
 
 	if(unlikely(check_early_anti_messages(msg)))
 		return;
 
-	if(unlikely(array_count(proc_p->p_msgs) && msg_is_before(msg, array_peek(proc_p->p_msgs)))) {
-		array_count_t past_i = match_straggler_msg(proc_p, msg);
-		do_rollback(proc_p, past_i);
-		termination_on_lp_rollback(msg->dest_t);
-		auto_ckpt_register_bad(&this_lp->auto_ckpt);
-	}
+	if(unlikely(array_count(lp->p.p_msgs) && msg_is_before(msg, array_peek(lp->p.p_msgs))))
+		handle_straggler_msg(lp, msg);
+
 #ifndef NDEBUG
 	current_msg = msg;
 #endif
 	timer_uint t = timer_hr_new();
-	global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, this_lp->state_pointer);
+	global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, lp->state_pointer);
 	stats_take(STATS_MSG_PROCESSED_TIME, timer_hr_value(t));
 	stats_take(STATS_MSG_PROCESSED, 1);
-	array_push(proc_p->p_msgs, msg);
+	array_push(lp->p.p_msgs, msg);
 
-	auto_ckpt_register_good(&this_lp->auto_ckpt);
-	if(auto_ckpt_is_needed(&this_lp->auto_ckpt))
-		checkpoint_take(this_lp);
+	auto_ckpt_register_good(&lp->auto_ckpt);
+	if(auto_ckpt_is_needed(&lp->auto_ckpt))
+		checkpoint_take(lp);
 
 	termination_on_msg_process(msg->dest_t);
 }

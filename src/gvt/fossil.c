@@ -9,15 +9,16 @@
 
 #include <gvt/fossil.h>
 
-#include <gvt/gvt.h>
-#include <lp/lp.h>
-#include <lp/process.h>
-#include <mm/model_allocator.h>
 #include <mm/msg_allocator.h>
 
 __thread unsigned fossil_epoch_current;
+/// The value of the last GVT, kept here for easier fossil collection operations
 static __thread simtime_t gvt_current;
 
+/**
+ * @brief Perform fossil collection operations at a given GVT
+ * @param current_gvt The value of the freshly computed GVT
+ */
 void fossil_on_gvt(simtime_t current_gvt)
 {
 	fossil_epoch_current += 1;
@@ -26,9 +27,7 @@ void fossil_on_gvt(simtime_t current_gvt)
 
 /**
  * @brief Perform fossil collection for the data structures of a certain LP
- *
  * @param lp The LP on which to perform fossil collection
- * @param current_gvt The current GVT value
  */
 void fossil_lp_collect(struct lp_ctx *lp)
 {
@@ -39,18 +38,13 @@ void fossil_lp_collect(struct lp_ctx *lp)
 		return;
 
 	simtime_t gvt = gvt_current;
-	const struct lp_msg *msg = array_get_at(proc_p->p_msgs, --past_i);
-	do {
-		if(msg->dest_t < gvt)
-			break;
-		while(1) {
+	for(const struct lp_msg *msg = array_get_at(proc_p->p_msgs, --past_i); msg->dest_t >= gvt;) {
+		do {
 			if(!past_i)
 				return;
 			msg = array_get_at(proc_p->p_msgs, --past_i);
-			if(is_msg_past(msg))
-				break;
-		}
-	} while(1);
+		} while(!is_msg_past(msg));
+	}
 
 	past_i = model_allocator_fossil_lp_collect(&lp->mm_state, past_i + 1);
 
