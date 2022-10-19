@@ -3,7 +3,7 @@
  *
  * @brief LP state management functions
  *
- * LP state management functions
+ * This module contains the main logic for the parallel simulation runtime
  *
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -21,9 +21,13 @@
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 
+/// The flag used in ScheduleNewEvent() to keep track of silent execution
 static __thread bool silent_processing = false;
+/// The vector of early remote anti-messages; i.e. anti-messages delivered before their original counterpart
 static __thread dyn_array(struct lp_msg_remote_match) early_antis;
 #ifndef NDEBUG
+/// The currently processed message
+/** This is not necessary for normal operation, but it's useful in debug */
 static __thread struct lp_msg *current_msg;
 #endif
 
@@ -82,11 +86,17 @@ void process_fini(void)
 	array_fini(early_antis);
 }
 
-static inline void checkpoint_take(struct lp_ctx *this_lp)
+/**
+ * @brief Take a checkpoint of the state of a LP
+ * @param lp the LP to checkpoint
+ *
+ * The actual checkpoint operation is delegated to the model memory allocator.
+ */
+static inline void checkpoint_take(struct lp_ctx *lp)
 {
 	timer_uint t = timer_hr_new();
-	model_allocator_checkpoint_take(array_count(this_lp->p.p_msgs));
-	stats_take(STATS_CKPT_STATE_SIZE, this_lp->mm_state.used_mem);
+	model_allocator_checkpoint_take(array_count(lp->p.p_msgs));
+	stats_take(STATS_CKPT_STATE_SIZE, lp->mm_state.used_mem);
 	stats_take(STATS_CKPT, 1);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 }
@@ -115,7 +125,7 @@ void process_lp_init(void)
 }
 
 /**
- * @brief Deinitializes the LP by calling the model's LP_FINI handler
+ * @brief De-initialize the LP by calling the model's LP_FINI handler
  */
 void process_lp_deinit(void)
 {
@@ -124,7 +134,7 @@ void process_lp_deinit(void)
 }
 
 /**
- * @brief Finalizes the processing module in the current LP
+ * @brief Finalize the processing module in the current LP
  */
 void process_lp_fini(void)
 {
@@ -143,6 +153,14 @@ void process_lp_fini(void)
 	array_fini(proc_p->p_msgs);
 }
 
+/**
+ * @brief Perform silent execution of events
+ * @param proc_p the message processing data for the LP that has to coast forward
+ * @param last_i the index in @a proc_p of the last processed message in the current LP state
+ * @param past_i the target index in @a proc_p of the message to reach with the silent execution operation
+ *
+ * This function implements the coasting forward operation done after a checkpoint has been restored.
+ */
 static inline void silent_execution(const struct process_data *proc_p, array_count_t last_i, array_count_t past_i)
 {
 	if(unlikely(last_i >= past_i))
@@ -165,6 +183,11 @@ static inline void silent_execution(const struct process_data *proc_p, array_cou
 	stats_take(STATS_MSG_SILENT_TIME, timer_hr_value(t));
 }
 
+/**
+ * @brief Send anti-messages
+ * @param proc_p the message processing data for the LP that has to send anti-messages
+ * @param past_i the index in @a proc_p of the last validly processed message
+ */
 static inline void send_anti_messages(struct process_data *proc_p, array_count_t past_i)
 {
 	array_count_t p_cnt = array_count(proc_p->p_msgs);
@@ -198,6 +221,11 @@ static inline void send_anti_messages(struct process_data *proc_p, array_count_t
 	array_count(proc_p->p_msgs) = past_i;
 }
 
+/**
+ * @brief Perform a rollback
+ * @param proc_p the message processing data for the LP that has to rollback
+ * @param past_i the index in @a proc_p of the last validly processed message
+ */
 static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 {
 	timer_uint t = timer_hr_new();
@@ -208,6 +236,12 @@ static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 	silent_execution(proc_p, last_i, past_i);
 }
 
+/**
+ * @brief Find the last valid processed message with respect to a straggler message
+ * @param proc_p the message processing data for the LP
+ * @param s_msg the straggler message
+ * @return the index in @a proc_p of the last validly processed message
+ */
 static inline array_count_t match_straggler_msg(const struct process_data *proc_p, const struct lp_msg *s_msg)
 {
 	array_count_t i = array_count(proc_p->p_msgs) - 1;
@@ -225,6 +259,12 @@ static inline array_count_t match_straggler_msg(const struct process_data *proc_
 	}
 }
 
+/**
+ * @brief Find the last valid processed message with respect to a received anti-message
+ * @param proc_p the message processing data for the LP
+ * @param a_msg the anti-message
+ * @return the index in @a proc_p of the last validly processed message
+ */
 static inline array_count_t match_anti_msg(const struct process_data *proc_p, const struct lp_msg *a_msg)
 {
 	array_count_t past_i = 0;
@@ -241,22 +281,27 @@ static inline array_count_t match_anti_msg(const struct process_data *proc_p, co
 	} while(1);
 }
 
-static inline void handle_remote_anti_msg(struct process_data *proc_p, const struct lp_msg *msg)
+/**
+ * @brief Handle the receipt of a remote anti-message
+ * @param proc_p the message processing data for the LP that has to handle the anti-message
+ * @param a_msg the remote anti-message
+ */
+static inline void handle_remote_anti_msg(struct process_data *proc_p, const struct lp_msg *a_msg)
 {
-	uint32_t m_id = msg->raw_flags >> 2, m_seq = msg->m_seq;
+	uint32_t m_id = a_msg->raw_flags >> 2, m_seq = a_msg->m_seq;
 	array_count_t p_cnt = array_count(proc_p->p_msgs), past_i = 0;
 	while(likely(past_i < p_cnt)) {
 		array_count_t j = past_i;
-		struct lp_msg *amsg = array_get_at(proc_p->p_msgs, j);
-		while(is_msg_sent(amsg))
-			amsg = array_get_at(proc_p->p_msgs, ++j);
+		struct lp_msg *msg = array_get_at(proc_p->p_msgs, j);
+		while(is_msg_sent(msg))
+			msg = array_get_at(proc_p->p_msgs, ++j);
 
-		if(amsg->raw_flags >> 2 == m_id && amsg->m_seq == m_seq) {
+		if(msg->raw_flags >> 2 == m_id && msg->m_seq == m_seq) {
 			// suppresses the re-insertion in the processing queue
-			amsg->raw_flags |= MSG_FLAG_ANTI;
+			msg->raw_flags |= MSG_FLAG_ANTI;
 			do_rollback(proc_p, past_i);
-			termination_on_lp_rollback(msg->dest_t);
-			msg_allocator_free(amsg);
+			termination_on_lp_rollback(a_msg->dest_t);
+			msg_allocator_free(msg);
 			return;
 		}
 
@@ -311,7 +356,7 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
 /**
  * @brief Extract and process a message, if available
  *
- * This function encloses most of the actual simulation logic.
+ * This function encloses most of the actual parallel/distributed simulation logic.
  */
 void process_msg(void)
 {
@@ -327,7 +372,7 @@ void process_msg(void)
 	current_lp = lp;
 
 	if(unlikely(fossil_is_needed(lp))) {
-		auto_ckpt_lp_on_gvt(&lp->auto_ckpt, lp->mm_state.used_mem);
+		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.used_mem);
 		fossil_lp_collect(lp);
 	}
 
