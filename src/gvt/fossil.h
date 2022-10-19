@@ -14,4 +14,9 @@
 #include <core/core.h>
 #include <lp/lp.h>
 
-extern void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt);
+#define fossil_is_needed(lp) ((lp)->fossil_epoch != fossil_epoch_current)
+
+extern __thread unsigned fossil_epoch_current;
+
+extern void fossil_on_gvt(simtime_t current_gvt);
+extern void fossil_lp_collect(struct lp_ctx *lp);

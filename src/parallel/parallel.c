@@ -13,6 +13,7 @@
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
+#include <gvt/fossil.h>
 #include <gvt/gvt.h>
 #include <gvt/termination.h>
 #include <log/stats.h>
@@ -76,7 +77,7 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 		if(unlikely(current_gvt != 0.0)) {
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
-			lp_on_gvt(current_gvt);
+			fossil_on_gvt(current_gvt);
 			msg_allocator_on_gvt(current_gvt);
 			stats_on_gvt(current_gvt);
 		}

@@ -15,13 +15,22 @@
 #include <mm/model_allocator.h>
 #include <mm/msg_allocator.h>
 
+__thread unsigned fossil_epoch_current;
+static __thread simtime_t gvt_current;
+
+void fossil_on_gvt(simtime_t current_gvt)
+{
+	fossil_epoch_current += 1;
+	gvt_current = current_gvt;
+}
+
 /**
  * @brief Perform fossil collection for the data structures of a certain LP
  *
  * @param lp The LP on which to perform fossil collection
  * @param current_gvt The current GVT value
  */
-void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt)
+void fossil_lp_collect(struct lp_ctx *lp)
 {
 	struct process_data *proc_p = &lp->p;
 
@@ -29,9 +38,10 @@ void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt)
 	if(past_i == 0)
 		return;
 
+	simtime_t gvt = gvt_current;
 	const struct lp_msg *msg = array_get_at(proc_p->p_msgs, --past_i);
 	do {
-		if(msg->dest_t < current_gvt)
+		if(msg->dest_t < gvt)
 			break;
 		while(1) {
 			if(!past_i)
@@ -51,4 +61,6 @@ void fossil_lp_on_gvt(struct lp_ctx *lp, simtime_t current_gvt)
 			msg_allocator_free(unmark_msg(msg));
 	}
 	array_truncate_first(proc_p->p_msgs, past_i);
+
+	lp->fossil_epoch = fossil_epoch_current;
 }

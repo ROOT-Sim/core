@@ -26,6 +26,8 @@ struct lp_ctx {
 	struct rng_ctx *rng_ctx;
 	/// The pointer set by the model with the SetState() API call
 	void *state_pointer;
+	/// The housekeeping epoch number
+	unsigned fossil_epoch;
 	/// The automatic checkpointing interval selection data
 	struct auto_ckpt auto_ckpt;
 	/// The message processing context of this LP
@@ -62,6 +64,3 @@ extern void lp_global_fini(void);
 
 extern void lp_init(void);
 extern void lp_fini(void);
-
-extern void lp_on_gvt(simtime_t gvt);
-

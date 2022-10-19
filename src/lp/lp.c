@@ -92,9 +92,10 @@ void lp_init(void)
 		current_lp = lp;
 
 		model_allocator_lp_init();
+		lp->state_pointer = NULL;
+		lp->fossil_epoch = 0;
 		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
 		random_lib_lp_init();
-		lp->state_pointer = NULL;
 
 		msg_queue_lp_init();
 		auto_ckpt_lp_init(&lp->auto_ckpt);
@@ -126,19 +127,6 @@ void lp_fini(void)
 	}
 
 	current_lp = NULL;
-}
-
-/**
- * @brief Do housekeeping operations on the thread-locally hosted LPs after a fresh GVT
- * @param gvt the value of the freshly computed GVT
- */
-void lp_on_gvt(simtime_t gvt)
-{
-	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
-		struct lp_ctx *lp = &lps[i];
-		fossil_lp_on_gvt(lp, gvt);
-		auto_ckpt_lp_on_gvt(&lp->auto_ckpt, lp->mm_state.used_mem);
-	}
 }
 
 /**

@@ -13,6 +13,7 @@
 #include <arch/timer.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
+#include <gvt/fossil.h>
 #include <gvt/gvt.h>
 #include <log/stats.h>
 #include <lp/lp.h>
@@ -88,7 +89,6 @@ static inline void checkpoint_take(struct lp_ctx *this_lp)
 	stats_take(STATS_CKPT_STATE_SIZE, this_lp->mm_state.used_mem);
 	stats_take(STATS_CKPT, 1);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
-
 }
 
 /**
@@ -304,6 +304,11 @@ void process_msg(void)
 	struct lp_ctx *this_lp = &lps[msg->dest];
 	struct process_data *proc_p = &this_lp->p;
 	current_lp = this_lp;
+
+	if(unlikely(fossil_is_needed(this_lp))) {
+		auto_ckpt_lp_on_gvt(&this_lp->auto_ckpt, this_lp->mm_state.used_mem);
+		fossil_lp_collect(this_lp);
+	}
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 
