@@ -261,7 +261,7 @@ static inline array_count_t match_anti_msg(const struct process_data *proc_p, co
 }
 
 /**
- * @brief Handle the receipt of a remote anti-message
+ * @brief Handle the reception of a remote anti-message
  * @param proc_p the message processing data for the LP that has to handle the anti-message
  * @param a_msg the remote anti-message
  */
@@ -272,10 +272,10 @@ static inline void handle_remote_anti_msg(struct process_data *proc_p, struct lp
 
 	uint32_t m_id = a_msg->raw_flags, m_seq = a_msg->m_seq;
 	array_count_t i = array_count(proc_p->p_msgs);
-	struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
+	struct lp_msg *msg;
 	do {
 		if(unlikely(!i)) {
-			// Sadly this is a early remote anti-message
+			// Sadly this is an early remote anti-message
 			a_msg->next = proc_p->early_antis;
 			proc_p->early_antis = a_msg;
 			return;
@@ -298,6 +298,12 @@ static inline void handle_remote_anti_msg(struct process_data *proc_p, struct lp
 	msg_allocator_free(a_msg);
 }
 
+/**
+ * @brief Check if a remote message has already been invalidated by an early remote anti-message
+ * @param proc_p the message processing data of the current LP
+ * @param a_msg the remote message to check
+ * @return true if the message has been matched with an early remote anti-message, false otherwise
+ */
 static inline bool check_early_anti_messages(struct process_data *proc_p, struct lp_msg *msg)
 {
 	uint32_t m_id = msg->raw_flags, m_seq = msg->m_seq;
@@ -316,6 +322,12 @@ static inline bool check_early_anti_messages(struct process_data *proc_p, struct
 	return false;
 }
 
+/**
+ * @brief Handle the reception of an anti-message
+ * @param lp the processing context of the current LP
+ * @param msg the received anti-message
+ * @param last_flags the original value of the message flags before being modified by the current process_msg() call
+ */
 static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint32_t last_flags)
 {
 	if(last_flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
@@ -331,6 +343,11 @@ static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint32_t last
 	msg_allocator_free(msg);
 }
 
+/**
+ * @brief Handle the reception of a straggler message
+ * @param lp the processing context of the current LP
+ * @param msg the received straggler message
+ */
 static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
 {
 	array_count_t past_i = match_straggler_msg(&lp->p, msg);
