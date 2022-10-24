@@ -98,7 +98,7 @@ void *multi_buddy_realloc(struct multi_buddy_state *self, void *ptr, size_t req_
 {
 	struct buddy_state *b = buddy_find_by_address(self, ptr);
 	struct buddy_realloc_res ret = buddy_best_effort_realloc(b, ptr, req_size);
-	if (ret.handled) {
+	if(ret.handled) {
 		self->used_mem += ret.variation;
 		return ptr;
 	}
@@ -130,7 +130,8 @@ void multi_buddy_dirty_mark(struct multi_buddy_state *self, const void *ptr, siz
 void multi_buddy_checkpoint_take(struct multi_buddy_state *self, array_count_t ref_i)
 {
 	size_t buddies_size = offsetof(struct buddy_checkpoint, base_mem) * array_count(self->buddies);
-	struct mm_checkpoint *ckp = mm_alloc(offsetof(struct mm_checkpoint, chkps) + buddies_size + self->used_mem);
+	struct mm_checkpoint *ckp = mm_alloc(
+	    offsetof(struct mm_checkpoint, chkps) + buddies_size + self->used_mem + sizeof(struct buddy_state *));
 	ckp->used_mem = self->used_mem;
 
 	struct mm_log mm_log = {.ref_i = ref_i, .c = ckp};
@@ -140,6 +141,7 @@ void multi_buddy_checkpoint_take(struct multi_buddy_state *self, array_count_t r
 	array_count_t i = array_count(self->buddies);
 	while(i--)
 		buddy_ckp = checkpoint_full_take(array_get_at(self->buddies, i), buddy_ckp);
+	buddy_ckp->orig = NULL;
 }
 
 void multi_buddy_checkpoint_next_force_full(struct multi_buddy_state *self)
@@ -162,7 +164,7 @@ array_count_t multi_buddy_checkpoint_restore(struct multi_buddy_state *self, arr
 	while(k--) {
 		struct buddy_state *b = array_get_at(self->buddies, k);
 		const struct buddy_checkpoint *c = checkpoint_full_restore(array_get_at(self->buddies, k), buddy_ckp);
-		if (unlikely(c == NULL))
+		if(unlikely(c == NULL))
 			buddy_init(b);
 		else
 			buddy_ckp = c;

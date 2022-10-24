@@ -142,15 +142,6 @@ void lp_on_gvt(simtime_t gvt)
 }
 
 /**
- * @brief Compute the id of the currently processed LP
- * @return the id of the current LP
- */
-lp_id_t lp_id_get(void)
-{
-	return current_lp - lps;
-}
-
-/**
  * @brief Retrieve the user libraries dynamic state of the current LP
  * @return a pointer to the user libraries dynamic state of the current LP
  */

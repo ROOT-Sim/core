@@ -231,7 +231,7 @@ struct simulation_configuration {
 	const char *stats_file;
 	/// The checkpointing interval
 	unsigned ckpt_interval;
-	/// The seed used to initialize the pseudo random numbers, 0 for self-seeding
+	/// The seed used to initialize the pseudo random numbers
 	uint64_t prng_seed;
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
