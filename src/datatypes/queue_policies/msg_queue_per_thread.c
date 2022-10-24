@@ -10,8 +10,11 @@
 
 /// The multi-threaded message buffer, implemented as a non-blocking list
 struct msg_buffer {
-	/// The head of the messages list
-	alignas(CACHE_LINE_SIZE) _Atomic(struct lp_msg *) list;
+	union {
+		/// The head of the messages list
+		alignas(CACHE_LINE_SIZE) _Atomic(struct lp_msg *) list;
+		alignas(CACHE_LINE_SIZE) queue_mem_block *qp;
+	};
 };
 
 /// The buffers vector
@@ -35,7 +38,10 @@ void msg_queue_per_thread_init(void)
 {
 	msg_queue_current.context_alloc(&thread_queue_ctx);
 	msg_queue_current.queue_alloc(&thread_queue_ctx, &thread_queue);
-	atomic_store_explicit(&queues[rid].list, NULL, memory_order_relaxed);
+	if(msg_queue_current.is_thread_safe)
+		queues[rid].qp = &thread_queue;
+	else
+		atomic_store_explicit(&queues[rid].list, NULL, memory_order_relaxed);
 }
 
 /**
@@ -59,6 +65,9 @@ void msg_queue_per_thread_fini(void)
 {
 	msg_queue_current.queue_free(&thread_queue_ctx, &thread_queue);
 	msg_queue_current.context_free(&thread_queue_ctx);
+
+	if(msg_queue_current.is_thread_safe)
+		return;
 
 	struct lp_msg *m = atomic_load_explicit(&queues[rid].list, memory_order_relaxed);
 	while(m != NULL) {
@@ -103,7 +112,8 @@ struct lp_msg *msg_queue_per_thread_extract(void)
 void msg_queue_per_thread_insert(struct lp_msg *msg)
 {
 	if (msg_queue_current.is_thread_safe) {
-		msg_queue_current.message_insert(&thread_queue_ctx, &thread_queue, msg);
+		// FIXME: the context is still wrong
+		msg_queue_current.message_insert(&thread_queue_ctx, queues[lid_to_rid(msg->dest)].qp, msg);
 		return;
 	}
 

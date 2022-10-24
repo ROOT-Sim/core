@@ -20,6 +20,8 @@
 #include <datatypes/queue_policies/msg_queue_per_thread.h>
 
 #include <datatypes/queues/msg_queue_heap.h>
+#include <datatypes/queues/msg_queue_nb_skip_list.h>
+#include <datatypes/queues/msg_queue_nb_skip_list/gc/gc.h>
 
 struct message_queue_datatype msg_queue_current;
 static enum message_queue_policy msg_queue_policy_current;
@@ -48,6 +50,11 @@ void msg_queue_set(enum message_queue mq, enum message_queue_policy policy)
 	switch(mq) {
 		case MESSAGE_QUEUE_HEAP:
 			msg_queue_current = heap_datatype;
+			break;
+		case MESSAGE_QUEUE_NB_SKIP_LIST:
+			_init_allocators();
+			msg_queue_current = nb_skip_list_datatype;
+			
 	}
 	msg_queue_policy_current = policy;
 }
