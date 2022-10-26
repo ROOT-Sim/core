@@ -45,7 +45,8 @@ enum message_queue_policy {
 
 enum message_queue {
 	MESSAGE_QUEUE_HEAP,
-	MESSAGE_QUEUE_NB_SKIP_LIST
+	MESSAGE_QUEUE_NB_SKIP_LIST,
+	MESSAGE_QUEUE_NB_LINKED_LIST
 };
 
 extern void msg_queue_set(enum message_queue mq, enum message_queue_policy policy);

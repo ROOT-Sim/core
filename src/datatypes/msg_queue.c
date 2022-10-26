@@ -21,6 +21,7 @@
 
 #include <datatypes/queues/msg_queue_heap.h>
 #include <datatypes/queues/msg_queue_nb_skip_list.h>
+#include <datatypes/queues/msg_queue_nb_linked_list.h>
 #include <datatypes/queues/msg_queue_nb_skip_list/gc/gc.h>
 
 struct message_queue_datatype msg_queue_current;
@@ -54,6 +55,11 @@ void msg_queue_set(enum message_queue mq, enum message_queue_policy policy)
 		case MESSAGE_QUEUE_NB_SKIP_LIST:
 			_init_allocators();
 			msg_queue_current = nb_skip_list_datatype;
+			break;
+		case MESSAGE_QUEUE_NB_LINKED_LIST:
+			_nb_ll_pq_init_allocators();
+			msg_queue_current = nb_linked_list_datatype;
+			break;
 			
 	}
 	msg_queue_policy_current = policy;

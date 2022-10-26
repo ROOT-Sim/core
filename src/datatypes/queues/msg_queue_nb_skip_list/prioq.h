@@ -24,7 +24,6 @@ typedef struct node_s {
 typedef struct {
 	int max_offset;
 	int max_level;
-	int nthreads;
 	node_t *head;
 	node_t *tail;
 } pq_t;
