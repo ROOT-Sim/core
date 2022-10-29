@@ -8,7 +8,7 @@
 #include <lp/lp.h>
 #include <mm/auto_ckpt.h>
 
-#define ALPHA_PREF 1.2
+#define ALPHA_PREF 1.0
 
 static unsigned *phase_cnt;
 
