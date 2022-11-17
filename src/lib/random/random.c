@@ -72,7 +72,7 @@ double Random(void)
  * @brief Return a pair of independent random numbers according to a Standard Normal Distribution
  * @return A pair of random numbers
  */
-struct normal_deviates Normal(void)
+double Normal(void)
 {
 	double v1, v2, rsq;
 	do {
@@ -82,10 +82,7 @@ struct normal_deviates Normal(void)
 	} while(rsq >= 1.0 || rsq == 0);
 
 	double fac = sqrt(-2.0 * log(rsq) / rsq);
-
-	// Perform Box-Muller transformation to get two normal deviates.
-	struct normal_deviates ret = {.d1 = v1 * fac, .d2 = v2 * fac};
-	return ret;
+	return v1 * fac; // also v2 * fac is normally distributed and independent
 }
 
 int RandomRange(int min, int max)
@@ -116,11 +113,11 @@ double Gamma(unsigned ia)
 		return -log(x);
 	}
 
-	double x;
+	double x, y, s;
 	double am = ia - 1;
-	double v1, v2, y, s;
 	// Use rejection method
 	do {
+		double v1, v2;
 		do {
 			v1 = Random();
 			v2 = 2.0 * Random() - 1.0;
@@ -140,7 +137,7 @@ double Gamma(unsigned ia)
  *
  * @return A random number
  */
-double Expent(void)
+double Poisson(void)
 {
 	return -log(1 - Random());
 }
