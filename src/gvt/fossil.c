@@ -13,16 +13,16 @@
 
 __thread unsigned fossil_epoch_current;
 /// The value of the last GVT, kept here for easier fossil collection operations
-static __thread simtime_t gvt_current;
+static __thread simtime_t fossil_gvt_current;
 
 /**
  * @brief Perform fossil collection operations at a given GVT
- * @param current_gvt The value of the freshly computed GVT
+ * @param this_gvt The value of the freshly computed GVT
  */
-void fossil_on_gvt(simtime_t current_gvt)
+void fossil_on_gvt(simtime_t this_gvt)
 {
 	fossil_epoch_current += 1;
-	gvt_current = current_gvt;
+	fossil_gvt_current = this_gvt;
 }
 
 /**
@@ -37,7 +37,7 @@ void fossil_lp_collect(struct lp_ctx *lp)
 	if(past_i == 0)
 		return;
 
-	simtime_t gvt = gvt_current;
+	simtime_t gvt = fossil_gvt_current;
 	for(const struct lp_msg *msg = array_get_at(proc_p->p_msgs, --past_i); msg->dest_t >= gvt;) {
 		do {
 			if(!past_i)
