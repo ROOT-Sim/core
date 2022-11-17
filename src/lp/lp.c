@@ -28,6 +28,10 @@ struct lp_ctx *lps;
 /// The number of LPs hosted on this node
 lp_id_t n_lps_node;
 
+#ifndef NDEBUG
+bool lp_initialized;
+#endif
+
 /**
  * @brief Compute the first index of a partition in a linear space of indexes
  * @param part_id the id of the requested partition
@@ -133,5 +137,11 @@ void lp_fini(void)
  */
 void SetState(void *state)
 {
+#ifndef NDEBUG
+	if(unlikely(lp_initialized)) {
+		logger(LOG_FATAL, "SetState() is being called outside the LP_INIT event!");
+		abort();
+	}
+#endif
 	current_lp->state_pointer = state;
 }

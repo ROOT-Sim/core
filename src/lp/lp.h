@@ -59,6 +59,13 @@ extern __thread uint64_t lid_thread_end;
 extern __thread struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
 
+#ifndef NDEBUG
+extern bool lp_initialized;
+#define lp_initialized_set() (lp_initialized = true)
+#else
+#define lp_initialized_set()
+#endif
+
 extern void lp_global_init(void);
 extern void lp_global_fini(void);
 
