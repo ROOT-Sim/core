@@ -16,6 +16,7 @@
 #include <gvt/fossil.h>
 #include <gvt/gvt.h>
 #include <log/stats.h>
+#include <lp/common.h>
 #include <lp/lp.h>
 #include <mm/auto_ckpt.h>
 #include <mm/msg_allocator.h>
@@ -96,8 +97,7 @@ void process_lp_init(void)
 #ifndef NDEBUG
 	current_msg = msg;
 #endif
-	global_config.dispatcher(lp - lps, 0, LP_INIT, NULL, 0, NULL);
-	stats_take(STATS_MSG_PROCESSED, 1);
+	common_msg_process(lp, msg);
 
 	array_push(lp->p.p_msgs, msg);
 	model_allocator_checkpoint_next_force_full();
@@ -394,10 +394,8 @@ void process_msg(void)
 #ifndef NDEBUG
 	current_msg = msg;
 #endif
-	timer_uint t = timer_hr_new();
-	global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, lp->state_pointer);
-	stats_take(STATS_MSG_PROCESSED_TIME, timer_hr_value(t));
-	stats_take(STATS_MSG_PROCESSED, 1);
+
+	common_msg_process(lp, msg);
 	array_push(lp->p.p_msgs, msg);
 
 	auto_ckpt_register_good(&lp->auto_ckpt);
