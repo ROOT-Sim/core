@@ -129,7 +129,7 @@ void *rs_realloc(void *ptr, size_t req_size)
 	struct mm_state *self = &current_lp->mm_state;
 	struct buddy_state *b = buddy_find_by_address(self, ptr);
 	struct buddy_realloc_res ret = buddy_best_effort_realloc(b, ptr, req_size);
-	if (ret.handled) {
+	if(ret.handled) {
 		self->used_mem += ret.variation;
 		return ptr;
 	}
@@ -163,7 +163,8 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 {
 	struct mm_state *self = &current_lp->mm_state;
 	size_t buddies_size = offsetof(struct buddy_checkpoint, base_mem) * array_count(self->buddies);
-	struct mm_checkpoint *ckp = mm_alloc(offsetof(struct mm_checkpoint, chkps) + buddies_size + self->used_mem);
+	struct mm_checkpoint *ckp = mm_alloc(
+	    offsetof(struct mm_checkpoint, chkps) + buddies_size + self->used_mem + sizeof(struct buddy_state *));
 	ckp->used_mem = self->used_mem;
 
 	struct mm_log mm_log = {.ref_i = ref_i, .c = ckp};
@@ -173,6 +174,7 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 	array_count_t i = array_count(self->buddies);
 	while(i--)
 		buddy_ckp = checkpoint_full_take(array_get_at(self->buddies, i), buddy_ckp);
+	buddy_ckp->orig = NULL;
 }
 
 void model_allocator_checkpoint_next_force_full(void)
@@ -195,7 +197,7 @@ array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
 	while(k--) {
 		struct buddy_state *b = array_get_at(self->buddies, k);
 		const struct buddy_checkpoint *c = checkpoint_full_restore(array_get_at(self->buddies, k), buddy_ckp);
-		if (unlikely(c == NULL))
+		if(unlikely(c == NULL))
 			buddy_init(b);
 		else
 			buddy_ckp = c;

@@ -87,14 +87,6 @@ struct lp_msg {
 	unsigned char extra_pl[];
 };
 
-/// The data structure used to keep track of out-of-order distributed antimessages
-struct lp_msg_remote_match {
-	/// The original anti message raw_flags
-	uint32_t raw_flags;
-	/// The original anti message m_seq
-	uint32_t m_seq;
-};
-
 enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
 
 /**

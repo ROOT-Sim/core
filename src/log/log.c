@@ -10,7 +10,6 @@
  */
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include <arch/io.h>
 #include <log/log.h>
@@ -69,5 +68,5 @@ void vlogger(enum log_level level, char *file, unsigned line, const char *fmt, .
  */
 void log_init(FILE *file)
 {
-	logfile = logfile == NULL ? stdout : file;
+	logfile = file == NULL ? stdout : file;
 }

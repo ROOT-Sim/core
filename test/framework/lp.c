@@ -12,18 +12,18 @@
 
 struct lp_mock {
 	struct lp_ctx lp;
-	struct lib_ctx lp_lib;
+	struct rng_ctx rng_ctx;
 };
 
 static _Thread_local struct lp_mock lp_mock;
 
-struct lp_ctx *test_lp_mock_get()
+struct lp_ctx *test_lp_mock_get(void)
 {
-	lp_mock.lp.lib_ctx = &lp_mock.lp_lib;
-	lp_mock.lp_lib.rng_s[0] = 7319936632422683443ULL;
-	lp_mock.lp_lib.rng_s[1] = 2268344373199366324ULL;
-	lp_mock.lp_lib.rng_s[2] = 3443862242366399137ULL;
-	lp_mock.lp_lib.rng_s[3] = 2366399137344386224ULL;
+	lp_mock.lp.rng_ctx = &lp_mock.rng_ctx;
+	lp_mock.rng_ctx.state[0] = 7319936632422683443ULL;
+	lp_mock.rng_ctx.state[1] = 2268344373199366324ULL;
+	lp_mock.rng_ctx.state[2] = 3443862242366399137ULL;
+	lp_mock.rng_ctx.state[3] = 2366399137344386224ULL;
 
 	return &lp_mock.lp;
 }
