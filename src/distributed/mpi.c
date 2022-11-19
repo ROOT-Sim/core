@@ -12,8 +12,6 @@
 #include <distributed/mpi.h>
 #include <mm/mm.h>
 
-#include <core/core.h>
-#include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <mm/msg_allocator.h>
 

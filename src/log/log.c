@@ -10,7 +10,6 @@
  */
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include <arch/io.h>
 #include <log/log.h>

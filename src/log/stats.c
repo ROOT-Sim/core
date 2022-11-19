@@ -17,7 +17,6 @@
 #include <log/file.h>
 #include <mm/mm.h>
 
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>

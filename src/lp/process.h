@@ -17,6 +17,9 @@
 struct process_data {
 	/// The messages processed in the past by the owner LP
 	dyn_array(struct lp_msg *) p_msgs;
+	/// The list of remote anti-messages delivered before their original counterpart
+	/** Hopefully this is 99.9% of the time empty */
+	struct lp_msg *early_antis;
 };
 
 #define is_msg_sent(msg_p) (((uintptr_t)(msg_p)) & 3U)
@@ -24,9 +27,6 @@ struct process_data {
 #define is_msg_local_sent(msg_p) (((uintptr_t)(msg_p)) & 1U)
 #define is_msg_past(msg_p) (!(((uintptr_t)(msg_p)) & 3U))
 #define unmark_msg(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
-
-extern void process_init(void);
-extern void process_fini(void);
 
 extern void process_lp_init(void);
 extern void process_lp_deinit(void);
