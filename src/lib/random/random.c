@@ -13,22 +13,37 @@
 #include <core/core.h>
 #include <core/intrinsics.h>
 #include <lib/random/xoroshiro.h>
+#include <lib/random/xxtea.h>
+#include <lp/lp.h>
 
 #include <math.h>
-#include "lp/lp.h"
+
+static const uint32_t xxtea_seeding_key[4] = {UINT32_C(0xd0a8f58a), UINT32_C(0x33359424), UINT32_C(0x09baa55b),
+    UINT32_C(0x80e1bdb0)};
 
 /**
- * @brief Initalize the rollbackable RNG library of the current LP
- * @todo Implement a scheme to support deterministic seed automatic selection
- * @bug if global_config.prng_seed is zero, automatic seed initialization should be performed.
+ * @brief Initialize the rollbackable RNG library of the current LP
  */
 void random_lib_lp_init(void)
 {
 	uint64_t seed = global_config.prng_seed;
-	lp_id_t lid = lp_id_get();
-	struct lib_ctx *ctx = lib_ctx_get();
-	random_init(ctx->rng_s, lid, seed);
-	ctx->has_normal = false;
+	uint64_t lid = current_lp - lps;
+	struct rng_ctx *ctx = current_lp->rng_ctx;
+	ctx->state[0] = lid;
+	ctx->state[1] = seed;
+	ctx->state[2] = lid;
+	ctx->state[3] = seed;
+	xxtea_encode((uint32_t *)ctx->state, 8, xxtea_seeding_key);
+}
+
+/**
+ * @brief Return a random 64-bit value
+ * @return The random number
+ */
+uint64_t RandomU64(void)
+{
+	struct rng_ctx *ctx = current_lp->rng_ctx;
+	return random_u64(ctx->state);
 }
 
 /**
@@ -37,8 +52,7 @@ void random_lib_lp_init(void)
  */
 double Random(void)
 {
-	struct lib_ctx *ctx = lib_ctx_get();
-	uint64_t u_val = random_u64(ctx->rng_s);
+	uint64_t u_val = RandomU64();
 	if(unlikely(!u_val))
 		return 0.0;
 
@@ -55,59 +69,20 @@ double Random(void)
 }
 
 /**
- * @brief Return a random 64-bit value
- * @return The random number
- */
-uint64_t RandomU64(void)
-{
-	struct lib_ctx *ctx = lib_ctx_get();
-	return random_u64(ctx->rng_s);
-}
-
-/**
- * Return a random number according to an Exponential distribution.
- * The mean value of the distribution must be passed as the mean value.
- *
- * @param mean Mean value of the distribution
- * @return A random number
- */
-double Expent(double mean)
-{
-	if(unlikely(mean < 0)) {
-		logger(LOG_WARN, "Passed a negative mean into Expent()");
-	}
-	return -mean * log(1 - Random());
-}
-
-/**
- * Return a random number according to a Standard Normal Distribution
- *
- * @return A random number
+ * @brief Return a pair of independent random numbers according to a Standard Normal Distribution
+ * @return A pair of random numbers
  */
 double Normal(void)
 {
-	struct lib_ctx *ctx = lib_ctx_get();
-	if(!ctx->has_normal) {
-		ctx->has_normal = true;
+	double v1, v2, rsq;
+	do {
+		v1 = 2.0 * Random() - 1.0;
+		v2 = 2.0 * Random() - 1.0;
+		rsq = v1 * v1 + v2 * v2;
+	} while(rsq >= 1.0 || rsq == 0);
 
-		double v1, v2, rsq;
-		do {
-			v1 = 2.0 * Random() - 1.0;
-			v2 = 2.0 * Random() - 1.0;
-			rsq = v1 * v1 + v2 * v2;
-		} while(rsq >= 1.0 || rsq == 0);
-
-		double fac = sqrt(-2.0 * log(rsq) / rsq);
-
-		// Perform Box-Muller transformation to get two normal deviates.
-		// Return one and save the other for next time.
-		ctx->unif = v1 * fac;
-		return v2 * fac;
-	} else {
-		ctx->has_normal = false;
-		// A deviate is already available
-		return ctx->unif;
-	}
+	double fac = sqrt(-2.0 * log(rsq) / rsq);
+	return v1 * fac; // also v2 * fac is normally distributed and independent
 }
 
 int RandomRange(int min, int max)
@@ -121,8 +96,8 @@ int RandomRangeNonUniform(int x, int min, int max)
 }
 
 /**
- * Return a number in according to a Gamma Distribution of Integer Order ia,
- * a waiting time to the ia-th event in a Poisson process of unit mean.
+ * @brief Return a number in according to a Gamma Distribution of Integer Order ia
+ * Corresponds to the waiting time to the ia-th event in a Poisson process of unit mean.
  *
  * @author D. E. Knuth
  * @param ia Integer Order of the Gamma Distribution
@@ -130,45 +105,35 @@ int RandomRangeNonUniform(int x, int min, int max)
  */
 double Gamma(unsigned ia)
 {
-	if(unlikely(ia < 1)) {
-		logger(LOG_WARN, "Gamma distribution must have a ia "
-				 "value >= 1. Defaulting to 1...");
-		ia = 1;
-	}
-
-	double x;
-
 	if(ia < 6) {
 		// Use direct method, adding waiting times
-		x = 1.0;
+		double x = 1.0;
 		while(ia--)
 			x *= 1 - Random();
-		x = -log(x);
-	} else {
-		double am = ia - 1;
-		double v1, v2, e, y, s;
-		// Use rejection method
-		do {
-			do {
-				do {
-					v1 = Random();
-					v2 = 2.0 * Random() - 1.0;
-				} while(v1 * v1 + v2 * v2 > 1.0);
-
-				y = v2 / v1;
-				s = sqrt(2.0 * am + 1.0);
-				x = s * y + am;
-			} while(x < 0.0);
-
-			e = (1.0 + y * y) * exp(am * log(x / am) - s * y);
-		} while(Random() > e);
+		return -log(x);
 	}
+
+	double x, y, s;
+	double am = ia - 1;
+	// Use rejection method
+	do {
+		double v1, v2;
+		do {
+			v1 = Random();
+			v2 = 2.0 * Random() - 1.0;
+		} while(v1 * v1 + v2 * v2 > 1.0);
+
+		y = v2 / v1;
+		s = sqrt(2.0 * am + 1.0) * y;
+		x = s + am;
+	} while(x < 0.0 || Random() > (1.0 + y * y) * exp(am * log(x / am) - s));
 
 	return x;
 }
 
 /**
- * Return the waiting time to the next event in a Poisson process of unit mean.
+ * @brief Return a random number according to an Exponential distribution with unit mean
+ * Corresponds to the waiting time to the next event in a Poisson process of unit mean.
  *
  * @return A random number
  */
@@ -178,7 +143,7 @@ double Poisson(void)
 }
 
 /**
- * Return a random sample from a Zipf distribution.
+ * @brief Return a random sample from a Zipf distribution
  * Based on the rejection method by Luc Devroye for sampling:
  * "Non-Uniform Random Variate Generation, page 550, Springer-Verlag, 1986
  *

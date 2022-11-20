@@ -12,9 +12,10 @@
 
 #include <stdint.h>
 
-extern void random_lib_lp_init(void);
+/// The container for the pseudo random number generator context
+struct rng_ctx {
+	/// The current PRNG state
+	uint64_t state[4];
+};
 
-extern double Random(void);
-extern uint64_t RandomU64(void);
-extern double Expent(double mean);
-extern double Normal(void);
+extern void random_lib_lp_init(void);

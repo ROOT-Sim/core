@@ -24,7 +24,7 @@ void retractable_lib_lp_init(void)
 {
 	struct lp_ctx *this_lp = current_lp;
 	this_lp->retractable_pos = ARRAY_COUNT_MAX;
-	this_lp->lib_ctx->retractable_t = SIMTIME_MAX;
+	//this_lp->retractable_t = SIMTIME_MAX;
 }
 
 void retractable_lib_fini(void)
@@ -61,13 +61,13 @@ static void retractable_reschedule(simtime_t t, struct lp_ctx *lp)
 void retractable_rollback_handle(void)
 {
 	struct lp_ctx *this_lp = current_lp;
-	retractable_reschedule(this_lp->lib_ctx->retractable_t, this_lp);
+	//retractable_reschedule(*this_lp->retractable_t, this_lp);
 }
 
 void ScheduleRetractableEvent(simtime_t timestamp)
 {
 	struct lp_ctx *this_lp = current_lp;
-	this_lp->lib_ctx->retractable_t = timestamp;
+	//this_lp->retractable_t = timestamp;
 
 	if(unlikely(process_is_silent()))
 		return;

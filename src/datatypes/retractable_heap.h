@@ -112,8 +112,6 @@
  * For correct operation of the heap you need to always pass the same @a cmp_f
  * both for insertion, extraction and priority change
  */
-
-
 #define rheap_priority_increased(self, cmp_f, upd_f, elem, pos)                                                        \
 	__extension__({                                                                                                \
 		__typeof(array_items(self)) items = array_items(self);                                                 \

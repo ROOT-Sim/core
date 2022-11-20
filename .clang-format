@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: CC0-1.0
 BasedOnStyle: LLVM
+Language: Cpp
 AccessModifierOffset: -8
 AlignAfterOpenBracket: DontAlign
 AlignConsecutiveAssignments: None
@@ -79,7 +80,6 @@ InsertTrailingCommas: None
 JavaScriptQuotes: Double
 JavaScriptWrapImports: true
 KeepEmptyLinesAtTheStartOfBlocks: false
-Language: Cpp
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
 ObjCBinPackProtocolList: Auto
