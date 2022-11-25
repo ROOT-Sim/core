@@ -102,6 +102,11 @@ int RootsimInit(const struct simulation_configuration *conf)
 		return -1;
 	}
 
+	if(unlikely(global_config.mm != MM_MULTI_BUDDY && global_config.mm != MM_DYMELOR)) {
+		fprintf(stderr, "Incorrect model memory allocator choice\n");
+		return -1;
+	}
+
 	if(unlikely(global_config.n_threads > thread_cores_count())) {
 		fprintf(stderr, "Demanding %u cores, which are more than available (%u)\n", global_config.n_threads,
 		    thread_cores_count());

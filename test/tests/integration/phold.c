@@ -71,6 +71,7 @@ struct simulation_configuration conf = {
     .gvt_period = 1000,
     .log_level = LOG_INFO,
     .stats_file = "phold",
+    .mm = MM_DYMELOR,
     .ckpt_interval = 0,
     .prng_seed = 0,
     .core_binding = true,

@@ -93,7 +93,7 @@ void lp_init(void)
 		struct lp_ctx *lp = &lps[i];
 		current_lp = lp;
 
-		model_allocator_lp_init();
+		model_allocator_lp_init(&lp->mm_state);
 		lp->state_pointer = NULL;
 		lp->fossil_epoch = 0;
 		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
@@ -121,11 +121,12 @@ void lp_fini(void)
 	sync_thread_barrier();
 
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
-		current_lp = &lps[i];
+		struct lp_ctx *lp = &lps[i];
+		current_lp = lp;
 
 		process_lp_fini();
 		msg_queue_lp_fini();
-		model_allocator_lp_fini();
+		model_allocator_lp_fini(&lp->mm_state);
 	}
 
 	current_lp = NULL;

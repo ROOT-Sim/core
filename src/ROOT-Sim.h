@@ -206,6 +206,11 @@ extern struct topology *vInitializeTopology(enum topology_geometry geometry, int
 #define InitializeTopology(geometry, ...) vInitializeTopology(geometry, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 /********* TOPOLOGY LIBRARY ************/
 
+enum mm_allocator_choice {
+	MM_MULTI_BUDDY,
+	MM_DYMELOR
+};
+
 /// A set of configurable values used by other modules
 struct simulation_configuration {
 	/// The number of LPs to be used in the simulation
@@ -214,6 +219,8 @@ struct simulation_configuration {
 	unsigned n_threads;
 	/// The target termination logical time. Setting this value to zero means that LVT-based termination is disabled
 	simtime_t termination_time;
+	/// The allocator to use for model's memory
+	enum mm_allocator_choice mm;
 	/// The gvt period expressed in microseconds
 	unsigned gvt_period;
 	/// The logger verbosity level

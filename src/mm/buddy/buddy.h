@@ -1,7 +1,7 @@
 /**
  * @file mm/buddy/buddy.h
  *
- * @brief A Buddy System implementation
+ * @brief A rollbackable Buddy System implementation
  *
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only

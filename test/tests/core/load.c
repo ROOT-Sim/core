@@ -63,6 +63,11 @@ int main(void)
 	test_xf("Start simulation with no CanEnd", run_rootsim, NULL);
 
 	memcpy(&conf, &valid_conf, sizeof(conf));
+	conf.mm = 123;
+	test_xf("Incorrect model allocator choice", init_rootsim, &conf);
+	test_xf("Start simulation with model allocator choice", run_rootsim, NULL);
+
+	memcpy(&conf, &valid_conf, sizeof(conf));
 	test("Initialization", init_rootsim, &conf);
 	test("Dummy simulation", run_rootsim, NULL);
 }

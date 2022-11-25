@@ -1,7 +1,7 @@
 /**
  * @file mm/buddy/ckpt.c
  *
- * @brief Checkpointing capabilities
+ * @brief Checkpointing capabilities for the rollbackable buddy system
  *
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
