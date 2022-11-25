@@ -17,15 +17,17 @@
 
 struct mm_state {
 	union {
+		uint_fast32_t used_mem;
 		struct multi_buddy_state m_mb;
 		struct dymelor_state m_dy;
 	};
 };
-
+_Static_assert(offsetof(struct mm_state, used_mem) == offsetof(struct multi_buddy_state, used_mem),
+    "Can't access used memory field in an homogeneous way!");
 _Static_assert(offsetof(struct multi_buddy_state, used_mem) == offsetof(struct dymelor_state, used_mem),
     "Can't access used memory field in an homogeneous way!");
 
-#define model_allocator_state_size(self) ((self)->m_mb.used_mem)
+#define model_allocator_state_size(self) ((self)->used_mem)
 
 extern void model_allocator_lp_init(struct mm_state *self);
 extern void model_allocator_lp_fini(struct mm_state *self);

@@ -52,17 +52,16 @@ void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i)
 	switch(global_config.mm) {
 		case MM_MULTI_BUDDY:
 			multi_buddy_checkpoint_take(&self->m_mb, ref_i);
-			stats_take(STATS_CKPT_STATE_SIZE, self->m_mb.used_mem);
 			break;
 		case MM_DYMELOR:
 			dymelor_checkpoint_take(&self->m_dy, ref_i);
-			stats_take(STATS_CKPT_STATE_SIZE, self->m_dy.used_mem);
 			break;
 		default:
 			assert(0);
 			__builtin_unreachable();
 	}
 	stats_take(STATS_CKPT, 1);
+	stats_take(STATS_CKPT_STATE_SIZE, self->used_mem);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 }
 

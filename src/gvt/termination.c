@@ -36,7 +36,7 @@ void termination_global_init(void)
 void termination_lp_init(void)
 {
 	struct lp_ctx *this_lp = current_lp;
-	bool term = global_config.committed(this_lp - lps, current_lp->lib_ctx->state_s);
+	bool term = global_config.committed(this_lp - lps, this_lp->state_pointer);
 	lps_to_end += !term;
 	this_lp->termination_t = term * SIMTIME_MAX;
 }
@@ -51,7 +51,7 @@ void termination_on_msg_process(simtime_t msg_time)
 	if(this_lp->termination_t)
 		return;
 
-	bool term = global_config.committed(this_lp - lps, this_lp->lib_ctx->state_s);
+	bool term = global_config.committed(this_lp - lps, this_lp->state_pointer);
 	max_t = term ? max(msg_time, max_t) : max_t;
 	this_lp->termination_t = term * msg_time;
 	lps_to_end -= term;
