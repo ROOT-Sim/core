@@ -6,9 +6,8 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include "application.h"
+#include <tests/integration/correctness/application.h>
 
-#include <stdio.h>
 #include <string.h>
 
 uint32_t crc_update(const uint64_t *buf, size_t n, uint32_t crc);
