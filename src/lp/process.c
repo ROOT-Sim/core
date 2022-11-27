@@ -98,7 +98,7 @@ void process_lp_init(void)
 	current_msg = msg;
 #endif
 	common_msg_process(lp, msg);
-
+	lp->p.bound = 0.0;
 	array_push(lp->p.p_msgs, msg);
 	model_allocator_checkpoint_next_force_full();
 	checkpoint_take(lp);
@@ -377,18 +377,20 @@ void process_msg(void)
 	if(unlikely(fossil_is_needed(lp))) {
 		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.used_mem);
 		fossil_lp_collect(lp);
+		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
 	}
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
 		handle_anti_msg(lp, msg, flags);
+		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
 		return;
 	}
 
 	if(unlikely(flags && lp->p.early_antis && check_early_anti_messages(&lp->p, msg)))
 		return;
 
-	if(unlikely(array_count(lp->p.p_msgs) && msg_is_before(msg, array_peek(lp->p.p_msgs))))
+	if(unlikely(lp->p.bound >= msg->dest_t && msg_is_before(msg, array_peek(lp->p.p_msgs))))
 		handle_straggler_msg(lp, msg);
 
 #ifndef NDEBUG
@@ -396,6 +398,7 @@ void process_msg(void)
 #endif
 
 	common_msg_process(lp, msg);
+	lp->p.bound = msg->dest_t;
 	array_push(lp->p.p_msgs, msg);
 
 	auto_ckpt_register_good(&lp->auto_ckpt);

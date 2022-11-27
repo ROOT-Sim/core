@@ -20,6 +20,9 @@ struct process_data {
 	/// The list of remote anti-messages delivered before their original counterpart
 	/** Hopefully this is 99.9% of the time empty */
 	struct lp_msg *early_antis;
+	/// The current logical time at which this LP is
+	/** This is lazily updated and not always accurate; it's sufficient for faster straggler detection */
+	simtime_t bound;
 };
 
 #define is_msg_sent(msg_p) (((uintptr_t)(msg_p)) & 3U)
