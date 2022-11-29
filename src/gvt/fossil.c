@@ -31,7 +31,7 @@ void fossil_on_gvt(simtime_t this_gvt)
  */
 void fossil_lp_collect(struct lp_ctx *lp)
 {
-	struct process_data *proc_p = &lp->p;
+	struct process_ctx *proc_p = &lp->p;
 
 	array_count_t past_i = array_count(proc_p->p_msgs);
 	if(past_i == 0)

@@ -31,6 +31,7 @@ if(NOT DISABLE_MPI)
 endif()
 
 add_compile_options(-Wall -Wextra -pedantic)
+add_link_options(-Wl,--no-as-needed,-lprofiler,--as-needed)
 
 include(CheckLibraryExists)
 CHECK_LIBRARY_EXISTS(m exp "" HAVE_LIB_M)

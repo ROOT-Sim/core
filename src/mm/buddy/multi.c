@@ -22,18 +22,15 @@
 #define is_log_incremental(l) false
 #endif
 
-void model_allocator_lp_init(void)
+void model_allocator_lp_init(struct mm_state *self)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	array_init(self->buddies);
 	array_init(self->logs);
 	self->full_ckpt_size = offsetof(struct mm_checkpoint, chkps) + sizeof(struct buddy_state *);
 }
 
-void model_allocator_lp_fini(void)
+void model_allocator_lp_fini(struct mm_state *self)
 {
-	struct mm_state *self = &current_lp->mm_state;
-
 	array_count_t i = array_count(self->logs);
 	while(i--)
 		mm_free(array_get_at(self->logs, i).c);
@@ -160,9 +157,8 @@ void __write_mem(const void *ptr, size_t s)
 }
 
 // todo: incremental
-void model_allocator_checkpoint_take(array_count_t ref_i)
+void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	struct mm_checkpoint *ckp = mm_alloc(self->full_ckpt_size);
 	ckp->ckpt_size = self->full_ckpt_size;
 
@@ -176,14 +172,14 @@ void model_allocator_checkpoint_take(array_count_t ref_i)
 	buddy_ckp->orig = NULL;
 }
 
-void model_allocator_checkpoint_next_force_full(void)
+void model_allocator_checkpoint_next_force_full(struct mm_state *self)
 {
+	(void)self;
 	// TODO: force full checkpointing when incremental state saving is enabled
 }
 
-array_count_t model_allocator_checkpoint_restore(array_count_t ref_i)
+array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_count_t ref_i)
 {
-	struct mm_state *self = &current_lp->mm_state;
 	array_count_t i = array_count(self->logs) - 1;
 	while(array_get_at(self->logs, i).ref_i > ref_i)
 		i--;

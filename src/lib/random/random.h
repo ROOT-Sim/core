@@ -10,6 +10,8 @@
  */
 #pragma once
 
+#include <core/core.h>
+
 #include <stdint.h>
 
 /// The container for the pseudo random number generator context
@@ -18,4 +20,4 @@ struct rng_ctx {
 	uint64_t state[4];
 };
 
-extern void random_lib_lp_init(void);
+extern void random_lib_lp_init(lp_id_t lp_id, struct rng_ctx *rng_ctx);

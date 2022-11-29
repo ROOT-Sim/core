@@ -14,7 +14,7 @@
 #include <lp/msg.h>
 
 /// The message processing data produced by the LP
-struct process_data {
+struct process_ctx {
 	/// The messages processed in the past by the owner LP
 	dyn_array(struct lp_msg *) p_msgs;
 	/// The list of remote anti-messages delivered before their original counterpart
@@ -31,8 +31,9 @@ struct process_data {
 #define is_msg_past(msg_p) (!(((uintptr_t)(msg_p)) & 3U))
 #define unmark_msg(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
 
-extern void process_lp_init(void);
-extern void process_lp_deinit(void);
-extern void process_lp_fini(void);
+struct lp_ctx; // forward declaration
+
+extern void process_lp_init(struct lp_ctx *lp);
+extern void process_lp_fini(struct lp_ctx *lp);
 
 extern void process_msg(void);
