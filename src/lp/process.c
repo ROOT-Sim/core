@@ -78,7 +78,7 @@ static inline void checkpoint_take(struct lp_ctx *lp)
 {
 	timer_uint t = timer_hr_new();
 	model_allocator_checkpoint_take(array_count(lp->p.p_msgs));
-	stats_take(STATS_CKPT_STATE_SIZE, lp->mm_state.used_mem);
+	stats_take(STATS_CKPT_SIZE, lp->mm_state.full_ckpt_size);
 	stats_take(STATS_CKPT, 1);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 }
@@ -375,7 +375,7 @@ void process_msg(void)
 	current_lp = lp;
 
 	if(unlikely(fossil_is_needed(lp))) {
-		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.used_mem);
+		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.full_ckpt_size);
 		fossil_lp_collect(lp);
 		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
 	}

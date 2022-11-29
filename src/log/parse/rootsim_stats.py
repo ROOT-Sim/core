@@ -252,7 +252,7 @@ if __name__ == "__main__":
     msgs_cost = stats.thread_metric_get("processed messages time", aggregate_nodes=True, aggregate_gvts=True)
     checkpoints_cost = stats.thread_metric_get("checkpoints time", aggregate_nodes=True, aggregate_gvts=True)
     recoveries_cost = stats.thread_metric_get("recovery time", aggregate_nodes=True, aggregate_gvts=True)
-    avg_log_size = stats.thread_metric_get("checkpoints state size", aggregate_nodes=True, aggregate_gvts=True) / \
+    avg_log_size = stats.thread_metric_get("checkpoints size", aggregate_nodes=True, aggregate_gvts=True) / \
                    checkpoints if checkpoints != 0 else 0
 
     avg_msg_cost = 0 if processed_msgs == 0 else msgs_cost / (processed_msgs * hr_ticks_per_second)
@@ -322,7 +322,7 @@ if __name__ == "__main__":
         f.write(f"AVERAGE EVENT COST......... : {fmt_size(avg_msg_cost, False)}s\n")
         f.write(f"AVERAGE CHECKPOINT COST.... : {fmt_size(avg_checkpoint_cost, False)}s\n")
         f.write(f"AVERAGE RECOVERY COST...... : {fmt_size(avg_recovery_cost, False)}s\n")
-        f.write(f"AVERAGE LOGGED STATE SIZE.. : {fmt_size(avg_log_size)}B\n")
+        f.write(f"AVERAGE LOG SIZE........... : {fmt_size(avg_log_size)}B\n")
         f.write(f"LAST COMMITTED GVT ........ : {last_gvt}\n")
         f.write(f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n")
         f.write(f"SIMULATION TIME SPEED...... : {sim_speed}\n")
