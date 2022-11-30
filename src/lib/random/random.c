@@ -24,16 +24,14 @@ static const uint32_t xxtea_seeding_key[4] = {UINT32_C(0xd0a8f58a), UINT32_C(0x3
 /**
  * @brief Initialize the rollbackable RNG library of the current LP
  */
-void random_lib_lp_init(void)
+void random_lib_lp_init(lp_id_t lp_id, struct rng_ctx *rng_ctx)
 {
 	uint64_t seed = global_config.prng_seed;
-	uint64_t lid = current_lp - lps;
-	struct rng_ctx *ctx = current_lp->rng_ctx;
-	ctx->state[0] = lid;
-	ctx->state[1] = seed;
-	ctx->state[2] = lid;
-	ctx->state[3] = seed;
-	xxtea_encode((uint32_t *)ctx->state, 8, xxtea_seeding_key);
+	rng_ctx->state[0] = lp_id;
+	rng_ctx->state[1] = seed;
+	rng_ctx->state[2] = lp_id;
+	rng_ctx->state[3] = seed;
+	xxtea_encode((uint32_t *)rng_ctx->state, 8, xxtea_seeding_key);
 }
 
 /**

@@ -8,7 +8,6 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-
 #include <test.h>
 
 #include <lp/lp.h>
@@ -144,8 +143,9 @@ int parallel_malloc_test(_unused void *_)
 {
 	unsigned i, b, j, actions, action;
 
-	current_lp = test_lp_mock_get();
-	model_allocator_lp_init();
+	struct lp_ctx *lp = test_lp_mock_get();
+	current_lp = lp;
+	model_allocator_lp_init(&lp->mm_state);
 
 	struct bin_info p;
 	p.size = (1 << (B_BLOCK_EXP + 1));
@@ -186,7 +186,7 @@ int parallel_malloc_test(_unused void *_)
 
 	free(p.m);
 
-	model_allocator_lp_fini();
+	model_allocator_lp_fini(&lp->mm_state);
 
 	return 0;
 }

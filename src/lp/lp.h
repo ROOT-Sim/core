@@ -31,7 +31,7 @@ struct lp_ctx {
 	/// The automatic checkpointing interval selection data
 	struct auto_ckpt auto_ckpt;
 	/// The message processing context of this LP
-	struct process_data p;
+	struct process_ctx p;
 	/// The memory allocator state of this LP
 	struct mm_state mm_state;
 };

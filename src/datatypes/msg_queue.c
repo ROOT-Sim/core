@@ -62,20 +62,6 @@ void msg_queue_init(void)
 }
 
 /**
- * @brief Initialize the message queue for the current LP
- *
- * This is a no-op for this kind of queue.
- */
-void msg_queue_lp_init(void) {}
-
-/**
- * @brief Finalize the message queue for the current LP
- *
- * This is a no-op for this kind of queue.
- */
-void msg_queue_lp_fini(void) {}
-
-/**
  * @brief Finalizes the message queue for the current thread
  */
 void msg_queue_fini(void)

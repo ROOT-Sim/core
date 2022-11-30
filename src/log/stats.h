@@ -47,8 +47,8 @@ enum stats_thread_type {
 	STATS_CKPT,
 	/// The time spent in checkpointing activities
 	STATS_CKPT_TIME,
-	/// The size of the LPs state when checkpointed
-	STATS_CKPT_STATE_SIZE,
+	/// The size of LPs checkpoints
+	STATS_CKPT_SIZE,
 	/// The count of messages processed in coasting forward, i.e. silently executed messages
 	STATS_MSG_SILENT,
 	/// The time taken to carry out silent processing activities

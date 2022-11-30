@@ -20,7 +20,7 @@
 
 #define BUDDY_TEST_SEED 0x5E550UL
 
-static int block_size_test(unsigned b_exp)
+static int block_size_test(struct mm_state *mm, unsigned b_exp)
 {
 	int errs = 0;
 	unsigned block_size = 1 << b_exp;
@@ -43,8 +43,8 @@ static int block_size_test(unsigned b_exp)
 		}
 	}
 
-	model_allocator_checkpoint_next_force_full();
-	model_allocator_checkpoint_take(0);
+	model_allocator_checkpoint_next_force_full(mm);
+	model_allocator_checkpoint_take(mm, 0);
 	b_chk = b_rng;
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
@@ -54,7 +54,7 @@ static int block_size_test(unsigned b_exp)
 		}
 	}
 
-	model_allocator_checkpoint_take(1);
+	model_allocator_checkpoint_take(mm, 1);
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
 		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
@@ -63,26 +63,24 @@ static int block_size_test(unsigned b_exp)
 		}
 	}
 
-	model_allocator_checkpoint_take(2);
+	model_allocator_checkpoint_take(mm, 2);
 
-	model_allocator_checkpoint_restore(1);
+	model_allocator_checkpoint_restore(mm, 1);
 	b_rng = b_chk;
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
-		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
+		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j)
 			errs += allocations[i][j] != rng_random_u(&b_rng);
-		}
 
 		rs_free(allocations[i]);
 	}
 
-	model_allocator_checkpoint_restore(0);
+	model_allocator_checkpoint_restore(mm, 0);
 	rng_init(&b_rng, BUDDY_TEST_SEED);
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
-		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
+		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j)
 			errs += allocations[i][j] != rng_random_u(&b_rng);
-		}
 
 		rs_free(allocations[i]);
 	}
@@ -95,12 +93,12 @@ int model_allocator_test(_unused void *_)
 {
 	int errs = 0;
 
-	current_lp = test_lp_mock_get();
-	model_allocator_lp_init();
+	struct lp_ctx *lp = test_lp_mock_get();
+	current_lp = lp;
+	model_allocator_lp_init(&lp->mm_state);
 
-	for(unsigned j = B_BLOCK_EXP; j < B_TOTAL_EXP; ++j) {
-		errs += block_size_test(j);
-	}
+	for(unsigned j = B_BLOCK_EXP; j < B_TOTAL_EXP; ++j)
+		errs += block_size_test(&lp->mm_state, j);
 
 	errs += rs_malloc(0) != NULL;
 	errs += rs_calloc(0, sizeof(uint64_t)) != NULL;
@@ -111,7 +109,7 @@ int model_allocator_test(_unused void *_)
 	errs += *mem != 0;
 	rs_free(mem);
 
-	model_allocator_lp_fini();
+	model_allocator_lp_fini(&lp->mm_state);
 
 	return errs;
 }

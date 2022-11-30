@@ -91,18 +91,18 @@ void lp_init(void)
 
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
-		current_lp = lp;
 
-		model_allocator_lp_init();
+		model_allocator_lp_init(&lp->mm_state);
 		lp->state_pointer = NULL;
 		lp->fossil_epoch = 0;
-		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
-		random_lib_lp_init();
 
-		msg_queue_lp_init();
+		current_lp = lp;
+		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
+		random_lib_lp_init(i, lp->rng_ctx);
+
 		auto_ckpt_lp_init(&lp->auto_ckpt);
-		process_lp_init();
-		termination_lp_init();
+		process_lp_init(lp);
+		termination_lp_init(lp);
 	}
 }
 
@@ -111,21 +111,11 @@ void lp_init(void)
  */
 void lp_fini(void)
 {
-	if(sync_thread_barrier()) {
-		for(uint64_t i = 0; i < n_lps_node; ++i) {
-			current_lp = &lps[i + lid_node_first];
-			process_lp_deinit();
-		}
-	}
-
-	sync_thread_barrier();
-
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
-		current_lp = &lps[i];
+		struct lp_ctx *lp = &lps[i];
 
-		process_lp_fini();
-		msg_queue_lp_fini();
-		model_allocator_lp_fini();
+		process_lp_fini(lp);
+		model_allocator_lp_fini(&lp->mm_state);
 	}
 
 	current_lp = NULL;

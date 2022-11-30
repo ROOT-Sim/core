@@ -33,27 +33,25 @@ void termination_global_init(void)
 /**
  * @brief Initialize the termination detection module LP-wide
  */
-void termination_lp_init(void)
+void termination_lp_init(struct lp_ctx *lp)
 {
-	struct lp_ctx *this_lp = current_lp;
-	bool term = global_config.committed(this_lp - lps, this_lp->state_pointer);
+	bool term = global_config.committed(lp - lps, lp->state_pointer);
 	lps_to_end += !term;
-	this_lp->termination_t = term * SIMTIME_MAX;
+	lp->termination_t = term * SIMTIME_MAX;
 }
 
 /**
  * @brief Compute termination operations after a new message has been processed
  * @param msg_time the timestamp of the freshly processed message
  */
-void termination_on_msg_process(simtime_t msg_time)
+void termination_on_msg_process(struct lp_ctx *lp, simtime_t msg_time)
 {
-	struct lp_ctx *this_lp = current_lp;
-	if(this_lp->termination_t)
+	if(lp->termination_t)
 		return;
 
-	bool term = global_config.committed(this_lp - lps, this_lp->state_pointer);
+	bool term = global_config.committed(lp - lps, lp->state_pointer);
 	max_t = term ? max(msg_time, max_t) : max_t;
-	this_lp->termination_t = term * msg_time;
+	lp->termination_t = term * msg_time;
 	lps_to_end -= term;
 }
 
@@ -101,11 +99,10 @@ void RootsimStop(void)
  * @brief Compute termination operations after a LP has been rollbacked
  * @param msg_time the timestamp of the straggler or anti message which caused the rollback
  */
-void termination_on_lp_rollback(simtime_t msg_time)
+void termination_on_lp_rollback(struct lp_ctx *lp, simtime_t msg_time)
 {
-	struct lp_ctx *this_lp = current_lp;
-	simtime_t old_t = this_lp->termination_t;
+	simtime_t old_t = lp->termination_t;
 	bool keep = old_t < msg_time || old_t == SIMTIME_MAX;
-	this_lp->termination_t = keep * old_t;
+	lp->termination_t = keep * old_t;
 	lps_to_end += !keep;
 }
