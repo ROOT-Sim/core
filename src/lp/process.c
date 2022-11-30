@@ -218,18 +218,13 @@ static void do_rollback(struct lp_ctx *lp, array_count_t past_i)
 static inline array_count_t match_straggler_msg(const struct process_ctx *proc_p, const struct lp_msg *s_msg)
 {
 	array_count_t i = array_count(proc_p->p_msgs) - 1;
-	const struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
-	while(1) {
-		if(!msg_is_before(s_msg, msg))
-			return i + 1;
-		while(1) {
-			if(!i)
-				return 0;
-			msg = array_get_at(proc_p->p_msgs, --i);
-			if(is_msg_past(msg))
-				break;
-		}
-	}
+	const struct lp_msg *msg;
+	do {
+		if(!i)
+			return 0;
+		msg = array_get_at(proc_p->p_msgs, --i);
+	} while(is_msg_sent(msg) || msg_is_before(s_msg, msg));
+	return i + 1;
 }
 
 /**
