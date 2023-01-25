@@ -9,13 +9,20 @@
 #include <mm/auto_ckpt.h>
 
 #define ALPHA_PREF 1.0
+#define EXPLORATION_THRESHOLD 128
 
 static unsigned *phase_cnt;
+static __thread unsigned explore_approximated;
 
 void approximated_global_init(void)
 {
 	phase_cnt = mm_alloc(sizeof(*phase_cnt) * global_config.lps);
 	memset(phase_cnt, 0, sizeof(*phase_cnt) * global_config.lps);
+}
+
+void approximated_on_gvt(void)
+{
+	explore_approximated = (explore_approximated + 1) % EXPLORATION_THRESHOLD;
 }
 
 void approximated_lp_on_gvt(struct lp_ctx *ctx)
@@ -24,6 +31,11 @@ void approximated_lp_on_gvt(struct lp_ctx *ctx)
 
 	if (ctx->lib_ctx->approximated_mode != APPROXIMATED_MODE_AUTONOMIC)
 		return;
+
+	if(explore_approximated == 0) {
+		ctx->mm_state.is_approximated = true;
+		return;
+	}
 
 	unsigned approx_ckpt_interval = ctx->auto_ckpt.approx_ckpt_interval;
 	unsigned ckpt_interval = ctx->auto_ckpt.ckpt_interval;

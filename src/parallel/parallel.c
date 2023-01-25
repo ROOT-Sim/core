@@ -15,6 +15,7 @@
 #include <distributed/mpi.h>
 #include <gvt/gvt.h>
 #include <gvt/termination.h>
+#include <lib/approximated/approximated.h>
 #include <lib/lib.h>
 #include <log/stats.h>
 #include <lp/lp.h>
@@ -75,6 +76,7 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 
 		simtime_t current_gvt;
 		if(unlikely(current_gvt = gvt_phase_run())) {
+			approximated_on_gvt();
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
 			lp_on_gvt(current_gvt);
