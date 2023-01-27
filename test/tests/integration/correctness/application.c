@@ -22,6 +22,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 		if(event_type == LP_FINI) {
 			if(model_expected_output[me] != state->total_checksum) {
 				puts("[ERROR] Incorrect output!");
+				fflush(stdout);
 				abort();
 			}
 			while(state->head)

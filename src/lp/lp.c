@@ -59,17 +59,11 @@ bool lp_initialized;
  */
 void lp_global_init(void)
 {
-	lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, global_config.lps);
-	n_lps_node = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps) - lid_node_first;
+	lid_node_first = 0;
+	n_lps_node = global_config.lps + global_config.lps_racer;
 
 	lps = mm_alloc(sizeof(*lps) * n_lps_node);
 	lps -= lid_node_first;
-
-	if(n_lps_node < global_config.n_threads) {
-		logger(LOG_WARN, "The simulation will run with %u threads instead of the requested %u", n_lps_node,
-		    global_config.n_threads);
-		global_config.n_threads = n_lps_node;
-	}
 }
 
 /**
@@ -86,9 +80,21 @@ void lp_global_fini(void)
  */
 void lp_init(void)
 {
-	lid_thread_first = partition_start(rid, global_config.n_threads, lid_to_rid, lid_node_first, n_lps_node);
-	lid_thread_end = partition_start(rid + 1, global_config.n_threads, lid_to_rid, lid_node_first, n_lps_node);
+	if(rid < global_config.n_threads) {
+		lid_thread_first =
+		    partition_start(rid, global_config.n_threads, lid_to_rid, 0, global_config.lps);
+		lid_thread_end =
+		    partition_start(rid + 1, global_config.n_threads, lid_to_rid, 0, global_config.lps);
+	} else {
+		rid_t this_rid = rid - global_config.n_threads;
+		lid_thread_first =
+		    partition_start(this_rid, global_config.n_threads_racer, lid_to_rid, 0, global_config.lps_racer);
+		lid_thread_end =
+		    partition_start(this_rid + 1, global_config.n_threads_racer, lid_to_rid, 0, global_config.lps_racer);
 
+		lid_thread_first += global_config.lps;
+		lid_thread_end += global_config.lps;
+	}
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
 

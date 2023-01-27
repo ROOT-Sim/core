@@ -19,6 +19,7 @@
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
+#include <lp/process.h>
 
 #include <memory.h>
 #include <stdatomic.h>
@@ -69,7 +70,7 @@ void gvt_global_init(void)
  */
 void gvt_start_processing(void)
 {
-	gvt_accumulator = SIMTIME_MAX;
+	gvt_accumulator = racer_last();
 	thread_phase = thread_phase_A;
 }
 
@@ -261,9 +262,8 @@ simtime_t gvt_phase_run(void)
 
 	if(unlikely(!rid && !nid)) {
 		timer_uint t = timer_new();
-		if(unlikely(global_config.gvt_period < t - gvt_timer &&
-			    !atomic_load_explicit(&gvt_nodes, memory_order_relaxed))) {
-			gvt_timer = t;
+		if(unlikely(t > gvt_timer && !atomic_load_explicit(&gvt_nodes, memory_order_relaxed))) {
+			gvt_timer = t + global_config.gvt_period;
 			atomic_fetch_add_explicit(&gvt_nodes, n_nodes, memory_order_relaxed);
 			mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 		}

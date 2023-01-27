@@ -114,7 +114,7 @@ void stats_global_init(void)
 
 	if(mem_stat_setup() < 0)
 		logger(LOG_ERROR, "Unable to extract memory statistics!");
-	stats_tmps = mm_alloc(global_config.n_threads * sizeof(*stats_tmps));
+	stats_tmps = mm_alloc((global_config.n_threads + global_config.n_threads_racer) * sizeof(*stats_tmps));
 }
 
 /**
@@ -180,7 +180,7 @@ static void stats_files_send(void)
 	mpi_blocking_data_send(f_buf, f_size, 0);
 	mm_free(f_buf);
 
-	for(rid_t i = 0; i < global_config.n_threads; ++i) {
+	for(rid_t i = 0; i < global_config.n_threads + global_config.n_threads_racer; ++i) {
 		f_buf = file_memory_load(stats_tmps[i], &f_size);
 		f_size = min(INT_MAX, f_size);
 		mpi_blocking_data_send(f_buf, f_size, 0);
@@ -276,7 +276,7 @@ static void stats_file_final_write(FILE *out_f)
 	file_write_chunk(out_f, buf, buf_size);
 	mm_free(buf);
 
-	for(rid_t i = 0; i < global_config.n_threads; ++i) {
+	for(rid_t i = 0; i < global_config.n_threads + global_config.n_threads_racer; ++i) {
 		buf = file_memory_load(stats_tmps[i], &buf_size);
 		file_write_chunk(out_f, &buf_size, sizeof(buf_size));
 		file_write_chunk(out_f, buf, buf_size);
@@ -295,7 +295,7 @@ void stats_global_fini(void)
 	if(global_config.stats_file == NULL)
 		return;
 
-	stats_glob_cur.threads_count = global_config.n_threads;
+	stats_glob_cur.threads_count = global_config.n_threads + global_config.n_threads_racer;
 	stats_glob_cur.lps_count = n_lps_node;
 
 	if(nid) {
@@ -312,7 +312,7 @@ void stats_global_fini(void)
 		}
 	}
 
-	for(rid_t i = 0; i < global_config.n_threads; ++i)
+	for(rid_t i = 0; i < global_config.n_threads + global_config.n_threads_racer; ++i)
 		fclose(stats_tmps[i]);
 
 	mm_free(stats_tmps);

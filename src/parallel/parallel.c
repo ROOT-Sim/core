@@ -40,7 +40,6 @@ static void worker_thread_init(rid_t this_rid)
 
 static void worker_thread_fini(void)
 {
-	gvt_msg_drain();
 
 	if(sync_thread_barrier()) {
 		stats_dump();
@@ -56,16 +55,14 @@ static void worker_thread_fini(void)
 	msg_allocator_fini();
 }
 
-static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
+static void warp_loop(void)
 {
-	worker_thread_init((uintptr_t)rid_arg);
-
 	while(likely(termination_cant_end())) {
 		mpi_remote_msg_handle();
 
 		unsigned i = 64;
 		while(i--)
-			process_msg();
+			warp_process_msg();
 
 		simtime_t current_gvt = gvt_phase_run();
 		if(unlikely(current_gvt != 0.0)) {
@@ -76,6 +73,29 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 			stats_on_gvt(current_gvt);
 		}
 	}
+	gvt_msg_drain();
+}
+
+static void racer_loop(void)
+{
+	while(likely(termination_cant_end())) {
+		mpi_remote_msg_handle();
+
+		unsigned i = 64;
+		while(i--)
+			racer_process_msg();
+
+	}
+}
+
+static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
+{
+	worker_thread_init((uintptr_t)rid_arg);
+
+	if(rid < global_config.n_threads)
+		warp_loop();
+	else
+		racer_loop();
 
 	worker_thread_fini();
 
@@ -104,8 +124,8 @@ int parallel_simulation(void)
 	parallel_global_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
-	thr_id_t thrs[global_config.n_threads];
-	rid_t i = global_config.n_threads;
+	thr_id_t thrs[global_config.n_threads + global_config.n_threads_racer];
+	rid_t i = global_config.n_threads + global_config.n_threads_racer;
 	while(i--) {
 		if(thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
 			logger(LOG_FATAL, "Unable to create threads!");
@@ -117,7 +137,7 @@ int parallel_simulation(void)
 		}
 	}
 
-	i = global_config.n_threads;
+	i = global_config.n_threads + global_config.n_threads_racer;
 	while(i--)
 		thread_wait(thrs[i], NULL);
 

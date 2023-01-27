@@ -41,7 +41,7 @@ struct lp_ctx {
  * @param lp_id the id of the LP
  * @return the id of the node which hosts the LP identified by @p lp_id
  */
-#define lid_to_nid(lp_id) ((nid_t)((lp_id) * n_nodes / global_config.lps))
+#define lid_to_nid(lp_id) 0
 
 /**
  * @brief Compute the id of the thread which hosts a given LP
@@ -50,7 +50,7 @@ struct lp_ctx {
  *
  * Horrible things may happen if @p lp_id is not locally hosted (use #lid_to_nid() to make sure of that!)
  */
-#define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
+#define lid_to_rid_old(lp_id) ((rid_t)(((lp_id)-lid_node_first) * global_config.n_threads / n_lps_node))
 
 extern uint64_t lid_node_first;
 extern __thread uint64_t lid_thread_first;
@@ -58,6 +58,16 @@ extern __thread uint64_t lid_thread_end;
 
 extern __thread struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
+
+static inline rid_t lid_to_rid(lp_id_t lp_id)
+{
+	if(lp_id < global_config.lps) {
+		return lp_id * global_config.n_threads / global_config.lps;
+	} else {
+		return global_config.n_threads +
+		       (lp_id - global_config.lps) * global_config.n_threads_racer / global_config.lps_racer;
+	}
+}
 
 #ifndef NDEBUG
 extern bool lp_initialized;

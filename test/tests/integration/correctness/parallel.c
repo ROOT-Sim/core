@@ -11,11 +11,11 @@
 #include <tests/integration/correctness/application.h>
 
 struct simulation_configuration conf = {
-    .lps = N_LPS,
-    .n_threads = 2,
+    .lps_racer = N_LPS,
+    .n_threads_racer = 2,
     .termination_time = 0.0,
     .gvt_period = 100000,
-    .log_level = LOG_SILENT,
+    .log_level = LOG_INFO,
     .stats_file = NULL,
     .ckpt_interval = 0,
     .prng_seed = 0,

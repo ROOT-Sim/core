@@ -23,7 +23,7 @@
 #include <stdatomic.h>
 
 /// Determine an ordering between two elements in a queue
-#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended(ma.m, mb.m)))
+#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended((ma).m, (mb).m)))
 
 /// An element in the message queue
 struct q_elem {
@@ -49,7 +49,7 @@ static __thread heap_declare(struct q_elem) mqp;
  */
 void msg_queue_global_init(void)
 {
-	queues = mm_aligned_alloc(CACHE_LINE_SIZE, global_config.n_threads * sizeof(*queues));
+	queues = mm_aligned_alloc(CACHE_LINE_SIZE, (global_config.n_threads + global_config.n_threads_racer) * sizeof(*queues));
 }
 
 /**

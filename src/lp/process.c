@@ -11,6 +11,7 @@
 #include <lp/process.h>
 
 #include <arch/timer.h>
+#include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
 #include <gvt/fossil.h>
@@ -207,6 +208,7 @@ static void do_rollback(struct lp_ctx *lp, array_count_t past_i)
 	stats_take(STATS_RECOVERY_TIME, timer_hr_value(t));
 	stats_take(STATS_ROLLBACK, 1);
 	silent_execution(lp, last_i, past_i);
+	auto_ckpt_register_bad(&lp->auto_ckpt);
 }
 
 /**
@@ -246,6 +248,18 @@ static inline array_count_t match_anti_msg(const struct process_ctx *proc_p, con
 			return i + 1;
 	}
 	return i;
+}
+
+static inline array_count_t match_straggler_time(const struct process_ctx *proc_p, simtime_t t)
+{
+	array_count_t i = array_count(proc_p->p_msgs) - 1;
+	const struct lp_msg *msg;
+	do {
+		if(!i)
+			return 0;
+		msg = array_get_at(proc_p->p_msgs, --i);
+	} while(is_msg_sent(msg) || msg->dest_t >= t);
+	return i + 1;
 }
 
 /**
@@ -316,19 +330,16 @@ static inline bool check_early_anti_messages(struct process_ctx *proc_p, struct 
  * @param msg the received anti-message
  * @param last_flags the original value of the message flags before being modified by the current process_msg() call
  */
-static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint32_t last_flags)
+static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, bool is_remote)
 {
-	if(last_flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
+	if(is_remote) {
 		handle_remote_anti_msg(lp, msg);
-		auto_ckpt_register_bad(&lp->auto_ckpt);
-		return;
-	} else if(last_flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
+	} else {
 		array_count_t past_i = match_anti_msg(&lp->p, msg);
 		do_rollback(lp, past_i);
 		termination_on_lp_rollback(lp, msg->dest_t);
-		auto_ckpt_register_bad(&lp->auto_ckpt);
+		msg_allocator_free(msg);
 	}
-	msg_allocator_free(msg);
 }
 
 /**
@@ -341,7 +352,6 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
 	array_count_t past_i = match_straggler_msg(&lp->p, msg);
 	do_rollback(lp, past_i);
 	termination_on_lp_rollback(lp, msg->dest_t);
-	auto_ckpt_register_bad(&lp->auto_ckpt);
 }
 
 /**
@@ -349,7 +359,7 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
  *
  * This function encloses most of the actual parallel/distributed simulation logic.
  */
-void process_msg(void)
+void warp_process_msg(void)
 {
 	struct lp_msg *msg = msg_queue_extract();
 	if(unlikely(!msg)) {
@@ -370,8 +380,12 @@ void process_msg(void)
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
-		handle_anti_msg(lp, msg, flags);
-		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
+		if(unlikely(flags < (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED))) {
+			msg_allocator_free(msg);
+		} else {
+			handle_anti_msg(lp, msg, flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED));
+			lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
+		}
 		return;
 	}
 

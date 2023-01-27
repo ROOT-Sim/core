@@ -208,10 +208,14 @@ extern struct topology *vInitializeTopology(enum topology_geometry geometry, int
 
 /// A set of configurable values used by other modules
 struct simulation_configuration {
-	/// The number of LPs to be used in the simulation
+	/// The total number of LPs to be used in the simulation
 	lp_id_t lps;
-	/// The number of threads to be used in the simulation. If zero, it defaults to the amount of available cores
+	/// The number of LPs to be used in the window racer simulation
+	lp_id_t lps_racer;
+	/// The total number of threads to be used in the simulation. If zero, it defaults to the amount of available cores
 	unsigned n_threads;
+	/// The number of threads to be used in the window racer simulation
+	unsigned n_threads_racer;
 	/// The target termination logical time. Setting this value to zero means that LVT-based termination is disabled
 	simtime_t termination_time;
 	/// The gvt period expressed in microseconds
