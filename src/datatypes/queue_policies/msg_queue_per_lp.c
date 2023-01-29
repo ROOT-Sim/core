@@ -112,9 +112,9 @@ struct lp_msg *msg_queue_per_lp_extract(void)
 			spin_unlock(&lp_queues[i].lock);
 		}
 
-		spin_lock(&lp_queues[min_lp].b);
+		spin_lock(&lp_queues[min_lp].lock);
 		struct lp_msg *ret = msg_queue_current.message_extract(&lp_queue_ctx, &lp_queues[min_lp].b);
-		spin_unlock(&lp_queues[min_lp].b);
+		spin_unlock(&lp_queues[min_lp].lock);
 		return ret;
 	}
 }

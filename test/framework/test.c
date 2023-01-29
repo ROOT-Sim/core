@@ -37,14 +37,15 @@ struct test_case {
 static atomic_flag test_setup_done = ATOMIC_FLAG_INIT;
 static atomic_uint test_success_count;
 static atomic_uint test_total_count;
-static _Thread_local struct test_ctx test_ctx = {.rng = (((test_rng_state)12399196U) << 64) | (test_rng_state)3532456U};
+static _Thread_local struct test_ctx test_ctx = {.assertion_failed = false,
+    .rng = (((test_rng_state)12399196U) << 64) | (test_rng_state)3532456U};
 
 __attribute__((noreturn)) void test_fail(void)
 {
 	longjmp(test_ctx.jmp_buf, 1);
 }
 
-static void test_at_exit()
+static void test_at_exit(void)
 {
 	unsigned tot = atomic_load_explicit(&test_total_count, memory_order_relaxed);
 	unsigned succ = atomic_load_explicit(&test_success_count, memory_order_relaxed);
@@ -54,6 +55,12 @@ static void test_at_exit()
 	printf("PASSED.............: %u / %u\n", succ, tot);
 	printf("%.*s\n", d, "============================================================================");
 	fflush(stdout);
+
+	if(test_ctx.assertion_failed) {
+		printf("One or more top level assertions failed!\n");
+		fflush(stdout);
+		_exit(EXIT_FAILURE);
+	}
 
 	if(tot != succ)
 		_exit(EXIT_FAILURE);
@@ -165,6 +172,9 @@ void test_assert_internal(_Bool condition, const char *file_name, unsigned line_
 	if(condition)
 		return;
 
+	if(!atomic_flag_test_and_set_explicit(&test_setup_done, memory_order_relaxed))
+		atexit(test_at_exit);
+
 	test_ctx.assertion_failed = true;
 	printf("assertion failed at line %u in file %s ", line_count, file_name);
 	fflush(stdout);
@@ -177,7 +187,7 @@ void test_assert_internal(_Bool condition, const char *file_name, unsigned line_
  *
  * This is the per-thread version of lcg_random()
  */
-double test_random_double()
+double test_random_double(void)
 {
 	return rng_random(&test_ctx.rng);
 }
@@ -203,4 +213,9 @@ uint64_t test_random_range(uint64_t n)
 uint64_t test_random_u(void)
 {
 	return rng_random_u(&test_ctx.rng);
+}
+
+unsigned test_parallel_thread_id(void)
+{
+	return test_ctx.tid;
 }

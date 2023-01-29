@@ -72,11 +72,26 @@ msg_queue_define_function(fini)
 msg_queue_define_function(lp_init)
 msg_queue_define_function(lp_fini)
 
+
+/**
+ * @brief Peeks the timestamp of the next message from the queue
+ * @returns the lowest timestamp of the next message to be processed or SIMTIME_MAX is there's no message to process
+ *
+ * This returns the lowest timestamp of the next message to be processed for the current thread. This is calculated in a
+ * precise fashion since this value is used in the gvt calculation.
+ */
 simtime_t msg_queue_time_peek(void)
 {
-	return SIMTIME_MAX;
+	return SIMTIME_MAX; // TODO: decide what to do with this
 }
 
+/**
+ * @brief Extracts the next message from the queue
+ * @returns a pointer to the message to be processed or NULL if there isn't one
+ *
+ * The extracted message is a best effort lowest timestamp for the current thread. Guaranteeing the lowest timestamp may
+ * increase the contention on the queues.
+ */
 struct lp_msg *msg_queue_extract(void)
 {
 	switch(msg_queue_policy_current) {
@@ -91,6 +106,10 @@ struct lp_msg *msg_queue_extract(void)
 	}
 }
 
+/**
+ * @brief Inserts a message in the queue
+ * @param msg the message to insert in the queue
+ */
 void msg_queue_insert(struct lp_msg *msg)
 {
 	switch(msg_queue_policy_current) {

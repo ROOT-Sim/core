@@ -23,9 +23,8 @@ set(rscore_srcs
         gvt/fossil.c
         gvt/gvt.c
         gvt/termination.c
-        lib/lib.c
         lib/random/random.c
-        lib/state/state.c
+        lib/random/xxtea.c
         lib/topology/topology.c
         log/file.c
         log/log.c

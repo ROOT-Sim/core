@@ -24,6 +24,7 @@ extern __attribute__((noreturn)) void test_fail(void);
 extern int test(const char *desc, test_fn test_fn, void *arg);
 extern int test_xf(const char *desc, test_fn test_fn, void *arg);
 extern int test_parallel(const char *desc, test_fn test_fn, void *args, unsigned thread_count);
+extern unsigned test_parallel_thread_id(void);
 
 extern void test_assert_internal(_Bool condition, const char *file_name, unsigned line_count);
 #define test_assert(condition) test_assert_internal(condition, __FILE__, __LINE__)

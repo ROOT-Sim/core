@@ -31,6 +31,15 @@ int test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 	return -(pthread_join(thr, ret) != 0);
 }
 
+void test_thread_sleep(unsigned milliseconds)
+{
+	struct timespec ts;
+	ts.tv_sec = milliseconds / 1000;
+	ts.tv_nsec = (milliseconds % 1000) * 1000000;
+	nanosleep(&ts, NULL);
+}
+
+
 #elif defined(_WIN32)
 
 #define WIN32_LEAN_AND_MEAN
@@ -61,6 +70,11 @@ int test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 		return -(GetExitCodeThread(thr, ret) == 0);
 
 	return 0;
+}
+
+void test_thread_sleep(unsigned milliseconds)
+{
+	Sleep(milliseconds);
 }
 
 #endif
