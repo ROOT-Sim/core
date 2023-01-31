@@ -101,7 +101,7 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
 	worker_thread_init((uintptr_t)rid_arg);
 
-	if(rid < global_config.n_threads_racer)
+	if(rid < global_config.n_threads_racer && !global_config.fake_racer)
 		racer_loop();
 	else
 		warp_loop();
@@ -120,7 +120,7 @@ static void parallel_global_init(void)
 	termination_global_init();
 	gvt_global_init();
 
-	if(!global_config.n_threads_racer)
+	if(!global_config.n_threads_racer || global_config.fake_racer)
 		racer_reset();
 }
 
