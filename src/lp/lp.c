@@ -75,6 +75,11 @@ void lp_global_fini(void)
 	mm_free(lps);
 }
 
+static inline rid_t warp_helper_lid_to_rid(lp_id_t lp_id)
+{
+	return (lp_id) * global_config.n_threads_warp / global_config.lps_warp;
+}
+
 /**
  * @brief Initialize the data structures of the LPs hosted in the calling thread
  */
@@ -88,9 +93,9 @@ void lp_init(void)
 	} else {
 		rid_t this_rid = rid - global_config.n_threads_racer;
 		lid_thread_first =
-		    partition_start(this_rid, global_config.n_threads_warp, lid_to_rid, 0, global_config.lps_warp);
+		    partition_start(this_rid, global_config.n_threads_warp, warp_helper_lid_to_rid, 0, global_config.lps_warp);
 		lid_thread_end =
-		    partition_start(this_rid + 1, global_config.n_threads_warp, lid_to_rid, 0, global_config.lps_warp);
+		    partition_start(this_rid + 1, global_config.n_threads_warp, warp_helper_lid_to_rid, 0, global_config.lps_warp);
 
 		lid_thread_first += global_config.lps_racer;
 		lid_thread_end += global_config.lps_racer;
