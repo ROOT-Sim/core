@@ -28,12 +28,12 @@ static void serial_simulation_init(void)
 	msg_allocator_init();
 	heap_init(queue);
 
-	lps = mm_alloc(sizeof(*lps) * global_config.lps);
-	memset(lps, 0, sizeof(*lps) * global_config.lps);
+	lps = mm_alloc(sizeof(*lps) * (global_config.lps_warp + global_config.n_threads_racer));
+	memset(lps, 0, sizeof(*lps) * (global_config.lps_warp + global_config.n_threads_racer));
 
-	n_lps_node = global_config.lps;
+	n_lps_node = (global_config.lps_warp + global_config.n_threads_racer);
 
-	for(lp_id_t i = 0; i < global_config.lps; ++i) {
+	for(lp_id_t i = 0; i < (global_config.lps_warp + global_config.n_threads_racer); ++i) {
 		struct lp_ctx *lp = &lps[i];
 
 		lp->termination_t = -1;
@@ -62,7 +62,7 @@ static void serial_simulation_init(void)
  */
 static void serial_simulation_fini(void)
 {
-	for(uint64_t i = 0; i < global_config.lps; ++i) {
+	for(uint64_t i = 0; i < global_config.lps_racer + global_config.lps_warp; ++i) {
 		struct lp_ctx *lp = &lps[i];
 		current_lp = lp;
 		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lp->state_pointer);
@@ -85,7 +85,7 @@ static void serial_simulation_fini(void)
 static int serial_simulation_run(void)
 {
 	timer_uint last_vt = timer_new();
-	lp_id_t to_terminate = global_config.lps;
+	lp_id_t to_terminate = global_config.lps_warp + global_config.lps_racer;
 
 	while(likely(!heap_is_empty(queue))) {
 		const struct lp_msg *msg = heap_min(queue);

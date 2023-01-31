@@ -11,8 +11,7 @@
 #include <tests/integration/correctness/application.h>
 
 struct simulation_configuration conf = {
-    .lps = N_LPS,
-    .n_threads = 2,
+    .lps_warp = N_LPS,
     .termination_time = 0.0,
     .gvt_period = 100000,
     .log_level = LOG_SILENT,

@@ -17,7 +17,7 @@
 #endif
 
 #ifndef NUM_THREADS
-#define NUM_THREADS 0
+#define NUM_THREADS 4
 #endif
 
 #define EVENT 1
@@ -26,7 +26,7 @@ struct phold_message {
 	long int dummy_data;
 };
 
-static simtime_t p_remote = 0.25;
+static simtime_t p_remote = 0.35;
 static simtime_t mean = 1.0;
 static simtime_t lookahead = 0.0;
 static int start_events = 1;
@@ -47,7 +47,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, _unused const 
 			break;
 
 		case EVENT:
-			dest = me;
+			dest = 0;
 			if(Random() <= p_remote)
 				dest = (lp_id_t)(Random() * NUM_LPS);
 
@@ -66,10 +66,10 @@ bool CanEnd(_unused lp_id_t me, _unused const void *snapshot)
 }
 
 struct simulation_configuration conf = {
-    .lps = NUM_LPS,
-    .n_threads = NUM_THREADS,
+    .lps_racer = NUM_LPS,
+    .n_threads_racer = NUM_THREADS,
     .termination_time = 1000,
-    .gvt_period = 1000,
+    .gvt_period = 100000,
     .log_level = LOG_INFO,
     .stats_file = "phold",
     .ckpt_interval = 0,

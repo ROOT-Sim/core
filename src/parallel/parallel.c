@@ -85,17 +85,27 @@ static void racer_loop(void)
 		while(i--)
 			racer_process_msg();
 
+		simtime_t current_gvt = gvt_phase_run();
+		if(unlikely(current_gvt != 0.0)) {
+			termination_on_gvt(current_gvt);
+			auto_ckpt_on_gvt();
+			fossil_on_gvt(current_gvt);
+			msg_allocator_on_gvt(current_gvt);
+			stats_on_gvt(current_gvt);
+		}
 	}
+	gvt_msg_drain();
 }
 
 static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
 	worker_thread_init((uintptr_t)rid_arg);
 
-	if(rid < global_config.n_threads)
-		warp_loop();
-	else
+	if(rid < global_config.n_threads_racer)
 		racer_loop();
+	else
+		warp_loop();
+
 
 	worker_thread_fini();
 
@@ -109,6 +119,9 @@ static void parallel_global_init(void)
 	msg_queue_global_init();
 	termination_global_init();
 	gvt_global_init();
+
+	if(!global_config.n_threads_racer)
+		racer_reset();
 }
 
 static void parallel_global_fini(void)
@@ -124,8 +137,8 @@ int parallel_simulation(void)
 	parallel_global_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
-	thr_id_t thrs[global_config.n_threads + global_config.n_threads_racer];
-	rid_t i = global_config.n_threads + global_config.n_threads_racer;
+	thr_id_t thrs[global_config.n_threads_warp + global_config.n_threads_racer];
+	rid_t i = global_config.n_threads_warp + global_config.n_threads_racer;
 	while(i--) {
 		if(thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
 			logger(LOG_FATAL, "Unable to create threads!");
@@ -137,7 +150,7 @@ int parallel_simulation(void)
 		}
 	}
 
-	i = global_config.n_threads + global_config.n_threads_racer;
+	i = global_config.n_threads_warp + global_config.n_threads_racer;
 	while(i--)
 		thread_wait(thrs[i], NULL);
 

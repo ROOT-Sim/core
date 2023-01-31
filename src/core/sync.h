@@ -61,4 +61,3 @@ typedef atomic_flag spinlock_t;
 #define spin_unlock(lck_p) atomic_flag_clear_explicit((lck_p), memory_order_release)
 
 extern bool sync_thread_barrier(void);
-extern bool sync_thread_barrier_racer();

@@ -22,13 +22,13 @@ static bool DummyCanEnd(_unused lp_id_t lid, _unused const void *state)
 }
 
 static struct simulation_configuration conf = {
-    .lps = 0,
+    .lps_warp = 0,
     .dispatcher = NULL,
     .committed = NULL,
 };
 
 static const struct simulation_configuration valid_conf = {
-    .lps = 1,
+    .lps_warp = 1,
     .dispatcher = DummyProcessEvent,
     .committed = DummyCanEnd,
 };
@@ -48,7 +48,7 @@ int main(void)
 	test_xf("Start simulation with no configuration", run_rootsim, NULL);
 
 	memcpy(&conf, &valid_conf, sizeof(conf));
-	conf.lps = 0;
+	conf.lps_warp = 0;
 	test_xf("LPs not set", init_rootsim, &conf);
 	test_xf("Start simulation with no LPs", run_rootsim, NULL);
 

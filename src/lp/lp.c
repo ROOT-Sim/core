@@ -60,7 +60,7 @@ bool lp_initialized;
 void lp_global_init(void)
 {
 	lid_node_first = 0;
-	n_lps_node = global_config.lps + global_config.lps_racer;
+	n_lps_node = global_config.lps_warp + global_config.lps_racer;
 
 	lps = mm_alloc(sizeof(*lps) * n_lps_node);
 	lps -= lid_node_first;
@@ -80,20 +80,20 @@ void lp_global_fini(void)
  */
 void lp_init(void)
 {
-	if(rid < global_config.n_threads) {
+	if(rid < global_config.n_threads_racer) {
 		lid_thread_first =
-		    partition_start(rid, global_config.n_threads, lid_to_rid, 0, global_config.lps);
-		lid_thread_end =
-		    partition_start(rid + 1, global_config.n_threads, lid_to_rid, 0, global_config.lps);
+		    partition_start(rid, global_config.n_threads_racer, lid_to_rid, 0, global_config.lps_racer);
+		lid_thread_end = rid + 1 == global_config.n_threads_racer ? global_config.lps_racer :
+		    partition_start(rid + 1, global_config.n_threads_racer, lid_to_rid, 0, global_config.lps_racer);
 	} else {
-		rid_t this_rid = rid - global_config.n_threads;
+		rid_t this_rid = rid - global_config.n_threads_racer;
 		lid_thread_first =
-		    partition_start(this_rid, global_config.n_threads_racer, lid_to_rid, 0, global_config.lps_racer);
+		    partition_start(this_rid, global_config.n_threads_warp, lid_to_rid, 0, global_config.lps_warp);
 		lid_thread_end =
-		    partition_start(this_rid + 1, global_config.n_threads_racer, lid_to_rid, 0, global_config.lps_racer);
+		    partition_start(this_rid + 1, global_config.n_threads_warp, lid_to_rid, 0, global_config.lps_warp);
 
-		lid_thread_first += global_config.lps;
-		lid_thread_end += global_config.lps;
+		lid_thread_first += global_config.lps_racer;
+		lid_thread_end += global_config.lps_racer;
 	}
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];

@@ -61,11 +61,11 @@ extern struct lp_ctx *lps;
 
 static inline rid_t lid_to_rid(lp_id_t lp_id)
 {
-	if(lp_id < global_config.lps) {
-		return lp_id * global_config.n_threads / global_config.lps;
+	if(lp_id < global_config.lps_racer) {
+		return lp_id * global_config.n_threads_racer / global_config.lps_racer;
 	} else {
-		return global_config.n_threads +
-		       (lp_id - global_config.lps) * global_config.n_threads_racer / global_config.lps_racer;
+		return global_config.n_threads_racer +
+		       (lp_id - global_config.lps_racer) * global_config.n_threads_warp / global_config.lps_warp;
 	}
 }
 

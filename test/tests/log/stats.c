@@ -31,8 +31,8 @@ bool DummyCanEnd(lp_id_t lid, const void *state)
 }
 
 static struct simulation_configuration conf = {
-    .lps = 123,
-    .n_threads = N_THREADS,
+    .lps_warp = 123,
+    .n_threads_warp = N_THREADS,
     .termination_time = 0,
     .gvt_period = 0,
     .log_level = LOG_SILENT,

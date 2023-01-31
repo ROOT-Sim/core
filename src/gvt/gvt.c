@@ -53,6 +53,7 @@ static _Atomic nid_t gvt_nodes;
 __thread _Bool gvt_phase;
 __thread uint32_t remote_msg_seq[2][MAX_NODES];
 __thread uint32_t remote_msg_received[2];
+static rid_t gvt_total_threads;
 
 /**
  * @brief Initializes the gvt module in the node
@@ -60,6 +61,7 @@ __thread uint32_t remote_msg_received[2];
 void gvt_global_init(void)
 {
 	gvt_timer = timer_new();
+	gvt_total_threads = global_config.n_threads_racer + global_config.n_threads_warp;
 }
 
 /**
@@ -98,7 +100,7 @@ void gvt_on_msg_extraction(simtime_t msg_t)
 
 static inline simtime_t gvt_node_reduce(void)
 {
-	unsigned i = global_config.n_threads - 1;
+	unsigned i = gvt_total_threads - 1;
 	simtime_t candidate = reducing_p[i];
 	while(i--)
 		candidate = min(reducing_p[i], candidate);
@@ -117,13 +119,13 @@ static bool gvt_thread_phase_run(void)
 			atomic_fetch_add_explicit(&c_b, 1U, memory_order_relaxed);
 			break;
 		case thread_phase_B:
-			if(atomic_load_explicit(&c_b, memory_order_relaxed) != global_config.n_threads)
+			if(atomic_load_explicit(&c_b, memory_order_relaxed) != gvt_total_threads)
 				break;
 			thread_phase = thread_phase_C;
 			atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
 			break;
 		case thread_phase_C:
-			if(atomic_load_explicit(&c_a, memory_order_relaxed) != global_config.n_threads)
+			if(atomic_load_explicit(&c_a, memory_order_relaxed) != gvt_total_threads)
 				break;
 			reducing_p[rid] = min(gvt_accumulator, msg_queue_time_peek());
 			thread_phase = thread_phase_D;
@@ -193,7 +195,7 @@ static bool gvt_node_phase_run(void)
 
 			atomic_fetch_add_explicit(&total_msg_received, 1U, memory_order_relaxed);
 			// synchronizes total_sent and sent values zeroing
-			if(atomic_fetch_add_explicit(&c_c, 1U, memory_order_acq_rel) != global_config.n_threads - 1) {
+			if(atomic_fetch_add_explicit(&c_c, 1U, memory_order_acq_rel) != gvt_total_threads - 1) {
 				node_phase = node_sent_wait;
 				break;
 			}
@@ -203,7 +205,7 @@ static bool gvt_node_phase_run(void)
 		case node_sent_reduce_wait:
 			if(!mpi_reduce_sum_scatter_done())
 				break;
-			atomic_fetch_sub_explicit(&total_msg_received, remote_msg_to_receive + global_config.n_threads,
+			atomic_fetch_sub_explicit(&total_msg_received, remote_msg_to_receive + gvt_total_threads,
 			    memory_order_relaxed);
 			node_phase = node_sent_wait;
 			break;
@@ -214,7 +216,7 @@ static bool gvt_node_phase_run(void)
 				remote_msg_received[!gvt_phase] = 0;
 				if(r)
 					break;
-				uint32_t q = n_nodes / global_config.n_threads + 1;
+				uint32_t q = n_nodes / gvt_total_threads + 1;
 				memset(total_sent + rid * q, 0, q * sizeof(*total_sent));
 				node_phase = node_phase_redux_second;
 				break;
@@ -229,10 +231,10 @@ static bool gvt_node_phase_run(void)
 			node_phase = node_min_reduce_wait;
 			break;
 		case node_min_reduce_wait:
-			if(atomic_load_explicit(&c_d, memory_order_relaxed) != global_config.n_threads ||
+			if(atomic_load_explicit(&c_d, memory_order_relaxed) != gvt_total_threads ||
 			    !mpi_reduce_min_done())
 				break;
-			atomic_fetch_sub_explicit(&c_c, global_config.n_threads, memory_order_release);
+			atomic_fetch_sub_explicit(&c_c, gvt_total_threads, memory_order_release);
 			node_phase = node_done;
 			return true;
 		case node_min_wait:

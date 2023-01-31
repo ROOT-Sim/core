@@ -32,33 +32,7 @@ bool sync_thread_barrier(void)
 		} while(r);
 	} else {
 		l = !atomic_fetch_add_explicit(c, 1, memory_order_acq_rel);
-		rid_t thr_cnt = global_config.n_threads + global_config.n_threads_racer;
-		do {
-			r = atomic_load_explicit(c, memory_order_relaxed);
-		} while(r != thr_cnt);
-	}
-
-	phase = (phase + 1) & 3U;
-	return l;
-}
-
-bool sync_thread_barrier_racer(void)
-{
-	bool l;
-	unsigned r;
-
-	static __thread unsigned phase;
-	static atomic_uint cs[2]; // FIXME: this makes this barrier stateful with respect to the threads used
-	atomic_uint *c = cs + (phase & 1U);
-
-	if(phase & 2U) {
-		l = atomic_fetch_add_explicit(c, -1, memory_order_acq_rel) == 1;
-		do {
-			r = atomic_load_explicit(c, memory_order_relaxed);
-		} while(r);
-	} else {
-		l = !atomic_fetch_add_explicit(c, 1, memory_order_acq_rel);
-		rid_t thr_cnt = global_config.n_threads_racer;
+		rid_t thr_cnt = global_config.n_threads_racer + global_config.n_threads_warp;
 		do {
 			r = atomic_load_explicit(c, memory_order_relaxed);
 		} while(r != thr_cnt);

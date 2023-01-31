@@ -26,7 +26,7 @@ static __thread simtime_t max_t;
  */
 void termination_global_init(void)
 {
-	atomic_store_explicit(&thr_to_end, global_config.n_threads + global_config.n_threads_racer, memory_order_relaxed);
+	atomic_store_explicit(&thr_to_end, global_config.n_threads_warp + global_config.n_threads_racer, memory_order_relaxed);
 	atomic_store_explicit(&nodes_to_end, n_nodes, memory_order_relaxed);
 }
 

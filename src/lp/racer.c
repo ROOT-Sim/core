@@ -19,6 +19,11 @@ simtime_t racer_last(void)
 	return atomic_load_explicit(&racer.window_last, memory_order_relaxed);
 }
 
+void racer_reset(void)
+{
+	atomic_store_explicit(&racer.window_last, SIMTIME_MAX, memory_order_relaxed);
+}
+
 static void racer_on_rollback(simtime_t t)
 {
 	simtime_t w = atomic_load_explicit(&racer.window_upper, memory_order_relaxed);
@@ -27,9 +32,8 @@ static void racer_on_rollback(simtime_t t)
 		spin_pause();
 }
 
-static void racer_align_lps(void)
+static void racer_align_lps(simtime_t w)
 {
-	simtime_t w = atomic_load_explicit(&racer.window_upper, memory_order_relaxed);
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
 
@@ -47,46 +51,43 @@ static inline void racer_window_rearm(void)
 {
 	static simtime_t window_delta;
 	simtime_t w = atomic_load_explicit(&racer.window_upper, memory_order_relaxed);
-	window_delta = EXP_AVG(8, window_delta, DELTA_EXTENSION * (w - racer.window_last));
+	if(w > racer.window_last)
+		window_delta = EXP_AVG(8, window_delta, DELTA_EXTENSION * (w - racer.window_last));
 	atomic_store_explicit(&racer.window_last, w, memory_order_relaxed);
 	atomic_store_explicit(&racer.window_upper, w + window_delta, memory_order_relaxed);
 }
 
 static void racer_window_commit(void)
 {
-	unsigned r;
-
-	static __thread unsigned phase;
-	static atomic_uint cs[2];
-	atomic_uint *c = cs + (phase & 1U);
-	bool inc = phase & 2U;
-	phase = (phase + 1) & 3U;
-	if(inc) {
-		atomic_fetch_add_explicit(c, -1, memory_order_acq_rel);
-		do {
-			r = atomic_load_explicit(c, memory_order_acquire);
-			racer_align_lps();
-		} while(r);
-	} else {
-		rid_t thr_cnt = global_config.n_threads_racer;
-		atomic_fetch_add_explicit(c, 1, memory_order_acq_rel);
-		do {
-			r = atomic_load_explicit(c, memory_order_acquire);
-			racer_align_lps();
-		} while(r != thr_cnt);
+	static atomic_uint cs[3];
+	static __thread bool racer_ready;
+	static __thread unsigned racer_phase;
+	unsigned dec = 1 - racer_phase;
+	unsigned cmp = racer_phase ? 0 : global_config.n_threads_racer;
+	if(!racer_ready) {
+		atomic_fetch_add_explicit(&cs[0], dec, memory_order_relaxed);
+		racer_ready = true;
 	}
 
-	if(sync_thread_barrier_racer())
+	rid_t v = atomic_load_explicit(&cs[0], memory_order_acquire);
+	if(v != cmp)
+		return;
+
+	racer_phase ^= 2U;
+	racer_ready = false;
+	simtime_t w = atomic_load_explicit(&racer.window_upper, memory_order_relaxed);
+
+	v = atomic_fetch_add_explicit(&cs[1], dec, memory_order_acq_rel) + dec;
+	if(v == cmp)
 		racer_window_rearm();
 
-	sync_thread_barrier_racer();
+	racer_align_lps(w);
 
-	simtime_t s = racer_last();
-	termination_on_gvt(s);
-	auto_ckpt_on_gvt();
-	fossil_on_gvt(s);
-	msg_allocator_on_gvt(s);
-	stats_on_gvt(s);
+	v = atomic_fetch_add_explicit(&cs[2], dec, memory_order_release) + dec;
+	while(v != cmp && likely(termination_cant_end())) {
+		spin_pause();
+		v = atomic_load_explicit(&cs[2], memory_order_relaxed);
+	}
 }
 
 void racer_process_msg(void)
@@ -96,6 +97,8 @@ void racer_process_msg(void)
 		racer_window_commit();
 		return;
 	}
+
+	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *lp = &lps[msg->dest];
 	current_lp = lp;
@@ -126,13 +129,17 @@ void racer_process_msg(void)
 		racer_on_rollback(msg->dest_t);
 		handle_straggler_msg(lp, msg);
 		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : array_peek(lp->p.p_msgs)->dest_t;
-		msg_queue_insert(msg);
+		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
+		if(!(f & MSG_FLAG_ANTI))
+			msg_queue_insert_own(msg);
 		racer_window_commit();
 		return;
 	}
 
 	if(unlikely(atomic_load_explicit(&racer.window_upper, memory_order_relaxed) <= msg->dest_t)) {
-		msg_queue_insert(msg);
+		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
+		if(!(f & MSG_FLAG_ANTI))
+			msg_queue_insert_own(msg);
 		racer_window_commit();
 		return;
 	}

@@ -49,7 +49,7 @@ static __thread heap_declare(struct q_elem) mqp;
  */
 void msg_queue_global_init(void)
 {
-	queues = mm_aligned_alloc(CACHE_LINE_SIZE, (global_config.n_threads + global_config.n_threads_racer) * sizeof(*queues));
+	queues = mm_aligned_alloc(CACHE_LINE_SIZE, (global_config.n_threads_warp + global_config.n_threads_racer) * sizeof(*queues));
 }
 
 /**
@@ -136,4 +136,10 @@ void msg_queue_insert(struct lp_msg *msg)
 	while(unlikely(!atomic_compare_exchange_weak_explicit(list_p, &msg->next, msg, memory_order_release,
 	    memory_order_relaxed)))
 		spin_pause();
+}
+
+void msg_queue_insert_own(struct lp_msg *m)
+{
+	struct q_elem qe = {.t = m->dest_t, .m = m};
+	heap_insert(mqp, q_elem_is_before, qe);
 }

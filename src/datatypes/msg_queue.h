@@ -20,3 +20,4 @@ extern void msg_queue_fini(void);
 extern struct lp_msg *msg_queue_extract(void);
 extern simtime_t msg_queue_time_peek(void);
 extern void msg_queue_insert(struct lp_msg *msg);
+extern void msg_queue_insert_own(struct lp_msg *m);

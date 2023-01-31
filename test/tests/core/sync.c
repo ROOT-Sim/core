@@ -76,7 +76,7 @@ static int spinlock_test(_unused void *_)
 int main(void)
 {
 	n_threads = test_thread_cores_count();
-	global_config.n_threads = n_threads;
+	global_config.n_threads_warp = n_threads;
 	test_parallel("Testing synchronization barrier", sync_barrier_test, NULL, n_threads);
 	test_parallel("Testing spinlock", spinlock_test, NULL, n_threads);
 }

@@ -47,7 +47,7 @@ static void print_config(void)
 	fprintf(stderr, "ROOT-Sim configuration:\n");
 	fprintf(stderr, "\x1b[90m");
 
-	fprintf(stderr, "Logical processes: %" PRIu64 "\n", global_config.lps);
+	fprintf(stderr, "Logical processes: %" PRIu64 "\n", global_config.lps_racer + global_config.lps_warp);
 	fprintf(stderr, "Termination time: ");
 	if(global_config.termination_time == SIMTIME_MAX)
 		fprintf(stderr, "not set\n");
@@ -60,7 +60,8 @@ static void print_config(void)
 		if(n_nodes > 1)
 			fprintf(stderr, "Parallelism: %d MPI processes\n", n_nodes);
 		else
-			fprintf(stderr, "Parallelism: %u threads\n", global_config.n_threads + global_config.n_threads_racer);
+			fprintf(stderr, "Parallelism: %u threads\n",
+			    global_config.n_threads_warp + global_config.n_threads_racer);
 	}
 	fprintf(stderr, "Thread-to-core binding: %s\n", global_config.core_binding ? "enabled" : "disabled");
 
@@ -92,7 +93,7 @@ int RootsimInit(const struct simulation_configuration *conf)
 {
 	memcpy(&global_config, conf, sizeof(struct simulation_configuration));
 
-	if(unlikely(global_config.lps == 0 && global_config.lps_racer == 0)) {
+	if(unlikely(global_config.lps_warp == 0 && global_config.lps_racer == 0)) {
 		fprintf(stderr, "You must specify the total number of Logical Processes\n");
 		return -1;
 	}
@@ -102,16 +103,16 @@ int RootsimInit(const struct simulation_configuration *conf)
 		return -1;
 	}
 
-	if(unlikely(global_config.n_threads + global_config.n_threads_racer > thread_cores_count())) {
-		fprintf(stderr, "Demanding %u cores, which are more than available (%u)\n", global_config.n_threads,
-		    thread_cores_count());
+	if(unlikely(global_config.n_threads_warp + global_config.n_threads_racer > thread_cores_count())) {
+		fprintf(stderr, "Demanding %u cores, which are more than available (%u)\n",
+		    global_config.n_threads_warp + global_config.n_threads_racer, thread_cores_count());
 		return -1;
 	}
 
 	if(global_config.serial)
-		global_config.n_threads = 1;
+		global_config.n_threads_warp = 1;
 
-	if(unlikely((!global_config.lps != !global_config.n_threads) ||
+	if(unlikely((!global_config.lps_warp != !global_config.n_threads_warp) ||
 		    (!global_config.lps_racer != !global_config.n_threads_racer))) {
 		fprintf(stderr, "Inconsistent window racer settings\n");
 		return -1;

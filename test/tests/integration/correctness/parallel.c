@@ -12,7 +12,9 @@
 
 struct simulation_configuration conf = {
     .lps_racer = N_LPS,
-    .n_threads_racer = 2,
+    .lps_warp = 0,
+    .n_threads_racer = 4,
+    .n_threads_warp = 0,
     .termination_time = 0.0,
     .gvt_period = 100000,
     .log_level = LOG_INFO,
