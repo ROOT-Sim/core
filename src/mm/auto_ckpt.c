@@ -55,15 +55,15 @@ void auto_ckpt_on_gvt(void)
 		return;
 
 	uint64_t ckpt_cost = stats_retrieve(STATS_CKPT_TIME);
-	uint64_t ckpt_state_size = stats_retrieve(STATS_CKPT_STATE_SIZE);
+	uint64_t ckpt_size = stats_retrieve(STATS_CKPT_SIZE);
 	uint64_t sil_count = stats_retrieve(STATS_MSG_SILENT);
 	uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
 
 	if(likely(sil_count))
 		ackpt.inv_sil_avg_cost = EXP_AVG(16.0, ackpt.inv_sil_avg_cost, (double)sil_count / (double)sil_cost);
 
-	if(likely(ckpt_state_size))
-		ackpt.ckpt_avg_cost = EXP_AVG(16.0, ackpt.ckpt_avg_cost, (double)ckpt_cost / (double)ckpt_state_size);
+	if(likely(ckpt_size))
+		ackpt.ckpt_avg_cost = EXP_AVG(16.0, ackpt.ckpt_avg_cost, (double)ckpt_cost / (double)ckpt_size);
 }
 
 /**

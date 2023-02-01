@@ -18,7 +18,7 @@
 /// The checkpoint for the multiple buddy system allocator
 struct mm_checkpoint {
 	/// The total count of allocated bytes at the moment of the checkpoint
-	uint_fast32_t used_mem;
+	uint_fast32_t ckpt_size;
 	/// The sequence of checkpoints of the allocated buddy systems (see @a buddy_checkpoint)
 	unsigned char chkps[];
 };
@@ -38,6 +38,6 @@ struct mm_state {
 	/// The array of checkpoints
 	dyn_array(struct mm_log) logs;
 	/// The total count of allocated bytes
-	uint_fast32_t used_mem;
+	uint_fast32_t full_ckpt_size;
 };
 

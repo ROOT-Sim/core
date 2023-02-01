@@ -10,10 +10,6 @@
 
 #include <test.h>
 
-#ifndef STATS_SCRIPT_PATH
-#define STATS_SCRIPT_PATH ""
-#endif
-
 #define N_THREADS 2
 
 void DummyProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size,

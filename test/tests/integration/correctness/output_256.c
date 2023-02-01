@@ -6,7 +6,7 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include "application.h"
+#include <stdint.h>
 
 const uint32_t model_expected_output[256] = {
 	1954882895,
