@@ -8,12 +8,13 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <stdarg.h>
-#include <stdio.h>
+#include <log/log.h>
 
 #include <arch/io.h>
-#include <log/log.h>
 #include <core/core.h>
+
+#include <stdarg.h>
+#include <stdio.h>
 
 /// The file to write logging information to
 static FILE *logfile = NULL;

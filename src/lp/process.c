@@ -16,6 +16,7 @@
 #include <distributed/mpi.h>
 #include <gvt/fossil.h>
 #include <gvt/gvt.h>
+#include <lib/retractable/retractable.h>
 #include <log/stats.h>
 #include <lp/common.h>
 #include <lp/lp.h>
@@ -100,6 +101,7 @@ void process_lp_init(struct lp_ctx *lp)
 	current_lp = lp;
 	common_msg_process(lp, msg);
 	lp->p.bound = 0.0;
+	retractable_reschedule(lp);
 	array_push(lp->p.p_msgs, msg);
 	model_allocator_checkpoint_next_force_full(&lp->mm_state);
 	checkpoint_take(lp);
@@ -188,7 +190,11 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 
 		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(f & MSG_FLAG_ANTI)) {
-			msg_queue_insert_own(msg);
+			if(is_retractable(msg)) {
+				msg_allocator_free(msg);
+			} else {
+				msg_queue_insert_own(msg);
+			}
 			stats_take(STATS_MSG_ROLLBACK, 1);
 		}
 	}
@@ -303,7 +309,7 @@ static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_ms
 /**
  * @brief Check if a remote message has already been invalidated by an early remote anti-message
  * @param proc_p the message processing data of the current LP
- * @param a_msg the remote message to check
+ * @param msg the remote message to check
  * @return true if the message has been matched with an early remote anti-message, false otherwise
  */
 static inline bool check_early_anti_messages(struct process_ctx *proc_p, struct lp_msg *msg)
@@ -385,6 +391,7 @@ void warp_process_msg(void)
 		} else {
 			handle_anti_msg(lp, msg, flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED));
 			lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
+			retractable_reschedule(lp);
 		}
 		return;
 	}
@@ -401,6 +408,7 @@ void warp_process_msg(void)
 
 	common_msg_process(lp, msg);
 	lp->p.bound = msg->dest_t;
+	retractable_reschedule(lp);
 	array_push(lp->p.p_msgs, msg);
 
 	auto_ckpt_register_good(&lp->auto_ckpt);

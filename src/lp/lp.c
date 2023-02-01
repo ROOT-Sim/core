@@ -13,6 +13,7 @@
 #include <datatypes/msg_queue.h>
 #include <core/sync.h>
 #include <gvt/termination.h>
+#include <lib/retractable/retractable.h>
 
 /// The lowest LP id between the ones hosted on this node
 uint64_t lid_node_first;
@@ -108,9 +109,9 @@ void lp_init(void)
 		lp->fossil_epoch = 0;
 
 		current_lp = lp;
-		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
-		random_lib_lp_init(i, lp->rng_ctx);
-
+		lp->lib_ctx = rs_malloc(sizeof(*lp->lib_ctx));
+		random_lib_lp_init(i, &lp->lib_ctx->rng_ctx);
+		retractable_lib_lp_init(lp);
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init(lp);
 		termination_lp_init(lp);

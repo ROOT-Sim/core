@@ -16,6 +16,7 @@
 
 #include <core/sync.h>
 #include <datatypes/heap.h>
+#include <lib/retractable/retractable.h>
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
@@ -24,6 +25,8 @@
 
 /// Determine an ordering between two elements in a queue
 #define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended((ma).m, (mb).m)))
+
+#define ROOTSIM_RETRACTABLE
 
 /// An element in the message queue
 struct q_elem {
@@ -59,6 +62,7 @@ void msg_queue_init(void)
 {
 	heap_init(mqp);
 	atomic_store_explicit(&queues[rid].list, NULL, memory_order_relaxed);
+	retractable_lib_init();
 }
 
 /**
@@ -66,6 +70,7 @@ void msg_queue_init(void)
  */
 void msg_queue_fini(void)
 {
+	retractable_lib_fini();
 	for(array_count_t i = 0; i < heap_count(mqp); ++i)
 		msg_allocator_free(heap_items(mqp)[i].m);
 
@@ -109,6 +114,12 @@ static inline void msg_queue_insert_queued(void)
 struct lp_msg *msg_queue_extract(void)
 {
 	msg_queue_insert_queued();
+
+#ifdef ROOTSIM_RETRACTABLE
+	simtime_t qt = likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
+	if(retractable_is_before(qt))
+		return retractable_extract();
+#endif
 	return likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
 }
 
@@ -122,7 +133,13 @@ struct lp_msg *msg_queue_extract(void)
 simtime_t msg_queue_time_peek(void)
 {
 	msg_queue_insert_queued();
+
+#ifdef ROOTSIM_RETRACTABLE
+	simtime_t qt = likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
+	return min(retractable_min_t(), qt);
+#else
 	return likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
+#endif
 }
 
 /**

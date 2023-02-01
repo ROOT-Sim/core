@@ -17,6 +17,8 @@
 
 /// The initial size of dynamic arrays expressed in the number of elements
 #define INIT_SIZE_ARRAY 8U
+/// The maximum size of a dynamic array
+#define ARRAY_COUNT_MAX UINT_LEAST32_MAX
 /// The type used to handle dynamic arrays count of elements and capacity
 typedef uint_least32_t array_count_t;
 
@@ -162,7 +164,7 @@ typedef uint_least32_t array_count_t;
  * @brief Reduce the size of the dynamic array
  * @param self The target dynamic array
  *
- * The size of the dinamic array is halved if the number of elements is less than a third of the capacity.
+ * The size of the dynamic array is halved if the number of elements is less than a third of the capacity.
  */
 #define array_shrink(self)                                                                                             \
 	__extension__({                                                                                                \

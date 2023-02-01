@@ -22,12 +22,17 @@
 struct lp_ctx {
 	/// The termination time of this LP, handled by the termination module
 	simtime_t termination_t;
-	/// The additional libraries context of this LP
-	struct rng_ctx *rng_ctx;
-	/// The pointer set by the model with the SetState() API call
-	void *state_pointer;
+	/// Position of the retractable entry in the heap data structure
+	array_count_t retractable_pos;
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
+	/// The additional libraries context of this LP
+	struct lp_lib_ctx {
+		struct rng_ctx rng_ctx;
+		simtime_t retractable_ctx;
+	} *lib_ctx;
+	/// The pointer set by the model with the SetState() API call
+	void *state_pointer;
 	/// The automatic checkpointing interval selection data
 	struct auto_ckpt auto_ckpt;
 	/// The message processing context of this LP

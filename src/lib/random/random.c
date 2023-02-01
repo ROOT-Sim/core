@@ -40,12 +40,12 @@ void random_lib_lp_init(lp_id_t lp_id, struct rng_ctx *rng_ctx)
  */
 uint64_t RandomU64(void)
 {
-	struct rng_ctx *ctx = current_lp->rng_ctx;
+	struct rng_ctx *ctx = &current_lp->lib_ctx->rng_ctx;
 	return random_u64(ctx->state);
 }
 
 /**
- * @brief Return a random value in [0,1] according to a uniform distribution
+ * @brief Return a random value in [0,1) according to a uniform distribution
  * @return The random number
  */
 double Random(void)

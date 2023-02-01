@@ -68,7 +68,7 @@ typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, c
  */
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
-enum rootsim_event {LP_INIT = 65534, LP_FINI};
+enum rootsim_event {LP_RETRACTABLE = 65533, LP_INIT, LP_FINI};
 
 /**
  * @brief API to inject a new event in the simulation
@@ -103,6 +103,7 @@ extern int RandomRangeNonUniform(int x, int min, int max);
 extern double Gamma(unsigned ia);
 extern unsigned Zipf(double skew, unsigned limit);
 
+extern void ScheduleRetractableEvent(simtime_t timestamp);
 
 enum log_level {
 	LOG_TRACE,  //!< The logging level reserved to very low priority messages
