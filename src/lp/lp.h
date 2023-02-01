@@ -27,7 +27,10 @@ struct lp_ctx {
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
 	/// The additional libraries context of this LP
-	struct rng_ctx *rng_ctx;
+	struct lp_lib_ctx {
+		struct rng_ctx rng_ctx;
+		simtime_t retractable_ctx;
+	} *lib_ctx;
 	/// The pointer set by the model with the SetState() API call
 	void *state_pointer;
 	/// The automatic checkpointing interval selection data

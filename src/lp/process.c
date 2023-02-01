@@ -100,6 +100,7 @@ void process_lp_init(struct lp_ctx *lp)
 	current_lp = lp;
 	common_msg_process(lp, msg);
 	lp->p.bound = 0.0;
+	retractable_reschedule(lp);
 	array_push(lp->p.p_msgs, msg);
 	model_allocator_checkpoint_next_force_full(&lp->mm_state);
 	checkpoint_take(lp);
@@ -377,6 +378,7 @@ void process_msg(void)
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
 		handle_anti_msg(lp, msg, flags);
 		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
+		retractable_reschedule(lp);
 		return;
 	}
 
@@ -392,6 +394,7 @@ void process_msg(void)
 
 	common_msg_process(lp, msg);
 	lp->p.bound = msg->dest_t;
+	retractable_reschedule(lp);
 	array_push(lp->p.p_msgs, msg);
 
 	auto_ckpt_register_good(&lp->auto_ckpt);
@@ -399,9 +402,4 @@ void process_msg(void)
 		checkpoint_take(lp);
 
 	termination_on_msg_process(lp, msg->dest_t);
-}
-
-bool process_is_silent(void)
-{
-	return silent_processing;
 }

@@ -13,7 +13,7 @@ set(rscore_srcs
         gvt/gvt.c
         gvt/termination.c
         lib/random/random.c
-	    lib/random/xxtea.c
+        lib/random/xxtea.c
         lib/retractable/retractable.c
         lib/topology/topology.c
         log/file.c

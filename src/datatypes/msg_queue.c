@@ -26,6 +26,8 @@
 /// Determine an ordering between two elements in a queue
 #define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended(ma.m, mb.m)))
 
+#define ROOTSIM_RETRACTABLE
+
 /// An element in the message queue
 struct q_elem {
 	/// The timestamp of the message
@@ -114,12 +116,10 @@ struct lp_msg *msg_queue_extract(void)
 	msg_queue_insert_queued();
 
 #ifdef ROOTSIM_RETRACTABLE
-	simtime_t qt = likely(heap_count(mqp.q)) ? heap_min(mqp.q).t : SIMTIME_MAX;
-	struct lp_msg *retractable = retractable_extract(qt);
-	if (retractable != NULL)
-		return retractable;
+	simtime_t qt = likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
+	if(retractable_is_before(qt))
+		return retractable_extract();
 #endif
-
 	return likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
 }
 
@@ -135,8 +135,8 @@ simtime_t msg_queue_time_peek(void)
 	msg_queue_insert_queued();
 
 #ifdef ROOTSIM_RETRACTABLE
-	simtime_t qt = likely(heap_count(mqp.q)) ? heap_min(mqp.q).t : SIMTIME_MAX;
-	return retractable_min_t(qt);
+	simtime_t qt = likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
+	return min(retractable_min_t(), qt);
 #else
 	return likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
 #endif

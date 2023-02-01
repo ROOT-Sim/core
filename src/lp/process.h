@@ -35,7 +35,4 @@ struct lp_ctx; // forward declaration
 
 extern void process_lp_init(struct lp_ctx *lp);
 extern void process_lp_fini(struct lp_ctx *lp);
-
-extern bool process_is_silent(void);
-
 extern void process_msg(void);
