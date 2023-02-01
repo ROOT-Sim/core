@@ -117,6 +117,7 @@ void racer_process_msg(void)
 			racer_on_rollback(msg->dest_t);
 			handle_anti_msg(lp, msg, flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED));
 			lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : array_peek(lp->p.p_msgs)->dest_t;
+			retractable_reschedule(lp);
 			racer_window_commit();
 		}
 		return;
@@ -132,14 +133,21 @@ void racer_process_msg(void)
 		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(f & MSG_FLAG_ANTI))
 			msg_queue_insert_own(msg);
+		retractable_reschedule(lp);
 		racer_window_commit();
 		return;
 	}
 
 	if(unlikely(atomic_load_explicit(&racer.window_upper, memory_order_relaxed) <= msg->dest_t)) {
 		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
-		if(!(f & MSG_FLAG_ANTI))
-			msg_queue_insert_own(msg);
+		if(!(f & MSG_FLAG_ANTI)) {
+			if(is_retractable(msg)) {
+				msg_allocator_free(msg);
+				ScheduleRetractableEvent(msg->dest_t);
+			} else {
+				msg_queue_insert_own(msg);
+			}
+		}
 		racer_window_commit();
 		return;
 	}
@@ -150,6 +158,7 @@ void racer_process_msg(void)
 
 	common_msg_process(lp, msg);
 	lp->p.bound = msg->dest_t;
+	retractable_reschedule(lp);
 	array_push(lp->p.p_msgs, msg);
 
 	auto_ckpt_register_good(&lp->auto_ckpt);
