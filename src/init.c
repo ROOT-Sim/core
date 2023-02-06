@@ -109,13 +109,15 @@ int RootsimInit(const struct simulation_configuration *conf)
 		return -1;
 	}
 
-	if(global_config.serial)
-		global_config.n_threads_warp = 1;
-
 	if(unlikely((!global_config.lps_warp != !global_config.n_threads_warp) ||
-		    (!global_config.lps_racer != !global_config.n_threads_racer))) {
+				(!global_config.lps_racer != !global_config.n_threads_racer))) {
 		fprintf(stderr, "Inconsistent window racer settings\n");
 		return -1;
+	}
+
+	if(global_config.serial) {
+		global_config.n_threads_warp = 1;
+		global_config.n_threads_racer = 0;
 	}
 
 	log_init(global_config.logfile);

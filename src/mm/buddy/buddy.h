@@ -16,7 +16,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define B_TOTAL_EXP 16U
+#define B_TOTAL_EXP 21U
 #define B_BLOCK_EXP 6U
 
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
@@ -24,7 +24,7 @@
 
 #define buddy_left_child(i) (((i) << 1U) + 1U)
 #define buddy_right_child(i) (((i) << 1U) + 2U)
-#define buddy_parent(i) ((((i) + 1) >> 1U) - 1U)
+#define buddy_parent(i) (((i) - 1U) >> 1U)
 
 /// The checkpointable memory context of a single buddy system
 struct buddy_state {

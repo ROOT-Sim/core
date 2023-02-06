@@ -12,9 +12,10 @@
 
 struct simulation_configuration conf = {
     .lps_warp = N_LPS,
+	.n_threads_warp = 1,
     .termination_time = 0.0,
     .gvt_period = 100000,
-    .log_level = LOG_SILENT,
+    .log_level = LOG_INFO,
     .stats_file = NULL,
     .ckpt_interval = 0,
     .prng_seed = 0,

@@ -43,6 +43,7 @@ static void racer_align_lps(simtime_t w)
 			do_rollback(lp, past_i);
 			termination_on_lp_rollback(lp, w);
 			lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : array_peek(lp->p.p_msgs)->dest_t;
+			retractable_reschedule(lp);
 		}
 	}
 }
@@ -144,6 +145,7 @@ void racer_process_msg(void)
 			if(is_retractable(msg)) {
 				msg_allocator_free(msg);
 				ScheduleRetractableEvent(msg->dest_t);
+				retractable_reschedule(lp);
 			} else {
 				msg_queue_insert_own(msg);
 			}
