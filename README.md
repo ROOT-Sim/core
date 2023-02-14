@@ -1,7 +1,7 @@
 # ROOT-Sim core 3.0.0
 
-*Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/)
-Research Group*
+_Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/)
+Research Group_
 
 [![Build Status](https://github.com/ROOT-Sim/core/workflows/ROOT-Sim%20core%20CI/badge.svg)](https://github.com/ROOT-Sim/core/actions)
 [![codecov](https://codecov.io/gh/ROOT-Sim/core/branch/master/graph/badge.svg)](https://codecov.io/gh/ROOT-Sim/core)
@@ -50,9 +50,9 @@ Windows users are encouraged to use clang.
 MPI is a mandatory dependency of the project, used to support simulations runs on distributed systems.
 The core is continuously tested against the following MPI implementations:
 
-*  OpenMPI
-*  MPICH
-*  Microsoft MPI
+*   OpenMPI
+*   MPICH
+*   Microsoft MPI
 
 Any of the three is required to build the project. A full MPI3 implementation supporting multithreading is necessary.
 

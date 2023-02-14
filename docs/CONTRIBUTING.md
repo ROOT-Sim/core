@@ -29,7 +29,7 @@ If you want to contribute to ROOT-Sim, these are the essential steps:
 *   Test everything using the script `./scripts/tests.sh` (Travis-CI does that for you every time that you commit on
     your branch).
 
-  * Create a pull request to `develop` or `master`. A `hotfix-*` branch should be merged in both.
+*   Create a pull request to `develop` or `master`. A `hotfix-*` branch should be merged in both.
 
 Thanks a lot for your help!
 
@@ -531,11 +531,11 @@ release.
 
 The `MAJOR` part is incremented in two different cases:
 
-  * Some incompatibility is introduced. This incompatibility will be described in the release notes for the version. In
+*   Some incompatibility is introduced. This incompatibility will be described in the release notes for the version. In
     this way, the user will know that transitioning from 1.x.x to 2.0.0 will require some intervention. This includes, for
     example, if version 2.0.0 still offers the same functionalities of 1.x.x, yet the default configuration is different.
 
-  * A large batch of updates to the software have been introduced. In any case, an increment in the `MAJOR` number is
+*   A large batch of updates to the software have been introduced. In any case, an increment in the `MAJOR` number is
     tolerated whenever we want to emphasize that, even if still behaving as in the previous release, the codebase has been
     significantly enlarged with new functionalities.
 
@@ -627,15 +627,15 @@ Please, enforce it as much as possible, configuring your favourite editor to hel
 
 ROOT-Sim uses a mixed convention. In particular:
 
-* CamelCase names are *only* used for functions which are exposed to simulation model developers;
-* Internal functions use a `_` to separate words.
+*   CamelCase names are _only_ used for functions which are exposed to simulation model developers;
+*   Internal functions use a `_` to separate words.
 
 This allows to immediately see the purpose of a function when reading the code: `RandomNumber` is something that is
 externally exposed, while `random_numer` is something used internally.
 
 ### Indentation and braces
 
-We have decided to use a tab (`\t`) as a tab for the project. A tab is just a tab: *please*, do not use whitespaces (be
+We have decided to use a tab (`\t`) as a tab for the project. A tab is just a tab: _please_, do not use whitespaces (be
 they 8, 4, ...) instead of tab when indenting.
 
 Anything inside a block of code, delimited by `{` and `}`, should be indented on one level more. This entails, e.g.,
@@ -709,24 +709,33 @@ you ought not to use it).
 
 Don't collapse statements to single lines.
 
-* Multiple statements on a single line make stepping and setting breakpoints difficult when debugging.
-* We're no longer working from teletypes
+*   Multiple statements on a single line make stepping and setting breakpoints difficult when debugging.
+*   We're no longer working from teletypes
 
 Inserting blank before/after a chunk of code can be useful for indicating a conceptual grouping.
 
 ### Spacing
 
-* Space after commas, never before
-* Space before `{` declaring a block of code
-* Space around comparing signs, binary logical/arithmetic operators (`==`, `!=`, `>`, `<`, `>>`, `<<`, `+`, `-`, ...)
-* NO space after unary operator (`!`, `~`, ...)
-* NO space around expressions in parentheses
-* NO space after keywords that precede expressions (`if`, `for`, `while`, etc.)
-* NO space around an expression used as a subscript
-* NO space between a function (or macro) and its argument list
-* NO space before `;`
-* `return` should not use parenthesis around its accompanying expression unless the expression is complex and it helps
-  clarity
+*   Space after commas, never before
+
+*   Space before `{` declaring a block of code
+
+*   Space around comparing signs, binary logical/arithmetic operators (`==`, `!=`, `>`, `<`, `>>`, `<<`, `+`, `-`, ...)
+
+*   NO space after unary operator (`!`, `~`, ...)
+
+*   NO space around expressions in parentheses
+
+*   NO space after keywords that precede expressions (`if`, `for`, `while`, etc.)
+
+*   NO space around an expression used as a subscript
+
+*   NO space between a function (or macro) and its argument list
+
+*   NO space before `;`
+
+*   `return` should not use parenthesis around its accompanying expression unless the expression is complex and it helps
+    clarity
 
 Examples:
 
