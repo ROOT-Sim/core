@@ -33,11 +33,11 @@ static int random_range_non_uniform_test(_unused void *_)
 	int passed = 0;
 	for(unsigned i = 0; i < 1000000; i++) {
 		int x = INT_MAX * Random();
-		int max = INT_MAX * Random();
-		int min = (int)(max * Random());
-		int r = RandomRangeNonUniform(x, min, max);
+		int max_val = INT_MAX * Random();
+		int min_val = (int)(max_val * Random());
+		int r = RandomRangeNonUniform(x, min_val, max_val);
 
-		if(r < min || r > max)
+		if(r < min_val || r > max_val)
 			passed = 1;
 	}
 
@@ -48,11 +48,11 @@ static int random_range_test(_unused void *_)
 {
 	int passed = 0;
 	for(unsigned i = 0; i < 1000000; i++) {
-		int max = INT_MAX * Random();
-		int min = (int)(max * Random());
-		int r = RandomRange(min, max);
+		int max_val = INT_MAX * Random();
+		int min_val = (int)(max_val * Random());
+		int r = RandomRange(min_val, max_val);
 
-		if(r < min || r > max)
+		if(r < min_val || r > max_val)
 			passed = 1;
 	}
 
