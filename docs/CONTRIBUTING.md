@@ -141,7 +141,7 @@ enforce this.
 
 When starting work on a new feature, branch off from the `develop` branch.
 
-```
+```sh
 $ git checkout -b myfeature develop
 Switched to a new branch "myfeature"
 ```
@@ -154,7 +154,7 @@ code review.
 Finished features may be anyhow merged into the develop branch definitely add them to the upcoming release, provided
 that extensive tests have been carried:
 
-```
+```sh
 $ git checkout develop
 Switched to branch 'develop'
 
@@ -170,7 +170,7 @@ $ git push origin develop
 
 In case you want to delete the remote branch, you can additionally run:
 
-```
+```sh
 git push origin --delete myfeature
 ```
 
@@ -220,7 +220,7 @@ Release branches are created from the `develop` branch. For example, say version
 and we have a big release coming up. The state of develop is ready for the "next release". So we branch off and give the
 release branch a name reflecting the new version number:
 
-```
+```sh
 $ git checkout -b release-1.2.0 develop
 Switched to a new branch "release-1.2.0"
 
@@ -239,7 +239,7 @@ depending on the kind of branch (hence, the importance of branch names). The onl
 the major number, which is a decision which cannot be taken automatically (see versioning below). To bump the major
 version number, you can run the following command:
 
-```
+```sh
 $ ./scripts/bump-version.py major
 ```
 
@@ -267,7 +267,7 @@ least, for easiness of retrieval, the public key of the person creating the tag 
 
 To set up git for using your private key to sign tags:
 
-```
+```sh
 $ git config --global user.signingkey HASH
 ```
 
@@ -276,7 +276,7 @@ your key for signing, in the tag creation command you must replace `-s` with `-u
 
 The git steps to create the release from the `master branch` after that the Pull Requests have been merged are:
 
-```
+```sh
 $ git checkout master
 Switched to branch 'master'
 
@@ -291,7 +291,7 @@ are releasing.
 
 To publish the tag on origin, the following command can be used:
 
-```
+```sh
 $ git push --follow-tags
 ```
 
@@ -308,7 +308,7 @@ not only "sane" ones.
 The release is now done, and tagged for future reference.
 To keep the changes made in the release branch, we need to merge those back into `develop`, though. In git:
 
-```
+```sh
 $ git checkout develop
 Switched to branch 'develop'
 
@@ -351,7 +351,7 @@ Hotfix branches are created from the `master` branch. For example, say version 1
 running live and causing troubles due to a severe bug. But changes on `develop` are yet unstable. We may then branch off
 a hotfix branch and start fixing the problem:
 
-```
+```sh
 $ git checkout -b hotfix-1.2.1 master
 Switched to a new branch "hotfix-1.2.1"
 
@@ -368,7 +368,7 @@ automatically determine the new version number starting from the branch name.
 
 Then, fix the bug and commit the fix in one or more separate commits.
 
-```
+```sh
 $ git commit
 [hotfix-1.2.1-2 abbe5d6] Fixed severe production problem
 5 files changed, 32 insertions(+), 17 deletions(-)
@@ -391,7 +391,7 @@ safely merge the bugfix into `develop` now already as well.)
 
 Finally, remove the temporary branch:
 
-```
+```sh
 $ git branch -d hotfix-1.2.1
 Deleted branch hotfix-1.2.1 (was abbe5d6).
 ```
@@ -480,7 +480,7 @@ The commit messages should be manually indented. Usually, each line of the messa
 characters. Note that in order to do this easily, is always better to avoid using the `-m` switch when committing: in
 fact, simply issuing:
 
-```
+```sh
 $ git commit
 ```
 
@@ -488,7 +488,7 @@ will fire up the text editor specified in the `EDITOR` environment variable (you
 so that you can freely write your commit message respecting the adopted layout. Note that if you set your favorite
 editor to vim, you can add the following lines to ~/.vimrc:
 
-```
+```vim
 filetype plugin indent on
 au FileType gitcommit set tw=72
 ```
@@ -496,13 +496,13 @@ au FileType gitcommit set tw=72
 which automatically wraps the text to the specified 72 characters for git commit messages. To check whether vim is
 correctly identifying the commit message as gitcommit, the following command can be used within vi:
 
-```
+```vim
 :set filetype?
 ```
 
 or to save a few keystrokes:
 
-```
+```vim
 :se ft?
 ```
 
@@ -641,7 +641,7 @@ they 8, 4, ...) instead of tab when indenting.
 Anything inside a block of code, delimited by `{` and `}`, should be indented on one level more. This entails, e.g.,
 data structures, enums, for example:
 
-```
+```c
 struct my_structure {
     int field;
     ...
@@ -651,7 +651,7 @@ struct my_structure {
 Braces always go on the same line of the definition,
 except for function definition. The opening bracket of a function must be placed on a separate line, as in:
 
-```
+```c
 void foo(void)
 {
 	...
@@ -662,7 +662,7 @@ However, if the leading `if`/`while`/`for` expression spans more than one line, 
 itself, in order to make clearer which lines are part of the expression and which lines are part of the block. An
 example:
 
-```
+```c
  if ( grarzbo(mof, glorble(gronk), fofo, obo,
               fronk, bleeb)  &&
       grarzbo(fom, 42, 0, 0, 0, 0) )
@@ -675,7 +675,7 @@ example:
 
 Case statements should be fully indented. cases must live on a level on their own, for example:
 
-```
+```c
 switch(var) {
 	case 0:
 		...
@@ -695,7 +695,7 @@ you ought not to use it).
 
 `goto`s are regular instructions, so they would be fully indented as well:
 
-```
+```c
  void fooo(int a) {
 	...
 	goto out;
@@ -739,7 +739,7 @@ Inserting blank before/after a chunk of code can be useful for indicating a conc
 
 Examples:
 
-```
+```c
 func(a, b);
 
 if(var) {
@@ -807,7 +807,7 @@ If the expression contains a mix of operators acting at a "similar level" (e.g. 
 and `||`), then putting those operators at the beginning of the continuations makes it much easier for
 humans to parse:
 
-```
+```c
 (((foodlesplork()
       && bartlecapple())
     == (fork < spoon))
@@ -818,7 +818,7 @@ humans to parse:
 
 is easier to understand than
 
-```
+```c
 (((foodlesplork() &&
       bartlecapple()) ==
     (fork < spoon)) &&
@@ -830,7 +830,7 @@ is easier to understand than
 In cases where the precedence is easier to see without help, putting the operator at the end of the line can make it
 easier to see the similarities and differences between the operands by having them line up vertically:
 
-```
+```c
 ((foo.fork == bar.fork) &&
   (foo.spoon == bar.spoon) &&
   (foo.knife == bar.knife))
@@ -857,7 +857,7 @@ dead code chunks).
 
 Also, never ever do this:
 
-```
+```c
  #ifdef SOMETHING
    some code
  #else
