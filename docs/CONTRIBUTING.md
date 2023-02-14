@@ -12,17 +12,17 @@ consistent with the code base and easy to maintain by people which will come aft
 
 If you want to contribute to ROOT-Sim, these are the essential steps:
 
-* Fork a new branch named `hotfix-*` from `master` if you want to provide a bugfix for a bug in production, or named
-  _whatever_ from `develop` if you want to provide a new feature.
-* Implement your changes, trying to adhere to coding styles as much as possible. Use `doxygen` syntax to document
-  _functions_, _variables_, _structures_, _enums_, _global variables_, everything!
-* Update `ChangeLog` in the `[Unreleased]` section.
-* Update the wiki (if necessary).
-* Update manpages (if necessary).
-* Clone `gh-pages` and create a post describing your new feature (it's made using [jekyll](https://jekyllrb.com/])).
-* Test everything using the script `./scripts/tests.sh` (Travis-CI does that for you every time that you commit on your
-  branch).
-* Create a pull request to `develop` or `master`. A `hotfix-*` branch should be merged in both.
+  * Fork a new branch named `hotfix-*` from `master` if you want to provide a bugfix for a bug in production, or named
+    _whatever_ from `develop` if you want to provide a new feature.
+  * Implement your changes, trying to adhere to coding styles as much as possible. Use `doxygen` syntax to document
+    _functions_, _variables_, _structures_, _enums_, _global variables_, everything!
+  * Update `ChangeLog` in the `[Unreleased]` section.
+  * Update the wiki (if necessary).
+  * Update manpages (if necessary).
+  * Clone `gh-pages` and create a post describing your new feature (it's made using [jekyll](https://jekyllrb.com/])).
+  * Test everything using the script `./scripts/tests.sh` (Travis-CI does that for you every time that you commit on
+    your branch).
+  * Create a pull request to `develop` or `master`. A `hotfix-*` branch should be merged in both.
 
 Thanks a lot for your help!
 
@@ -67,22 +67,22 @@ The central repo holds two main branches with an infinite lifetime:
 The `master` branch at origin should be familiar to every Git user. Parallel to the `master` branch, another branch
 exists called `develop`.
 
-We consider `origin/master` to be the main branch where the source code of `HEAD` always reflects a *production-ready*
+We consider `origin/master` to be the main branch where the source code of `HEAD` always reflects a _production-ready_
 state.
 
 We consider `origin/develop` to be the main branch where the source code of `HEAD` always reflects a state with the
-latest delivered development changes for the next release. Some would call this the "*integration branch*".
+latest delivered development changes for the next release. Some would call this the "_integration branch_".
 
 When the source code in the `develop` branch reaches a stable point and is ready to be released, all the changes
 should be merged back into `master` somehow and then tagged with a release number. How this is done in detail will be
 discussed further on.
 
-Therefore, each time when changes are merged back into `master`, this is a new production release *by definition*. This
+Therefore, each time when changes are merged back into `master`, this is a new production release _by definition_. This
 must be enforced strictly: if there is some issue which is still known to be in the `origin/develop` for some reason,
 then `origin/develop` should not be merged into `origin/master`.
 
-`origin/master` is a *protected branch*: no one can directly push into it. This branch is used only by relying on *pull
-requests*, and the repository rules enforce that all automatic integration checks must pass in order to merge, and at
+`origin/master` is a _protected branch_: no one can directly push into it. This branch is used only by relying on _pull
+requests_, and the repository rules enforce that all automatic integration checks must pass in order to merge, and at
 least two independent code reviews are required for a pull request to be merged. This should reduce the chances that a
 broken release is delivered.
 
@@ -105,7 +105,7 @@ originating branch and which branches must be their merge targets. We will walk 
 By no means are these branches "special" from a technical perspective. The branch types are categorized by how we use
 them. They are of course plain old Git branches.
 
-In general, if you want to contribute by developing a *new feature*, you should use a **feature branch**. If you have
+In general, if you want to contribute by developing a _new feature_, you should use a **feature branch**. If you have
 spotted a bug and have a patch for it, you should rely on a **hotfix branch**.
 
 The semantics behind these branches are described below.
@@ -182,7 +182,7 @@ Merging into `develop` is sometimes referred to as "merge window". Once a new re
 features are automatically directed towards the next release.
 
 Once a feature branch is closed, the contributor is required to create a short notice on the project website, Please,
-see section *Short Notes on the Project Website* below.
+see section _Short Notes on the Project Website_ below.
 
 ### Release Branches
 
@@ -237,8 +237,8 @@ $ ./scripts/bump-version.py major
 ```
 
 This newly-created branch may exist there for a while, until the release may be rolled out definitely. During that time,
-bug fixes may be applied in this branch (rather than on the `develop` branch). Adding large new features here is *
-*strictly prohibited**. They must be merged into `develop`, and therefore, wait for the next big release.
+bug fixes may be applied in this branch (rather than on the `develop` branch). Adding large new features here is
+**strictly prohibited**. They must be merged into `develop`, and therefore, wait for the next big release.
 
 #### Finishing a release branch
 
@@ -524,13 +524,13 @@ release.
 
 The `MAJOR` part is incremented in two different cases:
 
-* Some incompatibility is introduced. This incompatibility will be described in the release notes for the version. In
-  this way, the user will know that transitioning from 1.x.x to 2.0.0 will require some intervention. This includes, for
-  example, if version 2.0.0 still offers the same functionalities of 1.x.x, yet the default configuration is different.
+  * Some incompatibility is introduced. This incompatibility will be described in the release notes for the version. In
+    this way, the user will know that transitioning from 1.x.x to 2.0.0 will require some intervention. This includes, for
+    example, if version 2.0.0 still offers the same functionalities of 1.x.x, yet the default configuration is different.
 
-* A large batch of updates to the software have been introduced. In any case, an increment in the `MAJOR` number is
-  tolerated whenever we want to emphasize that, even if still behaving as in the previous release, the codebase has been
-  significantly enlarged with new functionalities.
+  * A large batch of updates to the software have been introduced. In any case, an increment in the `MAJOR` number is
+    tolerated whenever we want to emphasize that, even if still behaving as in the previous release, the codebase has been
+    significantly enlarged with new functionalities.
 
 Documentation
 -------------
