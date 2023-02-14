@@ -12,21 +12,21 @@ consistent with the code base and easy to maintain by people which will come aft
 
 If you want to contribute to ROOT-Sim, these are the essential steps:
 
-  * Fork a new branch named `hotfix-*` from `master` if you want to provide a bugfix for a bug in production, or named
+*   Fork a new branch named `hotfix-*` from `master` if you want to provide a bugfix for a bug in production, or named
     _whatever_ from `develop` if you want to provide a new feature.
+  
+*   Implement your changes, trying to adhere to coding styles as much as possible. Use `doxygen` syntax to document
+    _functions_, _variables_, _structures_, _enums_, _global variables_, everything!
 
-  *   Implement your changes, trying to adhere to coding styles as much as possible. Use `doxygen` syntax to document
-      _functions_, _variables_, _structures_, _enums_, _global variables_, everything!
+*   Update `ChangeLog` in the `[Unreleased]` section.
 
-  * Update `ChangeLog` in the `[Unreleased]` section.
+*   Update the wiki (if necessary).
+  
+*   Update manpages (if necessary).
 
-  * Update the wiki (if necessary).
+*   Clone `gh-pages` and create a post describing your new feature (it's made using [jekyll](https://jekyllrb.com/])).
 
-  *   Update manpages (if necessary).
-
-  * Clone `gh-pages` and create a post describing your new feature (it's made using [jekyll](https://jekyllrb.com/])).
-
-  * Test everything using the script `./scripts/tests.sh` (Travis-CI does that for you every time that you commit on
+*   Test everything using the script `./scripts/tests.sh` (Travis-CI does that for you every time that you commit on
     your branch).
 
   * Create a pull request to `develop` or `master`. A `hotfix-*` branch should be merged in both.
