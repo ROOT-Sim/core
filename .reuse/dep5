@@ -34,3 +34,7 @@ License: GPL-3.0-only
 Files: .markdownlint.json
 Copyright: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 License: CC0-1.0
+
+Files: .stylelintrc.json
+Copyright: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
+License: CC0-1.0
