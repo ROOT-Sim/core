@@ -545,15 +545,14 @@ int test_graph(_unused void *_)
 int test_init_fini(_unused void *_)
 {
 	struct topology *topology;
-	unsigned par1, par2; // Testing a variadic function, these are the two parameters
 
 	for(enum topology_geometry i = 1; i <= LAST_TOPOLOGY_WITH_TWO_PARAMETERS; i++) {
 		test_assert(InitializeTopology(i, 0, 0) == NULL);
 		test_assert(InitializeTopology(i, 1, 0) == NULL);
 		test_assert(InitializeTopology(i, 0, 1) == NULL);
-
-		par1 = test_random_range(100) + 1;
-		par2 = test_random_range(100) + 1;
+		// Testing a variadic function, these are the two parameters
+		unsigned par1 = test_random_range(100) + 1;
+		unsigned par2 = test_random_range(100) + 1;
 		topology = InitializeTopology(i, par1, par2);
 		test_assert(CountRegions(topology) == par1 * par2);
 		test_assert(GetReceiver(par1 * par2 + 1, topology, DIRECTION_E) == INVALID_DIRECTION);
@@ -563,8 +562,8 @@ int test_init_fini(_unused void *_)
 
 	for(enum topology_geometry i = LAST_TOPOLOGY_WITH_TWO_PARAMETERS + 1; i <= LAST_TOPOLOGY_VALID_VALUE; i++) {
 		test_assert(InitializeTopology(i, 0) == NULL);
-
-		par1 = test_random_range(100) + 1;
+		// Testing a variadic function, this is the single parameter
+		unsigned par1 = test_random_range(100) + 1;
 		topology = InitializeTopology(i, par1);
 		test_assert(CountRegions(topology) == par1);
 		test_assert(GetReceiver(par1 + 1, topology, DIRECTION_E) == INVALID_DIRECTION);

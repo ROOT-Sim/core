@@ -14,8 +14,6 @@
 #include <core/core.h>
 #include <datatypes/list.h>
 
-#include <ROOT-Sim.h>
-
 /// A node in the topology adjacency matrix
 struct graph_node {
 	lp_id_t neighbor;        /**< The ID of the neighbor */

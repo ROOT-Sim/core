@@ -31,13 +31,11 @@ static int aux_ks_test(_unused void *_)
 static int random_range_non_uniform_test(_unused void *_)
 {
 	int passed = 0;
-	int x, min, max, r, i;
-
-	for(i = 0; i < 1000000; i++) {
-		x = INT_MAX * Random();
-		max = INT_MAX * Random();
-		min = (int)(max * Random());
-		r = RandomRangeNonUniform(x, min, max);
+	for(unsigned i = 0; i < 1000000; i++) {
+		int x = INT_MAX * Random();
+		int max = INT_MAX * Random();
+		int min = (int)(max * Random());
+		int r = RandomRangeNonUniform(x, min, max);
 
 		if(r < min || r > max)
 			passed = 1;
@@ -49,12 +47,10 @@ static int random_range_non_uniform_test(_unused void *_)
 static int random_range_test(_unused void *_)
 {
 	int passed = 0;
-	int min, max, r, i;
-
-	for(i = 0; i < 1000000; i++) {
-		max = INT_MAX * Random();
-		min = (int)(max * Random());
-		r = RandomRange(min, max);
+	for(unsigned i = 0; i < 1000000; i++) {
+		int max = INT_MAX * Random();
+		int min = (int)(max * Random());
+		int r = RandomRange(min, max);
 
 		if(r < min || r > max)
 			passed = 1;
