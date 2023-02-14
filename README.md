@@ -24,7 +24,7 @@ relies on asynchronous MPI primitives for increased efficiency.
 The programming model supported by ROOT-Sim allows the simulation model developer to use a simple application-callback
 function named `ProcessEvent()` as the event handler. Its parameters determine which simulation object is currently
 taking control for processing its next event and where the state of this object is located in memory. An object is a
-data structure whose state can be scattered on dynamically allocated memory chunks. Hence the memory address passed to
+data structure whose state can be scattered on dynamically allocated memory chunks. Hence, the memory address passed to
 the callback identifies a top-level data structure implementing the object state layout.
 
 ROOT-Sim's development started as a research project late back in 1987 and is currently maintained by the High
@@ -49,9 +49,10 @@ Windows users are encouraged to use clang.
 
 MPI is a mandatory dependency of the project, used to support simulations runs on distributed systems.
 The core is continuously tested against the following MPI implementations:
-*   OpenMPI
-*   MPICH
-*   Microsoft MPI
+
+* OpenMPI
+* MPICH
+* Microsoft MPI
 
 Any of the three is required to build the project. A full MPI3 implementation supporting multithreading is necessary.
 
