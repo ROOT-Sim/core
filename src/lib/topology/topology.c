@@ -130,7 +130,7 @@ static lp_id_t get_random_neighbor(lp_id_t from, struct topology *topology, size
  */
 static lp_id_t get_neighbor_hexagon(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
-	uint32_t x, y;
+	lp_id_t x, y;
 
 	assert(topology->geometry == TOPOLOGY_HEXAGON);
 
@@ -190,7 +190,7 @@ static lp_id_t get_neighbor_hexagon(lp_id_t from, struct topology *topology, enu
  */
 static lp_id_t get_neighbor_square(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
-	unsigned x, y;
+	lp_id_t x, y;
 
 	assert(topology->geometry == TOPOLOGY_SQUARE);
 
@@ -240,7 +240,7 @@ static lp_id_t get_neighbor_square(lp_id_t from, struct topology *topology, enum
  */
 static lp_id_t get_neighbor_torus(lp_id_t from, struct topology *topology, enum topology_direction direction)
 {
-	uint32_t x, y;
+	lp_id_t x, y;
 
 	assert(topology->geometry == TOPOLOGY_TORUS);
 
@@ -302,7 +302,7 @@ static lp_id_t get_neighbor_mesh(lp_id_t from, struct topology *topology, enum t
 		return INVALID_DIRECTION;
 
 	do {
-		ret = ((double)topology->regions * Random());
+		ret = (lp_id_t)((double)topology->regions * Random());
 	} while(ret == from);
 
 	return ret;
@@ -392,7 +392,7 @@ lp_id_t CountRegions(struct topology *topology)
 lp_id_t CountDirections(lp_id_t from, struct topology *topology)
 {
 	lp_id_t neighbors;
-	uint32_t x, y;
+	lp_id_t x, y;
 
 	assert(topology);
 

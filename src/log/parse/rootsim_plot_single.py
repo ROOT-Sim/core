@@ -2,9 +2,9 @@
 # SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 
+import sys
 import matplotlib.pyplot as plt
 from rootsim_stats import RSStats
-import sys
 
 # This is a use example of the RSStats class
 # You can actually include this module in your code and use the object as it is done here
@@ -18,22 +18,22 @@ if __name__ == "__main__":
 
     if len(sys.argv) != 2:
         print("Please, supply the name of a raw statistics file!", file=sys.stderr)
-        exit(-1)
+        sys.exit(-1)
 
     plt.rcParams['font.family'] = ['monospace']
     plt.rcParams["axes.unicode_minus"] = False
 
-    def compute_diffs(d):
+    def compute_diffs(values):
         ret = []
-        iter_d = iter(d)
-        ret.append(next(iter_d))
-        for i, v in enumerate(iter_d):
-            ret.append(v - d[i])
+        iter_values = iter(values)
+        ret.append(next(iter_values))
+        for i, val in enumerate(iter_values):
+            ret.append(val - values[i])
         return ret
 
     stats = RSStats(sys.argv[1])
     rts = stats.rts(reduction=lambda x: sum(x) / len(x))
-    rts = [v / 1000000 for v in rts]
+    rts = [val / 1000000 for val in rts]
     time_diff = compute_diffs(rts)
     gvt_advancement = compute_diffs(stats.gvts)
     gvt_advancement = [gvt_advancement[i] / time_diff[i] for i in range(len(time_diff))]
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     def plot_data(sub_fig, data, data_label):
         if dump_tsv:
-            with open(data_label.replace(" ", "_").lower() + '.tsv', 'w') as f:
+            with open(data_label.replace(" ", "_").lower() + '.tsv', 'w', encoding="utf8") as f:
                 f.write(f'Real time\t{data_label}\n')
                 for i, sample in enumerate(data):
                     f.write(f'{rts[i]}\t{sample}\n')
