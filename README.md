@@ -50,9 +50,9 @@ Windows users are encouraged to use clang.
 MPI is a mandatory dependency of the project, used to support simulations runs on distributed systems.
 The core is continuously tested against the following MPI implementations:
 
-  * OpenMPI
-  * MPICH
-  * Microsoft MPI
+*  OpenMPI
+*  MPICH
+*  Microsoft MPI
 
 Any of the three is required to build the project. A full MPI3 implementation supporting multithreading is necessary.
 
