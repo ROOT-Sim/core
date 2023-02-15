@@ -20,30 +20,30 @@ def get_stats(file_name):
     return int(sum(rs_stats.threads_count)), total_seconds_first_node / 1000000, rollback_freq, efficiency
 
 
-# This is a use example of the RSStats class
-# You can actually include this module in your code and use the object as it is done here
-if __name__ == "__main__":
-
-    dump_tsv = True
-    try:
-        sys.argv.remove('--tsv')
-    except ValueError:
-        dump_tsv = False
-
-    if len(sys.argv) < 2:
-        print("Please, supply the name of at least a raw statistics file!", file=sys.stderr)
-        sys.exit(-1)
-
-    plt.rcParams['font.family'] = ['monospace']
-    plt.rcParams["axes.unicode_minus"] = False
+def compute_avg(values):
+    return sum(values) / len(values)
 
 
-    def compute_avg(values):
-        return sum(values) / len(values)
+def plot_data(data_label, threads, data, sub_fig):
+    sub_fig.set_xticks(threads)
+    sub_fig.plot(threads, data, marker='.', markersize=3, markeredgecolor=(0.2, 0.3, 0.7),
+                 color=(0.4, 0.5, 0.7))
+    sub_fig.set_xlabel('Threads')
+    sub_fig.set_ylabel(data_label)
+    sub_fig.label_outer()
+    sub_fig.grid(True)
 
 
+def dump_tsv_data(data_label, threads, data):
+    with open(data_label.replace(" ", "_").lower() + '.tsv', 'w', encoding="utf8") as f:
+        f.write(f'Threads\t{data_label}\n')
+        for i, sample in enumerate(data):
+            f.write(f'{threads[i]}\t{sample}\n')
+
+
+def plot_multi(filenames, dump_tsv=False):
     all_data = {}
-    for s in sys.argv[1:]:
+    for s in filenames:
         thr_cnt, t, rf, eff = get_stats(s)
         if thr_cnt not in all_data:
             all_data[thr_cnt] = ([], [], [])
@@ -60,30 +60,31 @@ if __name__ == "__main__":
         rollback_probs.append(compute_avg(all_data[thr][1]))
         efficiencies.append(compute_avg(all_data[thr][2]))
 
-    fig, figxs = plt.subplots(3)
-
-
-    def plot_data(sub_fig, data, data_label):
-        if dump_tsv:
-            with open(data_label.replace(" ", "_").lower() + '.tsv', 'w', encoding="utf8") as f:
-                f.write(f'Threads\t{data_label}\n')
-                for i, sample in enumerate(data):
-                    f.write(f'{threads[i]}\t{sample}\n')
-        else:
-            sub_fig.set_xticks(threads)
-            sub_fig.plot(threads, data, marker='.', markersize=3, markeredgecolor=(0.2, 0.3, 0.7),
-                         color=(0.4, 0.5, 0.7))
-            sub_fig.set_xlabel('Threads')
-            sub_fig.set_ylabel(data_label)
-            sub_fig.label_outer()
-            sub_fig.grid(True)
-
-
-    plt.rcParams['font.family'] = ['mono']
-
-    plot_data(figxs[0], times, "Execution time")
-    plot_data(figxs[1], rollback_probs, "% Rollback")
-    plot_data(figxs[2], efficiencies, "% Efficiency")
-
-    if not dump_tsv:
+    if dump_tsv:
+        dump_tsv_data("Execution time", threads, times)
+        dump_tsv_data("% Rollback", threads, rollback_probs)
+        dump_tsv_data("% Efficiency", threads, efficiencies)
+    else:
+        plt.rcParams['font.family'] = ['mono']
+        plt.rcParams["axes.unicode_minus"] = False
+        fig, figxs = plt.subplots(3)
+        plot_data("Execution time", threads, times, figxs[0])
+        plot_data("% Rollback", threads, rollback_probs, figxs[1])
+        plot_data("% Efficiency", threads, efficiencies, figxs[2])
         plt.show()
+
+
+# This is a use example of the RSStats class
+# You can actually include this module in your code and use the object as it is done here
+if __name__ == "__main__":
+    tsv_arg = True
+    try:
+        sys.argv.remove('--tsv')
+    except ValueError:
+        tsv_arg = False
+
+    if len(sys.argv) < 2:
+        print("Please, supply the name of at least a raw statistics file!", file=sys.stderr)
+        sys.exit(1)
+
+    plot_multi(sys.argv[1:], tsv_arg)

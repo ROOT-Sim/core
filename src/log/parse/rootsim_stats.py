@@ -232,13 +232,34 @@ class RSStats:
         return this_stats
 
 
-# Produce a boring textual report
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Please, supply the name of the raw statistics file!", file=sys.stderr)
-        sys.exit(-1)
+def format_size(num, is_binary=True):
+    div = 1024.0 if is_binary else 1000.0
+    post_unit = "i" if is_binary else ""
 
-    stats = RSStats(sys.argv[1])
+    if num == 0:
+        return "0"
+
+    if abs(num) < div:
+        if abs(num) > 1:
+            return f"{num:3.1f}"
+        num *= div
+        for unit in ["m", "u", "n"]:
+            if abs(num) > 1:
+                return f"{num:3.1f}{unit}{post_unit}"
+            num *= div
+        return f"{num:3.1f}p{post_unit}"
+
+    num /= div
+    for unit in ["K", "M", "G", "T", "P"]:
+        if abs(num) < div:
+            return f"{num:.1f}{unit}{post_unit}"
+        num /= div
+
+    return f"{num:.1f}P{post_unit}"
+
+
+def dump_text_report(filename):
+    stats = RSStats(filename)
 
     simulation_time = stats.nodes_stats["node_total_time"][0] / 1000000
     hr_ticks_per_second = stats.nodes_stats["node_total_hr_time"][0] / simulation_time
@@ -278,35 +299,8 @@ if __name__ == "__main__":
     out_name = sys.argv[1][:-4] if sys.argv[1].endswith(".bin") else sys.argv[1]
     out_name = out_name + ".txt"
 
-
-    def fmt_size(num, is_binary=True):
-        div = 1024.0 if is_binary else 1000.0
-        post_unit = "i" if is_binary else ""
-
-        if num == 0:
-            return "0"
-
-        if abs(num) < div:
-            if abs(num) > 1:
-                return f"{num:3.1f}"
-            num *= div
-            for unit in ["m", "u", "n"]:
-                if abs(num) > 1:
-                    return f"{num:3.1f}{unit}{post_unit}"
-                num *= div
-            return f"{num:3.1f}p{post_unit}"
-
-        num /= div
-        for unit in ["K", "M", "G", "T", "P"]:
-            if abs(num) < div:
-                return f"{num:.1f}{unit}{post_unit}"
-            num /= div
-
-        return f"{num:.1f}P{post_unit}"
-
-
     with open(out_name, "w+", encoding="utf8") as f:
-        f.write(f"TOTAL SIMULATION TIME ..... : {fmt_size(simulation_time, False)}s\n")
+        f.write(f"TOTAL SIMULATION TIME ..... : {format_size(simulation_time, False)}s\n")
         f.write(f"TOTAL KERNELS ............. : {stats.nodes_count}\n")
         f.write(f"TOTAL_THREADS ............. : {sum(stats.threads_count)}\n")
         f.write(f"TOTAL_LPs ................. : {lps_count}\n")
@@ -319,12 +313,21 @@ if __name__ == "__main__":
         f.write(f"ROLLBACK FREQUENCY......... : {rollback_freq:.2f}%\n")
         f.write(f"ROLLBACK LENGTH............ : {rollback_len:.2f}\n")
         f.write(f"EFFICIENCY................. : {efficiency:.2f}%\n")
-        f.write(f"AVERAGE EVENT COST......... : {fmt_size(avg_msg_cost, False)}s\n")
-        f.write(f"AVERAGE CHECKPOINT COST.... : {fmt_size(avg_checkpoint_cost, False)}s\n")
-        f.write(f"AVERAGE RECOVERY COST...... : {fmt_size(avg_recovery_cost, False)}s\n")
-        f.write(f"AVERAGE LOG SIZE........... : {fmt_size(avg_log_size)}B\n")
+        f.write(f"AVERAGE EVENT COST......... : {format_size(avg_msg_cost, False)}s\n")
+        f.write(f"AVERAGE CHECKPOINT COST.... : {format_size(avg_checkpoint_cost, False)}s\n")
+        f.write(f"AVERAGE RECOVERY COST...... : {format_size(avg_recovery_cost, False)}s\n")
+        f.write(f"AVERAGE LOG SIZE........... : {format_size(avg_log_size)}B\n")
         f.write(f"LAST COMMITTED GVT ........ : {last_gvt}\n")
         f.write(f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n")
         f.write(f"SIMULATION TIME SPEED...... : {sim_speed}\n")
-        f.write(f"AVERAGE MEMORY USAGE....... : {fmt_size(avg_memory_usage)}B\n")
-        f.write(f"PEAK MEMORY USAGE.......... : {fmt_size(peak_memory_usage)}B\n")
+        f.write(f"AVERAGE MEMORY USAGE....... : {format_size(avg_memory_usage)}B\n")
+        f.write(f"PEAK MEMORY USAGE.......... : {format_size(peak_memory_usage)}B\n")
+
+
+# Produce a boring textual report
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Please, supply the name of the raw statistics file!", file=sys.stderr)
+        sys.exit(1)
+
+    dump_text_report(sys.argv[1])
