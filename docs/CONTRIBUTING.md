@@ -1,5 +1,4 @@
-Guide for Contributing to ROOT-Sim
-==================================
+# Guide for Contributing to ROOT-Sim
 
 Thanks for your interest in ROOT-Sim! ROOT-Sim stems from an inter-university research effort, and has seen many people
 proposing patches, implementing bleeding new subsystems, and help at polishing the code or rewriting previously-existing
@@ -12,30 +11,29 @@ consistent with the code base and easy to maintain by people which will come aft
 
 If you want to contribute to ROOT-Sim, these are the essential steps:
 
-*   Fork a new branch named `hotfix-*` from `master` if you want to provide a bugfix for a bug in production, or named
-    _whatever_ from `develop` if you want to provide a new feature.
-  
-*   Implement your changes, trying to adhere to coding styles as much as possible. Use `doxygen` syntax to document
-    _functions_, _variables_, _structures_, _enums_, _global variables_, everything!
+* Fork a new branch named `hotfix-*` from `master` if you want to provide a bugfix for a bug in production, or named
+  _whatever_ from `develop` if you want to provide a new feature.
 
-*   Update `ChangeLog` in the `[Unreleased]` section.
+* Implement your changes, trying to adhere to coding styles as much as possible. Use `doxygen` syntax to document
+  _functions_, _variables_, _structures_, _enums_, _global variables_, everything!
 
-*   Update the wiki (if necessary).
-  
-*   Update manpages (if necessary).
+* Update `ChangeLog` in the `[Unreleased]` section.
 
-*   Clone `gh-pages` and create a post describing your new feature (it's made using [jekyll](https://jekyllrb.com/])).
+* Update the wiki (if necessary).
 
-*   Test everything using the script `./scripts/tests.sh` (Travis-CI does that for you every time that you commit on
-    your branch).
+* Update manpages (if necessary).
 
-*   Create a pull request to `develop` or `master`. A `hotfix-*` branch should be merged in both.
+* Clone `gh-pages` and create a post describing your new feature (it's made using [jekyll](https://jekyllrb.com/])).
+
+* Test everything using the script `./scripts/tests.sh` (Travis-CI does that for you every time that you commit on
+  your branch).
+
+* Create a pull request to `develop` or `master`. A `hotfix-*` branch should be merged in both.
 
 Thanks a lot for your help!
 
 
-Branching Model
----------------
+### Branching Model
 
 We use a strict branching model to drive the ROOT-Sim development, which is here described. This model ensures that the
 mergeability likelihood is high, and that the patches that you produce can be integrated seamlessly and quickly. The
@@ -142,8 +140,8 @@ enforce this.
 When starting work on a new feature, branch off from the `develop` branch.
 
 ```sh
-$ git checkout -b myfeature develop
-Switched to a new branch "myfeature"
+$ git checkout -b my_feature develop
+Switched to a new branch "my_feature"
 ```
 
 #### Incorporating a finished feature on `develop`
@@ -262,8 +260,8 @@ We then have to create a tag to identify the new release in `master`. By definit
 should be done by using git’s integration with PGP, so a key to identify the signer must be publicly available. At
 least, for easiness of retrieval, the public key of the person creating the tag should be published here:
 
-* http://pgp.mit.edu/[http://pgp.mit.edu/](http://pgp.mit.edu/)
-* [http://keyserver.pgp.com/ ](http://keyserver.pgp.com/)
+* [http://pgp.mit.edu/](http://pgp.mit.edu/)
+* [http://keyserver.pgp.com/](http://keyserver.pgp.com/)
 
 To set up git for using your private key to sign tags:
 
@@ -322,7 +320,7 @@ commit.
 
 Now we are really done and the release branch may be removed, since we don’t need it anymore:
 
-```
+```sh
 $ git branch -d release-1.2
 Deleted branch release-1.2 (was ff452fe).
 ```
@@ -396,8 +394,7 @@ $ git branch -d hotfix-1.2.1
 Deleted branch hotfix-1.2.1 (was abbe5d6).
 ```
 
-Commits and Commit Messages
----------------------------
+## Commits and Commit Messages
 
 A commit should be a self-contained update to the code tree. Despite bug fixes that could be introduced later in the
 development, a commit should be never considered as "I’m saving my work now, I’ll continue later", especially if the
@@ -449,7 +446,7 @@ This is an example of a good commit message:
 ```
 
 Several things should be noted here. The minimal commit message is good for new code development and simple changes. An
-empty line must always come after it, otherwise post processing software might not be able to distinguish it from the
+empty line must always come after it, otherwise post-processing software might not be able to distinguish it from the
 rest of the commit text.
 
 The single short logger message indicates what needed to be changed. It should begin with an indicator as to the primary
@@ -510,9 +507,7 @@ If, for any reason, you have pushed commits with non-meaningful descriptions (du
 these should never end up in the `master` branch. Here, interactively rebasing you local branch (and issuing a force
 push if possible) is a good practice.
 
-
-Versioning
-----------
+## Versioning
 
 ROOT-Sim follows a small variation of [semantic versioning](http://semver.org/). Basically, each version number is
 structured in this way:
@@ -531,16 +526,15 @@ release.
 
 The `MAJOR` part is incremented in two different cases:
 
-*   Some incompatibility is introduced. This incompatibility will be described in the release notes for the version. In
-    this way, the user will know that transitioning from 1.x.x to 2.0.0 will require some intervention. This includes, for
-    example, if version 2.0.0 still offers the same functionalities of 1.x.x, yet the default configuration is different.
+* Some incompatibility is introduced. This incompatibility will be described in the release notes for the version. In
+  this way, the user will know that transitioning from 1.x.x to 2.0.0 will require some intervention. This includes, for
+  example, if version 2.0.0 still offers the same functionalities of 1.x.x, yet the default configuration is different.
 
-*   A large batch of updates to the software have been introduced. In any case, an increment in the `MAJOR` number is
-    tolerated whenever we want to emphasize that, even if still behaving as in the previous release, the codebase has been
-    significantly enlarged with new functionalities.
+* A large batch of updates to the software have been introduced. In any case, an increment in the `MAJOR` number is
+  tolerated whenever we want to emphasize that, even if still behaving as in the previous release, the codebase has been
+  significantly enlarged with new functionalities.
 
-Documentation
--------------
+## Documentation
 
 ROOT-Sim documentation is organised into three different parts, some of which are updated automatically, others need
 manual intervention.
@@ -601,8 +595,7 @@ subfolder of the project.
 Anytime that you add or modify something that is exposed, please take time to update manpages. This significantly helps
 at keeping the quality of the project high.
 
-Short Notes on the Project Website
-----------------------------------
+## Short Notes on the Project Website
 
 ROOT-Sim webpage is implemented using Jekyll, and hosted on GitHub pages. Any time that a new function or subsystem is
 implemented and merged into `develop`, we require the developers to create a short notice as a blog post in the `_posts`
@@ -615,8 +608,7 @@ release notes when a new version is released.
 Please note that `gh-pages` is a protected branches, therefore the update should be carried out using a Pull request, to
 allow maintainers to keep track of the changes.
 
-Coding Style Guidelines
------------------------
+## Coding Style Guidelines
 
 We want to keep the code base as uniform as possible. Here we describe the coding guidelines which should be used when
 preparing a patch to ROOT-Sim.
@@ -627,8 +619,8 @@ Please, enforce it as much as possible, configuring your favourite editor to hel
 
 ROOT-Sim uses a mixed convention. In particular:
 
-*   CamelCase names are _only_ used for functions which are exposed to simulation model developers;
-*   Internal functions use a `_` to separate words.
+* CamelCase names are _only_ used for functions which are exposed to simulation model developers;
+* Internal functions use a `_` to separate words.
 
 This allows to immediately see the purpose of a function when reading the code: `RandomNumber` is something that is
 externally exposed, while `random_numer` is something used internally.
@@ -681,7 +673,7 @@ switch(var) {
 		...
 		break;
 	default:
-		...
+        ...
 }
 ```
 
@@ -709,33 +701,33 @@ you ought not to use it).
 
 Don't collapse statements to single lines.
 
-*   Multiple statements on a single line make stepping and setting breakpoints difficult when debugging.
-*   We're no longer working from teletypes
+* Multiple statements on a single line make stepping and setting breakpoints difficult when debugging.
+* We're no longer working from teletypes
 
 Inserting blank before/after a chunk of code can be useful for indicating a conceptual grouping.
 
 ### Spacing
 
-*   Space after commas, never before
+* Space after commas, never before
 
-*   Space before `{` declaring a block of code
+* Space before `{` declaring a block of code
 
-*   Space around comparing signs, binary logical/arithmetic operators (`==`, `!=`, `>`, `<`, `>>`, `<<`, `+`, `-`, ...)
+* Space around comparing signs, binary logical/arithmetic operators (`==`, `!=`, `>`, `<`, `>>`, `<<`, `+`, `-`, ...)
 
-*   NO space after unary operator (`!`, `~`, ...)
+* NO space after unary operator (`!`, `~`, ...)
 
-*   NO space around expressions in parentheses
+* NO space around expressions in parentheses
 
-*   NO space after keywords that precede expressions (`if`, `for`, `while`, etc.)
+* NO space after keywords that precede expressions (`if`, `for`, `while`, etc.)
 
-*   NO space around an expression used as a subscript
+* NO space around an expression used as a subscript
 
-*   NO space between a function (or macro) and its argument list
+* NO space between a function (or macro) and its argument list
 
-*   NO space before `;`
+* NO space before `;`
 
-*   `return` should not use parenthesis around its accompanying expression unless the expression is complex and it helps
-    clarity
+* `return` should not use parenthesis around its accompanying expression unless the expression is complex and it helps
+  clarity
 
 Examples:
 
