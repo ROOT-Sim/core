@@ -32,7 +32,6 @@ If you want to contribute to ROOT-Sim, these are the essential steps:
 
 Thanks a lot for your help!
 
-
 ### Branching Model
 
 We use a strict branching model to drive the ROOT-Sim development, which is here described. This model ensures that the
@@ -411,7 +410,7 @@ yes, then most likely it is a good commit.
 Commit messages should be meaningful. A one-line commit message like "I’m developing foo" will not allow other
 developers to understand what that commit is for. A minimal commit message would be of the format:
 
-```
+```text
   Short logger
 
   (Optional pointers to external resources, such as defect tracking)
@@ -426,7 +425,7 @@ developers to understand what that commit is for. A minimal commit message would
 
 This is an example of a good commit message:
 
-```
+```text
   foobar: Adjusted the foo setting in bar
 
   When using foobar on systems with less than a gigabyte of RAM common
@@ -512,7 +511,7 @@ push if possible) is a good practice.
 ROOT-Sim follows a small variation of [semantic versioning](http://semver.org/). Basically, each version number is
 structured in this way:
 
-```
+```text
 AJOR.MINOR.HOTFIX
 ```
 
