@@ -9,8 +9,7 @@ Research Group_
 [![doc coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Froot-sim.github.io%2Fcore%2Fdocs%2Fmaster.json)](https://root-sim.github.io/core/docs/)
 [![GitHub issues](https://img.shields.io/github/issues/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/issues)
 [![GitHub](https://img.shields.io/github/license/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/blob/master/LICENSES/GPL-3.0-only.txt)
-[![REUSE Compliance Check](https://github.com/ROOT-Sim/core/actions/workflows/reuse_check.yml/badge.svg)](https://github.com/ROOT-Sim/core/actions/workflows/reuse_check.yml)
-
+[![REUSE status](https://api.reuse.software/badge/github.com/ROOT-Sim/core)](https://api.reuse.software/info/github.com/ROOT-Sim/core)
 ----------------------------------------------------------------------------------------
 
 ## The ROme OpTimistic Simulator
@@ -50,9 +49,9 @@ Windows users are encouraged to use clang.
 MPI is a mandatory dependency of the project, used to support simulations runs on distributed systems.
 The core is continuously tested against the following MPI implementations:
 
-*   OpenMPI
-*   MPICH
-*   Microsoft MPI
+* OpenMPI
+* MPICH
+* Microsoft MPI
 
 Any of the three is required to build the project. A full MPI3 implementation supporting multithreading is necessary.
 
