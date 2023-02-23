@@ -10,6 +10,8 @@
  */
 #include <test.h>
 
+#include <framework/rng.h>
+
 #include <lp/lp.h>
 #include <mm/buddy/buddy.h>
 #include <mm/model_allocator.h>
@@ -18,13 +20,13 @@
 
 #define BUDDY_TEST_SEED 0x5E550UL
 
-static test_ret_t block_size_test(unsigned b_exp)
+static int block_size_test(struct mm_state *mm, unsigned b_exp)
 {
-	test_ret_t errs = 0;
+	int errs = 0;
 	unsigned block_size = 1 << b_exp;
 	unsigned allocations_cnt = 1 << (B_TOTAL_EXP - b_exp);
 	test_rng_state b_rng, b_chk;
-	lcg_init(&b_rng, BUDDY_TEST_SEED);
+	rng_init(&b_rng, BUDDY_TEST_SEED);
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
@@ -36,51 +38,49 @@ static test_ret_t block_size_test(unsigned b_exp)
 		}
 
 		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = lcg_random_u(&b_rng);
+			allocations[i][j] = rng_random_u(&b_rng);
 			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
 
-	model_allocator_checkpoint_next_force_full();
-	model_allocator_checkpoint_take(0);
+	model_allocator_checkpoint_next_force_full(mm);
+	model_allocator_checkpoint_take(mm, 0);
 	b_chk = b_rng;
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
 		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = lcg_random_u(&b_rng);
+			allocations[i][j] = rng_random_u(&b_rng);
 			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
 
-	model_allocator_checkpoint_take(1);
+	model_allocator_checkpoint_take(mm, 1);
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
 		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			allocations[i][j] = lcg_random_u(&b_rng);
+			allocations[i][j] = rng_random_u(&b_rng);
 			//__write_mem(&allocations[i][j], sizeof(allocations[i][j]));
 		}
 	}
 
-	model_allocator_checkpoint_take(2);
+	model_allocator_checkpoint_take(mm, 2);
 
-	model_allocator_checkpoint_restore(1);
+	model_allocator_checkpoint_restore(mm, 1);
 	b_rng = b_chk;
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
-		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			errs += allocations[i][j] != lcg_random_u(&b_rng);
-		}
+		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j)
+			errs += allocations[i][j] != rng_random_u(&b_rng);
 
 		rs_free(allocations[i]);
 	}
 
-	model_allocator_checkpoint_restore(0);
-	lcg_init(&b_rng, BUDDY_TEST_SEED);
+	model_allocator_checkpoint_restore(mm, 0);
+	rng_init(&b_rng, BUDDY_TEST_SEED);
 
 	for(unsigned i = 0; i < allocations_cnt; ++i) {
-		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j) {
-			errs += allocations[i][j] != lcg_random_u(&b_rng);
-		}
+		for(unsigned j = 0; j < block_size / sizeof(uint64_t); ++j)
+			errs += allocations[i][j] != rng_random_u(&b_rng);
 
 		rs_free(allocations[i]);
 	}
@@ -89,16 +89,16 @@ static test_ret_t block_size_test(unsigned b_exp)
 	return errs > 0;
 }
 
-test_ret_t model_allocator_test(__unused void *_)
+int model_allocator_test(_unused void *_)
 {
-	test_ret_t errs = 0;
+	int errs = 0;
 
-	current_lp = mock_lp();
-	model_allocator_lp_init();
+	struct lp_ctx *lp = test_lp_mock_get();
+	current_lp = lp;
+	model_allocator_lp_init(&lp->mm_state);
 
-	for(unsigned j = B_BLOCK_EXP; j < B_TOTAL_EXP; ++j) {
-		errs += block_size_test(j);
-	}
+	for(unsigned j = B_BLOCK_EXP; j < B_TOTAL_EXP; ++j)
+		errs += block_size_test(&lp->mm_state, j);
 
 	errs += rs_malloc(0) != NULL;
 	errs += rs_calloc(0, sizeof(uint64_t)) != NULL;
@@ -109,7 +109,7 @@ test_ret_t model_allocator_test(__unused void *_)
 	errs += *mem != 0;
 	rs_free(mem);
 
-	model_allocator_lp_fini();
+	model_allocator_lp_fini(&lp->mm_state);
 
 	return errs;
 }

@@ -95,12 +95,12 @@ extern void *rs_realloc(void *ptr, size_t req_size);
 
 extern double Random(void);
 extern uint64_t RandomU64(void);
-extern double Expent(double mean);
+extern double Poisson(void);
+#define Expent(mean) ((mean) * Poisson())
 extern double Normal(void);
 extern int RandomRange(int min, int max);
 extern int RandomRangeNonUniform(int x, int min, int max);
 extern double Gamma(unsigned ia);
-extern double Poisson(void);
 extern unsigned Zipf(double skew, unsigned limit);
 
 
@@ -224,7 +224,7 @@ struct simulation_configuration {
 	const char *stats_file;
 	/// The checkpointing interval
 	unsigned ckpt_interval;
-	/// The seed used to initialize the pseudo random numbers, 0 for self-seeding
+	/// The seed used to initialize the pseudo random numbers
 	uint64_t prng_seed;
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
@@ -238,3 +238,4 @@ struct simulation_configuration {
 
 extern int RootsimInit(const struct simulation_configuration *conf);
 extern int RootsimRun(void);
+extern void RootsimStop(void);

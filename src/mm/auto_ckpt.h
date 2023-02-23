@@ -61,4 +61,4 @@ struct auto_ckpt {
 extern void auto_ckpt_init(void);
 extern void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt);
 extern void auto_ckpt_on_gvt(void);
-extern void auto_ckpt_lp_on_gvt(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size);
+extern void auto_ckpt_recompute(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size);

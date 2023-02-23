@@ -43,7 +43,7 @@ static __thread enum thread_phase thread_phase = thread_phase_idle;
 
 static timer_uint gvt_timer;
 static simtime_t reducing_p[MAX_THREADS];
-static __thread simtime_t current_gvt;
+static __thread simtime_t gvt_accumulator;
 static _Atomic rid_t c_a = 0;
 static _Atomic rid_t c_b = 0;
 
@@ -69,7 +69,7 @@ void gvt_global_init(void)
  */
 void gvt_start_processing(void)
 {
-	current_gvt = SIMTIME_MAX;
+	gvt_accumulator = SIMTIME_MAX;
 	thread_phase = thread_phase_A;
 }
 
@@ -91,8 +91,8 @@ void gvt_on_done_ctrl_msg(void)
  */
 void gvt_on_msg_extraction(simtime_t msg_t)
 {
-	if(unlikely(current_gvt > msg_t))
-		current_gvt = msg_t;
+	if(unlikely(gvt_accumulator > msg_t))
+		gvt_accumulator = msg_t;
 }
 
 static inline simtime_t gvt_node_reduce(void)
@@ -111,7 +111,7 @@ static bool gvt_thread_phase_run(void)
 		case thread_phase_A:
 			if(atomic_load_explicit(&c_a, memory_order_relaxed))
 				break;
-			current_gvt = min(current_gvt, msg_queue_time_peek());
+			gvt_accumulator = min(gvt_accumulator, msg_queue_time_peek());
 			thread_phase = thread_phase_B;
 			atomic_fetch_add_explicit(&c_b, 1U, memory_order_relaxed);
 			break;
@@ -124,7 +124,7 @@ static bool gvt_thread_phase_run(void)
 		case thread_phase_C:
 			if(atomic_load_explicit(&c_a, memory_order_relaxed) != global_config.n_threads)
 				break;
-			reducing_p[rid] = min(current_gvt, msg_queue_time_peek());
+			reducing_p[rid] = min(gvt_accumulator, msg_queue_time_peek());
 			thread_phase = thread_phase_D;
 			atomic_fetch_sub_explicit(&c_b, 1U, memory_order_release);
 			break;

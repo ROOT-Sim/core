@@ -1,5 +1,5 @@
 /**
- * @file test/self-tests/fail.c
+ * @file test/framework/self-tests/fail_top_level_assert.c
  *
  * @brief Test: Test core functions of the testing framework
  *
@@ -10,13 +10,9 @@
  */
 
 #include <test.h>
-#include <string.h>
-
-extern test_ret_t test_explicit_fail(__unused void *_);
+#include <framework/self-tests/stubs.h>
 
 int main(void)
 {
-	init(0);
-	test("Test explicit fail", test_explicit_fail, NULL);
-	finish();
+	test_assert(0);
 }

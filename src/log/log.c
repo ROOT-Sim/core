@@ -10,7 +10,6 @@
  */
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include <arch/io.h>
 #include <log/log.h>
@@ -41,7 +40,7 @@ static const struct {
  * @param fmt a printf-style format string for the message to logger
  * @param ... the list of arguments to fill in the format string @a fmt
  */
-void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...)
+void vlogger(enum log_level level, char *file, unsigned line, const char *fmt, ...)
 {
 	va_list args;
 	char time_string[IO_TIME_BUFFER_LEN];
@@ -69,5 +68,5 @@ void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...)
  */
 void log_init(FILE *file)
 {
-	logfile = logfile == NULL ? stdout : file;
+	logfile = file == NULL ? stdout : file;
 }
