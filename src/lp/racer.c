@@ -32,7 +32,7 @@ static void racer_on_rollback(simtime_t t)
 		spin_pause();
 }
 
-static void racer_align_lps(simtime_t w)
+__attribute__((unused)) static void racer_align_lps(simtime_t w)
 {
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
@@ -60,7 +60,7 @@ static inline void racer_window_rearm(void)
 
 static void racer_window_commit(void)
 {
-	static atomic_uint cs[3];
+	static atomic_uint cs[2];
 	static __thread bool racer_ready;
 	static __thread unsigned racer_phase;
 	unsigned dec = 1 - racer_phase;
@@ -70,24 +70,19 @@ static void racer_window_commit(void)
 		racer_ready = true;
 	}
 
-	rid_t v = atomic_load_explicit(&cs[0], memory_order_acquire);
+	rid_t v = atomic_load_explicit(&cs[0], memory_order_relaxed);
 	if(v != cmp)
 		return;
 
 	racer_phase ^= 2U;
 	racer_ready = false;
-	simtime_t w = atomic_load_explicit(&racer.window_upper, memory_order_relaxed);
-
-	v = atomic_fetch_add_explicit(&cs[1], dec, memory_order_acq_rel) + dec;
-	if(v == cmp)
+	if(rid == 0)
 		racer_window_rearm();
 
-	racer_align_lps(w);
-
-	v = atomic_fetch_add_explicit(&cs[2], dec, memory_order_release) + dec;
+	v = atomic_fetch_add_explicit(&cs[1], dec, memory_order_acq_rel) + dec;
 	while(v != cmp && likely(termination_cant_end())) {
 		spin_pause();
-		v = atomic_load_explicit(&cs[2], memory_order_relaxed);
+		v = atomic_load_explicit(&cs[1], memory_order_relaxed);
 	}
 }
 

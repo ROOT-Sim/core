@@ -18,7 +18,7 @@
 #include <string.h>
 
 /// The minimum size of the payload to which message allocations are snapped to
-#define MSG_PAYLOAD_BASE_SIZE 32
+#define MSG_PAYLOAD_BASE_SIZE 1
 
 /**
  * @brief Compute the value of the happens-before relation between two messages
