@@ -351,7 +351,9 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
  */
 void process_msg(void)
 {
+	timer_uint t = timer_hr_new();
 	struct lp_msg *msg = msg_queue_extract();
+	stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
 	if(unlikely(!msg)) {
 		current_lp = NULL;
 		return;
