@@ -209,7 +209,6 @@ extern struct topology *vInitializeTopology(enum topology_geometry geometry, int
 
 /// A set of configurable values used by other modules
 struct simulation_configuration {
-	bool fake_racer;
 	/// The total number of LPs to be used in the simulation
 	lp_id_t lps_warp;
 	/// The number of LPs to be used in the window racer simulation

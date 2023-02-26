@@ -17,6 +17,9 @@
 #include <log/stats.h>
 #include <mm/msg_allocator.h>
 
+#define USE_RACER_FIRST_PARTITION 1
+#define USE_RACER_SECOND_PARTITION 0
+
 static void worker_thread_init(rid_t this_rid)
 {
 	rid = this_rid;
@@ -101,11 +104,18 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
 	worker_thread_init((uintptr_t)rid_arg);
 
-	if(rid < global_config.n_threads_racer && !global_config.fake_racer)
+	if(rid < global_config.n_threads_racer)
+#if USE_RACER_FIRST_PARTITION == 1
 		racer_loop();
-	else
+#else
 		warp_loop();
-
+#endif
+	else
+#if USE_RACER_SECOND_PARTITION == 1
+		racer_loop();
+#else
+		warp_loop();
+#endif
 
 	worker_thread_fini();
 
@@ -120,8 +130,14 @@ static void parallel_global_init(void)
 	termination_global_init();
 	gvt_global_init();
 
-	if(!global_config.n_threads_racer || global_config.fake_racer)
+#if USE_RACER_FIRST_PARTITION == 1
+	if(!global_config.n_threads_racer)
 		racer_reset();
+#endif
+#if USE_RACER_SECOND_PARTITION == 1
+	if(!global_config.n_threads_warp)
+		racer_reset();
+#endif
 }
 
 static void parallel_global_fini(void)
