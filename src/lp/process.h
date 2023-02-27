@@ -38,5 +38,3 @@ extern void process_lp_fini(struct lp_ctx *lp);
 
 extern void warp_process_msg(void);
 extern void racer_process_msg(void);
-extern simtime_t racer_last(void);
-extern void racer_reset(void);

@@ -14,16 +14,6 @@ static struct {
 	simtime_t window_last;
 } racer = {.window_upper = SIMTIME_MAX, .window_last = 0};
 
-simtime_t racer_last(void)
-{
-	return racer.window_last;
-}
-
-void racer_reset(void)
-{
-	racer.window_last = SIMTIME_MAX;
-}
-
 static void racer_on_rollback(simtime_t t)
 {
 	simtime_t w = atomic_load_explicit(&racer.window_upper, memory_order_relaxed);

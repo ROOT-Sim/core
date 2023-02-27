@@ -72,7 +72,7 @@ void gvt_global_init(void)
  */
 void gvt_start_processing(void)
 {
-	gvt_accumulator = racer_last();
+	gvt_accumulator = SIMTIME_MAX;
 	thread_phase = thread_phase_A;
 }
 
