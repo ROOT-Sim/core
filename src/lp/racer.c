@@ -11,17 +11,17 @@
 
 static struct {
 	_Atomic(simtime_t) window_upper;
-	_Atomic(simtime_t) window_last;
+	simtime_t window_last;
 } racer = {.window_upper = SIMTIME_MAX, .window_last = 0};
 
 simtime_t racer_last(void)
 {
-	return atomic_load_explicit(&racer.window_last, memory_order_relaxed);
+	return racer.window_last;
 }
 
 void racer_reset(void)
 {
-	atomic_store_explicit(&racer.window_last, SIMTIME_MAX, memory_order_relaxed);
+	racer.window_last = SIMTIME_MAX;
 }
 
 static void racer_on_rollback(simtime_t t)
@@ -53,8 +53,8 @@ static inline void racer_window_rearm(void)
 	static simtime_t window_delta;
 	simtime_t w = atomic_load_explicit(&racer.window_upper, memory_order_relaxed);
 	if(w > racer.window_last)
-		window_delta = EXP_AVG(8, window_delta, DELTA_EXTENSION * (w - racer.window_last));
-	atomic_store_explicit(&racer.window_last, w, memory_order_relaxed);
+		window_delta = EXP_AVG(4, window_delta, DELTA_EXTENSION * (w - racer.window_last));
+	racer.window_last = w;
 	atomic_store_explicit(&racer.window_upper, w + window_delta, memory_order_relaxed);
 }
 
