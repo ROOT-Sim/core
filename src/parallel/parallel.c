@@ -130,12 +130,7 @@ static void parallel_global_init(void)
 	termination_global_init();
 	gvt_global_init();
 
-#if USE_RACER_FIRST_PARTITION == 1
-	if(!global_config.n_threads_racer)
-		racer_reset();
-#endif
-#if USE_RACER_SECOND_PARTITION == 1
-	if(!global_config.n_threads_warp)
+#if USE_RACER_FIRST_PARTITION == 0 && USE_RACER_SECOND_PARTITION == 0
 		racer_reset();
 #endif
 }
