@@ -26,8 +26,7 @@ def compute_avg(values):
 
 def plot_data(data_label, threads, data, sub_fig):
     sub_fig.set_xticks(threads)
-    sub_fig.plot(threads, data, marker='.', markersize=3, markeredgecolor=(0.2, 0.3, 0.7),
-                 color=(0.4, 0.5, 0.7))
+    sub_fig.plot(threads, data, marker='.', markersize=3, markeredgecolor=(0.2, 0.3, 0.7), color=(0.4, 0.5, 0.7))
     sub_fig.set_xlabel('Threads')
     sub_fig.set_ylabel(data_label)
     sub_fig.label_outer()
@@ -43,8 +42,8 @@ def dump_tsv_data(data_label, threads, data):
 
 def plot_multi(filenames, dump_tsv=False):
     all_data = {}
-    for s in filenames:
-        thr_cnt, t, rf, eff = get_stats(s)
+    for filename in filenames:
+        thr_cnt, t, rf, eff = get_stats(filename)
         if thr_cnt not in all_data:
             all_data[thr_cnt] = ([], [], [])
         all_data[thr_cnt][0].append(t)

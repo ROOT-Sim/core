@@ -273,9 +273,9 @@ def dump_text_report(filename):
     msgs_cost = stats.thread_metric_get("processed messages time", aggregate_nodes=True, aggregate_gvts=True)
     checkpoints_cost = stats.thread_metric_get("checkpoints time", aggregate_nodes=True, aggregate_gvts=True)
     recoveries_cost = stats.thread_metric_get("recovery time", aggregate_nodes=True, aggregate_gvts=True)
-    avg_log_size = stats.thread_metric_get("checkpoints size", aggregate_nodes=True, aggregate_gvts=True) / \
-                   checkpoints if checkpoints != 0 else 0
+    checkpoints_size = stats.thread_metric_get("checkpoints size", aggregate_nodes=True, aggregate_gvts=True)
 
+    avg_checkpoint_size = checkpoints_size / checkpoints if checkpoints != 0 else 0
     avg_msg_cost = 0 if processed_msgs == 0 else msgs_cost / (processed_msgs * hr_ticks_per_second)
     avg_checkpoint_cost = 0 if checkpoints == 0 else checkpoints_cost / (checkpoints * hr_ticks_per_second)
     avg_recovery_cost = 0 if rollbacks == 0 else recoveries_cost / (rollbacks * hr_ticks_per_second)
@@ -299,29 +299,29 @@ def dump_text_report(filename):
     out_name = sys.argv[1][:-4] if sys.argv[1].endswith(".bin") else sys.argv[1]
     out_name = out_name + ".txt"
 
-    with open(out_name, "w+", encoding="utf8") as f:
-        f.write(f"TOTAL SIMULATION TIME ..... : {format_size(simulation_time, False)}s\n")
-        f.write(f"TOTAL KERNELS ............. : {stats.nodes_count}\n")
-        f.write(f"TOTAL_THREADS ............. : {sum(stats.threads_count)}\n")
-        f.write(f"TOTAL_LPs ................. : {lps_count}\n")
-        f.write(f"TOTAL EXECUTED EVENTS ..... : {processed_msgs + silent_msgs}\n")
-        f.write(f"TOTAL COMMITTED EVENTS..... : {processed_msgs - rollback_msgs}\n")
-        f.write(f"TOTAL REPROCESSED EVENTS... : {rollback_msgs}\n")
-        f.write(f"TOTAL SILENT EVENTS........ : {silent_msgs}\n")
-        f.write(f"TOTAL ROLLBACKS EXECUTED... : {rollbacks}\n")
-        f.write(f"TOTAL ANTIMESSAGES......... : {anti_msgs}\n")
-        f.write(f"ROLLBACK FREQUENCY......... : {rollback_freq:.2f}%\n")
-        f.write(f"ROLLBACK LENGTH............ : {rollback_len:.2f}\n")
-        f.write(f"EFFICIENCY................. : {efficiency:.2f}%\n")
-        f.write(f"AVERAGE EVENT COST......... : {format_size(avg_msg_cost, False)}s\n")
-        f.write(f"AVERAGE CHECKPOINT COST.... : {format_size(avg_checkpoint_cost, False)}s\n")
-        f.write(f"AVERAGE RECOVERY COST...... : {format_size(avg_recovery_cost, False)}s\n")
-        f.write(f"AVERAGE LOG SIZE........... : {format_size(avg_log_size)}B\n")
-        f.write(f"LAST COMMITTED GVT ........ : {last_gvt}\n")
-        f.write(f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n")
-        f.write(f"SIMULATION TIME SPEED...... : {sim_speed}\n")
-        f.write(f"AVERAGE MEMORY USAGE....... : {format_size(avg_memory_usage)}B\n")
-        f.write(f"PEAK MEMORY USAGE.......... : {format_size(peak_memory_usage)}B\n")
+    with open(out_name, "w+", encoding="utf8") as out_file:
+        out_file.write(f"TOTAL SIMULATION TIME ..... : {format_size(simulation_time, False)}s\n"
+                       f"TOTAL KERNELS ............. : {stats.nodes_count}\n" 
+                       f"TOTAL THREADS ............. : {sum(stats.threads_count)}\n"
+                       f"TOTAL LPS ................. : {lps_count}\n"
+                       f"TOTAL EXECUTED EVENTS ..... : {processed_msgs + silent_msgs}\n"
+                       f"TOTAL COMMITTED EVENTS..... : {processed_msgs - rollback_msgs}\n"
+                       f"TOTAL REPROCESSED EVENTS... : {rollback_msgs}\n"
+                       f"TOTAL SILENT EVENTS........ : {silent_msgs}\n"
+                       f"TOTAL ROLLBACKS EXECUTED... : {rollbacks}\n"
+                       f"TOTAL ANTIMESSAGES......... : {anti_msgs}\n"
+                       f"ROLLBACK FREQUENCY......... : {rollback_freq:.2f}%\n"
+                       f"ROLLBACK LENGTH............ : {rollback_len:.2f}\n"
+                       f"EFFICIENCY................. : {efficiency:.2f}%\n"
+                       f"AVERAGE EVENT COST......... : {format_size(avg_msg_cost, False)}s\n"
+                       f"AVERAGE CHECKPOINT COST.... : {format_size(avg_checkpoint_cost, False)}s\n"
+                       f"AVERAGE RECOVERY COST...... : {format_size(avg_recovery_cost, False)}s\n"
+                       f"AVERAGE CHECKPOINT SIZE.... : {format_size(avg_checkpoint_size)}B\n"
+                       f"LAST COMMITTED GVT ........ : {last_gvt}\n"
+                       f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n"
+                       f"SIMULATION TIME SPEED...... : {sim_speed}\n"
+                       f"AVERAGE MEMORY USAGE....... : {format_size(avg_memory_usage)}B\n"
+                       f"PEAK MEMORY USAGE.......... : {format_size(peak_memory_usage)}B\n")
 
 
 # Produce a boring textual report

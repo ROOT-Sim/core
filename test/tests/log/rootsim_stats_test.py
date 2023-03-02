@@ -15,8 +15,8 @@ def regex_get():
     stats_regex_str = f'''\
         TOTAL SIMULATION TIME ..... : {measure_regex}s
         TOTAL KERNELS ............. : {count_regex}
-        TOTAL_THREADS ............. : {count_regex}
-        TOTAL_LPs ................. : {count_regex}
+        TOTAL THREADS ............. : {count_regex}
+        TOTAL LPS ................. : {count_regex}
         TOTAL EXECUTED EVENTS ..... : {count_regex}
         TOTAL COMMITTED EVENTS..... : {count_regex}
         TOTAL REPROCESSED EVENTS... : {count_regex}
@@ -29,7 +29,7 @@ def regex_get():
         AVERAGE EVENT COST......... : {measure_regex}s
         AVERAGE CHECKPOINT COST.... : {measure_regex}s
         AVERAGE RECOVERY COST...... : {measure_regex}s
-        AVERAGE LOG SIZE........... : {measure_regex}B
+        AVERAGE CHECKPOINT SIZE.... : {measure_regex}B
         LAST COMMITTED GVT ........ : {float_regex}
         NUMBER OF GVT REDUCTIONS... : {count_regex}
         SIMULATION TIME SPEED...... : {float_regex}
