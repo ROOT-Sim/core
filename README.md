@@ -10,6 +10,7 @@ Research Group_
 [![GitHub issues](https://img.shields.io/github/issues/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/issues)
 [![GitHub](https://img.shields.io/github/license/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/blob/master/LICENSES/GPL-3.0-only.txt)
 [![REUSE status](https://api.reuse.software/badge/github.com/ROOT-Sim/core)](https://api.reuse.software/info/github.com/ROOT-Sim/core)
+
 ----------------------------------------------------------------------------------------
 
 ## The ROme OpTimistic Simulator

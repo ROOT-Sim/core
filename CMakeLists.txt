@@ -25,7 +25,7 @@ if(MSVC)
 endif()
 
 find_package(Threads REQUIRED)
-find_package(Python REQUIRED)
+find_package(Python3 3.6 REQUIRED)
 if(NOT DISABLE_MPI)
     find_package(MPI REQUIRED)
 endif()
