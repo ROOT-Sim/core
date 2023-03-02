@@ -11,8 +11,8 @@ def compute_diffs(values):
     ret = []
     iter_values = iter(values)
     ret.append(next(iter_values))
-    for i, val in enumerate(iter_values):
-        ret.append(val - values[i])
+    for i, value in enumerate(iter_values):
+        ret.append(value - values[i])
     return ret
 
 
@@ -32,12 +32,9 @@ def dump_tsv_data(data_label, rts, data):
 
 
 def plot_single(filename, dump_tsv=False):
-    plt.rcParams['font.family'] = ['monospace']
-    plt.rcParams["axes.unicode_minus"] = False
-
     stats = RSStats(filename)
     rts = stats.rts(reduction=lambda x: sum(x) / len(x))
-    rts = [val / 1000000 for val in rts]
+    rts = [value / 1000000 for value in rts]
     time_diff = compute_diffs(rts)
     gvt_advancement = compute_diffs(stats.gvts)
     gvt_advancement = [gvt_advancement[i] / time_diff[i] for i in range(len(time_diff))]
@@ -53,6 +50,8 @@ def plot_single(filename, dump_tsv=False):
         dump_tsv_data("Rollbacks", rts, rollbacks)
         dump_tsv_data("GVT advancement", rts, gvt_advancement)
     else:
+        plt.rcParams['font.family'] = ['monospace']
+        plt.rcParams["axes.unicode_minus"] = False
         _, figxs = plt.subplots(3)
         plot_data("Processed messages", rts, proc_msgs, figxs[0])
         plot_data("Rollbacks", rts, rollbacks, figxs[1])

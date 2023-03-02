@@ -158,7 +158,7 @@ class RSStats:
     ##
     # @brief Get the real time values
     # @return a list containing the computed real times in ascending order
-    def rts(self, reduction=min):
+    def rts(self, reduction=lambda x: sum(x) / len(x)):
         real_times = self._metrics["gvt real time"]
         ret = []
         for i in range(len(self._gvts)):
@@ -299,7 +299,7 @@ def dump_text_report(filename):
     out_name = sys.argv[1][:-4] if sys.argv[1].endswith(".bin") else sys.argv[1]
     out_name = out_name + ".txt"
 
-    with open(out_name, "w+", encoding="utf8") as out_file:
+    with open(out_name, "w", encoding="utf8") as out_file:
         out_file.write(f"TOTAL SIMULATION TIME ..... : {format_size(simulation_time, False)}s\n"
                        f"TOTAL KERNELS ............. : {stats.nodes_count}\n" 
                        f"TOTAL THREADS ............. : {sum(stats.threads_count)}\n"

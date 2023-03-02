@@ -15,9 +15,9 @@ def get_stats(file_name):
 
     rollback_freq = 100 * rollbacks / processed_msgs if processed_msgs != 0 else 0
     efficiency = 100 * (processed_msgs - rollback_msgs) / processed_msgs if processed_msgs else 100
-    total_seconds_first_node = rs_stats.nodes_stats["node_total_time"][0] / 1000000
+    total_seconds_first_node = rs_stats.nodes_stats["processing time"][0] / 1000000
 
-    return int(sum(rs_stats.threads_count)), total_seconds_first_node / 1000000, rollback_freq, efficiency
+    return sum(rs_stats.threads_count), total_seconds_first_node, rollback_freq, efficiency
 
 
 def compute_avg(values):
@@ -43,12 +43,12 @@ def dump_tsv_data(data_label, threads, data):
 def plot_multi(filenames, dump_tsv=False):
     all_data = {}
     for filename in filenames:
-        thr_cnt, t, rf, eff = get_stats(filename)
-        if thr_cnt not in all_data:
-            all_data[thr_cnt] = ([], [], [])
-        all_data[thr_cnt][0].append(t)
-        all_data[thr_cnt][1].append(rf)
-        all_data[thr_cnt][2].append(eff)
+        threads_count, total_time, rollback_freq, efficiency = get_stats(filename)
+        if threads_count not in all_data:
+            all_data[threads_count] = ([], [], [])
+        all_data[threads_count][0].append(total_time)
+        all_data[threads_count][1].append(rollback_freq)
+        all_data[threads_count][2].append(efficiency)
 
     threads = sorted(all_data.keys())
     times = []
@@ -60,16 +60,16 @@ def plot_multi(filenames, dump_tsv=False):
         efficiencies.append(compute_avg(all_data[thr][2]))
 
     if dump_tsv:
-        dump_tsv_data("Execution time", threads, times)
-        dump_tsv_data("% Rollback", threads, rollback_probs)
-        dump_tsv_data("% Efficiency", threads, efficiencies)
+        dump_tsv_data("Processing time (seconds)", threads, times)
+        dump_tsv_data("Rollback (%)", threads, rollback_probs)
+        dump_tsv_data("Efficiency (%)", threads, efficiencies)
     else:
-        plt.rcParams['font.family'] = ['mono']
+        plt.rcParams['font.family'] = ['monospace']
         plt.rcParams["axes.unicode_minus"] = False
         fig, figxs = plt.subplots(3)
-        plot_data("Execution time", threads, times, figxs[0])
-        plot_data("% Rollback", threads, rollback_probs, figxs[1])
-        plot_data("% Efficiency", threads, efficiencies, figxs[2])
+        plot_data(r"Processing time ($\it{seconds}$)", threads, times, figxs[0])
+        plot_data(r"Rollback ($\it{%}$)", threads, rollback_probs, figxs[1])
+        plot_data(r"Efficiency ($\it{%}$)", threads, efficiencies, figxs[2])
         plt.show()
 
 
