@@ -23,7 +23,9 @@
 #include <stdatomic.h>
 
 /// Determine an ordering between two elements in a queue
-#define q_elem_is_before(ma, mb) ((ma).t < (mb).t || ((ma).t == (mb).t && msg_is_before_extended(ma.m, mb.m)))
+#define q_elem_is_before(ma, mb)                                                                                       \
+	((ma).t < (mb).t ||                                                                                            \
+	    ((ma).t == (mb).t && ((ma).m->raw_flags & MSG_FLAG_ANTI) > ((mb).m->raw_flags & MSG_FLAG_ANTI)))
 
 /// An element in the message queue
 struct q_elem {
