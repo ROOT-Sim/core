@@ -109,7 +109,10 @@ static int serial_simulation_run(void)
 			last_vt = timer_new();
 		}
 
-		msg_allocator_free(heap_extract(queue, msg_is_before));
+		timer_uint t = timer_hr_new();
+		struct lp_msg *to_free = heap_extract(queue, msg_is_before);
+		stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
+		msg_allocator_free(to_free);
 	}
 
 	stats_dump();
