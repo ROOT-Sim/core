@@ -23,9 +23,7 @@
 #include <stdatomic.h>
 
 /// Determine an ordering between two elements in a queue
-#define q_elem_is_before(ma, mb)                                                                                       \
-	((ma).t < (mb).t ||                                                                                            \
-	    ((ma).t == (mb).t && ((ma).m->raw_flags & MSG_FLAG_ANTI) > ((mb).m->raw_flags & MSG_FLAG_ANTI)))
+#define q_elem_is_before(ma, mb)  ((ma).t < (mb).t)
 
 /// An element in the message queue
 struct q_elem {
@@ -95,7 +93,7 @@ static inline void msg_queue_insert_queued(void)
 {
 	struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
 	while(m != NULL) {
-		struct q_elem qe = {.t = m->dest_t, .m = m};
+		struct q_elem qe = {.t = (m->raw_flags & MSG_FLAG_ANTI) ? 0 : m->dest_t, .m = m};
 		heap_insert(mqp, q_elem_is_before, qe);
 		m = m->next;
 	}
@@ -112,19 +110,6 @@ struct lp_msg *msg_queue_extract(void)
 {
 	msg_queue_insert_queued();
 	return likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
-}
-
-/**
- * @brief Peeks the timestamp of the next message from the queue
- * @returns the lowest timestamp of the next message to be processed or SIMTIME_MAX is there's no message to process
- *
- * This returns the lowest timestamp of the next message to be processed for the current thread. This is calculated in a
- * precise fashion since this value is used in the gvt calculation.
- */
-simtime_t msg_queue_time_peek(void)
-{
-	msg_queue_insert_queued();
-	return likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
 }
 
 /**

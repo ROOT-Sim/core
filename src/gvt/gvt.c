@@ -111,7 +111,6 @@ static bool gvt_thread_phase_run(void)
 		case thread_phase_A:
 			if(atomic_load_explicit(&c_a, memory_order_relaxed))
 				break;
-			gvt_accumulator = min(gvt_accumulator, msg_queue_time_peek());
 			thread_phase = thread_phase_B;
 			atomic_fetch_add_explicit(&c_b, 1U, memory_order_relaxed);
 			break;
@@ -124,7 +123,7 @@ static bool gvt_thread_phase_run(void)
 		case thread_phase_C:
 			if(atomic_load_explicit(&c_a, memory_order_relaxed) != global_config.n_threads)
 				break;
-			reducing_p[rid] = min(gvt_accumulator, msg_queue_time_peek());
+			reducing_p[rid] = gvt_accumulator;
 			thread_phase = thread_phase_D;
 			atomic_fetch_sub_explicit(&c_b, 1U, memory_order_release);
 			break;
