@@ -66,16 +66,14 @@ def plot_multi(filenames, dump_tsv=False):
     else:
         plt.rcParams['font.family'] = ['monospace']
         plt.rcParams["axes.unicode_minus"] = False
-        fig, figxs = plt.subplots(3)
+        _, figxs = plt.subplots(3)
         plot_data(r"Processing time ($\it{seconds}$)", threads, times, figxs[0])
         plot_data(r"Rollback ($\it{%}$)", threads, rollback_probs, figxs[1])
         plot_data(r"Efficiency ($\it{%}$)", threads, efficiencies, figxs[2])
         plt.show()
 
 
-# This is a use example of the RSStats class
-# You can actually include this module in your code and use the object as it is done here
-if __name__ == "__main__":
+def plot_multi_main():
     tsv_arg = True
     try:
         sys.argv.remove('--tsv')
@@ -87,3 +85,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     plot_multi(sys.argv[1:], tsv_arg)
+
+
+# This is a use example of the RSStats class
+# You can actually include this module in your code and use the object as it is done here
+if __name__ == "__main__":
+    plot_multi_main()

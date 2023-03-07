@@ -55,7 +55,7 @@ def test_init():
 def test_stats_file(base_name, expected):
     full_base_name = os.path.join(bin_folder, base_name)
     if not os.path.isfile(full_base_name + ".bin"):
-        exit(1)
+        sys.exit(1)
     sys.argv[1] = full_base_name + ".bin"
     runpy.run_path(path_name=rs_script_path, run_name="__main__")
     with open(full_base_name + ".txt", "r", encoding="utf8") as report_file:
@@ -63,14 +63,14 @@ def test_stats_file(base_name, expected):
 
     match = stats_regex.fullmatch(data)
     if match is None:
-        exit(1)
+        sys.exit(1)
 
     for i, expected_field in enumerate(expected):
         if expected_field == 'NZ':
             if float(match[i + 1]) == 0:
-                exit(1)
+                sys.exit(1)
         elif expected_field != match[i + 1]:
-            exit(1)
+            sys.exit(1)
 
 
 if __name__ == "__main__":

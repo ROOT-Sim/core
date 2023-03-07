@@ -297,7 +297,7 @@ def dump_text_report(filename):
         sim_speed = last_gvt / len(stats.gvts)
 
     out_name = sys.argv[1][:-4] if sys.argv[1].endswith(".bin") else sys.argv[1]
-    out_name = out_name + ".txt"
+    out_name += ".txt"
 
     with open(out_name, "w", encoding="utf8") as out_file:
         out_file.write(f"TOTAL SIMULATION TIME ..... : {format_size(simulation_time, False)}s\n"

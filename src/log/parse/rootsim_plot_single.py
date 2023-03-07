@@ -59,9 +59,7 @@ def plot_single(filename, dump_tsv=False):
         plt.show()
 
 
-# This is a use example of the RSStats class
-# You can actually include this module in your code and use the object as it is done here
-if __name__ == "__main__":
+def plot_single_main():
     tsv_arg = True
     try:
         sys.argv.remove('--tsv')
@@ -73,3 +71,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     plot_single(sys.argv[1], tsv_arg)
+
+
+# This is a use example of the RSStats class
+# You can actually include this module in your code and use the object as it is done here
+if __name__ == "__main__":
+    plot_single_main()
