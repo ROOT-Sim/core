@@ -497,25 +497,20 @@ int test_mesh(_unused void *_)
 #define NUM_QUERIES 50
 int test_graph(_unused void *_)
 {
-	struct topology *topology;
-	unsigned num_edges;
-	lp_id_t from, to;
-
 	for(unsigned nodes = 1; nodes < MAX_NODES_TEST; nodes++) {
-		topology = InitializeTopology(TOPOLOGY_GRAPH, nodes);
-
-		num_edges = (unsigned)(nodes + (double)test_random_u() / ((double)ULLONG_MAX / (9 * nodes + 1) + 1));
+		struct topology *topology = InitializeTopology(TOPOLOGY_GRAPH, nodes);
+		unsigned num_edges = nodes + (unsigned)(test_random_double() * (double)(9 * nodes + 1));
 		for(unsigned edge = 0; edge < num_edges; edge++) {
-			from = test_random_range(nodes);
-			to = test_random_range(nodes);
+			lp_id_t from = test_random_range(nodes);
+			lp_id_t to = test_random_range(nodes);
 			test_assert(AddTopologyLink(topology, from, to, test_random_double()));
 			test_assert(AddTopologyLink(topology, from, to, 2.0) == false);
 			test_assert(AddTopologyLink(topology, from, to, -1.0) == false);
 		}
 
 		for(unsigned i = 0; i < NUM_QUERIES; i++) {
-			from = test_random_range(nodes);
-			to = GetReceiver(from, topology, DIRECTION_RANDOM);
+			lp_id_t from = test_random_range(nodes);
+			lp_id_t to = GetReceiver(from, topology, DIRECTION_RANDOM);
 
 			// We get an invalid direction only if there is a node with no
 			// outgoing edges. In this case, we check this condition.
@@ -532,7 +527,7 @@ int test_graph(_unused void *_)
 	}
 
 	// Test sanity checks on graphs
-	topology = InitializeTopology(TOPOLOGY_GRAPH, 1);
+	struct topology *topology = InitializeTopology(TOPOLOGY_GRAPH, 1);
 	for(enum topology_direction i = 0; i <= LAST_DIRECTION_VALID_VALUE; i++)
 		test_assert(GetReceiver(0, topology, i) == INVALID_DIRECTION);
 	ReleaseTopology(topology);
@@ -544,8 +539,6 @@ int test_graph(_unused void *_)
 
 int test_init_fini(_unused void *_)
 {
-	struct topology *topology;
-
 	for(enum topology_geometry i = 1; i <= LAST_TOPOLOGY_WITH_TWO_PARAMETERS; i++) {
 		test_assert(InitializeTopology(i, 0, 0) == NULL);
 		test_assert(InitializeTopology(i, 1, 0) == NULL);
@@ -553,7 +546,7 @@ int test_init_fini(_unused void *_)
 		// Testing a variadic function, these are the two parameters
 		unsigned par1 = test_random_range(100) + 1;
 		unsigned par2 = test_random_range(100) + 1;
-		topology = InitializeTopology(i, par1, par2);
+		struct topology *topology = InitializeTopology(i, par1, par2);
 		test_assert(CountRegions(topology) == par1 * par2);
 		test_assert(GetReceiver(par1 * par2 + 1, topology, DIRECTION_E) == INVALID_DIRECTION);
 		test_assert(AddTopologyLink(topology, par1, par2, test_random_double()) == false);
@@ -564,7 +557,7 @@ int test_init_fini(_unused void *_)
 		test_assert(InitializeTopology(i, 0) == NULL);
 		// Testing a variadic function, this is the single parameter
 		unsigned par1 = test_random_range(100) + 1;
-		topology = InitializeTopology(i, par1);
+		struct topology *topology = InitializeTopology(i, par1);
 		test_assert(CountRegions(topology) == par1);
 		test_assert(GetReceiver(par1 + 1, topology, DIRECTION_E) == INVALID_DIRECTION);
 		ReleaseTopology(topology);

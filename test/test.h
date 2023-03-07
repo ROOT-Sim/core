@@ -29,4 +29,4 @@ extern unsigned test_parallel_thread_id(void);
 extern void test_assert_internal(_Bool condition, const char *file_name, unsigned line_count);
 #define test_assert(condition) test_assert_internal(condition, __FILE__, __LINE__)
 
-extern struct lp_ctx *test_lp_mock_get();
+extern struct lp_ctx *test_lp_mock_get(void);

@@ -301,7 +301,7 @@ def dump_text_report(filename):
 
     with open(out_name, "w", encoding="utf8") as out_file:
         out_file.write(f"TOTAL SIMULATION TIME ..... : {format_size(simulation_time, False)}s\n"
-                       f"TOTAL KERNELS ............. : {stats.nodes_count}\n" 
+                       f"TOTAL KERNELS ............. : {stats.nodes_count}\n"
                        f"TOTAL THREADS ............. : {sum(stats.threads_count)}\n"
                        f"TOTAL LPS ................. : {lps_count}\n"
                        f"TOTAL EXECUTED EVENTS ..... : {processed_msgs + silent_msgs}\n"
