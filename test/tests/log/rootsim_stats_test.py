@@ -15,6 +15,7 @@ def regex_get():
 
     stats_regex_str = f'''\
         TOTAL SIMULATION TIME ..... : {measure_regex}s
+        TOTAL PROCESSING TIME ..... : {measure_regex}s
         TOTAL KERNELS ............. : {count_regex}
         TOTAL THREADS ............. : {count_regex}
         TOTAL LPS ................. : {count_regex}
@@ -76,13 +77,13 @@ def test_stats_file(base_name, expected):
 if __name__ == "__main__":
     rs_script_path, bin_folder = test_init()
     stats_regex = regex_get()
-    test_stats_file("empty_stats", ["NZ", "1", "2", "0", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00", "0",
-                                    "0", "0", "0", "0.0", "0", "0.0", "0", "NZ"])
-    test_stats_file("single_gvt_stats", ["NZ", "1", "2", "16", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00",
-                                         "0", "0", "0", "0", "0.0", "1", "0.0", "NZ", "NZ"])
-    test_stats_file("multi_gvt_stats", ["NZ", "1", "2", "16", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00",
-                                        "0", "0", "0", "0", "48.56", "4", "12.14", "NZ", "NZ"])
-    test_stats_file("measures_stats", ["NZ", "1", "2", "16", "156", "102", "24", "30", "20", "60", "15.87", "1.20",
+    test_stats_file("empty_stats", ["NZ", "0", "1", "2", "0", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00",
+                                    "0", "0", "0", "0", "0.0", "0", "0.0", "0", "NZ"])
+    test_stats_file("single_gvt_stats", ["NZ", "0", "1", "2", "16", "0", "0", "0", "0", "0", "0", "0.00", "0.00",
+                                         "100.00", "0", "0", "0", "0", "0.0", "1", "0.0", "NZ", "NZ"])
+    test_stats_file("multi_gvt_stats", ["NZ", "0", "1", "2", "16", "0", "0", "0", "0", "0", "0", "0.00", "0.00",
+                                        "100.00", "0", "0", "0", "0", "48.56", "4", "12.14", "NZ", "NZ"])
+    test_stats_file("measures_stats", ["NZ", "0", "1", "2", "16", "156", "102", "24", "30", "20", "60", "15.87", "1.20",
                                        "80.95", "0", "0", "0", "0", "0.0", "1", "0.0", "NZ", "NZ"])
 
     # TODO: test the actual RSStats python object

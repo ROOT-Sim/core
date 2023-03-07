@@ -15,7 +15,7 @@ def get_stats(file_name):
 
     rollback_freq = 100 * rollbacks / processed_msgs if processed_msgs != 0 else 0
     efficiency = 100 * (processed_msgs - rollback_msgs) / processed_msgs if processed_msgs else 100
-    total_seconds_first_node = rs_stats.nodes_stats["processing time"][0] / 1000000
+    total_seconds_first_node = rs_stats.nodes_stats["processing_time"][0] / 1000000
 
     return sum(rs_stats.threads_count), total_seconds_first_node, rollback_freq, efficiency
 
@@ -68,8 +68,8 @@ def plot_multi(filenames, dump_tsv=False):
         plt.rcParams["axes.unicode_minus"] = False
         _, figxs = plt.subplots(3)
         plot_data(r"Processing time ($\it{seconds}$)", threads, times, figxs[0])
-        plot_data(r"Rollback ($\it{%}$)", threads, rollback_probs, figxs[1])
-        plot_data(r"Efficiency ($\it{%}$)", threads, efficiencies, figxs[2])
+        plot_data(r"Rollback ($\it{\%}$)", threads, rollback_probs, figxs[1])
+        plot_data(r"Efficiency ($\it{\%}$)", threads, efficiencies, figxs[2])
         plt.show()
 
 

@@ -40,22 +40,23 @@ def plot_single(filename, dump_tsv=False):
     gvt_advancement = [gvt_advancement[i] / time_diff[i] for i in range(len(time_diff))]
 
     proc_msgs = stats.thread_metric_get("processed messages", aggregate_threads=True, aggregate_nodes=True)
-    proc_msgs = [proc_msgs[i] / time_diff[i] for i in range(len(time_diff))]
+    rbs_msgs = stats.thread_metric_get("rolled back messages", aggregate_threads=True, aggregate_nodes=True)
+    proc_msgs = [(proc_msgs[i] - rbs_msgs[i]) / time_diff[i] for i in range(len(time_diff))]
 
     rollbacks = stats.thread_metric_get("rollbacks", aggregate_threads=True, aggregate_nodes=True)
     rollbacks = [rollbacks[i] / time_diff[i] for i in range(len(time_diff))]
 
     if dump_tsv:
-        dump_tsv_data("Processed messages", rts, proc_msgs)
-        dump_tsv_data("Rollbacks", rts, rollbacks)
-        dump_tsv_data("GVT advancement", rts, gvt_advancement)
+        dump_tsv_data("Committed events per second", rts, proc_msgs)
+        dump_tsv_data("Rollbacks per second", rts, rollbacks)
+        dump_tsv_data("GVT advancement per second", rts, gvt_advancement)
     else:
         plt.rcParams['font.family'] = ['monospace']
         plt.rcParams["axes.unicode_minus"] = False
         _, figxs = plt.subplots(3)
-        plot_data("Processed messages", rts, proc_msgs, figxs[0])
-        plot_data("Rollbacks", rts, rollbacks, figxs[1])
-        plot_data("GVT advancement", rts, gvt_advancement, figxs[2])
+        plot_data("Committed events per second", rts, proc_msgs, figxs[0])
+        plot_data("Rollbacks per second", rts, rollbacks, figxs[1])
+        plot_data("GVT advancement per second", rts, gvt_advancement, figxs[2])
         plt.show()
 
 

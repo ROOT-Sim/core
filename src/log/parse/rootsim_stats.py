@@ -263,6 +263,7 @@ def dump_text_report(filename):
 
     simulation_time = stats.nodes_stats["node_total_time"][0] / 1000000
     hr_ticks_per_second = stats.nodes_stats["node_total_hr_time"][0] / simulation_time
+    processing_time = stats.nodes_stats["processing_time"][0] / 1000000
 
     processed_msgs = stats.thread_metric_get("processed messages", aggregate_nodes=True, aggregate_gvts=True)
     anti_msgs = stats.thread_metric_get("anti messages", aggregate_nodes=True, aggregate_gvts=True)
@@ -301,6 +302,7 @@ def dump_text_report(filename):
 
     with open(out_name, "w", encoding="utf8") as out_file:
         out_file.write(f"TOTAL SIMULATION TIME ..... : {format_size(simulation_time, False)}s\n"
+                       f"TOTAL PROCESSING TIME ..... : {format_size(processing_time, False)}s\n"
                        f"TOTAL KERNELS ............. : {stats.nodes_count}\n"
                        f"TOTAL THREADS ............. : {sum(stats.threads_count)}\n"
                        f"TOTAL LPS ................. : {lps_count}\n"
