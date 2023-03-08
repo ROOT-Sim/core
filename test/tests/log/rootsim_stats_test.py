@@ -29,7 +29,7 @@ def regex_get():
         AVERAGE EVENT COST......... : {measure_regex}s
         AVERAGE CHECKPOINT COST.... : {measure_regex}s
         AVERAGE RECOVERY COST...... : {measure_regex}s
-        AVERAGE LOG SIZE........... : {measure_regex}B
+        AVERAGE CHECKPOINT SIZE.... : {measure_regex}B
         LAST COMMITTED GVT ........ : {float_regex}
         NUMBER OF GVT REDUCTIONS... : {count_regex}
         SIMULATION TIME SPEED...... : {float_regex}

@@ -322,7 +322,7 @@ if __name__ == "__main__":
         f.write(f"AVERAGE EVENT COST......... : {fmt_size(avg_msg_cost, False)}s\n")
         f.write(f"AVERAGE CHECKPOINT COST.... : {fmt_size(avg_checkpoint_cost, False)}s\n")
         f.write(f"AVERAGE RECOVERY COST...... : {fmt_size(avg_recovery_cost, False)}s\n")
-        f.write(f"AVERAGE LOG SIZE........... : {fmt_size(avg_log_size)}B\n")
+        f.write(f"AVERAGE CHECKPOINT SIZE.... : {fmt_size(avg_log_size)}B\n")
         f.write(f"LAST COMMITTED GVT ........ : {last_gvt}\n")
         f.write(f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n")
         f.write(f"SIMULATION TIME SPEED...... : {sim_speed}\n")

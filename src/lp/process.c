@@ -49,7 +49,6 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
 #ifndef NDEBUG
-	msg->raw_flags = 0;
 	if(msg_is_before(msg, current_msg)) {
 		logger(LOG_FATAL, "Scheduling a message in the past!");
 		abort();
@@ -111,6 +110,7 @@ void process_lp_init(struct lp_ctx *lp)
 void process_lp_fini(struct lp_ctx *lp)
 {
 	current_lp = lp;
+	silent_processing = true;
 	global_config.dispatcher(lp - lps, 0, LP_FINI, NULL, 0, lp->state_pointer);
 
 	for(array_count_t i = 0; i < array_count(lp->p.p_msgs); ++i) {

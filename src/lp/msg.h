@@ -53,7 +53,7 @@
  * @brief Get the size of the a anti-message data, i.e. the part of the anti-message to be transmitted over MPI
  * @return the size in bytes of the anti-message data
  */
-#define msg_remote_anti_size() (offsetof(struct lp_msg, m_seq) - msg_preamble_size() + sizeof(uint32_t))
+#define msg_remote_anti_size() (offsetof(struct lp_msg, m_type) - msg_preamble_size())
 
 /// A model simulation message
 struct lp_msg {
@@ -63,6 +63,8 @@ struct lp_msg {
 	lp_id_t dest;
 	/// The intended destination logical time of this message
 	simtime_t dest_t;
+	/// The message sequence number
+	uint32_t m_seq;
 	union {
 		/// The flags to handle local anti messages
 		_Atomic uint32_t flags;
@@ -75,8 +77,6 @@ struct lp_msg {
 	/// The send time of the message
 	simtime_t send_t;
 #endif
-	/// The message sequence number
-	uint32_t m_seq;
 	/// The message type, a user controlled field
 	uint32_t m_type;
 	/// The message payload size
