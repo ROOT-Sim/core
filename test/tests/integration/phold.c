@@ -10,7 +10,9 @@
 
 #include <ROOT-Sim.h>
 
+#include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #ifndef NUM_LPS
 #define NUM_LPS 8192
@@ -22,6 +24,10 @@
 
 #define EVENT 1
 
+struct phold_state {
+	struct drand48_data rng_state;
+};
+
 struct phold_message {
 	long int dummy_data;
 };
@@ -31,27 +37,46 @@ static simtime_t mean = 1.0;
 static simtime_t lookahead = 0.0;
 static int start_events = 1;
 
+static double Random(struct phold_state *state)
+{
+	double res;
+	drand48_r(&state->rng_state, &res);
+	return res;
+}
+
+static double Expent(struct phold_state *state)
+{
+	return mean * (-log(1. - Random(state)));
+}
+
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, _unused const void *content, _unused unsigned size,
-    _unused void *s)
+    void *s)
 {
 	struct phold_message new_event = {0};
 	lp_id_t dest;
+	struct phold_state *state = (struct phold_state *)s;
 
 	switch(event_type) {
-		case LP_FINI:
+		case LP_INIT:
+			state = malloc(sizeof(*state));
+			if(state == NULL)
+				abort();
+			srand48_r((signed long)me, &state->rng_state);
+			SetState(state);
+
+			for(int i = 0; i < start_events; i++)
+				ScheduleNewEvent(me, Expent(state) + lookahead, EVENT, &new_event, sizeof(new_event));
 			break;
 
-		case LP_INIT:
-			for(int i = 0; i < start_events; i++)
-				ScheduleNewEvent(me, Expent(mean) + lookahead, EVENT, &new_event, sizeof(new_event));
+		case LP_FINI:
 			break;
 
 		case EVENT:
 			dest = me;
-			if(Random() <= p_remote)
-				dest = (lp_id_t)(Random() * NUM_LPS);
+			if(Random(state) <= p_remote)
+				dest = (lp_id_t)(Random(state) * NUM_LPS);
 
-			ScheduleNewEvent(dest, now + Expent(mean) + lookahead, EVENT, &new_event, sizeof(new_event));
+			ScheduleNewEvent(dest, now + Expent(state) + lookahead, EVENT, &new_event, sizeof(new_event));
 			break;
 
 		default:
