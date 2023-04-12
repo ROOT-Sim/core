@@ -20,6 +20,7 @@ set(rscore_srcs
         log/stats.c
         lp/lp.c
         lp/process.c
+        lp/racer.c
         mm/auto_ckpt.c
         mm/buddy/buddy.c
         mm/buddy/ckpt.c

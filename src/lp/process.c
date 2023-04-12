@@ -18,6 +18,7 @@
 #include <log/stats.h>
 #include <lp/common.h>
 #include <lp/lp.h>
+#include <lp/racer.h>
 #include <mm/auto_ckpt.h>
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
@@ -111,6 +112,7 @@ void process_lp_init(struct lp_ctx *lp)
 void process_lp_fini(struct lp_ctx *lp)
 {
 	current_lp = lp;
+	silent_processing = true;
 	global_config.dispatcher(lp - lps, 0, LP_FINI, NULL, 0, lp->state_pointer);
 
 	for(array_count_t i = 0; i < array_count(lp->p.p_msgs); ++i) {
@@ -350,14 +352,8 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
  *
  * This function encloses most of the actual parallel/distributed simulation logic.
  */
-void process_msg(void)
+void process_msg(struct lp_msg *msg)
 {
-	struct lp_msg *msg = msg_queue_extract();
-	if(unlikely(!msg)) {
-		current_lp = NULL;
-		return;
-	}
-
 	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *lp = &lps[msg->dest];
@@ -368,6 +364,9 @@ void process_msg(void)
 		fossil_lp_collect(lp);
 		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
 	}
+
+	if(unlikely(lp->is_racer && racer_handle(msg)))
+		return;
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 	if(unlikely(flags & MSG_FLAG_ANTI)) {

@@ -28,6 +28,8 @@ struct lp_ctx {
 	void *state_pointer;
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
+	///
+	bool is_racer;
 	/// The automatic checkpointing interval selection data
 	struct auto_ckpt auto_ckpt;
 	/// The message processing context of this LP

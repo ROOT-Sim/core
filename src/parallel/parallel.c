@@ -15,11 +15,13 @@
 #include <distributed/mpi.h>
 #include <gvt/fossil.h>
 #include <log/stats.h>
+#include <lp/racer.h>
 #include <mm/msg_allocator.h>
 
 static void worker_thread_init(rid_t this_rid)
 {
 	rid = this_rid;
+	racer_init();
 	stats_init();
 	auto_ckpt_init();
 	msg_allocator_init();
@@ -54,6 +56,7 @@ static void worker_thread_fini(void)
 	msg_queue_fini();
 	sync_thread_barrier();
 	msg_allocator_fini();
+	racer_fini();
 }
 
 static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
@@ -64,8 +67,14 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 		mpi_remote_msg_handle();
 
 		unsigned i = 64;
-		while(i--)
-			process_msg();
+		while(i--) {
+			struct lp_msg *msg = msg_queue_extract();
+			if(likely(msg != NULL))
+				process_msg(msg);
+		}
+
+		if(racer_phase())
+			continue;
 
 		simtime_t current_gvt = gvt_phase_run();
 		if(unlikely(current_gvt != 0.0)) {
