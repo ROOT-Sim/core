@@ -52,7 +52,7 @@ The core is continuously tested against the following MPI implementations:
 
 * OpenMPI
 * MPICH
-* Microsoft MPI
+* Intel MPI
 
 Any of the three is required to build the project. A full MPI3 implementation supporting multithreading is necessary.
 
