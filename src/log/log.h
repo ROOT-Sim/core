@@ -10,9 +10,9 @@
  */
 #pragma once
 
-#include <stdio.h>
+#include <ROOT-Sim.h>
 
-void vlogger(unsigned level, char *file, unsigned line, const char *fmt, ...);
+extern void vlogger(enum log_level level, char *file, unsigned line, const char *fmt, ...);
 
 /**
  * @brief Produce a log message

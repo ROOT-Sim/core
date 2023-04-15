@@ -11,9 +11,7 @@
 #include <lp/lp.h>
 
 #include <datatypes/msg_queue.h>
-#include <mm/mm.h>
 #include <core/sync.h>
-#include <gvt/fossil.h>
 #include <gvt/termination.h>
 
 /// The lowest LP id between the ones hosted on this node
@@ -29,6 +27,10 @@ __thread struct lp_ctx *current_lp;
 struct lp_ctx *lps;
 /// The number of LPs hosted on this node
 lp_id_t n_lps_node;
+
+#ifndef NDEBUG
+bool lp_initialized;
+#endif
 
 /**
  * @brief Compute the first index of a partition in a linear space of indexes
@@ -89,16 +91,18 @@ void lp_init(void)
 
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
 		struct lp_ctx *lp = &lps[i];
+
+		model_allocator_lp_init(&lp->mm_state);
+		lp->state_pointer = NULL;
+		lp->fossil_epoch = 0;
+
 		current_lp = lp;
+		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
+		random_lib_lp_init(i, lp->rng_ctx);
 
-		model_allocator_lp_init();
-		lp->lib_ctx = rs_malloc(sizeof(*current_lp->lib_ctx));
-
-		msg_queue_lp_init();
-		lib_lp_init();
 		auto_ckpt_lp_init(&lp->auto_ckpt);
-		process_lp_init();
-		termination_lp_init();
+		process_lp_init(lp);
+		termination_lp_init(lp);
 	}
 }
 
@@ -107,54 +111,27 @@ void lp_init(void)
  */
 void lp_fini(void)
 {
-	if(sync_thread_barrier()) {
-		for(uint64_t i = 0; i < n_lps_node; ++i) {
-			current_lp = &lps[i + lid_node_first];
-			process_lp_deinit();
-		}
-	}
-
-	sync_thread_barrier();
-
 	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
-		current_lp = &lps[i];
+		struct lp_ctx *lp = &lps[i];
 
-		process_lp_fini();
-		lib_lp_fini();
-		msg_queue_lp_fini();
-		model_allocator_lp_fini();
+		process_lp_fini(lp);
+		model_allocator_lp_fini(&lp->mm_state);
 	}
 
 	current_lp = NULL;
 }
 
 /**
- * @brief Do housekeeping operations on the thread-locally hosted LPs after a fresh GVT
- * @param gvt the value of the freshly computed GVT
+ * @brief Set the LP simulation state main pointer
+ * @param state The state pointer to be passed to ProcessEvent() for the invoker LP
  */
-void lp_on_gvt(simtime_t gvt)
+void SetState(void *state)
 {
-	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
-		struct lp_ctx *lp = &lps[i];
-		fossil_lp_on_gvt(lp, gvt);
-		auto_ckpt_lp_on_gvt(&lp->auto_ckpt, lp->mm_state.used_mem);
+#ifndef NDEBUG
+	if(unlikely(lp_initialized)) {
+		logger(LOG_FATAL, "SetState() is being called outside the LP_INIT event!");
+		abort();
 	}
-}
-
-/**
- * @brief Compute the id of the currently processed LP
- * @return the id of the current LP
- */
-lp_id_t lp_id_get(void)
-{
-	return current_lp - lps;
-}
-
-/**
- * @brief Retrieve the user libraries dynamic state of the current LP
- * @return a pointer to the user libraries dynamic state of the current LP
- */
-struct lib_ctx *lib_ctx_get(void)
-{
-	return current_lp->lib_ctx;
+#endif
+	current_lp->state_pointer = state;
 }

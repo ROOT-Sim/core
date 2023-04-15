@@ -12,7 +12,7 @@
 
 #include <arch/platform.h>
 #include <core/core.h>
-#include <lib/lib.h>
+#include <lib/random/random.h>
 #include <lp/msg.h>
 #include <lp/process.h>
 #include <mm/auto_ckpt.h>
@@ -20,16 +20,18 @@
 
 /// A complete LP context
 struct lp_ctx {
-	/// ID of the current LP
-	lp_id_t id;
 	/// The termination time of this LP, handled by the termination module
 	simtime_t termination_t;
 	/// The additional libraries context of this LP
-	struct lib_ctx *lib_ctx;
+	struct rng_ctx *rng_ctx;
+	/// The pointer set by the model with the SetState() API call
+	void *state_pointer;
+	/// The housekeeping epoch number
+	unsigned fossil_epoch;
 	/// The automatic checkpointing interval selection data
 	struct auto_ckpt auto_ckpt;
 	/// The message processing context of this LP
-	struct process_data p;
+	struct process_ctx p;
 	/// The memory allocator state of this LP
 	struct mm_state mm_state;
 };
@@ -57,13 +59,15 @@ extern __thread uint64_t lid_thread_end;
 extern __thread struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
 
+#ifndef NDEBUG
+extern bool lp_initialized;
+#define lp_initialized_set() (lp_initialized = true)
+#else
+#define lp_initialized_set()
+#endif
+
 extern void lp_global_init(void);
 extern void lp_global_fini(void);
 
 extern void lp_init(void);
 extern void lp_fini(void);
-
-extern void lp_on_gvt(simtime_t gvt);
-
-_pure extern lp_id_t lp_id_get(void);
-_pure extern struct lib_ctx *lib_ctx_get(void);

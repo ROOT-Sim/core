@@ -18,7 +18,7 @@
 /// The initial size of dynamic arrays expressed in the number of elements
 #define INIT_SIZE_ARRAY 8U
 /// The type used to handle dynamic arrays count of elements and capacity
-typedef uint_fast32_t array_count_t;
+typedef uint_least32_t array_count_t;
 
 /**
  * @brief Declares a dynamic array

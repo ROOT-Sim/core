@@ -136,7 +136,7 @@ static bool allocation_check(struct alc *alc, unsigned p)
 	return false;
 }
 
-static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned down)
+static bool allocation_cycle(struct mm_state *mm, struct alc *alc, unsigned c, unsigned up, unsigned down)
 {
 	for(unsigned i = c + 1; i <= up; ++i) {
 		allocation_partial_write(alc, i);
@@ -144,15 +144,15 @@ static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned 
 			return true;
 		}
 		if(test_random_double() < FULL_CHK_P) {
-			model_allocator_checkpoint_next_force_full();
+			model_allocator_checkpoint_next_force_full(mm);
 		}
-		model_allocator_checkpoint_take(i);
+		model_allocator_checkpoint_take(mm, i);
 	}
 
 	up = max(up, c);
 
 	while(1) {
-		model_allocator_checkpoint_restore(up);
+		model_allocator_checkpoint_restore(mm, up);
 
 		if(allocation_check(alc, up)) {
 			return true;
@@ -166,19 +166,20 @@ static bool allocation_cycle(struct alc *alc, unsigned c, unsigned up, unsigned 
 		up -= s;
 	}
 
-	model_allocator_checkpoint_restore(down);
+	model_allocator_checkpoint_restore(mm, down);
 	return allocation_check(alc, down);
 }
 
-test_ret_t model_allocator_test_hard(__unused void *_)
+int model_allocator_test_hard(_unused void *_)
 {
-	current_lp = mock_lp();
-	model_allocator_lp_init();
+	struct lp_ctx *lp = test_lp_mock_get();
+	current_lp = lp;
+	model_allocator_lp_init(&lp->mm_state);
 
 	struct alc *alc = allocation_all_init();
 
-	model_allocator_checkpoint_next_force_full();
-	model_allocator_checkpoint_take(0);
+	model_allocator_checkpoint_next_force_full(&lp->mm_state);
+	model_allocator_checkpoint_take(&lp->mm_state, 0);
 
 	if(allocation_check(alc, 0)) {
 		return -1;
@@ -186,21 +187,20 @@ test_ret_t model_allocator_test_hard(__unused void *_)
 
 	unsigned c = 0;
 	for(unsigned j = 0; j < ALLOC_OSCILLATIONS; ++j) {
-
 		unsigned u = test_random_range(MAX_ALLOC_PHASES - 1) + 1;
 		unsigned d = test_random_range(u);
 
-		if(allocation_cycle(alc, c, u, d)) {
+		if(allocation_cycle(&lp->mm_state, alc, c, u, d)) {
 			return -1;
 		}
 
 		c = d;
 	}
 
-	model_allocator_checkpoint_restore(0);
+	model_allocator_checkpoint_restore(&lp->mm_state, 0);
 
 	allocation_all_fini(alc);
-	model_allocator_lp_fini();
+	model_allocator_lp_fini(&lp->mm_state);
 
 	return 0;
 }

@@ -62,7 +62,7 @@ static test_ret_t msg_queue_empty(__unused void *_)
 	struct lp_msg *msg;
 	simtime_t last_time = 0.0;
 
-	while((msg = msg_queue_extract())){
+	while((msg = msg_queue_extract())) {
 		if(msg->dest_t < last_time)
 			--ret;
 		last_time = msg->dest_t;
@@ -75,7 +75,7 @@ static test_ret_t msg_queue_empty(__unused void *_)
 	memset(msg, 0, sizeof(*msg));
 	msg_queue_insert(msg);
 
-//	test_thread_barrier();
+	//	test_thread_barrier();
 
 	msg_queue_fini();
 	return ret;
