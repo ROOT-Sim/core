@@ -1,0 +1,13 @@
+<map id="/home/runner/work/core/core/src/distributed/control_msg.h" name="/home/runner/work/core/core/src/distributed/control_msg.h">
+<area shape="rect" id="node1" title="MPI remote control messages header." alt="" coords="629,5,807,61"/>
+<area shape="rect" id="node2" href="$control__msg_8c.html" title="MPI remote control messages module." alt="" coords="525,109,703,165"/>
+<area shape="rect" id="node3" href="$mpi_8h.html" title="MPI Support Module." alt="" coords="727,117,919,158"/>
+<area shape="rect" id="node4" href="$mpi_8c.html" title="MPI Support Module." alt="" coords="5,221,196,262"/>
+<area shape="rect" id="node5" href="$no__mpi_8c.html" title="MPI Support Module." alt="" coords="220,213,397,269"/>
+<area shape="rect" id="node6" href="$gvt_8c.html" title="Global Virtual Time." alt="" coords="421,221,599,262"/>
+<area shape="rect" id="node7" href="$termination_8c.html" title="Termination detection module." alt="" coords="623,221,816,262"/>
+<area shape="rect" id="node8" href="$init_8c.html" title="Initialization routines." alt="" coords="840,221,1017,262"/>
+<area shape="rect" id="node9" href="$stats_8c.html" title="Statistics module." alt="" coords="1041,221,1219,262"/>
+<area shape="rect" id="node10" href="$process_8c.html" title="LP state management functions." alt="" coords="1243,221,1420,262"/>
+<area shape="rect" id="node11" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="1445,221,1639,262"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="/home/runner/work/core/core/src/core/sync.h" name="/home/runner/work/core/core/src/core/sync.h">
+<area shape="rect" id="node1" title="Easier Synchronization primitives." alt="" coords="411,5,588,47"/>
+<area shape="rect" id="node2" href="$sync_8c.html" title="Easier Synchronization primitives." alt="" coords="5,102,183,143"/>
+<area shape="rect" id="node3" href="$msg__queue_8c.html" title="Message queue datatype." alt="" coords="207,95,386,151"/>
+<area shape="rect" id="node4" href="$gvt_8c.html" title="Global Virtual Time." alt="" coords="411,102,588,143"/>
+<area shape="rect" id="node5" href="$lp_8c.html" title="LP construction functions." alt="" coords="612,102,789,143"/>
+<area shape="rect" id="node6" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="814,102,1009,143"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="/home/runner/work/core/core/src/arch/thread.h" name="/home/runner/work/core/core/src/arch/thread.h">
+<area shape="rect" id="node1" title="Generic architecture management facilities." alt="" coords="207,5,384,47"/>
+<area shape="rect" id="node2" href="$thread_8c.html" title="Generic architecture management facilities." alt="" coords="5,95,183,136"/>
+<area shape="rect" id="node3" href="$init_8c.html" title="Initialization routines." alt="" coords="207,95,384,136"/>
+<area shape="rect" id="node4" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="409,95,603,136"/>
+</map>

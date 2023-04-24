@@ -1,0 +1,5 @@
+<map id="/home/runner/work/core/core/src/lp/common.h" name="/home/runner/work/core/core/src/lp/common.h">
+<area shape="rect" id="node1" title="Common LP functionalities." alt="" coords="105,5,283,47"/>
+<area shape="rect" id="node2" href="$process_8c.html" title="LP state management functions." alt="" coords="5,95,183,136"/>
+<area shape="rect" id="node3" href="$serial_8c.html" title="Sequential simulation engine." alt="" coords="207,95,384,136"/>
+</map>

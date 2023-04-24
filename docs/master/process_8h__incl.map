@@ -1,0 +1,21 @@
+<map id="/home/runner/work/core/core/src/lp/process.h" name="/home/runner/work/core/core/src/lp/process.h">
+<area shape="rect" id="node1" title="LP state management functions." alt="" coords="148,5,325,47"/>
+<area shape="rect" id="node2" href="$array_8h.html" title="Dynamic array datatype." alt="" coords="222,95,357,121"/>
+<area shape="rect" id="node18" href="$msg_8h.html" title="Message management functions." alt="" coords="158,169,237,196"/>
+<area shape="rect" id="node3" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="471,169,562,196"/>
+<area shape="rect" id="node10" title=" " alt="" coords="72,393,142,420"/>
+<area shape="rect" id="node17" title=" " alt="" coords="200,244,270,271"/>
+<area shape="rect" id="node4" href="$log_8h.html" title="Logging library." alt="" coords="413,244,492,271"/>
+<area shape="rect" id="node12" title=" " alt="" coords="645,393,716,420"/>
+<area shape="rect" id="node13" href="$mem_8h.html" title="Platform specific memory utilities." alt="" coords="618,244,718,271"/>
+<area shape="rect" id="node15" title=" " alt="" coords="524,319,599,345"/>
+<area shape="rect" id="node16" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="294,244,389,271"/>
+<area shape="rect" id="node5" href="$ROOT-Sim_8h.html" title="ROOT&#45;Sim header for model development." alt="" coords="381,319,481,345"/>
+<area shape="rect" id="node6" title=" " alt="" coords="166,393,237,420"/>
+<area shape="rect" id="node7" title=" " alt="" coords="261,393,324,420"/>
+<area shape="rect" id="node8" title=" " alt="" coords="546,393,620,420"/>
+<area shape="rect" id="node9" title=" " alt="" coords="348,393,431,420"/>
+<area shape="rect" id="node11" title=" " alt="" coords="455,393,522,420"/>
+<area shape="rect" id="node14" href="$platform_8h.html" title="Determine on what OS we are compiling." alt="" coords="674,319,796,345"/>
+<area shape="rect" id="node19" title=" " alt="" coords="26,244,124,271"/>
+</map>

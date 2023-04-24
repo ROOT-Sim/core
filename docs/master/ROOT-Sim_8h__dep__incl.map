@@ -1,0 +1,49 @@
+<map id="/home/runner/work/core/core/src/ROOT&#45;Sim.h" name="/home/runner/work/core/core/src/ROOT&#45;Sim.h">
+<area shape="rect" id="node1" title="ROOT&#45;Sim header for model development." alt="" coords="3005,5,3182,47"/>
+<area shape="rect" id="node2" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="1975,95,2153,136"/>
+<area shape="rect" id="node20" href="$init_8c.html" title="Initialization routines." alt="" coords="3143,965,3321,1006"/>
+<area shape="rect" id="node30" href="$topology_8c.html" title="Topology library." alt="" coords="2513,184,2690,240"/>
+<area shape="rect" id="node47" href="$log_8h.html" title="Logging library." alt="" coords="3087,95,3265,136"/>
+<area shape="rect" id="node3" href="$core_8c.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="941,191,1118,233"/>
+<area shape="rect" id="node4" href="$sync_8c.html" title="Easier Synchronization primitives." alt="" coords="1142,191,1319,233"/>
+<area shape="rect" id="node5" href="$msg__queue_8h.html" title="Message queue datatype." alt="" coords="653,645,832,701"/>
+<area shape="rect" id="node11" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="653,965,848,1006"/>
+<area shape="rect" id="node12" href="$fossil_8h.html" title="Housekeeping operations." alt="" coords="2054,653,2231,694"/>
+<area shape="rect" id="node14" href="$gvt_8h.html" title="Global Virtual Time." alt="" coords="2561,653,2738,694"/>
+<area shape="rect" id="node22" href="$msg__allocator_8c.html" title="Memory management functions for messages." alt="" coords="2593,757,2807,798"/>
+<area shape="rect" id="node23" href="$termination_8h.html" title="Termination detection module." alt="" coords="384,653,579,694"/>
+<area shape="rect" id="node24" href="$random_8c.html" title="Random Number Generators." alt="" coords="43,653,259,694"/>
+<area shape="rect" id="node25" href="$random_8h.html" title="Random Number Generators." alt="" coords="794,467,1011,508"/>
+<area shape="rect" id="node26" href="$lp_8h.html" title="LP construction functions." alt="" coords="1009,556,1186,597"/>
+<area shape="rect" id="node29" href="$multi_8c.html" title="Handling of multiple buddy systems." alt="" coords="1059,653,1259,694"/>
+<area shape="rect" id="node31" href="$file_8h.html" title="File utilities." alt="" coords="2915,191,3093,233"/>
+<area shape="rect" id="node33" href="$log_8c.html" title="Logging library." alt="" coords="3169,191,3346,233"/>
+<area shape="rect" id="node34" href="$stats_8h.html" title="Statistics module." alt="" coords="1927,556,2105,597"/>
+<area shape="rect" id="node36" href="$msg_8h.html" title="Message management functions." alt="" coords="1585,377,1762,419"/>
+<area shape="rect" id="node39" href="$buddy_8c.html" title="A Buddy System implementation." alt="" coords="1771,191,1975,233"/>
+<area shape="rect" id="node40" href="$ckpt_8c.html" title="Checkpointing capabilities." alt="" coords="2461,377,2656,419"/>
+<area shape="rect" id="node41" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="2714,191,2891,233"/>
+<area shape="rect" id="node46" href="$serial_8h.html" title="Sequential simulation engine." alt="" coords="2915,653,3093,694"/>
+<area shape="rect" id="node6" href="$msg__queue_8c.html" title="Message queue datatype." alt="" coords="920,749,1099,805"/>
+<area shape="rect" id="node7" href="$mpi_8c.html" title="MPI Support Module." alt="" coords="891,965,1082,1006"/>
+<area shape="rect" id="node8" href="$gvt_8c.html" title="Global Virtual Time." alt="" coords="1242,965,1419,1006"/>
+<area shape="rect" id="node9" href="$lp_8c.html" title="LP construction functions." alt="" coords="515,757,693,798"/>
+<area shape="rect" id="node10" href="$process_8c.html" title="LP state management functions." alt="" coords="2118,965,2295,1006"/>
+<area shape="rect" id="node13" href="$fossil_8c.html" title="Housekeeping operations." alt="" coords="1937,757,2114,798"/>
+<area shape="rect" id="node15" href="$control__msg_8h.html" title="MPI remote control messages header." alt="" coords="1281,749,1458,805"/>
+<area shape="rect" id="node16" href="$control__msg_8c.html" title="MPI remote control messages module." alt="" coords="1134,853,1311,909"/>
+<area shape="rect" id="node17" href="$mpi_8h.html" title="MPI Support Module." alt="" coords="1336,861,1528,902"/>
+<area shape="rect" id="node18" href="$no__mpi_8c.html" title="MPI Support Module." alt="" coords="1443,957,1621,1013"/>
+<area shape="rect" id="node19" href="$termination_8c.html" title="Termination detection module." alt="" coords="301,965,494,1006"/>
+<area shape="rect" id="node21" href="$stats_8c.html" title="Statistics module." alt="" coords="2883,965,3061,1006"/>
+<area shape="rect" id="node28" href="$serial_8c.html" title="Sequential simulation engine." alt="" coords="1730,757,1907,798"/>
+<area shape="rect" id="node27" href="$common_8h.html" title="Common LP functionalities." alt="" coords="2307,653,2485,694"/>
+<area shape="rect" id="node32" href="$file_8c.html" title="File utilities." alt="" coords="2915,288,3093,329"/>
+<area shape="rect" id="node35" href="$auto__ckpt_8c.html" title="Autonomic checkpoint interval selection module." alt="" coords="1792,653,1979,694"/>
+<area shape="rect" id="node37" href="$process_8h.html" title="LP state management functions." alt="" coords="1743,467,1921,508"/>
+<area shape="rect" id="node38" href="$msg__allocator_8h.html" title="Memory management functions for messages." alt="" coords="1553,653,1767,694"/>
+<area shape="rect" id="node42" href="$array_8h.html" title="Dynamic array datatype." alt="" coords="1735,288,1929,329"/>
+<area shape="rect" id="node43" href="$heap_8h.html" title="Heap datatype." alt="" coords="1283,653,1477,694"/>
+<area shape="rect" id="node44" href="$multi_8h.html" title="Handling of multiple buddy systems." alt="" coords="1277,377,1478,419"/>
+<area shape="rect" id="node45" href="$model__allocator_8h.html" title="Memory management functions for simulation models." alt="" coords="1137,467,1364,508"/>
+</map>

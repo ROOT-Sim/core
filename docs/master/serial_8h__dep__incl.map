@@ -1,0 +1,6 @@
+<map id="/home/runner/work/core/core/src/serial/serial.h" name="/home/runner/work/core/core/src/serial/serial.h">
+<area shape="rect" id="node1" title="Sequential simulation engine." alt="" coords="207,5,384,47"/>
+<area shape="rect" id="node2" href="$init_8c.html" title="Initialization routines." alt="" coords="5,95,183,136"/>
+<area shape="rect" id="node3" href="$process_8c.html" title="LP state management functions." alt="" coords="207,95,384,136"/>
+<area shape="rect" id="node4" href="$serial_8c.html" title="Sequential simulation engine." alt="" coords="408,95,585,136"/>
+</map>

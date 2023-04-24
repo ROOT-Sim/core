@@ -1,0 +1,34 @@
+<map id="/home/runner/work/core/core/src/log/log.h" name="/home/runner/work/core/core/src/log/log.h">
+<area shape="rect" id="node1" title="Logging library." alt="" coords="269,5,447,47"/>
+<area shape="rect" id="node2" href="$init_8c.html" title="Initialization routines." alt="" coords="5,861,183,902"/>
+<area shape="rect" id="node3" href="$file_8h.html" title="File utilities." alt="" coords="499,95,676,136"/>
+<area shape="rect" id="node6" href="$log_8c.html" title="Logging library." alt="" coords="269,95,447,136"/>
+<area shape="rect" id="node7" href="$common_8h.html" title="Common LP functionalities." alt="" coords="81,549,259,590"/>
+<area shape="rect" id="node10" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="709,95,887,136"/>
+<area shape="rect" id="node4" href="$file_8c.html" title="File utilities." alt="" coords="499,184,676,225"/>
+<area shape="rect" id="node5" href="$stats_8c.html" title="Statistics module." alt="" coords="1491,861,1668,902"/>
+<area shape="rect" id="node8" href="$process_8c.html" title="LP state management functions." alt="" coords="248,861,425,902"/>
+<area shape="rect" id="node9" href="$serial_8c.html" title="Sequential simulation engine." alt="" coords="135,653,312,694"/>
+<area shape="rect" id="node11" href="$array_8h.html" title="Dynamic array datatype." alt="" coords="701,184,895,225"/>
+<area shape="rect" id="node24" href="$mpi_8c.html" title="MPI Support Module." alt="" coords="1692,861,1883,902"/>
+<area shape="rect" id="node12" href="$heap_8h.html" title="Heap datatype." alt="" coords="198,452,393,493"/>
+<area shape="rect" id="node14" href="$process_8h.html" title="LP state management functions." alt="" coords="416,363,593,404"/>
+<area shape="rect" id="node30" href="$multi_8h.html" title="Handling of multiple buddy systems." alt="" coords="724,273,925,315"/>
+<area shape="rect" id="node31" href="$model__allocator_8h.html" title="Memory management functions for simulation models." alt="" coords="729,363,955,404"/>
+<area shape="rect" id="node32" href="$msg__allocator_8c.html" title="Memory management functions for messages." alt="" coords="486,273,699,315"/>
+<area shape="rect" id="node13" href="$msg__queue_8c.html" title="Message queue datatype." alt="" coords="387,541,566,597"/>
+<area shape="rect" id="node15" href="$lp_8h.html" title="LP construction functions." alt="" coords="747,452,924,493"/>
+<area shape="rect" id="node29" href="$auto__ckpt_8c.html" title="Autonomic checkpoint interval selection module." alt="" coords="467,452,654,493"/>
+<area shape="rect" id="node16" href="$fossil_8h.html" title="Housekeeping operations." alt="" coords="699,757,876,798"/>
+<area shape="rect" id="node19" href="$termination_8c.html" title="Termination detection module." alt="" coords="1273,861,1467,902"/>
+<area shape="rect" id="node20" href="$termination_8h.html" title="Termination detection module." alt="" coords="1075,549,1270,590"/>
+<area shape="rect" id="node27" href="$lp_8c.html" title="LP construction functions." alt="" coords="916,653,1093,694"/>
+<area shape="rect" id="node28" href="$multi_8c.html" title="Handling of multiple buddy systems." alt="" coords="590,549,790,590"/>
+<area shape="rect" id="node17" href="$fossil_8c.html" title="Housekeeping operations." alt="" coords="449,861,627,902"/>
+<area shape="rect" id="node18" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="651,861,846,902"/>
+<area shape="rect" id="node21" href="$control__msg_8h.html" title="MPI remote control messages header." alt="" coords="1117,645,1295,701"/>
+<area shape="rect" id="node22" href="$control__msg_8c.html" title="MPI remote control messages module." alt="" coords="1117,749,1295,805"/>
+<area shape="rect" id="node23" href="$mpi_8h.html" title="MPI Support Module." alt="" coords="901,757,1093,798"/>
+<area shape="rect" id="node25" href="$no__mpi_8c.html" title="MPI Support Module." alt="" coords="871,853,1048,909"/>
+<area shape="rect" id="node26" href="$gvt_8c.html" title="Global Virtual Time." alt="" coords="1072,861,1249,902"/>
+</map>

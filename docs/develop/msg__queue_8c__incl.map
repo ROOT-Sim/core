@@ -1,0 +1,34 @@
+<map id="/home/runner/work/core/core/src/datatypes/msg_queue.c" name="/home/runner/work/core/core/src/datatypes/msg_queue.c">
+<area shape="rect" id="node1" title="Message queue datatype." alt="" coords="791,5,970,61"/>
+<area shape="rect" id="node2" href="$msg__queue_8h.html" title="Message queue datatype." alt="" coords="879,259,1058,285"/>
+<area shape="rect" id="node13" title=" " alt="" coords="985,408,1083,435"/>
+<area shape="rect" id="node16" href="$sync_8h.html" title="Easier Synchronization primitives." alt="" coords="1123,333,1219,360"/>
+<area shape="rect" id="node17" href="$heap_8h.html" title="Heap datatype." alt="" coords="259,109,393,136"/>
+<area shape="rect" id="node23" href="$lp_8h.html" title="LP construction functions." alt="" coords="557,109,620,136"/>
+<area shape="rect" id="node30" title=" " alt="" coords="565,333,652,360"/>
+<area shape="rect" id="node31" href="$msg__allocator_8h.html" title="Memory management functions for messages." alt="" coords="803,109,958,136"/>
+<area shape="rect" id="node3" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="751,483,845,509"/>
+<area shape="rect" id="node12" href="$msg_8h.html" title="Message management functions." alt="" coords="759,333,837,360"/>
+<area shape="rect" id="node4" title=" " alt="" coords="777,632,840,659"/>
+<area shape="rect" id="node5" title=" " alt="" coords="864,632,935,659"/>
+<area shape="rect" id="node6" title=" " alt="" coords="959,632,1042,659"/>
+<area shape="rect" id="node7" title=" " alt="" coords="492,632,563,659"/>
+<area shape="rect" id="node8" href="$ROOT-Sim_8h.html" title="ROOT&#45;Sim header for model development." alt="" coords="667,557,767,584"/>
+<area shape="rect" id="node9" title=" " alt="" coords="678,632,753,659"/>
+<area shape="rect" id="node10" title=" " alt="" coords="587,632,654,659"/>
+<area shape="rect" id="node11" title=" " alt="" coords="211,632,281,659"/>
+<area shape="rect" id="node14" title=" " alt="" coords="310,557,385,584"/>
+<area shape="rect" id="node15" title=" " alt="" coords="264,408,335,435"/>
+<area shape="rect" id="node18" href="$array_8h.html" title="Dynamic array datatype." alt="" coords="169,333,304,360"/>
+<area shape="rect" id="node19" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="149,408,239,435"/>
+<area shape="rect" id="node20" href="$log_8h.html" title="Logging library." alt="" coords="411,483,489,509"/>
+<area shape="rect" id="node21" href="$mem_8h.html" title="Platform specific memory utilities." alt="" coords="184,483,284,509"/>
+<area shape="rect" id="node22" href="$platform_8h.html" title="Determine on what OS we are compiling." alt="" coords="35,557,158,584"/>
+<area shape="rect" id="node24" href="$process_8h.html" title="LP state management functions." alt="" coords="441,259,541,285"/>
+<area shape="rect" id="node25" href="$auto__ckpt_8h.html" title="Autonomic checkpoint interval selection header." alt="" coords="525,184,653,211"/>
+<area shape="rect" id="node27" href="$model__allocator_8h.html" title="Memory management functions for simulation models." alt="" coords="262,184,430,211"/>
+<area shape="rect" id="node26" title=" " alt="" coords="565,259,652,285"/>
+<area shape="rect" id="node28" href="$multi_8h.html" title="Handling of multiple buddy systems." alt="" coords="275,259,417,285"/>
+<area shape="rect" id="node29" title=" " alt="" coords="410,333,485,360"/>
+<area shape="rect" id="node32" title=" " alt="" coords="829,184,916,211"/>
+</map>

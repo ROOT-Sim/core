@@ -1,0 +1,11 @@
+<map id="/home/runner/work/core/core/src/distributed/mpi.h" name="/home/runner/work/core/core/src/distributed/mpi.h">
+<area shape="rect" id="node1" title="MPI Support Module." alt="" coords="727,5,919,47"/>
+<area shape="rect" id="node2" href="$mpi_8c.html" title="MPI Support Module." alt="" coords="5,102,196,143"/>
+<area shape="rect" id="node3" href="$no__mpi_8c.html" title="MPI Support Module." alt="" coords="220,95,397,151"/>
+<area shape="rect" id="node4" href="$gvt_8c.html" title="Global Virtual Time." alt="" coords="421,102,599,143"/>
+<area shape="rect" id="node5" href="$termination_8c.html" title="Termination detection module." alt="" coords="623,102,816,143"/>
+<area shape="rect" id="node6" href="$init_8c.html" title="Initialization routines." alt="" coords="840,102,1017,143"/>
+<area shape="rect" id="node7" href="$stats_8c.html" title="Statistics module." alt="" coords="1041,102,1219,143"/>
+<area shape="rect" id="node8" href="$process_8c.html" title="LP state management functions." alt="" coords="1243,102,1420,143"/>
+<area shape="rect" id="node9" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="1445,102,1639,143"/>
+</map>

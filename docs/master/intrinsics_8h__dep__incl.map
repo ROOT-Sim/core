@@ -1,0 +1,10 @@
+<map id="/home/runner/work/core/core/src/core/intrinsics.h" name="/home/runner/work/core/core/src/core/intrinsics.h">
+<area shape="rect" id="node1" title="Easier access to compiler extensions." alt="" coords="425,5,609,47"/>
+<area shape="rect" id="node2" href="$bitmap_8h.html" title="Bitmap data type." alt="" coords="250,95,458,136"/>
+<area shape="rect" id="node7" href="$multi_8c.html" title="Handling of multiple buddy systems." alt="" coords="391,363,591,404"/>
+<area shape="rect" id="node8" href="$random_8c.html" title="Random Number Generators." alt="" coords="554,95,770,136"/>
+<area shape="rect" id="node3" href="$buddy_8h.html" title="A Buddy System implementation." alt="" coords="239,184,445,225"/>
+<area shape="rect" id="node4" href="$buddy_8c.html" title="A Buddy System implementation." alt="" coords="5,273,209,315"/>
+<area shape="rect" id="node5" href="$ckpt_8h.html" title="Checkpointing capabilities." alt="" coords="234,273,429,315"/>
+<area shape="rect" id="node6" href="$ckpt_8c.html" title="Checkpointing capabilities." alt="" coords="173,363,367,404"/>
+</map>

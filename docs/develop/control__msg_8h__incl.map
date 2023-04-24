@@ -1,0 +1,31 @@
+<map id="/home/runner/work/core/core/src/distributed/control_msg.h" name="/home/runner/work/core/core/src/distributed/control_msg.h">
+<area shape="rect" id="node1" title="MPI remote control messages header." alt="" coords="733,5,910,61"/>
+<area shape="rect" id="node2" href="$gvt_8h.html" title="Global Virtual Time." alt="" coords="857,333,937,360"/>
+<area shape="rect" id="node16" href="$termination_8h.html" title="Termination detection module." alt="" coords="702,109,837,136"/>
+<area shape="rect" id="node3" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="721,557,815,584"/>
+<area shape="rect" id="node12" href="$msg_8h.html" title="Message management functions." alt="" coords="525,408,603,435"/>
+<area shape="rect" id="node4" title=" " alt="" coords="847,707,910,733"/>
+<area shape="rect" id="node5" title=" " alt="" coords="645,707,715,733"/>
+<area shape="rect" id="node6" title=" " alt="" coords="740,707,823,733"/>
+<area shape="rect" id="node7" title=" " alt="" coords="242,707,313,733"/>
+<area shape="rect" id="node8" href="$ROOT-Sim_8h.html" title="ROOT&#45;Sim header for model development." alt="" coords="542,632,642,659"/>
+<area shape="rect" id="node9" title=" " alt="" coords="545,707,620,733"/>
+<area shape="rect" id="node10" title=" " alt="" coords="455,707,521,733"/>
+<area shape="rect" id="node11" title=" " alt="" coords="359,707,430,733"/>
+<area shape="rect" id="node13" title=" " alt="" coords="640,483,739,509"/>
+<area shape="rect" id="node14" title=" " alt="" coords="341,632,416,659"/>
+<area shape="rect" id="node15" title=" " alt="" coords="393,483,463,509"/>
+<area shape="rect" id="node17" href="$lp_8h.html" title="LP construction functions." alt="" coords="474,184,537,211"/>
+<area shape="rect" id="node18" href="$platform_8h.html" title="Determine on what OS we are compiling." alt="" coords="93,632,216,659"/>
+<area shape="rect" id="node19" href="$process_8h.html" title="LP state management functions." alt="" coords="438,333,538,360"/>
+<area shape="rect" id="node24" href="$auto__ckpt_8h.html" title="Autonomic checkpoint interval selection header." alt="" coords="111,259,239,285"/>
+<area shape="rect" id="node26" href="$model__allocator_8h.html" title="Memory management functions for simulation models." alt="" coords="300,259,468,285"/>
+<area shape="rect" id="node20" href="$array_8h.html" title="Dynamic array datatype." alt="" coords="359,408,494,435"/>
+<area shape="rect" id="node21" href="$mm_8h.html" title="Memory Manager main header." alt="" coords="277,483,368,509"/>
+<area shape="rect" id="node22" href="$log_8h.html" title="Logging library." alt="" coords="551,557,630,584"/>
+<area shape="rect" id="node23" href="$mem_8h.html" title="Platform specific memory utilities." alt="" coords="273,557,373,584"/>
+<area shape="rect" id="node25" title=" " alt="" coords="109,333,195,360"/>
+<area shape="rect" id="node27" href="$multi_8h.html" title="Handling of multiple buddy systems." alt="" coords="219,333,362,360"/>
+<area shape="rect" id="node28" title=" " alt="" coords="260,408,335,435"/>
+<area shape="rect" id="node29" title=" " alt="" coords="149,408,235,435"/>
+</map>

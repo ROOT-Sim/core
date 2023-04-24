@@ -1,0 +1,9 @@
+<map id="/home/runner/work/core/core/src/log/stats.h" name="/home/runner/work/core/core/src/log/stats.h">
+<area shape="rect" id="node1" title="Statistics module." alt="" coords="321,5,499,47"/>
+<area shape="rect" id="node2" href="$stats_8c.html" title="Statistics module." alt="" coords="5,95,183,136"/>
+<area shape="rect" id="node3" href="$common_8h.html" title="Common LP functionalities." alt="" coords="259,95,436,136"/>
+<area shape="rect" id="node4" href="$process_8c.html" title="LP state management functions." alt="" coords="157,184,335,225"/>
+<area shape="rect" id="node5" href="$serial_8c.html" title="Sequential simulation engine." alt="" coords="372,184,549,225"/>
+<area shape="rect" id="node6" href="$auto__ckpt_8c.html" title="Autonomic checkpoint interval selection module." alt="" coords="511,95,698,136"/>
+<area shape="rect" id="node7" href="$parallel_8c.html" title="Concurrent simulation engine." alt="" coords="722,95,917,136"/>
+</map>

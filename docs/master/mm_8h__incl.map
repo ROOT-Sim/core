@@ -1,0 +1,16 @@
+<map id="/home/runner/work/core/core/src/mm/mm.h" name="/home/runner/work/core/core/src/mm/mm.h">
+<area shape="rect" id="node1" title="Memory Manager main header." alt="" coords="417,5,595,47"/>
+<area shape="rect" id="node2" href="$log_8h.html" title="Logging library." alt="" coords="367,95,445,121"/>
+<area shape="rect" id="node10" title=" " alt="" coords="579,244,649,271"/>
+<area shape="rect" id="node11" href="$mem_8h.html" title="Platform specific memory utilities." alt="" coords="575,95,675,121"/>
+<area shape="rect" id="node13" title=" " alt="" coords="741,169,815,196"/>
+<area shape="rect" id="node14" href="$core_8h.html" title="Core ROOT&#45;Sim functionalities." alt="" coords="204,95,299,121"/>
+<area shape="rect" id="node3" href="$ROOT-Sim_8h.html" title="ROOT&#45;Sim header for model development." alt="" coords="281,169,381,196"/>
+<area shape="rect" id="node4" title=" " alt="" coords="5,244,76,271"/>
+<area shape="rect" id="node5" title=" " alt="" coords="100,244,163,271"/>
+<area shape="rect" id="node6" title=" " alt="" coords="294,244,369,271"/>
+<area shape="rect" id="node7" title=" " alt="" coords="187,244,270,271"/>
+<area shape="rect" id="node8" title=" " alt="" coords="484,244,555,271"/>
+<area shape="rect" id="node9" title=" " alt="" coords="393,244,459,271"/>
+<area shape="rect" id="node12" href="$platform_8h.html" title="Determine on what OS we are compiling." alt="" coords="594,169,717,196"/>
+</map>
