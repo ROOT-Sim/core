@@ -10,9 +10,9 @@
 
 #include <ROOT-Sim.h>
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifndef NUM_LPS
 #define NUM_LPS 8192
@@ -98,7 +98,6 @@ struct simulation_configuration conf = {
     .log_level = LOG_INFO,
     .stats_file = "phold",
     .ckpt_interval = 0,
-    .prng_seed = 0,
     .core_binding = true,
     .serial = false,
     .dispatcher = ProcessEvent,

@@ -1,5 +1,5 @@
 /**
- * @file test/framework/rng_state.c
+ * @file test/framework/rng.c
  *
  * @brief Pseudo random number generator for tests
  *
