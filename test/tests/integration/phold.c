@@ -11,6 +11,7 @@
 #include <ROOT-Sim.h>
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,7 +26,7 @@
 #define EVENT 1
 
 struct phold_state {
-	struct drand48_data rng_state;
+	__uint128_t seed;
 };
 
 struct phold_message {
@@ -39,14 +40,20 @@ static int start_events = 1;
 
 static double Random(struct phold_state *state)
 {
-	double res;
-	drand48_r(&state->rng_state, &res);
-	return res;
+	const __uint128_t multiplier = (((__uint128_t)0x0fc94e3bf4e9ab32ULL) << 64) + 0x866458cd56f5e605ULL;
+	state->seed *= multiplier;
+	uint64_t ret = state->seed >> 64u;
+	return (double)ret / (double)UINT64_MAX;
 }
 
 static double Expent(struct phold_state *state)
 {
 	return mean * (-log(1. - Random(state)));
+}
+
+static void set_seed(__uint128_t seed, struct phold_state *state)
+{
+	state->seed = ((seed) << 1u) | 1u;
 }
 
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, _unused const void *content, _unused unsigned size,
@@ -58,10 +65,10 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, _unused const 
 
 	switch(event_type) {
 		case LP_INIT:
-			state = malloc(sizeof(*state));
+			state = rs_malloc(sizeof(*state));
 			if(state == NULL)
 				abort();
-			srand48_r((signed long)me, &state->rng_state);
+			set_seed(me, state);
 			SetState(state);
 
 			for(int i = 0; i < start_events; i++)
