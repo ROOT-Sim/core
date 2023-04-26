@@ -38,7 +38,6 @@ static struct simulation_configuration conf = {
     .log_level = LOG_SILENT,
     .stats_file = NULL,
     .ckpt_interval = 0,
-    .prng_seed = 0,
     .core_binding = true,
     .serial = false,
     .dispatcher = DummyProcessEvent,
