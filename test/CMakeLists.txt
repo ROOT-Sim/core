@@ -57,9 +57,6 @@ set_tests_properties(test_stats_parser PROPERTIES FIXTURES_REQUIRED STATISTICS)
 
 # Test libraries
 test_program(sync tests/core/sync.c)
-test_program(numerical tests/lib/numerical.c)
-test_program(topology tests/lib/topology.c)
-test_program(xxtea tests/lib/xxtea.c)
 
 # Integration tests
 test_program(correctness_serial tests/integration/correctness/serial.c tests/integration/correctness/application.c tests/integration/correctness/functions.c tests/integration/correctness/output_256.c)

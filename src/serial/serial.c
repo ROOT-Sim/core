@@ -10,7 +10,6 @@
 
 #include <arch/timer.h>
 #include <datatypes/heap.h>
-#include <lib/random/random.h>
 #include <log/stats.h>
 #include <lp/common.h>
 #include <mm/msg_allocator.h>
@@ -41,8 +40,6 @@ static void serial_simulation_init(void)
 		model_allocator_lp_init(&lp->mm_state);
 
 		current_lp = lp;
-		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
-		random_lib_lp_init(i, lp->rng_ctx);
 
 		lp->state_pointer = NULL;
 
