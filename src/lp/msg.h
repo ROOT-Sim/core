@@ -63,14 +63,14 @@ struct lp_msg {
 	lp_id_t dest;
 	/// The intended destination logical time of this message
 	simtime_t dest_t;
-	/// The message sequence number
-	uint32_t m_seq;
 	union {
 		/// The flags to handle local anti messages
 		_Atomic uint32_t flags;
 		/// The message unique id, used for inter-node anti messages
 		uint32_t raw_flags;
 	};
+	/// The message sequence number
+	uint32_t m_seq;
 #ifndef NDEBUG
 	/// The sender of the message
 	lp_id_t send;
