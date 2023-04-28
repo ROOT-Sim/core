@@ -48,6 +48,9 @@ test_program(load tests/core/load.c)
 test_program(bitmap tests/datatypes/bitmap.c)
 test_program(mm tests/mm/buddy.c tests/mm/buddy_hard.c tests/mm/parallel.c tests/mm/main.c)
 test_program(termination tests/gvt/termination.c)
+test_program(control_msg_serial tests/sdk/control_msg.c tests/sdk/serial.c)
+test_program(control_msg_parallel tests/sdk/control_msg.c tests/sdk/parallel.c)
+test_program_mpi(control_msg_distributed tests/sdk/control_msg.c tests/sdk/distributed.c)
 
 # Test the statistics subsystem
 test_program(stats tests/log/stats.c)

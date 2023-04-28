@@ -6,10 +6,10 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include "test.h"
+#include <test.h>
 
 #include <core/init.h>
-#include "gvt/gvt.h"
+#include <gvt/gvt.h>
 
 #define N_THREADS 3
 

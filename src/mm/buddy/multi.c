@@ -6,9 +6,9 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <mm/buddy/multi.h>
+#include <ROOT-Sim.h>
 
-#include <core/core.h>
+#include <mm/buddy/multi.h>
 #include <core/intrinsics.h>
 #include <lp/lp.h>
 #include <mm/buddy/buddy.h>

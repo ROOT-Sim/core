@@ -9,6 +9,8 @@
  * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
+#include <ROOT-Sim/sdk.h>
+
 #include <distributed/mpi.h>
 #include <mm/mm.h>
 
@@ -17,16 +19,8 @@
 
 #include <mpi.h>
 
-enum {
-	RS_MSG_TAG = 0,
+enum { RS_MSG_TAG = 0,
 	RS_DATA_TAG
-};
-
-/// Array of control codes values to be able to get their address for MPI_Send()
-static const enum msg_ctrl_code ctrl_msgs[] = {
-	[MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
-	[MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
-	[MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
 };
 
 /// The MPI request associated with the non blocking scatter gather collective
@@ -136,11 +130,31 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	MPI_Request_free(&req);
 }
 
+
+/**
+ * @brief Sends a library control message to all the nodes, including self
+ * @param ctrl the control message to send
+ */
+void mpi_library_control_msg_broadcast(unsigned ctrl, const void *payload, size_t size)
+{
+	nid_t i = n_nodes;
+	struct control_msg msg = {.ctrl_code = ctrl, {0}};
+	if(unlikely(payload != NULL)) {
+		memcpy(&msg.payload, payload, size);
+	}
+
+	while(i--) {
+		MPI_Request req;
+		MPI_Isend(&msg, sizeof(msg), MPI_BYTE, i, RS_MSG_TAG, MPI_COMM_WORLD, &req);
+		MPI_Request_free(&req);
+	}
+}
+
 /**
  * @brief Sends a platform control message to all the nodes, including self
  * @param ctrl the control message to send
  */
-void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
+void mpi_control_msg_broadcast(unsigned ctrl)
 {
 	nid_t i = n_nodes;
 	while(i--) {
@@ -153,10 +167,11 @@ void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
  * @param ctrl the control message to send
  * @param dest the id of the destination node
  */
-void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
+void mpi_control_msg_send_to(enum default_msg_ctrl_code ctrl, nid_t dest)
 {
 	MPI_Request req;
-	MPI_Isend(&ctrl_msgs[ctrl], sizeof(*ctrl_msgs), MPI_BYTE, dest, RS_MSG_TAG, MPI_COMM_WORLD, &req);
+	struct control_msg msg = {.ctrl_code = ctrl, {0}};
+	MPI_Isend(&msg, sizeof(msg), MPI_BYTE, dest, RS_MSG_TAG, MPI_COMM_WORLD, &req);
 	MPI_Request_free(&req);
 }
 
@@ -165,8 +180,8 @@ void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
  *        each one of them.
  *
  * This routine checks, using the MPI probing mechanism, for new remote messages and it handles them accordingly.
- * Control messages are handled by the respective platform handler. Simulation messages are unpacked and put in the
- * queue. Anti-messages are matched and accordingly processed by the message map.
+ * Control messages are handled by the respective platform handler or library handler. Simulation messages are unpacked
+ * and put in the queue. Anti-messages are matched and accordingly processed by the message map.
  */
 void mpi_remote_msg_handle(void)
 {
@@ -184,10 +199,10 @@ void mpi_remote_msg_handle(void)
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		struct lp_msg *msg;
 		if(unlikely(size <= (int)msg_remote_anti_size())) {
-			if(unlikely(size == sizeof(enum msg_ctrl_code))) {
-				enum msg_ctrl_code c;
-				MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-				control_msg_process(c);
+			if(unlikely(size == sizeof(struct control_msg))) {
+				struct control_msg ctrl;
+				MPI_Mrecv(&ctrl, sizeof(ctrl), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+				control_msg_process(ctrl.ctrl_code, ctrl.payload);
 				continue;
 			}
 			msg = msg_allocator_alloc(0);
@@ -231,10 +246,10 @@ void mpi_remote_msg_drain(void)
 		int size;
 		MPI_Get_count(&status, MPI_BYTE, &size);
 
-		if(unlikely(size == sizeof(enum msg_ctrl_code))) {
-			enum msg_ctrl_code c;
-			MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-			control_msg_process(c);
+		if(unlikely(size == sizeof(struct control_msg))) {
+			struct control_msg ctrl;
+			MPI_Mrecv(&ctrl, sizeof(ctrl), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
+			control_msg_process(ctrl.ctrl_code, ctrl.payload);
 			continue;
 		}
 
