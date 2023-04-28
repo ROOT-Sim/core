@@ -34,8 +34,8 @@ endif()
 # Build the core library
 add_library(rscore STATIC ${rscore_srcs})
 
-target_compile_definitions(rscore PRIVATE ROOTSIM_VERSION="${PROJECT_VERSION}")
-target_include_directories(rscore PRIVATE .)
+target_compile_definitions(rscore PRIVATE ROOTSIM_VERSION= "${PROJECT_VERSION}")
+target_include_directories(rscore PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_link_libraries(rscore ${CMAKE_THREAD_LIBS_INIT} ${EXTRA_LIBS})
 
 if(NOT DISABLE_MPI)
@@ -44,5 +44,5 @@ if(NOT DISABLE_MPI)
     target_link_libraries(rscore ${MPI_C_LIBRARIES})
 endif()
 
-install(FILES ROOT-Sim.h DESTINATION include)
+install(DIRECTORY include/ DESTINATION include)
 install(TARGETS rscore LIBRARY DESTINATION lib)

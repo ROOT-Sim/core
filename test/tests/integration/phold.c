@@ -20,7 +20,7 @@
 #endif
 
 #ifndef NUM_THREADS
-#define NUM_THREADS 0
+#define NUM_THREADS 2
 #endif
 
 #define EVENT 1

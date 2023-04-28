@@ -6,11 +6,11 @@ add_library(test_framework_lib STATIC
         framework/test.c
         framework/thread.c
         )
-target_include_directories(test_framework_lib PRIVATE ../src .)
+target_include_directories(test_framework_lib PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/include ${CMAKE_CURRENT_SOURCE_DIR})
 
 function(test_program name)
     add_executable(test_${name} ${ARGN})
-    target_include_directories(test_${name} PRIVATE ../src .)
+    target_include_directories(test_${name} PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/include ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(test_${name} test_framework_lib rscore) # FIXME this doesn't need to be in all the tests
     add_test(NAME test_${name} COMMAND test_${name})
     set_tests_properties(test_${name} PROPERTIES TIMEOUT 60)
@@ -19,6 +19,11 @@ endfunction()
 function(test_program_xf name)
     test_program(${name} ${ARGN})
     set_tests_properties(test_${name} PROPERTIES WILL_FAIL TRUE)
+endfunction()
+
+function(test_program_mpi name)
+    test_program(${name} ${ARGN})
+    set_property(TARGET test_${name} PROPERTY CROSSCOMPILING_EMULATOR "${MPIEXEC_EXECUTABLE};${MPIEXEC_NUMPROC_FLAG};2")
 endfunction()
 
 # Test framework tests
@@ -61,4 +66,6 @@ test_program(sync tests/core/sync.c)
 # Integration tests
 test_program(correctness_serial tests/integration/correctness/serial.c tests/integration/correctness/application.c tests/integration/correctness/functions.c tests/integration/correctness/output_256.c)
 test_program(correctness_parallel tests/integration/correctness/parallel.c tests/integration/correctness/application.c tests/integration/correctness/functions.c tests/integration/correctness/output_256.c)
+test_program_mpi(correctness_parallel_mpi tests/integration/correctness/parallel.c tests/integration/correctness/application.c tests/integration/correctness/functions.c tests/integration/correctness/output_256.c)
 test_program(phold tests/integration/phold.c)
+test_program_mpi(phold_mpi tests/integration/phold.c)
