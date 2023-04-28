@@ -25,8 +25,8 @@ extern void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid);
 extern void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 
 extern void mpi_library_control_msg_broadcast(unsigned ctrl, const void *payload, size_t size);
-extern void mpi_control_msg_broadcast(unsigned ctrl);
-extern void mpi_control_msg_send_to(unsigned ctrl, nid_t dest);
+extern void mpi_control_msg_broadcast(enum platform_ctrl_msg_code ctrl);
+extern void mpi_control_msg_send_to(enum platform_ctrl_msg_code ctrl, nid_t dest);
 extern void mpi_remote_msg_handle(void);
 extern void mpi_remote_msg_drain(void);
 

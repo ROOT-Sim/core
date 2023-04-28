@@ -20,7 +20,7 @@ struct library_handler {
 static struct library_handler *library_handlers = NULL;
 static size_t library_handlers_capacity = 0;
 static size_t library_handlers_size = 0;
-static int next_control_msg_id = MSG_CTRL_DEFAULT_END;
+static int next_control_msg_id = FIRST_LIBRARY_CONTROL_MSG_ID;
 
 int control_msg_register_handler(control_msg_handler_t handler)
 {
@@ -54,13 +54,15 @@ void invoke_library_handler(unsigned code, const void *payload)
 			return;
 		}
 	}
+	assert(false);
+	__builtin_unreachable();
 }
 
 /**
  * @brief Handle a received control message
  * @param ctrl the tag of the received control message
  */
-void control_msg_process(unsigned ctrl, void *payload)
+void control_msg_process(enum platform_ctrl_msg_code ctrl)
 {
 	switch(ctrl) {
 		case MSG_CTRL_GVT_START:
@@ -73,16 +75,12 @@ void control_msg_process(unsigned ctrl, void *payload)
 			termination_on_ctrl_msg();
 			break;
 		default:
-			invoke_library_handler(ctrl, payload);
+			__builtin_unreachable();
 	}
 }
 
 void control_msg_broadcast(unsigned ctrl, const void *payload, size_t size)
 {
-	if(size > CONTROL_MSG_PAYLOAD_SIZE) {
-		logger(LOG_FATAL, "The payload of the control message is too large");
-		abort();
-	}
 	if(global_config.serial || n_nodes == 1) {
 		invoke_library_handler(ctrl, payload);
 	} else {

@@ -35,8 +35,8 @@ int test_ctrl_msg(bool distributed)
 	ctrl_msg_id1 = control_msg_register_handler(handler);
 	ctrl_msg_id2 = control_msg_register_handler(handler);
 
-	assert(ctrl_msg_id1 == MSG_CTRL_DEFAULT_END);
-	assert(ctrl_msg_id2 > MSG_CTRL_DEFAULT_END);
+	assert(ctrl_msg_id1 == FIRST_LIBRARY_CONTROL_MSG_ID);
+	assert(ctrl_msg_id2 > FIRST_LIBRARY_CONTROL_MSG_ID);
 
 	control_msg_broadcast(ctrl_msg_id1, &value, sizeof(value));
 	control_msg_broadcast(ctrl_msg_id2, &value, sizeof(value));

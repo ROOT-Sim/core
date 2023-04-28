@@ -16,26 +16,25 @@
 #include "include/ROOT-Sim/sdk.h"
 
 #define INITIAL_HANDLERS_CAPACITY 4
+#define FIRST_LIBRARY_CONTROL_MSG_ID 1
 
 /// A control message MPI tag value
-enum default_msg_ctrl_code {
+enum platform_ctrl_msg_code {
 	/// Used by the master to start a new gvt reduction operation
 	MSG_CTRL_GVT_START = 1,
 	/// Used by slaves to signal their completion of the gvt protocol
 	MSG_CTRL_GVT_DONE,
 	/// Used in broadcast to signal that local LPs can terminate
-	MSG_CTRL_TERMINATION,
-	/// Marker to signal the end of the enum
-	MSG_CTRL_DEFAULT_END
+	MSG_CTRL_TERMINATION
 };
 
-struct control_msg {
+/// A control message that can be user by higher-level libraries to synchronize actions
+struct library_ctrl_msg {
 	/// The control message code
 	unsigned ctrl_code;
 	/// The payload of the control message
 	char payload[CONTROL_MSG_PAYLOAD_SIZE];
 };
 
-_Static_assert(sizeof(struct control_msg) < msg_remote_anti_size(), "Invalid control message payload size");
-
-extern void control_msg_process(unsigned ctrl, void *payload);
+extern void control_msg_process(enum platform_ctrl_msg_code ctrl);
+extern void invoke_library_handler(unsigned code, const void *payload);
