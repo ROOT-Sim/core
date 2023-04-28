@@ -55,7 +55,7 @@ test_program_mpi(control_msg_distributed tests/sdk/control_msg.c tests/sdk/distr
 # Test the statistics subsystem
 test_program(stats tests/log/stats.c)
 add_test(test_stats_parser
-        ${Python_EXECUTABLE}
+        ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/log/rootsim_stats_test.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/parse/rootsim_stats.py
         ${CMAKE_CURRENT_BINARY_DIR})

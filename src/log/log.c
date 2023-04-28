@@ -22,13 +22,13 @@ static FILE *logfile = NULL;
 static const struct {
 	const char *name;
 	const char *color;
-} levels[] = {
-    [LOG_TRACE] = {.name = "TRACE", .color = "\x1b[94m"},
-    [LOG_DEBUG] = {.name = "DEBUG", .color = "\x1b[36m"},
-    [LOG_INFO]  = {.name = "INFO",  .color = "\x1b[32m"},
-    [LOG_WARN]  = {.name = "WARN",  .color = "\x1b[33m"},
-    [LOG_ERROR] = {.name = "ERROR", .color = "\x1b[31m"},
-    [LOG_FATAL] = {.name = "FATAL", .color = "\x1b[35m"}
+} levels[6] = {
+    [LOG_TRACE] = {.name = "TRACE", .color = "\x1b" "[94m"},
+    [LOG_DEBUG] = {.name = "DEBUG", .color = "\x1b" "[36m"},
+    [LOG_INFO]  = {.name = "INFO",  .color = "\x1b" "[32m"},
+    [LOG_WARN]  = {.name = "WARN",  .color = "\x1b" "[33m"},
+    [LOG_ERROR] = {.name = "ERROR", .color = "\x1b" "[31m"},
+    [LOG_FATAL] = {.name = "FATAL", .color = "\x1b" "[35m"}
 };
 
 /**
