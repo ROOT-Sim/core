@@ -87,8 +87,7 @@ int stats_measures_test(_unused void *arg)
 
 static void stats_subsystem_test(const char *name, test_fn thread_fn)
 {
-	conf.stats_file = name;
-	RootsimInit(&conf);
+	global_config.stats_file = name;
 	stats_global_init();
 	test_parallel("Testing statistics module", thread_fn, NULL, N_THREADS);
 	stats_global_fini();
@@ -96,6 +95,7 @@ static void stats_subsystem_test(const char *name, test_fn thread_fn)
 
 int main(void)
 {
+	RootsimInit(&conf);
 	stats_subsystem_test("empty_stats", stats_empty_test);
 	n_lps_node = 16;
 	stats_subsystem_test("single_gvt_stats", stats_single_gvt_test);

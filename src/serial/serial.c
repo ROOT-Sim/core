@@ -20,7 +20,7 @@ static heap_declare(struct lp_msg *) queue;
 /**
  * @brief Initialize the serial simulation environment
  */
-static void serial_simulation_init(void)
+void serial_simulation_init(void)
 {
 	stats_global_init();
 	stats_init();
@@ -145,8 +145,6 @@ int serial_simulation(void)
 {
 	int ret;
 
-	logger(LOG_INFO, "Initializing serial simulation");
-	serial_simulation_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
 	stats_global_time_take(STATS_GLOBAL_EVENTS_START);

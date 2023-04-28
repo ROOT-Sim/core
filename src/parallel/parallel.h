@@ -9,3 +9,4 @@
 #pragma once
 
 extern int parallel_simulation(void);
+extern void parallel_global_init(void);
