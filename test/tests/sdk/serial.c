@@ -1,3 +1,11 @@
+/**
+* @file test/tests/sdk/distributed.c
+*
+* @brief Test: Higher-level control messages (sequential test)
+*
+* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-License-Identifier: GPL-3.0-only
+*/
 #include <ROOT-Sim.h>
 
 #include "control_msg.h"
