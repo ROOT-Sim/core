@@ -36,13 +36,13 @@ struct bin_info {
 
 static void mem_init(unsigned char *ptr, size_t size)
 {
-	size_t i, j;
+	if(!size)
+		return;
 
 	memset(ptr, 0, size);
 
-	if(!size)
-		return;
-	for(i = 0; i < size; i += 2047) {
+	size_t j;
+	for(size_t i = 0; i < size; i += 2047) {
 		j = (size_t)ptr ^ i;
 		ptr[i] = j ^ (j >> 8);
 	}
@@ -52,11 +52,11 @@ static void mem_init(unsigned char *ptr, size_t size)
 
 static int mem_check(const unsigned char *ptr, size_t size)
 {
-	size_t i, j;
-
 	if(!size)
 		return 0;
-	for(i = 0; i < size; i += 2047) {
+
+	size_t j;
+	for(size_t i = 0; i < size; i += 2047) {
 		j = (size_t)ptr ^ i;
 		if(ptr[i] != ((j ^ (j >> 8)) & 0xFF))
 			return 1;
@@ -70,15 +70,13 @@ static int mem_check(const unsigned char *ptr, size_t size)
 static int zero_check(void *p, size_t size)
 {
 	unsigned *ptr = p;
-	unsigned char *ptr2;
-
 	while(size >= sizeof(*ptr)) {
 		if(*ptr++)
 			return -1;
 		size -= sizeof(*ptr);
 	}
-	ptr2 = (unsigned char *)ptr;
 
+	unsigned char *ptr2 = (unsigned char *)ptr;
 	while(size > 0) {
 		if(*ptr2++)
 			return -1;
@@ -132,17 +130,12 @@ static void bin_free(struct bin *m)
 
 static void bin_test(struct bin_info *p)
 {
-	size_t b;
-
-	for(b = 0; b < p->bins; b++) {
+	for(size_t b = 0; b < p->bins; b++)
 		test_assert(mem_check(p->m[b].ptr, p->m[b].size) == 0);
-	}
 }
 
 int parallel_malloc_test(_unused void *_)
 {
-	unsigned i, b, j, actions, action;
-
 	struct lp_ctx *lp = test_lp_mock_get();
 	current_lp = lp;
 	model_allocator_lp_init(&lp->mm_state);
@@ -152,36 +145,36 @@ int parallel_malloc_test(_unused void *_)
 	p.bins = (1 << B_TOTAL_EXP) / p.size;
 	p.m = malloc(p.bins * sizeof(*p.m));
 
-	for(b = 0; b < p.bins; b++) {
+	for(unsigned b = 0; b < p.bins; b++) {
 		p.m[b].size = 0;
 		p.m[b].ptr = NULL;
 		if(!test_random_range(2))
 			bin_alloc(&p.m[b], test_random_range(p.size) + 1, test_random_u());
 	}
 
-	for(i = 0; i <= I_MAX;) {
+	for(unsigned i = 0; i <= I_MAX;) {
 		bin_test(&p);
 
-		actions = test_random_range(ACTIONS_MAX);
+		unsigned actions = test_random_range(ACTIONS_MAX);
 
-		for(j = 0; j < actions; j++) {
-			b = test_random_range(p.bins);
-			bin_free(&p.m[b]);
+		for(unsigned j = 0; j < actions; j++) {
+			unsigned bin = test_random_range(p.bins);
+			bin_free(&p.m[bin]);
 		}
 		i += actions;
 		actions = test_random_range(ACTIONS_MAX);
 
-		for(j = 0; j < actions; j++) {
-			b = test_random_range(p.bins);
-			action = test_random_u();
-			bin_alloc(&p.m[b], test_random_range(p.size) + 1, action);
+		for(unsigned j = 0; j < actions; j++) {
+			unsigned bin = test_random_range(p.bins);
+			uint64_t action = test_random_u();
+			bin_alloc(&p.m[bin], test_random_range(p.size) + 1, action);
 			bin_test(&p);
 		}
 
 		i += actions;
 	}
 
-	for(b = 0; b < p.bins; b++)
+	for(unsigned b = 0; b < p.bins; b++)
 		bin_free(&p.m[b]);
 
 	free(p.m);
