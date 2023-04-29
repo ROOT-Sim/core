@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
+import datetime
 import os
 import re
-import datetime
 
 year = datetime.datetime.now().year
 root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,7 +13,7 @@ for root, _, files in os.walk(root_path):
         if not (file_name.endswith(".py") or file_name.endswith(".c") or
             file_name.endswith(".cpp") or file_name.endswith(".h") or
             file_name.endswith(".hpp") or file_name.endswith(".md") or
-            file_name.endswith(".build")):
+            file_name.endswith(".txt") or file_name.startswith(".")):
             continue
 
         file_path = os.path.join(root, file_name)
