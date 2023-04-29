@@ -11,9 +11,9 @@ root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 for root, _, files in os.walk(root_path):
     for file_name in files:
         if not (file_name.endswith(".py") or file_name.endswith(".c") or
-            file_name.endswith(".cpp") or file_name.endswith(".h") or
-            file_name.endswith(".hpp") or file_name.endswith(".md") or
-            file_name.endswith(".txt") or file_name.startswith(".")):
+                file_name.endswith(".cpp") or file_name.endswith(".h") or
+                file_name.endswith(".hpp") or file_name.endswith(".md") or
+                file_name.endswith(".txt") or file_name.startswith(".")):
             continue
 
         file_path = os.path.join(root, file_name)
