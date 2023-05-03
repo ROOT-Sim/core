@@ -5,7 +5,7 @@
 *
 * This module allows to mock various parts of the core for testing purposes
 *
-* SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 * SPDX-License-Identifier: GPL-3.0-only
 */
 #include "mock.h"
