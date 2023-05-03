@@ -11,7 +11,6 @@ branch_name = check_output(['git', 'branch', '--show-current']).decode().strip()
 
 # Split version in major, minor, hotfix, and tag
 version = describe_str.split("-", 1)[0]
-version = version[1:]  # This is to remove the 'v' at the beginning of the previous tag name
 tag = "-" + describe_str.split("-", 1)[1].split("-", 1)[0]
 major, minor, hotfix = map(int, version.split(".", 3))
 
