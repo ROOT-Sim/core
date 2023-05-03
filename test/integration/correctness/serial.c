@@ -8,7 +8,7 @@
  */
 #include <test.h>
 
-#include <tests/integration/correctness/application.h>
+#include "application.h"
 
 struct simulation_configuration conf = {
     .lps = N_LPS,

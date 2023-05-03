@@ -7,7 +7,6 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>
-#include <framework/thread.h>
 
 #include <core/core.h>
 #include <core/sync.h>
