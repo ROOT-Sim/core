@@ -34,12 +34,11 @@ static int next_control_msg_id = FIRST_LIBRARY_CONTROL_MSG_ID;
  */
 void control_msg_init(void)
 {
-#ifndef NDEBUG
 	if(library_handlers != NULL) {
 		logger(LOG_WARN, "Trying to reinitialize control message module, ignoring!");
 		return;
 	}
-#endif
+
 	size_t size = INITIAL_HANDLERS_CAPACITY * sizeof(*library_handlers);
 	void *ptr = malloc(size);
 	if (ptr != NULL) {
@@ -56,7 +55,10 @@ void control_msg_init(void)
  */
 void control_msg_fini(void)
 {
-	free(library_handlers);
+	if(library_handlers != NULL) {
+		free(library_handlers);
+		library_handlers = NULL;
+	}
 }
 
 int control_msg_register_handler(control_msg_handler_t handler)

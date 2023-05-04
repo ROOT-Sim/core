@@ -20,7 +20,7 @@
 #endif
 
 #ifndef NUM_THREADS
-#define NUM_THREADS 2
+#define NUM_THREADS 0
 #endif
 
 #define EVENT 1
@@ -105,7 +105,7 @@ struct simulation_configuration conf = {
     .log_level = LOG_INFO,
     .stats_file = "phold",
     .ckpt_interval = 0,
-    .core_binding = true,
+    .core_binding = false,
     .serial = false,
     .dispatcher = ProcessEvent,
     .committed = CanEnd,
