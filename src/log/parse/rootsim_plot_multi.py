@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 
+"""This is a use example of the RSStats class
+You can actually include this module in your code and use the object as it is done here"""
 import sys
 
 import matplotlib.pyplot as plt
@@ -10,6 +12,12 @@ from rootsim_stats import RSStats
 
 
 def get_stats(file_name):
+    """Get the statistics from a file and return the number of threads, the total time of the first node,
+    the rollback frequency and the efficiency
+
+    :parameter file_name: the name of the file to parse
+    :return: a tuple with the number of threads, the total time of the first node, the rollback frequency and the efficiency
+    """
     rs_stats = RSStats(file_name)
     processed_msgs = rs_stats.thread_metric_get("processed messages", aggregate_nodes=True, aggregate_gvts=True)
     rollback_msgs = rs_stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
@@ -23,10 +31,24 @@ def get_stats(file_name):
 
 
 def compute_avg(values):
+    """
+    Compute the average of a list of values
+
+    :parameter values: the list of values
+    :return: the average of the values
+    """
     return sum(values) / len(values)
 
 
 def plot_data(data_label, threads, data, sub_fig):
+    """
+    Plot the data
+
+    :parameter data_label: the label of the data
+    :parameter threads: the list of threads
+    :parameter data: the list of data
+    :parameter sub_fig: the subplot to plot
+    """
     sub_fig.set_xticks(threads)
     sub_fig.plot(threads, data, marker='.', markersize=3, markeredgecolor=(0.2, 0.3, 0.7), color=(0.4, 0.5, 0.7))
     sub_fig.set_xlabel('Threads')
@@ -36,6 +58,13 @@ def plot_data(data_label, threads, data, sub_fig):
 
 
 def dump_tsv_data(data_label, threads, data):
+    """
+    Dump the data in a tsv file
+
+    :parameter data_label: the label of the data
+    :parameter threads: the list of threads
+    :parameter data: the list of data
+    """
     with open(data_label.replace(" ", "_").lower() + '.tsv', 'w', encoding="utf8") as f:
         f.write(f'Threads\t{data_label}\n')
         for i, sample in enumerate(data):
@@ -43,6 +72,12 @@ def dump_tsv_data(data_label, threads, data):
 
 
 def plot_multi(filenames, dump_tsv=False):
+    """
+    Plot the data from multiple files
+
+    :parameter filenames: the list of files to parse
+    :parameter dump_tsv: if True, dump the data in tsv files, otherwise plot the data
+    """
     all_data = {}
     for filename in filenames:
         threads_count, total_time, rollback_freq, efficiency = get_stats(filename)
@@ -76,6 +111,7 @@ def plot_multi(filenames, dump_tsv=False):
 
 
 def plot_multi_main():
+    """Main function to plot the data from multiple files"""
     tsv_arg = True
     try:
         sys.argv.remove('--tsv')
@@ -89,7 +125,5 @@ def plot_multi_main():
     plot_multi(sys.argv[1:], tsv_arg)
 
 
-# This is a use example of the RSStats class
-# You can actually include this module in your code and use the object as it is done here
 if __name__ == "__main__":
     plot_multi_main()
