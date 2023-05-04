@@ -1,5 +1,8 @@
 name: Documentation Coverage
 
+permissions:
+  contents: read
+
 on:
   pull_request:
 
