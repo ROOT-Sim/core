@@ -8,7 +8,7 @@
  * In case of POSIX, it also tries to set some macros used to understand what
  * is the POSIX version on which we are running.
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
