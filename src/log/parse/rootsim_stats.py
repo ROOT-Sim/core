@@ -259,71 +259,73 @@ def format_size(num, is_binary=True):
 
 
 def dump_text_report(filename):
-    stats = RSStats(filename)
+    raw_stats = RSStats(filename)
 
-    simulation_time = stats.nodes_stats["node_total_time"][0] / 1000000
-    hr_ticks_per_second = stats.nodes_stats["node_total_hr_time"][0] / simulation_time
-    processing_time = stats.nodes_stats["processing_time"][0] / 1000000
+    stat = {
+        "simulation_time": raw_stats.nodes_stats["node_total_time"][0] / 1000000,
+        "processing_time": raw_stats.nodes_stats["processing_time"][0] / 1000000,
+        "processed_msgs": raw_stats.thread_metric_get("processed messages", aggregate_nodes=True, aggregate_gvts=True),
+        "anti_msgs": raw_stats.thread_metric_get("anti messages", aggregate_nodes=True, aggregate_gvts=True),
+        "rollback_msgs": raw_stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True),
+        "silent_msgs": raw_stats.thread_metric_get("silent messages", aggregate_nodes=True, aggregate_gvts=True),
+        "rollbacks": raw_stats.thread_metric_get("rollbacks", aggregate_nodes=True, aggregate_gvts=True),
+        "checkpoints": raw_stats.thread_metric_get("checkpoints", aggregate_nodes=True, aggregate_gvts=True),
+        "msgs_cost": raw_stats.thread_metric_get("processed messages time", aggregate_nodes=True, aggregate_gvts=True),
+        "checkpoints_cost": raw_stats.thread_metric_get("checkpoints time", aggregate_nodes=True, aggregate_gvts=True),
+        "recoveries_cost": raw_stats.thread_metric_get("recovery time", aggregate_nodes=True, aggregate_gvts=True),
+        "checkpoints_size": raw_stats.thread_metric_get("checkpoints size", aggregate_nodes=True, aggregate_gvts=True),
+        "peak_memory_usage": sum(raw_stats.nodes_stats["maximum_resident_set"]),
+        "lps_count": sum(raw_stats.nodes_stats["lps"]),
+        "avg_memory_usage": 0.0,
+        "sim_speed": 0.0,
+        "last_gvt": 0.0
+    }
+    stat["hr_ticks_per_second"] = raw_stats.nodes_stats["node_total_hr_time"][0] / stat["simulation_time"]
+    stat["avg_checkpoint_size"] = stat["checkpoints_size"] / stat["checkpoints"] if stat["checkpoints"] != 0 else 0
+    stat["avg_msg_cost"] = 0 if stat["processed_msgs"] == 0 else stat["msgs_cost"] / (
+            stat["processed_msgs"] * stat["hr_ticks_per_second"])
+    stat["avg_checkpoint_cost"] = 0 if stat["checkpoints"] == 0 else stat["checkpoints_cost"] / (
+            stat["checkpoints"] * stat["hr_ticks_per_second"])
+    stat["avg_recovery_cost"] = 0 if stat["rollbacks"] == 0 else stat["recoveries_cost"] / (
+            stat["rollbacks"] * stat["hr_ticks_per_second"])
 
-    processed_msgs = stats.thread_metric_get("processed messages", aggregate_nodes=True, aggregate_gvts=True)
-    anti_msgs = stats.thread_metric_get("anti messages", aggregate_nodes=True, aggregate_gvts=True)
-    rollback_msgs = stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
-    silent_msgs = stats.thread_metric_get("silent messages", aggregate_nodes=True, aggregate_gvts=True)
-    rollbacks = stats.thread_metric_get("rollbacks", aggregate_nodes=True, aggregate_gvts=True)
-    checkpoints = stats.thread_metric_get("checkpoints", aggregate_nodes=True, aggregate_gvts=True)
-    msgs_cost = stats.thread_metric_get("processed messages time", aggregate_nodes=True, aggregate_gvts=True)
-    checkpoints_cost = stats.thread_metric_get("checkpoints time", aggregate_nodes=True, aggregate_gvts=True)
-    recoveries_cost = stats.thread_metric_get("recovery time", aggregate_nodes=True, aggregate_gvts=True)
-    checkpoints_size = stats.thread_metric_get("checkpoints size", aggregate_nodes=True, aggregate_gvts=True)
+    stat["rollback_freq"] = 100 * stat["rollbacks"] / stat["processed_msgs"] if stat["processed_msgs"] != 0 else 0
+    stat["rollback_len"] = stat["rollback_msgs"] / stat["rollbacks"] if stat["rollbacks"] != 0 else 0
+    stat["efficiency"] = 100 * (stat["processed_msgs"] - stat["rollback_msgs"]) / stat["processed_msgs"] if stat[
+        "processed_msgs"] else 100
 
-    avg_checkpoint_size = checkpoints_size / checkpoints if checkpoints != 0 else 0
-    avg_msg_cost = 0 if processed_msgs == 0 else msgs_cost / (processed_msgs * hr_ticks_per_second)
-    avg_checkpoint_cost = 0 if checkpoints == 0 else checkpoints_cost / (checkpoints * hr_ticks_per_second)
-    avg_recovery_cost = 0 if rollbacks == 0 else recoveries_cost / (rollbacks * hr_ticks_per_second)
-
-    rollback_freq = 100 * rollbacks / processed_msgs if processed_msgs != 0 else 0
-    rollback_len = rollback_msgs / rollbacks if rollbacks != 0 else 0
-    efficiency = 100 * (processed_msgs - rollback_msgs) / processed_msgs if processed_msgs else 100
-
-    peak_memory_usage = sum(stats.nodes_stats["maximum_resident_set"])
-    lps_count = sum(stats.nodes_stats["lps"])
-
-    if len(stats.gvts) == 0:
-        avg_memory_usage = 0.0
-        sim_speed = 0.0
-        last_gvt = 0.0
-    else:
-        avg_memory_usage = sum([sum(t) for t in stats.nodes_stats["resident_set"]]) / len(stats.gvts)
-        last_gvt = stats.gvts[-1]
-        sim_speed = last_gvt / len(stats.gvts)
+    if len(raw_stats.gvts) != 0:
+        stat["avg_memory_usage"] = sum([sum(t) for t in raw_stats.nodes_stats["resident_set"]]) / len(raw_stats.gvts)
+        stat["last_gvt"] = raw_stats.gvts[-1]
+        stat["sim_speed"] = stat["last_gvt"] / len(raw_stats.gvts)
 
     out_name = sys.argv[1][:-4] if sys.argv[1].endswith(".bin") else sys.argv[1]
     out_name += ".txt"
 
     with open(out_name, "w", encoding="utf8") as out_file:
-        out_file.write(f"TOTAL SIMULATION TIME ..... : {format_size(simulation_time, False)}s\n"
-                       f"TOTAL PROCESSING TIME ..... : {format_size(processing_time, False)}s\n"
-                       f"TOTAL KERNELS ............. : {stats.nodes_count}\n"
-                       f"TOTAL THREADS ............. : {sum(stats.threads_count)}\n"
-                       f"TOTAL LPS ................. : {lps_count}\n"
-                       f"TOTAL EXECUTED EVENTS ..... : {processed_msgs + silent_msgs}\n"
-                       f"TOTAL COMMITTED EVENTS..... : {processed_msgs - rollback_msgs}\n"
-                       f"TOTAL REPROCESSED EVENTS... : {rollback_msgs}\n"
-                       f"TOTAL SILENT EVENTS........ : {silent_msgs}\n"
-                       f"TOTAL ROLLBACKS EXECUTED... : {rollbacks}\n"
-                       f"TOTAL ANTIMESSAGES......... : {anti_msgs}\n"
-                       f"ROLLBACK FREQUENCY......... : {rollback_freq:.2f}%\n"
-                       f"ROLLBACK LENGTH............ : {rollback_len:.2f}\n"
-                       f"EFFICIENCY................. : {efficiency:.2f}%\n"
-                       f"AVERAGE EVENT COST......... : {format_size(avg_msg_cost, False)}s\n"
-                       f"AVERAGE CHECKPOINT COST.... : {format_size(avg_checkpoint_cost, False)}s\n"
-                       f"AVERAGE RECOVERY COST...... : {format_size(avg_recovery_cost, False)}s\n"
-                       f"AVERAGE CHECKPOINT SIZE.... : {format_size(avg_checkpoint_size)}B\n"
-                       f"LAST COMMITTED GVT ........ : {last_gvt}\n"
-                       f"NUMBER OF GVT REDUCTIONS... : {len(stats.gvts)}\n"
-                       f"SIMULATION TIME SPEED...... : {sim_speed}\n"
-                       f"AVERAGE MEMORY USAGE....... : {format_size(avg_memory_usage)}B\n"
-                       f"PEAK MEMORY USAGE.......... : {format_size(peak_memory_usage)}B\n")
+        out_file.write(f"TOTAL SIMULATION TIME ..... : {format_size(stat['simulation_time'], False)}s\n"
+                       f"TOTAL PROCESSING TIME ..... : {format_size(stat['processing_time'], False)}s\n"
+                       f"TOTAL KERNELS ............. : {raw_stats.nodes_count}\n"
+                       f"TOTAL THREADS ............. : {sum(raw_stats.threads_count)}\n"
+                       f"TOTAL LPS ................. : {stat['lps_count']}\n"
+                       f"TOTAL EXECUTED EVENTS ..... : {stat['processed_msgs'] + stat['silent_msgs']}\n"
+                       f"TOTAL COMMITTED EVENTS..... : {stat['processed_msgs'] - stat['rollback_msgs']}\n"
+                       f"TOTAL REPROCESSED EVENTS... : {stat['rollback_msgs']}\n"
+                       f"TOTAL SILENT EVENTS........ : {stat['silent_msgs']}\n"
+                       f"TOTAL ROLLBACKS EXECUTED... : {stat['rollbacks']}\n"
+                       f"TOTAL ANTIMESSAGES......... : {stat['anti_msgs']}\n"
+                       f"ROLLBACK FREQUENCY......... : {stat['rollback_freq']:.2f}%\n"
+                       f"ROLLBACK LENGTH............ : {stat['rollback_len']:.2f}\n"
+                       f"EFFICIENCY................. : {stat['efficiency']:.2f}%\n"
+                       f"AVERAGE EVENT COST......... : {format_size(stat['avg_msg_cost'], False)}s\n"
+                       f"AVERAGE CHECKPOINT COST.... : {format_size(stat['avg_checkpoint_cost'], False)}s\n"
+                       f"AVERAGE RECOVERY COST...... : {format_size(stat['avg_recovery_cost'], False)}s\n"
+                       f"AVERAGE CHECKPOINT SIZE.... : {format_size(stat['avg_checkpoint_size'])}B\n"
+                       f"LAST COMMITTED GVT ........ : {stat['last_gvt']}\n"
+                       f"NUMBER OF GVT REDUCTIONS... : {len(raw_stats.gvts)}\n"
+                       f"SIMULATION TIME SPEED...... : {stat['sim_speed']}\n"
+                       f"AVERAGE MEMORY USAGE....... : {format_size(stat['avg_memory_usage'])}B\n"
+                       f"PEAK MEMORY USAGE.......... : {format_size(stat['peak_memory_usage'])}B\n")
 
 
 # Produce a boring textual report
