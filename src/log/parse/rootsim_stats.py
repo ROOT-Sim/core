@@ -295,7 +295,7 @@ def dump_text_report(filename):
         "processed_msgs"] else 100
 
     if len(raw_stats.gvts) != 0:
-        stat["avg_memory_usage"] = sum([sum(t) for t in raw_stats.nodes_stats["resident_set"]]) / len(raw_stats.gvts)
+        stat["avg_memory_usage"] = sum(sum(t) for t in raw_stats.nodes_stats["resident_set"]) / len(raw_stats.gvts)
         stat["last_gvt"] = raw_stats.gvts[-1]
         stat["sim_speed"] = stat["last_gvt"] / len(raw_stats.gvts)
 
