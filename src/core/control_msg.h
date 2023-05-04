@@ -10,9 +10,9 @@
  */
 #pragma once
 
-#include <lp/msg.h>
-#include <gvt/gvt.h>
-#include <gvt/termination.h>
+#include "lp/msg.h"
+#include "gvt/gvt.h"
+#include "gvt/termination.h"
 #include "include/ROOT-Sim/sdk.h"
 
 #define INITIAL_HANDLERS_CAPACITY 4
@@ -36,5 +36,7 @@ struct library_ctrl_msg {
 	char payload[CONTROL_MSG_PAYLOAD_SIZE];
 };
 
+extern void control_msg_init(void);
+extern void control_msg_fini(void);
 extern void control_msg_process(enum platform_ctrl_msg_code ctrl);
 extern void invoke_library_handler(unsigned code, const void *payload);

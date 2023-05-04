@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include <distributed/control_msg.h>
+#include "core/control_msg.h"
 #include <lp/msg.h>
 
 extern void mpi_global_init(int *argc_p, char ***argv_p);

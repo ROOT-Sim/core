@@ -8,9 +8,9 @@
  * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <ROOT-Sim/sdk.h>
-#include <distributed/control_msg.h>
-#include <distributed/mpi.h>
+#include "include/ROOT-Sim/sdk.h"
+#include "control_msg.h"
+#include "distributed/mpi.h"
 
 struct library_handler {
 	unsigned control_msg_id;
@@ -22,18 +22,28 @@ static size_t library_handlers_capacity = 0;
 static size_t library_handlers_size = 0;
 static int next_control_msg_id = FIRST_LIBRARY_CONTROL_MSG_ID;
 
+void control_msg_init(void)
+{
+	library_handlers_capacity = INITIAL_HANDLERS_CAPACITY;
+	library_handlers = malloc(library_handlers_capacity * sizeof(*library_handlers));
+}
+
+void control_msg_fini(void)
+{
+	free(library_handlers);
+}
+
 int control_msg_register_handler(control_msg_handler_t handler)
 {
 	int ret = next_control_msg_id;
 
-	if(unlikely(library_handlers == NULL)) {
-		library_handlers_capacity = INITIAL_HANDLERS_CAPACITY;
-		library_handlers = malloc(library_handlers_capacity * sizeof(*library_handlers));
-	}
-
 	if(library_handlers_size == library_handlers_capacity) {
 		library_handlers_capacity *= 2;
 		library_handlers = realloc(library_handlers, library_handlers_capacity * sizeof(*library_handlers));
+		if(unlikely(library_handlers == NULL)) {
+			   logger(LOG_FATAL, "Error registering external library handler!");
+			   abort();
+	   	}
 	}
 	library_handlers[library_handlers_size].control_msg_id = next_control_msg_id++;
 	library_handlers[library_handlers_size++].handler = handler;

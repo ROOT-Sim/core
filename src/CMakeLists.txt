@@ -8,7 +8,7 @@ set(rscore_srcs
         init.c
         core/sync.c
         datatypes/msg_queue.c
-        distributed/control_msg.c
+        core/control_msg.c
         gvt/fossil.c
         gvt/gvt.c
         gvt/termination.c

@@ -9,6 +9,7 @@
 #include <serial/serial.h>
 
 #include <arch/timer.h>
+#include <core/control_msg.h>
 #include <datatypes/heap.h>
 #include <log/stats.h>
 #include <lp/common.h>
@@ -26,6 +27,7 @@ void serial_simulation_init(void)
 	stats_init();
 	msg_allocator_init();
 	heap_init(queue);
+	control_msg_init();
 
 	lps = mm_alloc(sizeof(*lps) * global_config.lps);
 	memset(lps, 0, sizeof(*lps) * global_config.lps);
@@ -71,6 +73,7 @@ static void serial_simulation_fini(void)
 
 	mm_free(lps);
 
+	control_msg_fini();
 	heap_fini(queue);
 	msg_allocator_fini();
 	stats_global_fini();

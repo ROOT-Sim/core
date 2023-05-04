@@ -9,7 +9,7 @@
 #include <test.h>
 
 #include <ROOT-Sim/sdk.h>
-#include <distributed/control_msg.h>
+#include "core/control_msg.h"
 #include <distributed/mpi.h>
 
 #include <assert.h>
