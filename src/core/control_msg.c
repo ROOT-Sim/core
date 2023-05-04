@@ -34,8 +34,21 @@ static int next_control_msg_id = FIRST_LIBRARY_CONTROL_MSG_ID;
  */
 void control_msg_init(void)
 {
-	library_handlers_capacity = INITIAL_HANDLERS_CAPACITY;
-	library_handlers = malloc(library_handlers_capacity * sizeof(*library_handlers));
+#ifndef NDEBUG
+	if(library_handlers != NULL) {
+		logger(LOG_WARN, "Trying to reinitialize control message module, ignoring!");
+		return;
+	}
+#endif
+	size_t size = INITIAL_HANDLERS_CAPACITY * sizeof(*library_handlers);
+	void *ptr = malloc(size);
+	if (ptr != NULL) {
+		library_handlers_capacity = INITIAL_HANDLERS_CAPACITY;
+		library_handlers = ptr;
+	} else {
+		logger(LOG_FATAL, "Error initializing control message module!");
+		abort();
+	}
 }
 
 /**
@@ -48,21 +61,24 @@ void control_msg_fini(void)
 
 int control_msg_register_handler(control_msg_handler_t handler)
 {
-	int ret = next_control_msg_id;
-
-	if(library_handlers_size == library_handlers_capacity) {
-		library_handlers_capacity *= 2;
-		library_handlers = realloc(library_handlers, library_handlers_capacity * sizeof(*library_handlers));
-		if(unlikely(library_handlers == NULL)) {
-			   logger(LOG_FATAL, "Error registering external library handler!");
-			   abort();
-	   	}
+	if (library_handlers_size >= library_handlers_capacity) {
+		size_t new_capacity = library_handlers_capacity * 2;
+		struct library_handler *new_handlers = realloc(library_handlers, new_capacity * sizeof(*new_handlers));
+		if (new_handlers == NULL) {
+			logger(LOG_FATAL, "Error registering external library handler!");
+			abort();
+		}
+		library_handlers = new_handlers;
+		library_handlers_capacity = new_capacity;
 	}
-	library_handlers[library_handlers_size].control_msg_id = next_control_msg_id++;
-	library_handlers[library_handlers_size++].handler = handler;
 
+	int ret = next_control_msg_id++;
+	library_handlers[library_handlers_size].control_msg_id = ret;
+	library_handlers[library_handlers_size].handler = handler;
+	library_handlers_size++;
 	return ret;
 }
+
 
 /**
  * @brief Invoke a library handler
@@ -71,15 +87,16 @@ int control_msg_register_handler(control_msg_handler_t handler)
  */
 void invoke_library_handler(unsigned code, const void *payload)
 {
-	for(size_t i = 0; i < library_handlers_size; i++) {
-		if(library_handlers[i].control_msg_id == code) {
+	for (size_t i = 0; i < library_handlers_size; i++) {
+		if (library_handlers[i].control_msg_id == code) {
 			library_handlers[i].handler(code, payload);
 			return;
 		}
 	}
-	assert(false);
-	__builtin_unreachable();
+	logger(LOG_FATAL, "No library handler registered for code %u", code);
+	abort();
 }
+
 
 /**
  * @brief Handle a received control message
@@ -98,13 +115,17 @@ void control_msg_process(enum platform_ctrl_msg_code ctrl)
 			termination_on_ctrl_msg();
 			break;
 		default:
+#ifndef NDEBUG
+			logger(LOG_WARN, "Unknown control message code %d", ctrl);
+#else
 			__builtin_unreachable();
+#endif
 	}
 }
 
 void control_msg_broadcast(unsigned ctrl, const void *payload, size_t size)
 {
-	if(global_config.serial || n_nodes == 1) {
+	if(global_config.serial || (n_nodes == 1)) {
 		invoke_library_handler(ctrl, payload);
 	} else {
 		mpi_library_control_msg_broadcast(ctrl, payload, size);

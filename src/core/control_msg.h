@@ -18,7 +18,7 @@
 /// The initial size of the handlers dynamic vector
 #define INITIAL_HANDLERS_CAPACITY 4
 /// The first control message ID that will be returned to the external libraries
-#define FIRST_LIBRARY_CONTROL_MSG_ID 1
+#define FIRST_LIBRARY_CONTROL_MSG_ID 0
 
 /// The size of the maximum payload of a control message
 #define CONTROL_MSG_PAYLOAD_SIZE 16
@@ -34,11 +34,13 @@ enum platform_ctrl_msg_code {
 };
 
 /// A control message that can be user by higher-level libraries to synchronize actions
+/* cppcheck-suppress misra-c2012-2.4
+ * The payload is anything used specified, and the size is checked in the code */
 struct library_ctrl_msg {
 	/// The control message code
 	unsigned ctrl_code;
 	/// The payload of the control message
-	char payload[CONTROL_MSG_PAYLOAD_SIZE];
+	unsigned char payload[CONTROL_MSG_PAYLOAD_SIZE];
 };
 
 extern void control_msg_init(void);
