@@ -1,5 +1,5 @@
 /**
- * @file distributed/control_msg.h
+ * @file core/control_msg.h
  *
  * @brief MPI remote control messages header
  *
@@ -15,8 +15,13 @@
 #include "gvt/termination.h"
 #include "include/ROOT-Sim/sdk.h"
 
+/// The initial size of the handlers dynamic vector
 #define INITIAL_HANDLERS_CAPACITY 4
+/// The first control message ID that will be returned to the external libraries
 #define FIRST_LIBRARY_CONTROL_MSG_ID 1
+
+/// The size of the maximum payload of a control message
+#define CONTROL_MSG_PAYLOAD_SIZE 16
 
 /// A control message MPI tag value
 enum platform_ctrl_msg_code {

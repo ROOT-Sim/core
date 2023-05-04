@@ -14,10 +14,7 @@
 
 #include <stdlib.h>
 
-/// The size of the maximum payload of a control message
-#define CONTROL_MSG_PAYLOAD_SIZE 16
-
-// The type of control message handlers that libraries can register
+/// The type of control message handlers that libraries can register
 typedef void (*control_msg_handler_t)(unsigned ctrl_msg_id, const void *payload);
 
 /**
@@ -42,5 +39,6 @@ extern int control_msg_register_handler(control_msg_handler_t handler);
  *
  * @param ctrl the control message ID, as returned by control_msg_register_handler()
  * @param payload the payload of the control message, must be of size CONTROL_MSG_PAYLOAD_SIZE at most
+ * @param size the size of the payload
  */
 extern void control_msg_broadcast(unsigned ctrl, const void *payload, size_t size);

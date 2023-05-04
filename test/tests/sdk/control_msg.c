@@ -25,9 +25,16 @@ static unsigned ctrl_msg_id2 = 0;
 static unsigned short inv1 = 0;
 static unsigned short inv2 = 0;
 
-void handler(unsigned ctrl_msg_id, const void *payload)
+#ifdef NDEBUG
+#define UNUSED _unused
+#else
+#define UNUSED
+#endif
+
+
+void handler(unsigned ctrl_msg_id, UNUSED const void *payload)
 {
-	assert(*(long *)payload == value);
+	assert(*(const long *)payload == value);
 
 	if(ctrl_msg_id == ctrl_msg_id1) {
 		inv1++;

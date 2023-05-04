@@ -1,5 +1,5 @@
 /**
- * @file distributed/control_msg.c
+ * @file core/control_msg.c
  *
  * @brief MPI remote control messages module
  *
@@ -12,22 +12,35 @@
 #include "control_msg.h"
 #include "distributed/mpi.h"
 
+/// This structure is used to store the handlers for the control messages
 struct library_handler {
+	/// The control message id
 	unsigned control_msg_id;
+	/// The handler for the control message
 	control_msg_handler_t handler;
 };
 
+/// The array of handlers for the control messages
 static struct library_handler *library_handlers = NULL;
+/// The capacity of the array of handlers for the control messages
 static size_t library_handlers_capacity = 0;
+/// The current number of used slots in the array of handlers for the control messages
 static size_t library_handlers_size = 0;
+/// The next control message ID
 static int next_control_msg_id = FIRST_LIBRARY_CONTROL_MSG_ID;
 
+/**
+ * @brief Initialize the control message module
+ */
 void control_msg_init(void)
 {
 	library_handlers_capacity = INITIAL_HANDLERS_CAPACITY;
 	library_handlers = malloc(library_handlers_capacity * sizeof(*library_handlers));
 }
 
+/**
+ * @brief Finalize the control message module
+ */
 void control_msg_fini(void)
 {
 	free(library_handlers);

@@ -142,12 +142,18 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 /**
  * @brief Sends a library control message to all the nodes, including self
  * @param ctrl the control message to send
+ * @param payload the payload to send with the message
+ * @param size the size of the payload
  */
 void mpi_library_control_msg_broadcast(unsigned ctrl, const void *payload, size_t size)
 {
 	nid_t i = n_nodes;
 	struct library_ctrl_msg msg = {.ctrl_code = ctrl, {0}};
 	if(unlikely(payload != NULL)) {
+		if(unlikely(size >= CONTROL_MSG_PAYLOAD_SIZE)) {
+			logger(LOG_FATAL, "Payload too big for a library control message");
+			abort();
+		}
 		memcpy(&msg.payload, payload, size);
 	}
 
