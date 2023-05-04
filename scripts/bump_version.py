@@ -4,10 +4,10 @@
 import os
 import re
 import sys
-from subprocess import check_output
+from subprocess import check_output # nosec B404
 
-describe_str = check_output(['git', 'describe']).decode()
-branch_name = check_output(['git', 'branch', '--show-current']).decode().strip()
+describe_str = check_output(['/usr/bin/git', 'describe'], shell=False).decode()
+branch_name = check_output(['/usr/bin/git', 'branch', '--show-current'], shell=False).decode().strip()
 
 # Split version in major, minor, hotfix, and tag
 version = describe_str.split("-", 1)[0]
