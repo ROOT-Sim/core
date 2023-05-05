@@ -3,14 +3,13 @@
  *
  * @brief Sequential simulation engine
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <serial/serial.h>
 
 #include <arch/timer.h>
 #include <datatypes/heap.h>
-#include <lib/random/random.h>
 #include <lib/retractable/retractable.h>
 #include <log/stats.h>
 #include <lp/common.h>
@@ -43,8 +42,6 @@ static void serial_simulation_init(void)
 		model_allocator_lp_init(&lp->mm_state);
 
 		current_lp = lp;
-		lp->lib_ctx = rs_malloc(sizeof(*lp->lib_ctx));
-		random_lib_lp_init(i, &lp->lib_ctx->rng_ctx);
 		retractable_lib_lp_init(lp);
 
 		lp->state_pointer = NULL;

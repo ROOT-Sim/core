@@ -5,7 +5,7 @@
  *
  * This module contains the main logic for the parallel simulation runtime
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <lp/process.h>
@@ -50,6 +50,7 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
 #ifndef NDEBUG
+	msg->raw_flags = 0;
 	if(msg_is_before(msg, current_msg)) {
 		logger(LOG_FATAL, "Scheduling a message in the past!");
 		abort();

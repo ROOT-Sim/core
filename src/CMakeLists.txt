@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 set(rscore_srcs
         arch/io.c
@@ -12,10 +12,7 @@ set(rscore_srcs
         gvt/fossil.c
         gvt/gvt.c
         gvt/termination.c
-        lib/random/random.c
-        lib/random/xxtea.c
         lib/retractable/retractable.c
-        lib/topology/topology.c
         log/file.c
         log/log.c
         log/stats.c

@@ -5,14 +5,13 @@
  *
  * LP construction functions
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
 #include <arch/platform.h>
 #include <core/core.h>
-#include <lib/random/random.h>
 #include <lp/msg.h>
 #include <lp/process.h>
 #include <mm/auto_ckpt.h>
@@ -26,11 +25,8 @@ struct lp_ctx {
 	array_count_t retractable_pos;
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
-	/// The additional libraries context of this LP
-	struct lp_lib_ctx {
-		struct rng_ctx rng_ctx;
-		simtime_t retractable_ctx;
-	} *lib_ctx;
+	/// Retractable message context
+	simtime_t retractable_ctx;
 	/// The pointer set by the model with the SetState() API call
 	void *state_pointer;
 	/// The automatic checkpointing interval selection data

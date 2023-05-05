@@ -3,7 +3,7 @@
  *
  * @brief Test: statistics module test
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <log/stats.h>
@@ -38,7 +38,6 @@ static struct simulation_configuration conf = {
     .log_level = LOG_SILENT,
     .stats_file = NULL,
     .ckpt_interval = 0,
-    .prng_seed = 0,
     .core_binding = true,
     .serial = false,
     .dispatcher = DummyProcessEvent,

@@ -5,7 +5,7 @@
  *
  * LP construction functions
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <lp/lp.h>
@@ -98,8 +98,7 @@ void lp_init(void)
 		lp->fossil_epoch = 0;
 
 		current_lp = lp;
-		lp->lib_ctx = rs_malloc(sizeof(*lp->lib_ctx));
-		random_lib_lp_init(i, &lp->lib_ctx->rng_ctx);
+
 		retractable_lib_lp_init(lp);
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init(lp);

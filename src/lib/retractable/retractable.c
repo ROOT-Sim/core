@@ -20,7 +20,7 @@ void retractable_lib_init(void)
 
 void retractable_lib_lp_init(struct lp_ctx *this_lp)
 {
-	this_lp->lib_ctx->retractable_ctx = SIMTIME_MAX;
+	this_lp->retractable_ctx = SIMTIME_MAX;
 	struct rq_elem rq = {.t = SIMTIME_MAX, .lp = this_lp};
 	rheap_insert(r_queue, rq_elem_is_before, rq_elem_update, rq);
 }
@@ -34,7 +34,7 @@ void retractable_reschedule(const struct lp_ctx *lp)
 {
 	array_count_t pos = lp->retractable_pos;
 	struct rq_elem rq = array_get_at(r_queue, pos);
-	simtime_t t = lp->lib_ctx->retractable_ctx;
+	simtime_t t = lp->retractable_ctx;
 	if(t == rq.t)
 		return;
 
@@ -50,13 +50,13 @@ void retractable_reschedule(const struct lp_ctx *lp)
 
 void ScheduleRetractableEvent(simtime_t timestamp)
 {
-	current_lp->lib_ctx->retractable_ctx = timestamp;
+	current_lp->retractable_ctx = timestamp;
 }
 
 struct lp_msg *retractable_extract(void)
 {
 	struct rq_elem rq = rheap_min(r_queue);
-	rq.lp->lib_ctx->retractable_ctx = SIMTIME_MAX;
+	rq.lp->retractable_ctx = SIMTIME_MAX;
 	struct lp_msg *ret = msg_allocator_pack(rq.lp - lps, rq.t, LP_RETRACTABLE, NULL, 0);
 	ret->raw_flags = 0;
 	return ret;
