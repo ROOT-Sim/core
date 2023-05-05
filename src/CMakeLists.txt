@@ -35,7 +35,7 @@ endif()
 add_library(rscore STATIC ${rscore_srcs})
 
 target_compile_definitions(rscore PRIVATE ROOTSIM_VERSION="${PROJECT_VERSION}")
-target_include_directories(rscore PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+target_include_directories(rscore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_link_libraries(rscore ${CMAKE_THREAD_LIBS_INIT} ${EXTRA_LIBS})
 
 if(NOT DISABLE_MPI)
