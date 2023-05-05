@@ -99,8 +99,8 @@ enum log_level {
 	LOG_INFO,   //!< The logging level reserved to useful runtime messages
 	LOG_WARN,   //!< The logging level reserved to unexpected, non deal breaking conditions
 	LOG_ERROR,  //!< The logging level reserved to unexpected, problematic conditions
-	LOG_FATAL,   //!< The logging level reserved to unexpected, fatal conditions
-	LOG_SILENT //!< Emit no message during the simulation
+	LOG_FATAL,  //!< The logging level reserved to unexpected, fatal conditions
+	LOG_SILENT  //!< Emit no message during the simulation
 };
 
 /// A set of configurable values used by other modules

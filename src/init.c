@@ -11,11 +11,8 @@
 #include <arch/thread.h>
 #include <core/core.h>
 #include <distributed/mpi.h>
-#include <log/log.h>
 #include <parallel/parallel.h>
 #include <serial/serial.h>
-
-#include <ROOT-Sim.h>
 
 #include <inttypes.h>
 #include <string.h>
@@ -110,15 +107,27 @@ int RootsimInit(const struct simulation_configuration *conf)
 
 	log_init(global_config.logfile);
 
-	if (global_config.serial)
-		global_config.n_threads = 1;
-	else if (global_config.n_threads == 0)
-		global_config.n_threads = thread_cores_count();
-
 	if(global_config.termination_time == 0)
 		global_config.termination_time = SIMTIME_MAX;
 
+	logger(LOG_INFO, "Initializing %s simulation", global_config.serial ? "serial" : "parallel");
+	if(global_config.serial) {
+		global_config.n_threads = 1;
+		serial_simulation_init();
+	} else {
+		if(global_config.n_threads == 0) {
+			global_config.n_threads = thread_cores_count();
+		}
+		mpi_global_init(NULL, NULL);
+		parallel_global_init();
+	}
+
 	configuration_done = true;
+
+	if(global_config.log_level < LOG_SILENT && !rid && !nid) {
+		print_logo();
+		print_config();
+	}
 
 	return 0;
 }
@@ -137,14 +146,6 @@ int RootsimRun(void)
 
 	if(!configuration_done)
 		return -1;
-
-	if(!global_config.serial)
-		mpi_global_init(NULL, NULL);
-
-	if(global_config.log_level < LOG_SILENT && !rid) {
-		print_logo();
-		print_config();
-	}
 
 	if(global_config.serial) {
 		ret = serial_simulation();

@@ -82,17 +82,19 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 	return THREAD_RET_SUCCESS;
 }
 
-static void parallel_global_init(void)
+void parallel_global_init(void)
 {
 	stats_global_init();
 	lp_global_init();
 	msg_queue_global_init();
 	termination_global_init();
 	gvt_global_init();
+	control_msg_init();
 }
 
 static void parallel_global_fini(void)
 {
+	control_msg_fini();
 	msg_queue_global_fini();
 	lp_global_fini();
 	stats_global_fini();
@@ -100,8 +102,6 @@ static void parallel_global_fini(void)
 
 int parallel_simulation(void)
 {
-	logger(LOG_INFO, "Initializing parallel simulation");
-	parallel_global_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
 	thr_id_t thrs[global_config.n_threads];

@@ -9,6 +9,7 @@ FetchContent_Declare(rstest
         )
 FetchContent_MakeAvailable(rstest)
 
+
 # Visibility tests
 test_program(visibility_weak visibility/visibility_weak.c)
 test_program_link_libraries(visibility_weak rscore)
@@ -49,3 +50,14 @@ test_program(correctness_parallel integration/correctness/parallel.c integration
 test_program_link_libraries(correctness_parallel rscore)
 test_program(phold integration/phold.c)
 test_program_link_libraries(phold rscore)
+
+# TODO: The following is garbage and will be removed soon
+target_include_directories(test_visibility_weak PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
+target_include_directories(test_load PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
+target_include_directories(test_mm PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
+target_include_directories(test_stats PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
+target_include_directories(test_termination PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
+target_include_directories(test_sync PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
+target_include_directories(test_correctness_serial PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
+target_include_directories(test_correctness_parallel PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
+target_include_directories(test_phold PRIVATE ${CMAKE_SOURCE_DIR}/src/include)
