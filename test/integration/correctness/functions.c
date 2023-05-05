@@ -6,7 +6,7 @@
  * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <tests/integration/correctness/application.h>
+#include "application.h"
 
 #include <string.h>
 

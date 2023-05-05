@@ -12,6 +12,7 @@
 
 #include <lp/lp.h>
 #include <mm/buddy/buddy.h>
+#include "../mock.h"
 
 #include <string.h>
 
