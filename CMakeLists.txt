@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 cmake_minimum_required(VERSION 3.12)
-project("ROOT-Sim core" LANGUAGES C DESCRIPTION "A General-Purpose Multi-threaded Parallel/Distributed Simulation Library")
+project("rootsim-core" LANGUAGES C DESCRIPTION "A General-Purpose Multi-threaded Parallel/Distributed Simulation Library")
 
 set(PROJECT_VERSION 3.0.0-beta)
 
@@ -53,3 +53,25 @@ add_subdirectory(test)
 
 # Generate and inspect documentation
 add_subdirectory(docs)
+
+# Package the library
+# DEB package
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${PROJECT_DESCRIPTION})
+set(CPACK_PACKAGE_VENDOR "HPDCS Group")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_CONTACT "rootsim@googlegroups.com")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "HPDCS Group")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+if(NOT DISABLE_MPI)
+    SET(CPACK_DEBIAN_PACKAGE_DEPENDS "mpi-default-bin")
+endif()
+
+#currently preliminarily tested on:
+# cpack -G DEB
+# cpack -G RPM
+# cpack -G NSIS
+# The resulting packages were not tested for installation yet.
+
+include(CPack)
