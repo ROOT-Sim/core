@@ -86,6 +86,8 @@ enum rootsim_event {LP_RETRACTABLE = 65533, LP_INIT, LP_FINI};
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
     unsigned event_size);
 
+extern void ScheduleRetractableEvent(simtime_t timestamp);
+
 extern void SetState(void *new_state);
 
 extern void *rs_malloc(size_t req_size);
