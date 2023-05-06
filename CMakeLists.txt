@@ -47,9 +47,11 @@ endif()
 
 add_subdirectory(src)
 
-# Run the tests
-enable_testing()
-add_subdirectory(test)
+if(NOT IMPORT_AS_LIB)
+    # Run the tests
+    enable_testing()
+    add_subdirectory(test)
 
-# Generate and inspect documentation
-add_subdirectory(docs)
+    # Generate and inspect documentation
+    add_subdirectory(docs)
+endif()
