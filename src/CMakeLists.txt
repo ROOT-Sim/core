@@ -8,7 +8,7 @@ set(rscore_srcs
         init.c
         core/sync.c
         datatypes/msg_queue.c
-        distributed/control_msg.c
+        core/control_msg.c
         gvt/fossil.c
         gvt/gvt.c
         gvt/termination.c
@@ -35,7 +35,7 @@ endif()
 add_library(rscore STATIC ${rscore_srcs})
 
 target_compile_definitions(rscore PRIVATE ROOTSIM_VERSION="${PROJECT_VERSION}")
-target_include_directories(rscore PRIVATE .)
+target_include_directories(rscore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_link_libraries(rscore ${CMAKE_THREAD_LIBS_INIT} ${EXTRA_LIBS})
 
 if(NOT DISABLE_MPI)
@@ -44,5 +44,7 @@ if(NOT DISABLE_MPI)
     target_link_libraries(rscore ${MPI_C_LIBRARIES})
 endif()
 
-install(FILES ROOT-Sim.h DESTINATION include)
-install(TARGETS rscore LIBRARY DESTINATION lib)
+if(NOT IMPORT_AS_LIB)
+    install(DIRECTORY include/ DESTINATION include)
+    install(TARGETS rscore LIBRARY DESTINATION lib)
+endif()

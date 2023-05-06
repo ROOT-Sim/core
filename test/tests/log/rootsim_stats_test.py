@@ -77,7 +77,7 @@ def test_stats_file(base_name, expected):
 if __name__ == "__main__":
     rs_script_path, bin_folder = test_init()
     stats_regex = regex_get()
-    test_stats_file("empty_stats", ["NZ", "0", "1", "2", "0", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00",
+    test_stats_file("empty_stats", ["NZ", "0", "1", "2", "123", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00",
                                     "0", "0", "0", "0", "0.0", "0", "0.0", "0", "NZ"])
     test_stats_file("single_gvt_stats", ["NZ", "0", "1", "2", "16", "0", "0", "0", "0", "0", "0", "0.00", "0.00",
                                          "100.00", "0", "0", "0", "0", "0.0", "1", "0.0", "NZ", "NZ"])
