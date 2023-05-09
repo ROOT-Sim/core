@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 add_library(test_framework_lib STATIC
         framework/lp.c
@@ -47,7 +47,7 @@ test_program(termination tests/gvt/termination.c)
 # Test the statistics subsystem
 test_program(stats tests/log/stats.c)
 add_test(test_stats_parser
-        ${Python_EXECUTABLE}
+        ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/log/rootsim_stats_test.py
         ${CMAKE_CURRENT_SOURCE_DIR}/../src/log/parse/rootsim_stats.py
         ${CMAKE_CURRENT_BINARY_DIR})

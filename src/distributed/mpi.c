@@ -6,7 +6,7 @@
  * This module implements all basic MPI facilities to let the distributed execution of a simulation model take place
  * consistently.
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <distributed/mpi.h>
@@ -289,9 +289,7 @@ bool mpi_reduce_sum_scatter_done(void)
  */
 void mpi_reduce_min(double *node_min_p)
 {
-	static double min_buff;
-	min_buff = *node_min_p;
-	MPI_Iallreduce(&min_buff, node_min_p, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD, &reduce_min_req);
+	MPI_Iallreduce(MPI_IN_PLACE, node_min_p, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD, &reduce_min_req);
 }
 
 /**

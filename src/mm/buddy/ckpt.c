@@ -3,14 +3,12 @@
  *
  * @brief Checkpointing capabilities
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <mm/buddy/ckpt.h>
 
 #include <core/core.h>
-#include <datatypes/array.h>
-#include <mm/mm.h>
 
 
 #define buddy_tree_visit(longest, on_visit)                                                                            \
@@ -56,7 +54,7 @@ struct buddy_checkpoint *checkpoint_incremental_take(const struct buddy_state *s
 
 #define copy_block_to_ckp(i)                                                                                           \
 	__extension__({                                                                                                \
-		memcpy(ptr, src + (i << B_BLOCK_EXP), 1 << B_BLOCK_EXP);                                               \
+		memcpy(ptr, src + ((i) << B_BLOCK_EXP), 1 << B_BLOCK_EXP);                                             \
 		ptr += 1 << B_BLOCK_EXP;                                                                               \
 	})
 
@@ -140,8 +138,8 @@ struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, st
 
 #define buddy_block_copy_to_ckp(offset, len)                                                                           \
 	__extension__({                                                                                                \
-		memcpy(ptr, self->base_mem + offset, len);                                                             \
-		ptr += len;                                                                                            \
+		memcpy(ptr, self->base_mem + (offset), (len));                                                         \
+		ptr += (len);                                                                                          \
 	})
 
 	unsigned char *ptr = ret->base_mem;
@@ -160,8 +158,8 @@ const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self,
 
 #define buddy_block_copy_from_ckp(offset, len)                                                                         \
 	__extension__({                                                                                                \
-		memcpy(self->base_mem + offset, ptr, len);                                                             \
-		ptr += len;                                                                                            \
+		memcpy(self->base_mem + (offset), ptr, (len));                                                         \
+		ptr += (len);                                                                                          \
 	})
 
 	const unsigned char *ptr = ckp->base_mem;

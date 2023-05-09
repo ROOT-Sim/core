@@ -1,7 +1,7 @@
 # ROOT-Sim core 3.0.0
 
-*Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/)
-Research Group*
+_Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/)
+Research Group_
 
 [![Build Status](https://github.com/ROOT-Sim/core/workflows/ROOT-Sim%20core%20CI/badge.svg)](https://github.com/ROOT-Sim/core/actions)
 [![codecov](https://codecov.io/gh/ROOT-Sim/core/branch/master/graph/badge.svg)](https://codecov.io/gh/ROOT-Sim/core)
@@ -9,7 +9,7 @@ Research Group*
 [![doc coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Froot-sim.github.io%2Fcore%2Fdocs%2Fmaster.json)](https://root-sim.github.io/core/docs/)
 [![GitHub issues](https://img.shields.io/github/issues/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/issues)
 [![GitHub](https://img.shields.io/github/license/ROOT-Sim/core)](https://github.com/ROOT-Sim/core/blob/master/LICENSES/GPL-3.0-only.txt)
-[![REUSE Compliance Check](https://github.com/ROOT-Sim/core/actions/workflows/reuse_check.yml/badge.svg)](https://github.com/ROOT-Sim/core/actions/workflows/reuse_check.yml)
+[![REUSE status](https://api.reuse.software/badge/github.com/ROOT-Sim/core)](https://api.reuse.software/info/github.com/ROOT-Sim/core)
 
 ----------------------------------------------------------------------------------------
 
@@ -24,7 +24,7 @@ relies on asynchronous MPI primitives for increased efficiency.
 The programming model supported by ROOT-Sim allows the simulation model developer to use a simple application-callback
 function named `ProcessEvent()` as the event handler. Its parameters determine which simulation object is currently
 taking control for processing its next event and where the state of this object is located in memory. An object is a
-data structure whose state can be scattered on dynamically allocated memory chunks. Hence the memory address passed to
+data structure whose state can be scattered on dynamically allocated memory chunks. Hence, the memory address passed to
 the callback identifies a top-level data structure implementing the object state layout.
 
 ROOT-Sim's development started as a research project late back in 1987 and is currently maintained by the High
@@ -49,9 +49,10 @@ Windows users are encouraged to use clang.
 
 MPI is a mandatory dependency of the project, used to support simulations runs on distributed systems.
 The core is continuously tested against the following MPI implementations:
-*   OpenMPI
-*   MPICH
-*   Microsoft MPI
+
+* OpenMPI
+* MPICH
+* Intel MPI
 
 Any of the three is required to build the project. A full MPI3 implementation supporting multithreading is necessary.
 
