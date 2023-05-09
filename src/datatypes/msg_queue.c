@@ -124,3 +124,14 @@ void msg_queue_insert(struct lp_msg *msg)
 	    memory_order_relaxed)))
 		spin_pause();
 }
+
+/**
+ * @brief Inserts a message in the queue, knowing it is destined for the current thread
+ * @param msg the message to insert in the queue
+ */
+void msg_queue_insert_self(struct lp_msg *msg)
+{
+	assert(lid_to_rid(msg->dest) == rid);
+	struct q_elem qe = {.t = msg->dest_t, .m = msg};
+	heap_insert(mqp, q_elem_is_before, qe);
+}
