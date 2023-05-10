@@ -16,18 +16,19 @@ def get_stats(file_name):
     the rollback frequency and the efficiency
 
     :parameter file_name: the name of the file to parse
-    :return: a tuple with the number of threads, the total time of the first node, the rollback frequency and the efficiency
+    :return: a tuple with the total number of threads across all nodes, the total time of the first node, the rollback
+    percentage w.r.t. to the total number of processed events and the efficiency expresses as a percentage
     """
     rs_stats = RSStats(file_name)
     processed_msgs = rs_stats.thread_metric_get("processed messages", aggregate_nodes=True, aggregate_gvts=True)
     rollback_msgs = rs_stats.thread_metric_get("rolled back messages", aggregate_nodes=True, aggregate_gvts=True)
     rollbacks = rs_stats.thread_metric_get("rollbacks", aggregate_nodes=True, aggregate_gvts=True)
 
-    rollback_freq = 100 * rollbacks / processed_msgs if processed_msgs != 0 else 0
+    rollback_percentage = 100 * rollbacks / processed_msgs if processed_msgs != 0 else 0
     efficiency = 100 * (processed_msgs - rollback_msgs) / processed_msgs if processed_msgs else 100
     total_seconds_first_node = rs_stats.nodes_stats["processing_time"][0] / 1000000
 
-    return sum(rs_stats.threads_count), total_seconds_first_node, rollback_freq, efficiency
+    return sum(rs_stats.threads_count), total_seconds_first_node, rollback_percentage, efficiency
 
 
 def compute_avg(values):
