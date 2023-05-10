@@ -66,6 +66,7 @@ static long linux_page_size;
 
 int mem_stat_setup(void)
 {
+	/* Flawfinder: ignore */
 	proc_stat_fd = open("/proc/self/statm", O_RDONLY);
 	if(proc_stat_fd == -1)
 		return -1;
@@ -76,7 +77,9 @@ int mem_stat_setup(void)
 
 size_t mem_stat_rss_current_get(void)
 {
+	/* Flawfinder: ignore */
 	char res[40]; // sufficient for two 64 bit base 10 numbers and a space
+	/* Flawfinder: ignore */
 	if(__builtin_expect(lseek(proc_stat_fd, 0, SEEK_SET) == -1 || read(proc_stat_fd, res, sizeof(res) - 1) == -1, 0))
 		return (size_t)0;
 
