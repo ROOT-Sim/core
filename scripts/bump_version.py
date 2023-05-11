@@ -23,7 +23,6 @@ BRANCH_NAME = check_output(['/usr/bin/git', 'branch', '--show-current'], shell=F
 
 # Split version in major, minor, hotfix, and tag
 version = DESCRIBE_STR.split("-", 1)[0]
-version = version[1:]  # This is to remove the 'v' at the beginning of the previous tag name
 tag = "-" + DESCRIBE_STR.split("-", 1)[1].split("-", 1)[0]
 major, minor, hotfix = map(int, version.split(".", 3))
 
