@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 
+"""This is a use example of the RSStats class
+You can actually include this module in your code and use the object as it is done here"""
 import sys
 
 import matplotlib.pyplot as plt
@@ -10,6 +12,12 @@ from rootsim_stats import RSStats
 
 
 def compute_diffs(values):
+    """
+    Compute the difference between each value and the previous one
+
+    :parameter values: the list of values
+    :return: the list of differences
+    """
     ret = []
     iter_values = iter(values)
     ret.append(next(iter_values))
@@ -19,6 +27,13 @@ def compute_diffs(values):
 
 
 def plot_data(data_label, rts, data, sub_fig):
+    """
+    Plot the data
+
+    :parameter data_label: the label of the data
+    :parameter rts: the list of real times
+    :parameter data: the list of data
+    """
     sub_fig.plot(rts, data, marker='.', markersize=3, markeredgecolor=(0.2, 0.3, 0.7), color=(0.4, 0.5, 0.7))
     sub_fig.set_xlabel('Real Time (in s)')
     sub_fig.set_ylabel(data_label)
@@ -27,6 +42,13 @@ def plot_data(data_label, rts, data, sub_fig):
 
 
 def dump_tsv_data(data_label, rts, data):
+    """
+    Dump the data in a tsv file
+
+    :parameter data_label: the label of the data
+    :parameter rts: the list of real times
+    :parameter data: the list of data
+    """
     with open(data_label.replace(" ", "_").lower() + '.tsv', 'w', encoding="utf8") as f:
         f.write(f'Real time\t{data_label}\n')
         for i, sample in enumerate(data):
@@ -34,6 +56,12 @@ def dump_tsv_data(data_label, rts, data):
 
 
 def plot_single(filename, dump_tsv=False):
+    """
+    Plot the data contained in the file
+
+    :parameter filename: the name of the file
+    :parameter dump_tsv: if True, dump the data in a tsv file, otherwise plot them
+    """
     stats = RSStats(filename)
     rts = stats.rts(reduction=lambda x: sum(x) / len(x))
     rts = [value / 1000000 for value in rts]
@@ -63,6 +91,7 @@ def plot_single(filename, dump_tsv=False):
 
 
 def plot_single_main():
+    """Main function to plot the data from a file"""
     tsv_arg = True
     try:
         sys.argv.remove('--tsv')
@@ -76,7 +105,5 @@ def plot_single_main():
     plot_single(sys.argv[1], tsv_arg)
 
 
-# This is a use example of the RSStats class
-# You can actually include this module in your code and use the object as it is done here
 if __name__ == "__main__":
     plot_single_main()
