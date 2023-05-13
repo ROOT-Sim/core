@@ -10,6 +10,6 @@
  */
 #pragma once
 
-#include "lp/lp.h"
+#include <lp/lp.h>
 
 extern struct lp_ctx *test_lp_mock_get(void);

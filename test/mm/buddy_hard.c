@@ -11,7 +11,7 @@
 #include <test.h>
 
 #include <lp/lp.h>
-#include "../mock.h"
+#include <mock.h>
 
 #include <stdlib.h>
 
