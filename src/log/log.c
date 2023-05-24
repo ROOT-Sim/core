@@ -11,9 +11,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include <ROOT-Sim/sdk.h>
 #include <arch/io.h>
-#include <log/log.h>
 #include <core/core.h>
+#include <log/log.h>
 
 /// The file to write logging information to
 static FILE *logfile = NULL;

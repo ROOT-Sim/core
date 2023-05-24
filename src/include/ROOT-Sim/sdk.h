@@ -12,6 +12,7 @@
  */
 #pragma once
 
+#include <ROOT-Sim.h>
 #include <stdlib.h>
 
 /// The type of control message handlers that libraries can register
@@ -42,3 +43,13 @@ extern int control_msg_register_handler(control_msg_handler_t handler);
  * @param size the size of the payload
  */
 extern void control_msg_broadcast(unsigned ctrl, const void *payload, size_t size);
+
+
+extern void vlogger(enum log_level level, char *file, unsigned line, const char *fmt, ...);
+
+/**
+ * @brief Produce a log message
+ * @param level the logging level associated to the message
+ * @param ... the format string followed by its arguments if needed
+ */
+#define logger(level, ...) vlogger(level, __FILE__, __LINE__, __VA_ARGS__)
