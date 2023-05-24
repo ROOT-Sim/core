@@ -10,15 +10,6 @@
  */
 #pragma once
 
-#include <ROOT-Sim.h>
-
-extern void vlogger(enum log_level level, char *file, unsigned line, const char *fmt, ...);
-
-/**
- * @brief Produce a log message
- * @param level the logging level associated to the message
- * @param ... the format string followed by its arguments if needed
- */
-#define logger(level, ...) vlogger(level, __FILE__, __LINE__, __VA_ARGS__)
+#include <ROOT-Sim/sdk.h>
 
 extern void log_init(FILE *file);

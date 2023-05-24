@@ -10,8 +10,10 @@
  */
 #include <log/log.h>
 
+#include <ROOT-Sim/sdk.h>
 #include <arch/io.h>
 #include <core/core.h>
+#include <log/log.h>
 
 #include <stdarg.h>
 #include <stdio.h>
