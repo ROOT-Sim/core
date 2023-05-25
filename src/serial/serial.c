@@ -51,6 +51,7 @@ static void serial_simulation_init(void)
 		heap_insert(queue, msg_is_before, msg);
 
 		common_msg_process(lp, msg);
+		retractable_reschedule(lp);
 
 		msg_allocator_free(heap_extract(queue, msg_is_before));
 	}
@@ -89,11 +90,16 @@ static int serial_simulation_run(void)
 	lp_id_t to_terminate = global_config.lps;
 
 	while(likely(!heap_is_empty(queue))) {
-		const struct lp_msg *msg = heap_min(queue);
+		struct lp_msg *msg = heap_min(queue);
+
+		if(retractable_is_before(msg->dest_t))
+			msg = retractable_extract();
+
 		struct lp_ctx *lp = &lps[msg->dest];
 		current_lp = lp;
 
 		common_msg_process(lp, msg);
+		retractable_reschedule(lp);
 
 		if(unlikely(lp->termination_t < 0 && global_config.committed(msg->dest, lp->state_pointer))) {
 			lp->termination_t = msg->dest_t;
@@ -110,7 +116,10 @@ static int serial_simulation_run(void)
 			last_vt = timer_new();
 		}
 
-		msg_allocator_free(heap_extract(queue, msg_is_before));
+		if(msg->m_type != LP_RETRACTABLE)
+			heap_extract(queue, msg_is_before);
+
+		msg_allocator_free(msg);
 	}
 
 	stats_dump();

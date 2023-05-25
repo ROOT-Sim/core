@@ -40,6 +40,7 @@ void retractable_reschedule(const struct lp_ctx *lp)
 
 	bool lowered = t > rq.t;
 	array_get_at(r_queue, pos).t = t;
+	rq.t = t;
 
 	if(lowered) {
 		rheap_priority_lowered(r_queue, rq_elem_is_before, rq_elem_update, rq, pos);
