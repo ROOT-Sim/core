@@ -167,7 +167,6 @@ static inline void silent_execution(const struct lp_ctx *lp, array_count_t last_
 static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t past_i)
 {
 	array_count_t p_cnt = array_count(proc_p->p_msgs);
-	stats_take(STATS_MSG_ANTI, p_cnt - past_i);
 	for(array_count_t i = past_i; i < p_cnt; ++i) {
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
 
@@ -185,6 +184,7 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 					msg_queue_insert(msg);
 			}
 
+			stats_take(STATS_MSG_ANTI, 1);
 			msg = array_get_at(proc_p->p_msgs, ++i);
 		}
 
@@ -195,8 +195,8 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 			} else {
 				msg_queue_insert(msg);
 			}
-			stats_take(STATS_MSG_ROLLBACK, 1);
 		}
+		stats_take(STATS_MSG_ROLLBACK, 1);
 	}
 	array_count(proc_p->p_msgs) = past_i;
 }

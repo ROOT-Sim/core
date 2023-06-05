@@ -1,5 +1,8 @@
 name: Documentation Deployment
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
@@ -9,7 +12,6 @@ on:
 jobs:
   update-website:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v1
