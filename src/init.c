@@ -87,7 +87,7 @@ static void print_config(void)
  */
 int RootsimInit(const struct simulation_configuration *conf)
 {
-	memcpy(&global_config, conf, sizeof(struct simulation_configuration));
+	memcpy(&global_config, conf, sizeof(global_config));
 
 	if(unlikely(global_config.lps == 0)) {
 		fprintf(stderr, "You must specify the total number of Logical Processes\n");

@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
+
+"""
+This script contains tests for the rootsim_stats.py script. It tests whether the output of rootsim_stats.py matches
+the expected results for several simulated scenarios. The tests check the correctness of the regular expressions
+used to parse the output of the rootsim_stats.py script, as well as the correctness of the statistics values computed
+by the script.
+
+The script requires two command line arguments: the path to the rootsim_stats.py script, and the path to the test
+folder containing the statistics binaries. The test_stats_file() function tests a single statistics file, while the
+main function calls test_stats_file() for each test case and checks the exit value to determine whether the tests
+passed or failed.
+"""
 import os
 import re
 import runpy
@@ -9,6 +21,11 @@ import textwrap
 
 
 def regex_get():
+    """
+    Get the regex for the stats
+
+    :return: the regex for the stats
+    """
     count_regex = r"(\d+)"
     float_regex = r"(\d+(?:\.\d+)?)"
     measure_regex = f"{float_regex}(?:[munKMGTPEZ]i?)?"
@@ -44,6 +61,11 @@ def regex_get():
 
 
 def test_init():
+    """
+    Initialize the test
+
+    :return: the script path and the test folder
+    """
     if len(sys.argv) < 3:
         raise RuntimeError("Need the rootsim_stats.py path and the test folder containing the statistics binaries!")
 
@@ -54,15 +76,21 @@ def test_init():
 
 
 def test_stats_file(base_name, expected):
-    full_base_name = os.path.join(bin_folder, base_name)
+    """
+    Test the stats file
+
+    :param base_name: the base name of the stats file
+    :param expected: the expected stats
+    """
+    full_base_name = os.path.join(BIN_FOLDER, base_name)
     if not os.path.isfile(full_base_name + ".bin"):
         sys.exit(1)
     sys.argv[1] = full_base_name + ".bin"
-    runpy.run_path(path_name=rs_script_path, run_name="__main__")
+    runpy.run_path(path_name=RS_SCRIPT_PATH, run_name="__main__")
     with open(full_base_name + ".txt", "r", encoding="utf8") as report_file:
         data = report_file.read()
 
-    match = stats_regex.fullmatch(data)
+    match = STATS_REGEX.fullmatch(data)
     if match is None:
         sys.exit(1)
 
@@ -75,9 +103,9 @@ def test_stats_file(base_name, expected):
 
 
 if __name__ == "__main__":
-    rs_script_path, bin_folder = test_init()
-    stats_regex = regex_get()
-    test_stats_file("empty_stats", ["NZ", "0", "1", "2", "123", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00",
+    RS_SCRIPT_PATH, BIN_FOLDER = test_init()
+    STATS_REGEX = regex_get()
+    test_stats_file("empty_stats", ["NZ", "0", "1", "2", "0", "0", "0", "0", "0", "0", "0", "0.00", "0.00", "100.00",
                                     "0", "0", "0", "0", "0.0", "0", "0.0", "0", "NZ"])
     test_stats_file("single_gvt_stats", ["NZ", "0", "1", "2", "16", "0", "0", "0", "0", "0", "0", "0.00", "0.00",
                                          "100.00", "0", "0", "0", "0", "0.0", "1", "0.0", "NZ", "NZ"])

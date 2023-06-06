@@ -26,7 +26,7 @@ struct lp_ctx {
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
 	/// Retractable message context
-	simtime_t retractable_ctx;
+	simtime_t *retractable_ctx;
 	/// The pointer set by the model with the SetState() API call
 	void *state_pointer;
 	/// The automatic checkpointing interval selection data

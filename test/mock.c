@@ -18,7 +18,5 @@ static _Thread_local struct lp_mock lp_mock;
 
 struct lp_ctx *test_lp_mock_get(void)
 {
-	lp_mock.lp.retractable_ctx = SIMTIME_MAX;
-
 	return &lp_mock.lp;
 }
