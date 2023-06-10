@@ -16,7 +16,7 @@ jobs:
       - name: Initialize Environment
         uses: ROOT-Sim/ci-actions/init@v1.2
       - name: Generate Documentation
-        uses: ROOT-Sim/ci-actions/docs@docs-target
+        uses: ROOT-Sim/ci-actions/docs@v1.3
         with:
           docs-target: rscore-doc
       - name: Documentation Coverage
