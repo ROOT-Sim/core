@@ -49,7 +49,6 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 
 #ifndef NDEBUG
-	msg->raw_flags = 0;
 	if(msg_is_before(msg, current_msg)) {
 		logger(LOG_FATAL, "Scheduling a message in the past!");
 		abort();
@@ -111,6 +110,7 @@ void process_lp_init(struct lp_ctx *lp)
 void process_lp_fini(struct lp_ctx *lp)
 {
 	current_lp = lp;
+	silent_processing = true;
 	global_config.dispatcher(lp - lps, 0, LP_FINI, NULL, 0, lp->state_pointer);
 
 	for(array_count_t i = 0; i < array_count(lp->p.p_msgs); ++i) {
@@ -188,7 +188,7 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 
 		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(f & MSG_FLAG_ANTI))
-			msg_queue_insert(msg);
+			msg_queue_insert_self(msg);
 		stats_take(STATS_MSG_ROLLBACK, 1);
 	}
 	array_count(proc_p->p_msgs) = past_i;
@@ -351,7 +351,9 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
  */
 void process_msg(void)
 {
+	timer_uint t = timer_hr_new();
 	struct lp_msg *msg = msg_queue_extract();
+	stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
 	if(unlikely(!msg)) {
 		current_lp = NULL;
 		return;
