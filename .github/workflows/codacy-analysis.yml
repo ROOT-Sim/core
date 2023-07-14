@@ -1,5 +1,8 @@
 name: Codacy Code Scan
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ "master", "develop" ]
@@ -7,9 +10,6 @@ on:
     branches: [ "master", "develop" ]
   schedule:
     - cron: '20 2 * * 3'
-
-permissions:
-  contents: read
 
 jobs:
   codacy-security-scan:
