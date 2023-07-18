@@ -1,5 +1,5 @@
 /**
- * @file test/tests/integration/correctness/serial.c
+ * @file test/tests/integration/correctness/parallel.c
  *
  * @brief Test: integration test of the serial runtime
  *
@@ -8,7 +8,7 @@
  */
 #include <test.h>
 
-#include <tests/integration/correctness/application.h>
+#include "application.h"
 
 struct simulation_configuration conf = {
     .lps = N_LPS,
@@ -19,7 +19,7 @@ struct simulation_configuration conf = {
     .stats_file = NULL,
     .ckpt_interval = 0,
     .core_binding = false,
-    .serial = true,
+    .serial = false,
     .dispatcher = ProcessEvent,
     .committed = CanEnd,
 };
@@ -33,5 +33,5 @@ static int correctness(void *config)
 int main(void)
 {
 	crc_table_init();
-	test("Correctness test (serial)", correctness, &conf);
+	test("Correctness test (parallel)", correctness, &conf);
 }

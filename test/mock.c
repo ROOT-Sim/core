@@ -1,14 +1,14 @@
 /**
-* @file test/framework/lp.c
+* @file test/framework/mock.c
 *
-* @brief LP mocking module
+* @brief Mocking module
 *
-* This module allows to mock various parts of an LP for testing purposes
+* This module allows to mock various parts of the core for testing purposes
 *
 * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 * SPDX-License-Identifier: GPL-3.0-only
 */
-#include <lp/lp.h>
+#include <mock.h>
 
 struct lp_mock {
 	struct lp_ctx lp;

@@ -10,11 +10,9 @@
  */
 #include <test.h>
 
-#include <framework/rng.h>
-
 #include <lp/lp.h>
 #include <mm/buddy/buddy.h>
-#include <mm/model_allocator.h>
+#include <mock.h>
 
 #include <stdlib.h>
 
