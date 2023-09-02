@@ -30,10 +30,8 @@ static __thread bool silent_processing = false;
 static __thread struct lp_msg *current_msg;
 #endif
 
-#define mark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))
-#define mark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 1U))
-#define unmark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) - 2U))
-#define unmark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) - 1U))
+#define proc_mark_sent_local(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 1U))
+#define proc_mark_sent_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))
 
 void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
     unsigned payload_size)
@@ -57,14 +55,13 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 	msg->send_t = current_msg->dest_t;
 #endif
 
-	nid_t dest_nid = lid_to_nid(receiver);
-	if(dest_nid != nid) {
-		mpi_remote_msg_send(msg, dest_nid);
-		array_push(current_lp->p.p_msgs, mark_msg_remote(msg));
-	} else {
+	if(lps[receiver].local) {
 		atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
-		msg_queue_insert(msg);
-		array_push(current_lp->p.p_msgs, mark_msg_sent(msg));
+		msg_queue_insert(msg, lps[receiver].id);
+		array_push(current_lp->p.p_msgs, proc_mark_sent_local(msg));
+	} else {
+		mpi_remote_msg_send(msg, (nid_t)lps[receiver].id);
+		array_push(current_lp->p.p_msgs, proc_mark_sent_remote(msg));
 	}
 }
 
@@ -115,13 +112,12 @@ void process_lp_fini(struct lp_ctx *lp)
 
 	for(array_count_t i = 0; i < array_count(lp->p.p_msgs); ++i) {
 		struct lp_msg *msg = array_get_at(lp->p.p_msgs, i);
-		if(is_msg_local_sent(msg))
+		if(proc_is_sent_local(msg))
 			continue;
 
-		bool remote = is_msg_remote(msg);
-		msg = unmark_msg(msg);
-		uint32_t flags = atomic_load_explicit(&msg->flags, memory_order_relaxed);
-		if(remote || !(flags & MSG_FLAG_ANTI))
+		bool remote = proc_is_sent_remote(msg);
+		msg = proc_untagged(msg);
+		if(remote || !(atomic_load_explicit(&msg->flags, memory_order_relaxed) & MSG_FLAG_ANTI))
 			msg_allocator_free(msg);
 	}
 	array_fini(lp->p.p_msgs);
@@ -146,7 +142,7 @@ static inline void silent_execution(const struct lp_ctx *lp, array_count_t last_
 	void *state_p = lp->state_pointer;
 	do {
 		const struct lp_msg *msg = array_get_at(lp->p.p_msgs, last_i);
-		while(is_msg_sent(msg))
+		while(proc_is_sent(msg))
 			msg = array_get_at(lp->p.p_msgs, ++last_i);
 
 		global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, state_p);
@@ -168,18 +164,15 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 	for(array_count_t i = past_i; i < p_cnt; ++i) {
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
 
-		while(is_msg_sent(msg)) {
-			if(is_msg_remote(msg)) {
-				msg = unmark_msg_remote(msg);
-				nid_t dest_nid = lid_to_nid(msg->dest);
-				mpi_remote_anti_msg_send(msg, dest_nid);
-				msg_allocator_free_at_gvt(msg);
-			} else {
-				msg = unmark_msg_sent(msg);
-				uint32_t f =
-				    atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
+		while(proc_is_sent(msg)) {
+			msg = proc_untagged(msg);
+			if(lps[msg->dest].local) {
+				uint32_t f = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
 				if(f & MSG_FLAG_PROCESSED)
-					msg_queue_insert(msg);
+					msg_queue_insert(msg, lps[msg->dest].id);
+			} else {
+				mpi_remote_anti_msg_send(msg, lps[msg->dest].id);
+				msg_allocator_free_at_gvt(msg);
 			}
 
 			stats_take(STATS_MSG_ANTI, 1);
@@ -223,7 +216,7 @@ static inline array_count_t match_straggler_msg(const struct process_ctx *proc_p
 		if(!i)
 			return 0;
 		msg = array_get_at(proc_p->p_msgs, --i);
-	} while(is_msg_sent(msg) || msg_is_before(s_msg, msg));
+	} while(proc_is_sent(msg) || msg_is_before(s_msg, msg));
 	return i + 1;
 }
 
@@ -242,7 +235,7 @@ static inline array_count_t match_anti_msg(const struct process_ctx *proc_p, con
 
 	while(i) {
 		msg = array_get_at(proc_p->p_msgs, --i);
-		if(is_msg_past(msg))
+		if(!proc_is_sent(msg))
 			return i + 1;
 	}
 	return i;
@@ -269,11 +262,11 @@ static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_ms
 			return;
 		}
 		msg = array_get_at(lp->p.p_msgs, --i);
-	} while(is_msg_sent(msg) || msg->raw_flags != m_id || msg->m_seq != m_seq);
+	} while(proc_is_sent(msg) || msg->raw_flags != m_id || msg->m_seq != m_seq);
 
 	while(i) {
 		const struct lp_msg *v_msg = array_get_at(lp->p.p_msgs, --i);
-		if(is_msg_past(v_msg)) {
+		if(!proc_is_sent(v_msg)) {
 			i++;
 			break;
 		}

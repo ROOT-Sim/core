@@ -200,7 +200,8 @@ void mpi_remote_msg_handle(void)
 
 			gvt_remote_msg_receive(msg);
 		}
-		msg_queue_insert(msg);
+		assert(lps[msg->dest].local);
+		msg_queue_insert(msg, lps[msg->dest].id);
 	}
 }
 
