@@ -47,4 +47,3 @@ void crc_table_init(void);
 extern const uint32_t model_expected_output[];
 
 extern void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st);
-extern bool CanEnd(lp_id_t me, const void *snapshot);

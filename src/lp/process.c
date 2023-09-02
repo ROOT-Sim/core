@@ -274,7 +274,6 @@ static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_ms
 
 	msg->raw_flags |= MSG_FLAG_ANTI;
 	do_rollback(lp, i);
-	termination_on_lp_rollback(lp, msg->dest_t);
 	msg_allocator_free(msg);
 	msg_allocator_free(a_msg);
 }
@@ -318,7 +317,6 @@ static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint32_t last
 	} else if(last_flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 		array_count_t past_i = match_anti_msg(&lp->p, msg);
 		do_rollback(lp, past_i);
-		termination_on_lp_rollback(lp, msg->dest_t);
 		auto_ckpt_register_bad(&lp->auto_ckpt);
 	}
 	msg_allocator_free(msg);
@@ -333,7 +331,6 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
 {
 	array_count_t past_i = match_straggler_msg(&lp->p, msg);
 	do_rollback(lp, past_i);
-	termination_on_lp_rollback(lp, msg->dest_t);
 	auto_ckpt_register_bad(&lp->auto_ckpt);
 }
 
@@ -387,6 +384,4 @@ void process_msg(void)
 	auto_ckpt_register_good(&lp->auto_ckpt);
 	if(auto_ckpt_is_needed(&lp->auto_ckpt))
 		checkpoint_take(lp);
-
-	termination_on_msg_process(lp, msg->dest_t);
 }

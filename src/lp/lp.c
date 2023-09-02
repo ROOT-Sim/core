@@ -125,7 +125,6 @@ void lp_init(void)
 
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init(lp);
-		termination_lp_init(lp);
 	}
 }
 

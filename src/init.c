@@ -97,8 +97,8 @@ int RootsimInit(const struct simulation_configuration *conf)
 		return -1;
 	}
 
-	if(unlikely(global_config.dispatcher == NULL || global_config.committed == NULL)) {
-		fprintf(stderr, "Function pointers not correctly set\n");
+	if(unlikely(global_config.dispatcher == NULL)) {
+		fprintf(stderr, "Function pointer not correctly set\n");
 		return -1;
 	}
 
