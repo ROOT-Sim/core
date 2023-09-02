@@ -77,13 +77,13 @@ class RSStats:
     def _nodes_stats_load(self):
         nodes_count = self._pattern_unpack("q")[0]
         for _ in range(nodes_count):
-            glob_stats = self._pattern_unpack("9Q")
+            glob_stats = self._pattern_unpack("8Q")
             n_threads = glob_stats[0]
             self.threads_count.append(n_threads)
-            n_stats = self._pattern_unpack("q")[0] // 16
+            n_stats = self._pattern_unpack("q")[0] // 24
             node_stats = []
             for _ in range(n_stats):
-                node_stats.append(self._pattern_unpack("dQ"))
+                node_stats.append(self._pattern_unpack("d2Q"))
 
             threads_stats = []
             for _ in range(n_threads):
@@ -137,7 +137,6 @@ class RSStats:
         self._truncate_to_last_gvt()
 
         self._global_measures = {
-            "lps": [],
             "maximum_resident_set": [],
             "node_init_time": [],
             "worker_threads_init_time": [],
@@ -146,31 +145,34 @@ class RSStats:
             "node_fini_time": [],
             "node_total_time": [],
             "node_total_hr_time": [],
-            "resident_set": []
+            "resident_set": [],
+            "lps": []
         }
         for triple in self.all_stats:
             glob_stats, node_stats, threads_stats = triple
 
-            self._global_measures["lps"].append(glob_stats[1])
-            self._global_measures["maximum_resident_set"].append(glob_stats[2])
-            self._global_measures["node_init_time"].append(glob_stats[3])
-            self._global_measures["worker_threads_init_time"].append(glob_stats[4] - glob_stats[3])
-            self._global_measures["processing_time"].append(glob_stats[5] - glob_stats[4])
-            self._global_measures["worker_threads_fini_time"].append(glob_stats[6] - glob_stats[5])
-            self._global_measures["node_fini_time"].append(glob_stats[7] - glob_stats[6])
-            self._global_measures["node_total_time"].append(glob_stats[7] - glob_stats[3])
-            self._global_measures["node_total_hr_time"].append(glob_stats[8])
+            self._global_measures["maximum_resident_set"].append(glob_stats[1])
+            self._global_measures["node_init_time"].append(glob_stats[2])
+            self._global_measures["worker_threads_init_time"].append(glob_stats[3] - glob_stats[2])
+            self._global_measures["processing_time"].append(glob_stats[4] - glob_stats[3])
+            self._global_measures["worker_threads_fini_time"].append(glob_stats[5] - glob_stats[4])
+            self._global_measures["node_fini_time"].append(glob_stats[6] - glob_stats[5])
+            self._global_measures["node_total_time"].append(glob_stats[6] - glob_stats[2])
+            self._global_measures["node_total_hr_time"].append(glob_stats[7])
 
             mem = []
-            for i, (gvt, crs_mem) in enumerate(node_stats):
+            lps = []
+            for i, (gvt, crs_mem, lps_count) in enumerate(node_stats):
                 if len(self._gvts) <= i:
                     self._gvts.append(gvt)
                 elif self._gvts[i] != gvt:
                     raise RuntimeWarning("Parsing failed, inconsistent GVTs across nodes and/or threads")
 
                 mem.append(crs_mem)
+                lps.append(lps_count)
 
             self._global_measures["resident_set"].append(mem)
+            self._global_measures["lps"].append(lps)
 
             for j, metric_name in enumerate(metric_names):
                 metric_n_stat = []
@@ -366,7 +368,7 @@ def dump_text_report(filename):
         "recoveries_cost": raw_stats.thread_metric_get("recovery time", aggregate_nodes=True, aggregate_gvts=True),
         "checkpoints_size": raw_stats.thread_metric_get("checkpoints size", aggregate_nodes=True, aggregate_gvts=True),
         "peak_memory_usage": sum(raw_stats.nodes_stats["maximum_resident_set"]),
-        "lps_count": sum(raw_stats.nodes_stats["lps"]),
+        "lps_count": sum([v[0] if len(v) > 0 else 0 for v in raw_stats.nodes_stats["lps"]]),
         "avg_memory_usage": 0.0,
         "sim_speed": 0.0,
         "last_gvt": 0.0

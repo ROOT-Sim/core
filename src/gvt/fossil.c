@@ -43,7 +43,7 @@ void fossil_lp_collect(struct lp_ctx *lp)
 			if(!past_i)
 				return;
 			msg = array_get_at(proc_p->p_msgs, --past_i);
-		} while(!is_msg_past(msg));
+		} while(proc_is_sent(msg));
 	}
 
 	past_i = model_allocator_fossil_lp_collect(&lp->mm_state, past_i + 1);
@@ -51,8 +51,8 @@ void fossil_lp_collect(struct lp_ctx *lp)
 	array_count_t k = past_i;
 	while(k--) {
 		struct lp_msg *msg = array_get_at(proc_p->p_msgs, k);
-		if(!is_msg_local_sent(msg))
-			msg_allocator_free(unmark_msg(msg));
+		if(!proc_is_sent_local(msg))
+			msg_allocator_free(proc_untagged(msg));
 	}
 	array_truncate_first(proc_p->p_msgs, past_i);
 

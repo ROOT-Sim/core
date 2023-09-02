@@ -14,12 +14,6 @@
 #include <core/sync.h>
 #include <gvt/termination.h>
 
-/// The lowest LP id between the ones hosted on this node
-uint64_t lid_node_first;
-/// The lowest LP id between the ones hosted on this thread
-__thread uint64_t lid_thread_first;
-/// One plus the highest LP id between the ones hosted on this thread
-__thread uint64_t lid_thread_end;
 /// A pointer to the currently processed LP context
 __thread struct lp_ctx *current_lp;
 /// A pointer to the LP contexts array
@@ -31,6 +25,22 @@ lp_id_t n_lps_node;
 #ifndef NDEBUG
 bool lp_initialized;
 #endif
+
+/**
+ * @brief Compute the id of the node which hosts a given LP
+ * @param lp_id the id of the LP
+ * @return the id of the node which hosts the LP identified by @p lp_id
+ */
+#define lid_to_nid(lp_id) ((nid_t)((lp_id) * n_nodes / global_config.lps))
+
+/**
+ * @brief Compute the id of the thread which hosts a given LP
+ * @param lp_id the id of the LP
+ * @return the id of the thread which hosts the LP identified by @p lp_id
+ *
+ * Horrible things may happen if @p lp_id is not locally hosted (use #lid_to_nid() to make sure of that!)
+ */
+#define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
 
 /**
  * @brief Compute the first index of a partition in a linear space of indexes
@@ -59,11 +69,10 @@ bool lp_initialized;
  */
 void lp_global_init(void)
 {
-	lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, global_config.lps);
+	lp_id_t lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, global_config.lps);
 	n_lps_node = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps) - lid_node_first;
 
-	lps = mm_alloc(sizeof(*lps) * n_lps_node);
-	lps -= lid_node_first;
+	lps = mm_alloc(sizeof(*lps) * global_config.lps);
 
 	if(n_lps_node < global_config.n_threads) {
 		logger(LOG_WARN, "The simulation will run with %u threads instead of the requested %u", n_lps_node,
@@ -77,7 +86,6 @@ void lp_global_init(void)
  */
 void lp_global_fini(void)
 {
-	lps += lid_node_first;
 	mm_free(lps);
 }
 
@@ -86,11 +94,28 @@ void lp_global_fini(void)
  */
 void lp_init(void)
 {
-	lid_thread_first = partition_start(rid, global_config.n_threads, lid_to_rid, lid_node_first, n_lps_node);
-	lid_thread_end = partition_start(rid + 1, global_config.n_threads, lid_to_rid, lid_node_first, n_lps_node);
+	lp_id_t lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, global_config.lps);
+	lp_id_t lid_node_last = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps);
 
-	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
+	for(lp_id_t i = rid; i < global_config.lps; i += global_config.n_threads) {
 		struct lp_ctx *lp = &lps[i];
+
+		nid_t this_nid = lid_to_nid(i);
+		if(this_nid != nid) {
+			lp->local = false;
+			lp->id = this_nid;
+		} else {
+			lp->local = true;
+			lp->id = lid_to_rid(i);
+		}
+	}
+
+	sync_thread_barrier();
+
+	for(lp_id_t i = lid_node_first; i < lid_node_last; ++i) {
+		struct lp_ctx *lp = &lps[i];
+		if(lp->id != rid)
+			continue;
 
 		model_allocator_lp_init(&lp->mm_state);
 		lp->state_pointer = NULL;
@@ -109,8 +134,11 @@ void lp_init(void)
  */
 void lp_fini(void)
 {
-	for(uint64_t i = lid_thread_first; i < lid_thread_end; ++i) {
+	for(lp_id_t i = rid; i < global_config.lps; i += global_config.n_threads) {
 		struct lp_ctx *lp = &lps[i];
+
+		if(!lp->local)
+			continue;
 
 		process_lp_fini(lp);
 		model_allocator_lp_fini(&lp->mm_state);

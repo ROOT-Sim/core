@@ -15,9 +15,9 @@
 #include <arch/timer.h>
 #include <distributed/mpi.h>
 #include <log/file.h>
+#include <mm/mm.h>
 
 #include <assert.h>
-#include <stdint.h>
 #include <stdio.h>
 
 /// The number of entries to keep in the stdio buffers before flushing a temporary statistics file to disk
@@ -35,22 +35,22 @@ struct stats_node {
 	simtime_t gvt;
 	/// The size in bytes of the resident set
 	uint64_t rss;
+	/// The number of LPs in this node
+	uint64_t lps_count;
 };
 
 /// A container for node-wide statistics relevant for the whole simulation run
 struct stats_global {
 	/// The number of threads in this node
 	uint64_t threads_count;
-	/// The number of LPs in this node
-	uint64_t lps_count; // todo: make it a per-thread count
 	/// The maximum size in bytes of the resident set
 	uint64_t max_rss;
 	/// The timestamps of the relevant simulation life-cycle events
 	uint64_t timestamps[STATS_GLOBAL_COUNT];
 };
 
-static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct stats_node) == 16 &&
-		  sizeof(struct stats_global) == 24 + 8 * (STATS_GLOBAL_COUNT),
+static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct stats_node) == 24 &&
+		  sizeof(struct stats_global) == 16 + 8 * (STATS_GLOBAL_COUNT),
     "structs aren't properly packed, parsing may be difficult");
 
 /// The statistics names, used to fill in the preamble of the final statistics binary file
@@ -219,7 +219,7 @@ static void stats_files_send(void)
  * Node stats:
  * | Count      | Size | Type             | Ref   | Description                                                        |
  * |:---------- |:---- |:---------------- |:----- | :----------------------------------------------------------------- |
- * | 1          | 8    | uint             | t_cnt | Count of threads for the this node                                 |
+ * | 1          | 8    | uint             | t_cnt | Count of threads for this node                                     |
  * | 1          | 8    | uint             | --    | Maximum resident set size of this node (in bytes)                  |
  * | 6          | 8    | uint             | --    | Some timestamps in us (see enum #stats_global_type)                |
  * | 1          | 8    | uint             | --    | High resolution time end to end value (see enum #stats_global_type)|
@@ -232,6 +232,7 @@ static void stats_files_send(void)
  * |:---------- |:---- |:---------------- |:----- | :----------------------------------------------------------------- |
  * | 1          | 8    | double           | --    | Global virtual time value                                          |
  * | 1          | 8    | uint             | --    | Current resident set size of this node (in bytes)                  |
+ * | 1          | 8    | uint             | --    | The current count of locally hosted LPs                            |
  *
  * Thread stats:
  * | Count               | Size      | Type             | Ref   | Description                                          |
@@ -296,7 +297,6 @@ void stats_global_fini(void)
 		return;
 
 	stats_glob_cur.threads_count = global_config.n_threads;
-	stats_glob_cur.lps_count = n_lps_node;
 
 	if(nid) {
 		stats_files_send();
@@ -360,7 +360,7 @@ void stats_on_gvt(simtime_t gvt)
 	if(rid != 0)
 		return;
 
-	struct stats_node stats_node_cur = {.gvt = gvt, .rss = mem_stat_rss_current_get()};
+	struct stats_node stats_node_cur = {.gvt = gvt, .rss = mem_stat_rss_current_get(), .lps_count = n_lps_node};
 	file_write_chunk(stats_node_tmp, &stats_node_cur, sizeof(stats_node_cur));
 	memset(&stats_node_cur, 0, sizeof(stats_node_cur));
 }

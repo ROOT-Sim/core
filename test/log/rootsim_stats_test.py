@@ -97,8 +97,10 @@ def test_stats_file(base_name, expected):
     for i, expected_field in enumerate(expected):
         if expected_field == 'NZ':
             if float(match[i + 1]) == 0:
+                print('NZ', match[i + 1])
                 sys.exit(1)
         elif expected_field != match[i + 1]:
+            print(expected_field, match[i + 1])
             sys.exit(1)
 
 

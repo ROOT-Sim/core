@@ -25,11 +25,10 @@ struct process_ctx {
 	simtime_t bound;
 };
 
-#define is_msg_sent(msg_p) (((uintptr_t)(msg_p)) & 3U)
-#define is_msg_remote(msg_p) (((uintptr_t)(msg_p)) & 2U)
-#define is_msg_local_sent(msg_p) (((uintptr_t)(msg_p)) & 1U)
-#define is_msg_past(msg_p) (!(((uintptr_t)(msg_p)) & 3U))
-#define unmark_msg(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3)))
+#define proc_is_sent(msg_p) (((uintptr_t)(msg_p)) & 3U)
+#define proc_is_sent_local(msg_p) (((uintptr_t)(msg_p)) & 1U)
+#define proc_is_sent_remote(msg_p) (((uintptr_t)(msg_p)) & 2U)
+#define proc_untagged(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3U)))
 
 struct lp_ctx; // forward declaration
 

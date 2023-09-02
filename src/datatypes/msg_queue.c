@@ -117,9 +117,9 @@ struct lp_msg *msg_queue_extract(void)
  * @brief Inserts a message in the queue
  * @param msg the message to insert in the queue
  */
-void msg_queue_insert(struct lp_msg *msg)
+void msg_queue_insert(struct lp_msg *msg, rid_t this_rid)
 {
-	_Atomic(struct lp_msg *) *list_p = &queues[lid_to_rid(msg->dest)].list;
+	_Atomic(struct lp_msg *) *list_p = &queues[this_rid].list;
 	msg->next = atomic_load_explicit(list_p, memory_order_relaxed);
 	while(unlikely(!atomic_compare_exchange_weak_explicit(list_p, &msg->next, msg, memory_order_release,
 	    memory_order_relaxed)))
@@ -132,7 +132,7 @@ void msg_queue_insert(struct lp_msg *msg)
  */
 void msg_queue_insert_self(struct lp_msg *msg)
 {
-	assert(lid_to_rid(msg->dest) == rid);
+	assert(lps[msg->dest].id == rid);
 	struct q_elem qe = {.t = msg->dest_t, .m = msg};
 	heap_insert(mqp, q_elem_is_before, qe);
 }
