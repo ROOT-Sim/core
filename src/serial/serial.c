@@ -35,8 +35,6 @@ static void serial_simulation_init(void)
 	for(lp_id_t i = 0; i < global_config.lps; ++i) {
 		struct lp_ctx *lp = &lps[i];
 
-		lp->termination_t = -1;
-
 		model_allocator_lp_init(&lp->mm_state);
 
 		current_lp = lp;
@@ -81,7 +79,6 @@ static void serial_simulation_fini(void)
 static int serial_simulation_run(void)
 {
 	timer_uint last_vt = timer_new();
-	lp_id_t to_terminate = global_config.lps;
 
 	while(likely(!heap_is_empty(queue))) {
 		const struct lp_msg *msg = heap_min(queue);
@@ -89,14 +86,6 @@ static int serial_simulation_run(void)
 		current_lp = lp;
 
 		common_msg_process(lp, msg);
-
-		if(unlikely(lp->termination_t < 0 && global_config.committed(msg->dest, lp->state_pointer))) {
-			lp->termination_t = msg->dest_t;
-			if(unlikely(!--to_terminate)) {
-				stats_on_gvt(msg->dest_t);
-				break;
-			}
-		}
 
 		if(global_config.gvt_period <= timer_value(last_vt)) {
 			stats_on_gvt(msg->dest_t);

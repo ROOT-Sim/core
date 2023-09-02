@@ -92,11 +92,6 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, _unused const 
 	}
 }
 
-bool CanEnd(_unused lp_id_t me, _unused const void *snapshot)
-{
-	return false;
-}
-
 struct simulation_configuration conf = {
     .lps = NUM_LPS,
     .n_threads = NUM_THREADS,
@@ -107,8 +102,7 @@ struct simulation_configuration conf = {
     .ckpt_interval = 0,
     .core_binding = true,
     .serial = false,
-    .dispatcher = ProcessEvent,
-    .committed = CanEnd,
+    .dispatcher = ProcessEvent
 };
 
 int main(void)

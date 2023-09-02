@@ -16,21 +16,14 @@ static void DummyProcessEvent(_unused lp_id_t me, _unused simtime_t now, _unused
     _unused const void *event_content, _unused unsigned event_size, _unused void *st)
 {}
 
-static bool DummyCanEnd(_unused lp_id_t lid, _unused const void *state)
-{
-	return false;
-}
-
 static struct simulation_configuration conf = {
     .lps = 0,
-    .dispatcher = NULL,
-    .committed = NULL,
+    .dispatcher = NULL
 };
 
 static const struct simulation_configuration valid_conf = {
     .lps = 1,
-    .dispatcher = DummyProcessEvent,
-    .committed = DummyCanEnd,
+    .dispatcher = DummyProcessEvent
 };
 
 static int run_rootsim(_unused void *_)
@@ -56,11 +49,6 @@ int main(void)
 	conf.dispatcher = NULL;
 	test_xf("Handler not set", init_rootsim, &conf);
 	test_xf("Start simulation with no handler", run_rootsim, NULL);
-
-	memcpy(&conf, &valid_conf, sizeof(conf));
-	conf.committed = NULL;
-	test_xf("CanEnd not set", init_rootsim, &conf);
-	test_xf("Start simulation with no CanEnd", run_rootsim, NULL);
 
 	memcpy(&conf, &valid_conf, sizeof(conf));
 	test("Initialization", init_rootsim, &conf);

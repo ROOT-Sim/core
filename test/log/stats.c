@@ -23,13 +23,6 @@ void DummyProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const voi
 	(void)st;
 }
 
-bool DummyCanEnd(lp_id_t lid, const void *state)
-{
-	(void)lid;
-	(void)state;
-	return false;
-}
-
 static struct simulation_configuration conf = {
     .lps = 123,
     .n_threads = N_THREADS,
@@ -41,7 +34,6 @@ static struct simulation_configuration conf = {
     .core_binding = true,
     .serial = false,
     .dispatcher = DummyProcessEvent,
-    .committed = DummyCanEnd,
 };
 
 static simtime_t gvt_tests[] = {0.0, 12.12, 23.4, 48.56};

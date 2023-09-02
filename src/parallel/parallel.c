@@ -60,7 +60,7 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
 	worker_thread_init((uintptr_t)rid_arg);
 
-	while(likely(termination_cant_end())) {
+	while(true) {
 		mpi_remote_msg_handle();
 
 		unsigned i = 64;
@@ -69,11 +69,12 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 
 		simtime_t current_gvt = gvt_phase_run();
 		if(unlikely(current_gvt != 0.0)) {
-			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
 			fossil_on_gvt(current_gvt);
 			msg_allocator_on_gvt(current_gvt);
 			stats_on_gvt(current_gvt);
+			if(unlikely(termination_on_gvt(current_gvt)))
+				break;
 		}
 	}
 
@@ -87,7 +88,6 @@ static void parallel_global_init(void)
 	stats_global_init();
 	lp_global_init();
 	msg_queue_global_init();
-	termination_global_init();
 	gvt_global_init();
 }
 

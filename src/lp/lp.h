@@ -27,8 +27,6 @@ struct lp_ctx {
 	};
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
-	/// The termination time of this LP, handled by the termination module
-	simtime_t termination_t;
 	/// The pointer set by the model with the SetState() API call
 	void *state_pointer;
 	/// The automatic checkpointing interval selection data

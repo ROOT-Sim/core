@@ -304,9 +304,6 @@ simtime_t gvt_phase_run(void)
  */
 void gvt_msg_drain(void)
 {
-	while(thread_phase != thread_phase_idle) // flush partial gvt algorithm
-		gvt_phase_run();
-
 	if(sync_thread_barrier())
 		mpi_node_barrier();
 	sync_thread_barrier();

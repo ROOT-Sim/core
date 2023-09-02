@@ -21,7 +21,6 @@ struct simulation_configuration conf = {
     .core_binding = false,
     .serial = false,
     .dispatcher = ProcessEvent,
-    .committed = CanEnd,
 };
 
 static int correctness(void *config)

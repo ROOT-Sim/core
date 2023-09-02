@@ -52,22 +52,6 @@ typedef uint64_t lp_id_t;
 typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content,
     unsigned event_size, void *st);
 
-/**
- * @brief Determine if simulation can be halted.
- * @param me The logical process ID of the called LP
- * @param snapshot The committed state of the logical process
- *
- * @return true if the simulation can be halted, false otherwise
- *
- * This function receives a committed snapshot of the logical process state. It can be inspected to determine
- * whether the simulation can be halted, locally at the LP. The function should return true if the simulation
- * can be halted, false otherwise.
- *
- * @warning The snapshot is in the committed part of the simulation trajectory, so it should not be modified. Any
- * change to the snapshot might lead to undefined behavior.
- */
-typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
-
 enum rootsim_event {LP_INIT = 65534, LP_FINI};
 
 /**
@@ -127,8 +111,6 @@ struct simulation_configuration {
 	bool serial;
 	/// Function pointer to the dispatching function
 	ProcessEvent_t dispatcher;
-	/// Function pointer to the termination detection function
-	CanEnd_t committed;
 };
 
 extern int RootsimInit(const struct simulation_configuration *conf);
