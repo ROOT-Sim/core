@@ -24,14 +24,14 @@
  */
 #define EXP_AVG(f, old_v, sample)                                                                                      \
 	__extension__({                                                                                                \
-		double s = (sample);                                                                                   \
-		double o = (old_v);                                                                                    \
-		o *(((f)-1.0) / (f)) + s *(1.0 / (f));                                                                 \
+		float s = (sample);                                                                                    \
+		float o = (old_v);                                                                                     \
+		o *(((f)-1.0f) / (f)) + s * (1.0f / (f));                                                              \
 	})
 
 static __thread struct {
-	double ckpt_avg_cost;
-	double inv_sil_avg_cost;
+	float ckpt_avg_cost;
+	float inv_sil_avg_cost;
 } ackpt;
 
 /**
@@ -39,8 +39,8 @@ static __thread struct {
  */
 void auto_ckpt_init(void)
 {
-	ackpt.ckpt_avg_cost = 1.0;
-	ackpt.inv_sil_avg_cost = 1.0 / 4096.0;
+	ackpt.ckpt_avg_cost = 1.0f;
+	ackpt.inv_sil_avg_cost = 1.0f / 4096.0f;
 }
 
 /**
@@ -60,10 +60,10 @@ void auto_ckpt_on_gvt(void)
 	uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
 
 	if(likely(sil_count))
-		ackpt.inv_sil_avg_cost = EXP_AVG(16.0, ackpt.inv_sil_avg_cost, (double)sil_count / (double)sil_cost);
+		ackpt.inv_sil_avg_cost = EXP_AVG(16.0f, ackpt.inv_sil_avg_cost, (float)sil_count / (float)sil_cost);
 
 	if(likely(ckpt_size))
-		ackpt.ckpt_avg_cost = EXP_AVG(16.0, ackpt.ckpt_avg_cost, (double)ckpt_cost / (double)ckpt_size);
+		ackpt.ckpt_avg_cost = EXP_AVG(16.0f, ackpt.ckpt_avg_cost, (float)ckpt_cost / (float)ckpt_size);
 }
 
 /**
@@ -74,7 +74,7 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 {
 	memset(auto_ckpt, 0, sizeof(*auto_ckpt));
 	auto_ckpt->ckpt_interval = global_config.ckpt_interval ? global_config.ckpt_interval : 256;
-	auto_ckpt->inv_bad_p = 64.0;
+	auto_ckpt->inv_bad_p = 64.0f;
 }
 
 /**
@@ -87,9 +87,9 @@ void auto_ckpt_recompute(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size)
 	if(unlikely(!auto_ckpt->m_bad || global_config.ckpt_interval))
 		return;
 
-	auto_ckpt->inv_bad_p = EXP_AVG(8.0, auto_ckpt->inv_bad_p, 2.0 * auto_ckpt->m_good / auto_ckpt->m_bad);
+	auto_ckpt->inv_bad_p = EXP_AVG(8.0f, auto_ckpt->inv_bad_p, 2.0f * auto_ckpt->m_good / auto_ckpt->m_bad);
 	auto_ckpt->m_bad = 0;
 	auto_ckpt->m_good = 0;
-	auto_ckpt->ckpt_interval =
-	    ceil(sqrt(auto_ckpt->inv_bad_p * ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost * (double)state_size));
+	auto_ckpt->ckpt_interval = (unsigned short)ceilf(
+	    sqrtf(auto_ckpt->inv_bad_p * ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost * (float)state_size));
 }
