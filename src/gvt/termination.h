@@ -9,9 +9,6 @@
 #pragma once
 
 #include <core/core.h>
-#include <lp/lp.h>
-
-#include <stdatomic.h>
 
 extern bool termination_on_gvt(simtime_t current_gvt);
 extern void termination_on_ctrl_msg(void);

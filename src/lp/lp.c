@@ -10,9 +10,7 @@
  */
 #include <lp/lp.h>
 
-#include <datatypes/msg_queue.h>
 #include <core/sync.h>
-#include <gvt/termination.h>
 
 /// A pointer to the currently processed LP context
 __thread struct lp_ctx *current_lp;
@@ -23,7 +21,7 @@ struct lp_ctx *lps;
 lp_id_t n_lps_node;
 
 #ifndef NDEBUG
-bool lp_initialized;
+_Thread_local bool lp_initialized;
 #endif
 
 /**
@@ -126,6 +124,8 @@ void lp_init(void)
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init(lp);
 	}
+
+	lp_initialized_set();
 }
 
 /**

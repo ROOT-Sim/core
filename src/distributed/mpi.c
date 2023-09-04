@@ -13,6 +13,8 @@
 #include <mm/mm.h>
 
 #include <datatypes/msg_queue.h>
+#include <gvt/gvt.h>
+#include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
 #include <mpi.h>
