@@ -10,6 +10,9 @@
  */
 #include <distributed/control_msg.h>
 
+#include <gvt/gvt.h>
+#include <gvt/termination.h>
+
 /**
  * @brief Handle a received control message
  * @param ctrl the tag of the received control message

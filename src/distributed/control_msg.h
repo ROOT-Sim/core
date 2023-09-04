@@ -10,9 +10,6 @@
  */
 #pragma once
 
-#include <gvt/gvt.h>
-#include <gvt/termination.h>
-
 /// A control message MPI tag value
 enum msg_ctrl_code {
 	/// Used by the master to start a new gvt reduction operation
