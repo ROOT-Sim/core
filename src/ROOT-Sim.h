@@ -91,20 +91,22 @@ enum log_level {
 struct simulation_configuration {
 	/// The number of LPs to be used in the simulation
 	lp_id_t lps;
-	/// The number of threads to be used in the simulation. If zero, it defaults to the amount of available cores
-	unsigned n_threads;
 	/// The target termination logical time. Setting this value to zero means that LVT-based termination is disabled
 	simtime_t termination_time;
+	/// How many bytes of memory to reserve, in average for the logical processes
+	unsigned long bytes_per_lp;
+	/// The number of threads to be used in the simulation. If zero, it defaults to the amount of available cores
+	unsigned n_threads;
 	/// The gvt period expressed in microseconds
 	unsigned gvt_period;
 	/// The logger verbosity level
 	enum log_level log_level;
+	/// The checkpointing interval
+	unsigned ckpt_interval;
 	/// File where to write logged information: if not NULL, output is redirected to this file
 	FILE *logfile;
 	/// Path to the statistics file. If NULL, no statistics are produced.
 	const char *stats_file;
-	/// The checkpointing interval
-	unsigned ckpt_interval;
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
 	/// If set, the simulation will run on the serial runtime
