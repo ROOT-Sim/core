@@ -26,7 +26,11 @@
 /// An OS-dependent function to free aligned memory
 #define mem_aligned_free(mem) free(mem)
 #endif
+/// Deterministic allocations make use of 2 MiB large pages; should be good for x86-64 and AArch64
+#define MEM_DETERMINISTIC_PAGE_SIZE (1UL << 21)
 
+extern int mem_deterministic_alloc(void *ptr, size_t mem_size);
+extern void mem_deterministic_free(void *ptr, size_t mem_size);
 
 extern int mem_stat_setup(void);
 extern size_t mem_stat_rss_max_get(void);
