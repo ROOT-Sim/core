@@ -60,24 +60,29 @@ void mpi_remote_msg_handle(void) {}
 
 void mpi_remote_msg_drain(void) {}
 
-void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
+void mpi_reduce_u32_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
 {
 	*result = values[0];
 }
 
-bool mpi_reduce_sum_scatter_done(void)
+bool mpi_reduce_u32_sum_scatter_done(void)
 {
 	return true;
 }
 
-void mpi_reduce_min(double *node_min_p)
+void mpi_reduce_double_min(double *node_min_p)
 {
 	(void)node_min_p;
 }
 
-bool mpi_reduce_min_done(void)
+bool mpi_reduce_double_min_done(void)
 {
 	return true;
+}
+
+void mpi_blocking_reduce_u64_max(uint64_t *val_p)
+{
+	(void)val_p;
 }
 
 void mpi_node_barrier(void) {}

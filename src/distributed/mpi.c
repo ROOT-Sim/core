@@ -19,9 +19,10 @@
 
 #include <mpi.h>
 
+/// The MPI tags used in this module
 enum {
-	RS_MSG_TAG = 0,
-	RS_DATA_TAG
+	RS_MSG_TAG = 0, /// The tag used for "normal messages" (i.e.: events, anti-events, and control messages)
+	RS_DATA_TAG /// The tag used for "raw data messages" (i.e.: the raw statistics data to aggregate at completion)
 };
 
 /// Array of control codes values to be able to get their address for MPI_Send()
@@ -145,9 +146,8 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
 {
 	nid_t i = n_nodes;
-	while(i--) {
+	while(i--)
 		mpi_control_msg_send_to(ctrl, i);
-	}
 }
 
 /**
@@ -163,8 +163,7 @@ void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
 }
 
 /**
- * @brief Empties the queue of incoming MPI messages, doing the right thing for
- *        each one of them.
+ * @brief Empties the queue of incoming MPI messages, doing the right thing for each one of them.
  *
  * This routine checks, using the MPI probing mechanism, for new remote messages and it handles them accordingly.
  * Control messages are handled by the respective platform handler. Simulation messages are unpacked and put in the
@@ -261,19 +260,19 @@ void mpi_remote_msg_drain(void)
  * Each node supplies a n_nodes components vector. The sum of all these vector is computed and the nid-th component of
  * this vector is stored in @a result. It is expected that only a single thread calls this function at a time. Each node
  * has to call this function else the result can't be computed. It is possible to have a single mpi_reduce_sum_scatter()
- * operation pending at a time. Both arguments must point to valid memory regions until mpi_reduce_sum_scatter_done()
+ * operation pending at a time. Both arguments must point to valid memory until mpi_reduce_u32_sum_scatter_done()
  * returns true.
  */
-void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
+void mpi_reduce_u32_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
 {
 	MPI_Ireduce_scatter_block(values, result, 1, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD, &reduce_sum_scatter_req);
 }
 
 /**
- * @brief Checks if a previous mpi_reduce_sum_scatter() operation has completed.
+ * @brief Checks if a previous mpi_reduce_u32_sum_scatter() operation has completed.
  * @return true if the previous operation has been completed, false otherwise.
  */
-bool mpi_reduce_sum_scatter_done(void)
+bool mpi_reduce_u32_sum_scatter_done(void)
 {
 	int flag = 0;
 	MPI_Test(&reduce_sum_scatter_req, &flag, MPI_STATUS_IGNORE);
@@ -288,22 +287,27 @@ bool mpi_reduce_sum_scatter_done(void)
  * Each node supplies a single simtime_t value. The minimum of all these values is computed and stored in @a node_min_p
  * itself. It is expected that only a single thread calls this function at a time. Each node has to call this function
  * else the result can't be computed. It is possible to have a single mpi_reduce_min() operation pending at a time.
- * Both arguments must point to valid memory regions until mpi_reduce_min_done() returns true.
+ * Both arguments must point to valid memory regions until mpi_reduce_double_min_done() returns true.
  */
-void mpi_reduce_min(double *node_min_p)
+void mpi_reduce_double_min(double *node_min_p)
 {
 	MPI_Iallreduce(MPI_IN_PLACE, node_min_p, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD, &reduce_min_req);
 }
 
 /**
- * @brief Checks if a previous mpi_reduce_min() operation has completed.
+ * @brief Checks if a previous mpi_reduce_double_min() operation has completed.
  * @return true if the previous operation has been completed, false otherwise.
  */
-bool mpi_reduce_min_done(void)
+bool mpi_reduce_double_min_done(void)
 {
 	int flag = 0;
 	MPI_Test(&reduce_min_req, &flag, MPI_STATUS_IGNORE);
 	return flag;
+}
+
+void mpi_blocking_reduce_u64_max(uint64_t *val_p)
+{
+	MPI_Allreduce(MPI_IN_PLACE, val_p, 1, MPI_UINT64_T, MPI_MAX, MPI_COMM_WORLD);
 }
 
 /**
@@ -320,8 +324,7 @@ void mpi_node_barrier(void)
  * @param data_size the buffer size
  * @param dest the id of the destination node
  *
- * This operation blocks the execution flow until the destination node receives
- * the data with mpi_raw_data_blocking_rcv().
+ * This operation blocks the execution until the destination node receives the data with mpi_raw_data_blocking_rcv().
  */
 void mpi_blocking_data_send(const void *data, int data_size, nid_t dest)
 {

@@ -29,11 +29,13 @@ extern void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest);
 extern void mpi_remote_msg_handle(void);
 extern void mpi_remote_msg_drain(void);
 
-extern void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result);
-extern bool mpi_reduce_sum_scatter_done(void);
+extern void mpi_reduce_u32_sum_scatter(const uint32_t values[n_nodes], uint32_t *result);
+extern bool mpi_reduce_u32_sum_scatter_done(void);
 
-extern void mpi_reduce_min(double *node_min_p);
-extern bool mpi_reduce_min_done(void);
+extern void mpi_reduce_double_min(double *min_p);
+extern bool mpi_reduce_double_min_done(void);
+
+extern void mpi_blocking_reduce_u64_max(uint64_t *val_p);
 
 extern void mpi_node_barrier(void);
 extern void mpi_blocking_data_send(const void *data, int data_size, nid_t dest);

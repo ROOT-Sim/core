@@ -192,7 +192,7 @@ static bool gvt_node_phase_run(void)
 			if(!gvt_thread_phase_run())
 				break;
 
-			gvt_phase = gvt_phase ^ (!node_phase);
+			gvt_phase = gvt_phase ^ (node_phase == node_phase_redux_first);
 			thread_phase = thread_phase_A;
 			++node_phase;
 			break;
@@ -211,11 +211,11 @@ static bool gvt_node_phase_run(void)
 				node_phase = node_sent_wait;
 				break;
 			}
-			mpi_reduce_sum_scatter((uint32_t *)total_sent, &remote_msg_to_receive);
+			mpi_reduce_u32_sum_scatter((uint32_t *)total_sent, &remote_msg_to_receive);
 			node_phase = node_sent_reduce_wait;
 			break;
 		case node_sent_reduce_wait:
-			if(!mpi_reduce_sum_scatter_done())
+			if(!mpi_reduce_u32_sum_scatter_done())
 				break;
 			atomic_fetch_sub_explicit(&total_msg_received, remote_msg_to_receive + global_config.n_threads,
 			    memory_order_relaxed);
@@ -239,12 +239,12 @@ static bool gvt_node_phase_run(void)
 				break;
 			}
 			*reducing_p = gvt_node_reduce();
-			mpi_reduce_min(reducing_p);
+			mpi_reduce_double_min(reducing_p);
 			node_phase = node_min_reduce_wait;
 			break;
 		case node_min_reduce_wait:
 			if(atomic_load_explicit(&c_d, memory_order_relaxed) != global_config.n_threads ||
-			    !mpi_reduce_min_done())
+			    !mpi_reduce_double_min_done())
 				break;
 			atomic_fetch_sub_explicit(&c_c, global_config.n_threads, memory_order_release);
 			node_phase = node_done;

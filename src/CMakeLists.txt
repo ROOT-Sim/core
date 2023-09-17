@@ -17,10 +17,11 @@ set(rscore_srcs
         log/stats.c
         lp/lp.c
         lp/process.c
-        mm/auto_ckpt.c
         mm/buddy/buddy.c
         mm/buddy/ckpt.c
         mm/buddy/multi.c
+        mm/auto_ckpt.c
+        mm/distributed_mem.c
         mm/msg_allocator.c
         parallel/parallel.c
         serial/serial.c)

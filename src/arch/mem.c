@@ -114,9 +114,9 @@ size_t mem_stat_rss_current_get(void)
 
 int mem_deterministic_alloc(void *ptr, size_t mem_size)
 {
-	int flags = (21 << MAP_HUGE_SHIFT) | // 2 MiB huge pages
-	            MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_HUGETLB | MAP_FIXED_NOREPLACE;
-	return -(mmap(ptr, mem_size, PROT_READ | PROT_WRITE, flags, -1, 0) == MAP_FAILED);
+	// TODO: use madvise() tu use Linux's transparent huge pages (THP)
+	int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_FIXED_NOREPLACE;
+	return -(mmap(ptr, mem_size, PROT_READ | PROT_WRITE, flags, -1, 0) != ptr);
 }
 
 #else
