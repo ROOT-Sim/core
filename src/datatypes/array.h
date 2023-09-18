@@ -88,6 +88,19 @@ typedef uint_least32_t array_count_t;
 		array_count(self) = 0;                                                                                 \
 	})
 
+
+/**
+ * @brief Initializes a dynamic array
+ * @param self The target dynamic array
+ * @param capacity The initial capacity of the dynamic array
+ */
+#define array_init_explicit(self, capacity)                                                                            \
+	__extension__({                                                                                                \
+		array_capacity(self) = capacity;                                                                       \
+		array_items(self) = mm_alloc(array_capacity(self) * sizeof(*array_items(self)));                       \
+		array_count(self) = 0;                                                                                 \
+	})
+
 /**
  * @brief Releases the memory used by a dynamic array
  * @param self The target dynamic array
@@ -196,11 +209,14 @@ typedef uint_least32_t array_count_t;
  */
 #define array_expand(self)                                                                                             \
 	__extension__({                                                                                                \
+                bool expanded = false;                                                                                 \
 		if(unlikely(array_count(self) >= array_capacity(self))) {                                              \
 			array_capacity(self) *= 2;                                                                     \
 			array_items(self) =                                                                            \
 			    mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));          \
+			expanded = true;                                                                               \
 		}                                                                                                      \
+		expanded;                                                                                              \
 	})
 
 /**
