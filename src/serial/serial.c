@@ -12,6 +12,7 @@
 #include <datatypes/heap.h>
 #include <log/stats.h>
 #include <lp/common.h>
+#include <mm/distributed_mem.h>
 #include <mm/msg_allocator.h>
 
 /// The messages queue of the serial runtime
@@ -23,6 +24,7 @@ static heap_declare(struct lp_msg *) queue;
 static void serial_simulation_init(void)
 {
 	stats_global_init();
+	distributed_mem_global_init();
 	stats_init();
 	msg_allocator_init();
 	heap_init(queue);
@@ -70,6 +72,7 @@ static void serial_simulation_fini(void)
 
 	heap_fini(queue);
 	msg_allocator_fini();
+	distributed_mem_global_fini();
 	stats_global_fini();
 }
 

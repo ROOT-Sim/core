@@ -17,6 +17,7 @@
 #include <gvt/gvt.h>
 #include <gvt/termination.h>
 #include <log/stats.h>
+#include <mm/distributed_mem.h>
 #include <mm/msg_allocator.h>
 
 static void worker_thread_init(rid_t this_rid)
@@ -86,6 +87,7 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 static void parallel_global_init(void)
 {
 	stats_global_init();
+	distributed_mem_global_init();
 	lp_global_init();
 	msg_queue_global_init();
 	gvt_global_init();
@@ -95,6 +97,7 @@ static void parallel_global_fini(void)
 {
 	msg_queue_global_fini();
 	lp_global_fini();
+	distributed_mem_global_fini();
 	stats_global_fini();
 }
 

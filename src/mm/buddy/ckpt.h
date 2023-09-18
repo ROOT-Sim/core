@@ -13,7 +13,7 @@
 /// A restorable checkpoint of the memory context of a single buddy system
 struct buddy_checkpoint { // todo only log longest[] if changed, or incrementally
 	/// The buddy system to which this checkpoint applies. TODO: reengineer the multi-checkpointing approach
-	const struct buddy_state *orig;
+	const struct distr_mem_chunk *orig;
 	/// The checkpoint of the dirty bitmap
 	block_bitmap dirty [
 		bitmap_required_size(
