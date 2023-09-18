@@ -20,7 +20,7 @@ static void DummyProcessEvent(_unused lp_id_t me, _unused simtime_t now, _unused
 	if(event_type == LP_FINI)
 		return;
 	initialized = true;
-	test_thread_sleep(20);
+	test_thread_sleep(5);
 	ScheduleNewEvent(0, now + 1.0, 0, NULL, 0);
 }
 
