@@ -19,6 +19,17 @@ void buddy_init(struct buddy_state *self)
 		self->longest[i] = node_size;
 		node_size -= is_power_of_2(i + 2);
 	}
+	self->chunk = distributed_mem_chunk_alloc(self);
+}
+
+void buddy_fini(struct buddy_state *self)
+{
+	distributed_mem_chunk_free(self->chunk);
+}
+
+void buddy_moved(struct buddy_state *self)
+{
+	distributed_mem_chunk_update(self->chunk, self);
 }
 
 void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp)
@@ -53,13 +64,17 @@ void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp)
 #endif
 	}
 
-	return ((char *)self->base_mem) + offset;
+	return self->chunk->mem + offset;
 }
 
-uint_fast32_t buddy_free(struct buddy_state *self, void *ptr)
+uint_fast32_t buddy_free(void *ptr)
 {
+	struct distr_mem_chunk *chk =
+	    (struct distr_mem_chunk *)(((uintptr_t)ptr) & ~(uintptr_t)(sizeof(struct distr_mem_chunk) - 1));
+	struct buddy_state *self = distributed_mem_chunk_ref(chk);
+
 	uint_fast8_t node_size = B_BLOCK_EXP;
-	uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
+	uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)chk->mem) >> B_BLOCK_EXP;
 	uint_fast32_t i = o + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
 	for(; self->longest[i]; i = buddy_parent(i))
@@ -97,10 +112,14 @@ uint_fast32_t buddy_free(struct buddy_state *self, void *ptr)
 	return ret;
 }
 
-struct buddy_realloc_res buddy_best_effort_realloc(struct buddy_state *self, void *ptr, size_t req_size)
+struct buddy_realloc_res buddy_best_effort_realloc(void *ptr, size_t req_size)
 {
+	struct distr_mem_chunk *chk =
+	    (struct distr_mem_chunk *)(((uintptr_t)ptr) & ~(uintptr_t)(sizeof(struct distr_mem_chunk) - 1));
+	struct buddy_state *self = distributed_mem_chunk_ref(chk);
+
 	uint_fast8_t node_size = B_BLOCK_EXP;
-	uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
+	uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)chk->mem) >> B_BLOCK_EXP;
 	uint_fast32_t i = o + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
 	for(; self->longest[i]; i = buddy_parent(i))
@@ -128,7 +147,7 @@ struct buddy_realloc_res buddy_best_effort_realloc(struct buddy_state *self, voi
 void buddy_dirty_mark(struct buddy_state *self, const void *ptr, size_t s)
 {
         // TODO: consider using ptrdiff_t here
-        uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->base_mem;
+        uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->chunk->mem;
 	uint_fast32_t i = (diff >> B_BLOCK_EXP) + (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 
 	s += diff & ((1 << B_BLOCK_EXP) - 1);

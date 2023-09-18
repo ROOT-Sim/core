@@ -9,6 +9,7 @@
 #pragma once
 
 #include <datatypes/bitmap.h>
+#include <mm/distributed_mem.h>
 
 #include <assert.h>
 #include <stdalign.h>
@@ -24,15 +25,15 @@
 
 #define buddy_left_child(i) (((i) << 1U) + 1U)
 #define buddy_right_child(i) (((i) << 1U) + 2U)
-#define buddy_parent(i) ((((i) + 1) >> 1U) - 1U)
+#define buddy_parent(i) (((i) - 1U) >> 1U)
 
 /// The checkpointable memory context of a single buddy system
 struct buddy_state {
 	/// The checkpointed binary tree representing the buddy system
 	/** the last char is actually unused */
-	alignas(16) uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
+	uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
 	/// The memory buffer served to the model
-	alignas(16) unsigned char base_mem[1U << B_TOTAL_EXP];
+	struct distr_mem_chunk *chunk;
 	/// Keeps track of memory blocks which have been dirtied by a write
 	block_bitmap dirty[
 		bitmap_required_size(
@@ -44,15 +45,11 @@ struct buddy_state {
 	];
 };
 
-static_assert(
-	offsetof(struct buddy_state, longest) ==
-	offsetof(struct buddy_state, base_mem) -
-	sizeof(((struct buddy_state *)0)->longest),
-	"longest and base_mem are not contiguous, this will break incremental checkpointing");
-
 extern void buddy_init(struct buddy_state *self);
+extern void buddy_fini(struct buddy_state *self);
+extern void buddy_moved(struct buddy_state *self);
 extern void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp);
-extern uint_fast32_t buddy_free(struct buddy_state *self, void *ptr);
+extern uint_fast32_t buddy_free(void *ptr);
 
 struct buddy_realloc_res {
 	bool handled;
@@ -61,5 +58,5 @@ struct buddy_realloc_res {
 		uint_fast32_t original;
 	};
 };
-extern struct buddy_realloc_res buddy_best_effort_realloc(struct buddy_state *self, void *ptr, size_t req_size);
+extern struct buddy_realloc_res buddy_best_effort_realloc(void *ptr, size_t req_size);
 extern void buddy_dirty_mark(struct buddy_state *self, const void *ptr, size_t s);

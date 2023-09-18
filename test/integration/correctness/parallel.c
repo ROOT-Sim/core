@@ -21,6 +21,7 @@ struct simulation_configuration conf = {
     .core_binding = false,
     .serial = false,
     .dispatcher = ProcessEvent,
+    .bytes_per_lp = 1024 * 128
 };
 
 static int correctness(void *config)
