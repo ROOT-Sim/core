@@ -28,6 +28,13 @@ void distributed_mem_global_init(void)
 	chunks_refs = mm_alloc(sizeof(*chunks_refs) * chunks_count);
 	memset(chunks_refs, 0, sizeof(*chunks_refs) * chunks_count);
 
+	if(global_config.serial) {
+		all_chunks = mem_aligned_alloc(alignof(struct distr_mem_chunk), mem_size);
+		start_chunks = all_chunks;
+		end_chunks = all_chunks + chunks_count;
+		return;
+	}
+
 	while(true) {
 		while(mem_deterministic_alloc((void *)ptr, mem_size) != 0)
 			ptr += mem_size;
@@ -60,7 +67,10 @@ void distributed_mem_global_init(void)
 
 void distributed_mem_global_fini(void)
 {
-	mem_deterministic_free(all_chunks, distr_mem_total_size_compute());
+	if(global_config.serial)
+		mem_aligned_free(all_chunks);
+	else
+		mem_deterministic_free(all_chunks, distr_mem_total_size_compute());
 	mm_free(chunks_refs);
 }
 
@@ -72,8 +82,8 @@ struct distr_mem_chunk *distributed_mem_chunk_alloc(void *ref)
 			chunk_id = 0;
 
 		void *nptr = NULL;
-		if(atomic_compare_exchange_strong_explicit(&chunks_refs[&start_chunks[chunk_id] - all_chunks], &nptr, ref,
-		       memory_order_relaxed, memory_order_relaxed))
+		if(atomic_compare_exchange_strong_explicit(&chunks_refs[&start_chunks[chunk_id] - all_chunks], &nptr,
+		       ref, memory_order_relaxed, memory_order_relaxed))
 			return &start_chunks[chunk_id++];
 
 	} while(++chunk_id != start_id);
@@ -88,4 +98,9 @@ void distributed_mem_chunk_free(struct distr_mem_chunk *chk)
 void *distributed_mem_chunk_ref(const struct distr_mem_chunk *chk)
 {
 	return atomic_load_explicit(&chunks_refs[chk - all_chunks], memory_order_relaxed);
+}
+
+void distributed_mem_chunk_update(const struct distr_mem_chunk *chk, void *ref)
+{
+	atomic_store_explicit(&chunks_refs[chk - all_chunks], ref, memory_order_relaxed);
 }

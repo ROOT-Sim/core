@@ -11,7 +11,7 @@ struct distr_mem_chunk {
 
 extern void distributed_mem_global_init(void);
 extern void distributed_mem_global_fini(void);
-extern void distributed_mem_init(void);
 extern struct distr_mem_chunk *distributed_mem_chunk_alloc(void *ref);
 extern void distributed_mem_chunk_free(struct distr_mem_chunk *chk);
 extern void *distributed_mem_chunk_ref(const struct distr_mem_chunk *chk);
+extern void distributed_mem_chunk_update(const struct distr_mem_chunk *chk, void *ref);
