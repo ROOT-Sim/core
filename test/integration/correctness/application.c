@@ -38,9 +38,10 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 	switch(event_type) {
 		case LP_INIT:
 			state = rs_malloc(sizeof(lp_state));
-			if(state == NULL)
-				exit(-1);
-
+			if(state == NULL) {
+				puts("[ERROR] Got NULL from rs malloc()!");
+				abort();
+			}
 			memset(state, 0, sizeof(lp_state));
 
 			rng_init(&state->rng_state, ((test_rng_state)me + 1) * 4390023366657240769ULL);
