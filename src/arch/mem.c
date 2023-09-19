@@ -53,6 +53,7 @@
 #include <mach/mach_port.h>
 #include <mach/task.h>
 #include <mach/task_info.h>
+#include <mach/vm_statistics.h>
 
 int mem_stat_setup(void)
 {
@@ -71,7 +72,7 @@ size_t mem_stat_rss_current_get(void)
 int mem_deterministic_alloc(void *ptr, size_t mem_size)
 {
 	int flags = MAP_PRIVATE | MAP_ANON | MAP_FIXED; // FIXME: may unmap already mapped memory to satisfy the call
-	return -(mmap(ptr, mem_size, PROT_READ | PROT_WRITE, flags, 242, 0) == (void *)-1);
+	return -(mmap(ptr, mem_size, PROT_READ | PROT_WRITE, flags, VM_MAKE_TAG(240), 0) == (void *)-1);
 }
 
 #elif defined(__LINUX)
