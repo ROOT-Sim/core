@@ -27,7 +27,7 @@ static bool configuration_done = false;
 struct simulation_configuration global_config = {0};
 
 /**
- * @brief Prints a fancy ROOT-Sim logo
+ * @brief Print a fancy ROOT-Sim logo
  */
 static void print_logo(void)
 {
@@ -37,9 +37,8 @@ static void print_logo(void)
 	fprintf(stderr, "\x1b[0m\n");
 }
 
-
 /**
- * @brief Pretty prints ROOT-Sim current configuration
+ * @brief Pretty print ROOT-Sim current configuration
  */
 static void print_config(void)
 {
@@ -48,11 +47,11 @@ static void print_config(void)
 	fprintf(stderr, "\x1b[90m");
 
 	fprintf(stderr, "Logical processes: %" PRIu64 "\n", global_config.lps);
-	fprintf(stderr, "Termination time: ");
+
 	if(global_config.termination_time == SIMTIME_MAX)
-		fprintf(stderr, "not set\n");
+		fprintf(stderr, "Termination time: not set\n");
 	else
-		fprintf(stderr, "%lf\n", global_config.termination_time);
+		fprintf(stderr, "Termination time: %lf\n", global_config.termination_time);
 
 	if(global_config.serial) {
 		fprintf(stderr, "Parallelism: sequential simulation\n");
@@ -61,21 +60,17 @@ static void print_config(void)
 			fprintf(stderr, "Parallelism: %d MPI processes\n", n_nodes);
 		else
 			fprintf(stderr, "Parallelism: %u threads\n", global_config.n_threads);
+
+		if(global_config.ckpt_interval)
+			fprintf(stderr, "Checkpoint interval: %u events\n", global_config.ckpt_interval);
+		else
+			fprintf(stderr, "Checkpoint interval: auto\n");
 	}
-	fprintf(stderr, "Thread-to-core binding: %s\n", global_config.core_binding ? "enabled" : "disabled");
+	fprintf(stderr, "Thread-to-core binding: %sabled\n", global_config.core_binding ? "en" : "dis");
 
 	fprintf(stderr, "GVT period: %u ms\n", global_config.gvt_period / 1000);
 
-	if(global_config.ckpt_interval) {
-		fprintf(stderr, "Checkpoint interval: %u events\n", global_config.ckpt_interval);
-	} else {
-		if(!global_config.serial)
-			fprintf(stderr, "Checkpoint interval: auto\n");
-	}
-
-	fprintf(stderr, "\x1b[39m");
-
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\x1b[39m\n");
 	fflush(stderr);
 }
 
@@ -103,8 +98,8 @@ int RootsimInit(const struct simulation_configuration *conf)
 	}
 
 	if(unlikely(global_config.n_threads > thread_cores_count())) {
-		fprintf(stderr, "Demanding %u cores, which are more than available (%u)\n", global_config.n_threads,
-		    thread_cores_count());
+		fprintf(stderr, "Demanding %u cores, which are more than available (%u)\n",
+		    global_config.n_threads, thread_cores_count());
 		return -1;
 	}
 
@@ -133,25 +128,21 @@ int RootsimInit(const struct simulation_configuration *conf)
  */
 int RootsimRun(void)
 {
-	int ret;
-
 	if(!configuration_done)
 		return -1;
 
 	if(!global_config.serial)
 		mpi_global_init(NULL, NULL);
 
-	if(global_config.log_level < LOG_SILENT && !rid) {
+	if(global_config.log_level < LOG_SILENT && !tid) {
 		print_logo();
 		print_config();
 	}
 
-	if(global_config.serial) {
-		ret = serial_simulation();
-	} else {
-		ret = parallel_simulation();
-		mpi_global_fini();
-	}
+	if(global_config.serial)
+		return serial_simulation();
 
+	int ret = parallel_simulation();
+	mpi_global_fini();
 	return ret;
 }
