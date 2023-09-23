@@ -144,15 +144,17 @@ struct buddy_realloc_res buddy_best_effort_realloc(void *ptr, size_t req_size)
 	return ret;
 }
 
-void buddy_dirty_mark(struct buddy_state *self, const void *ptr, size_t s)
+void buddy_dirty_mark(const void *ptr, size_t s)
 {
+	struct distr_mem_chunk *chk =
+	    (struct distr_mem_chunk *)(((uintptr_t)ptr) & ~(uintptr_t)(sizeof(struct distr_mem_chunk) - 1));
+	struct buddy_state *self = distributed_mem_chunk_ref(chk);
         // TODO: consider using ptrdiff_t here
-        uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->chunk->mem;
+        uintptr_t diff = (uintptr_t)ptr - (uintptr_t)chk->mem;
 	uint_fast32_t i = (diff >> B_BLOCK_EXP) + (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 
 	s += diff & ((1 << B_BLOCK_EXP) - 1);
-	--s;
-	s >>= B_BLOCK_EXP;
+	s = (s - 1) >> B_BLOCK_EXP;
 
 	do {
 		bitmap_set(self->dirty, i + s);

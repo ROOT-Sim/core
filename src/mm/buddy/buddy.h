@@ -17,7 +17,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define B_TOTAL_EXP 16U
+#define B_TOTAL_EXP DISTR_MEM_CHUNK_EXP
 #define B_BLOCK_EXP 6U
 
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
@@ -59,4 +59,4 @@ struct buddy_realloc_res {
 	};
 };
 extern struct buddy_realloc_res buddy_best_effort_realloc(void *ptr, size_t req_size);
-extern void buddy_dirty_mark(struct buddy_state *self, const void *ptr, size_t s);
+extern void buddy_dirty_mark(const void *ptr, size_t s);
