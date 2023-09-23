@@ -58,7 +58,7 @@ void msg_queue_global_init(void)
 void msg_queue_init(void)
 {
 	heap_init(mqp);
-	atomic_store_explicit(&queues[rid].list, NULL, memory_order_relaxed);
+	atomic_store_explicit(&queues[tid].list, NULL, memory_order_relaxed);
 }
 
 /**
@@ -71,7 +71,7 @@ void msg_queue_fini(void)
 
 	heap_fini(mqp);
 
-	struct lp_msg *m = atomic_load_explicit(&queues[rid].list, memory_order_relaxed);
+	struct lp_msg *m = atomic_load_explicit(&queues[tid].list, memory_order_relaxed);
 	while(m != NULL) {
 		msg_allocator_free(m);
 		m = m->next;
@@ -91,7 +91,7 @@ void msg_queue_global_fini(void)
  */
 static inline void msg_queue_insert_queued(void)
 {
-	struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
+	struct lp_msg *m = atomic_exchange_explicit(&queues[tid].list, NULL, memory_order_acquire);
 	while(m != NULL) {
 		struct q_elem qe = {.t = m->dest_t, .m = m};
 		heap_insert(mqp, q_elem_is_before, qe);
@@ -116,9 +116,9 @@ struct lp_msg *msg_queue_extract(void)
  * @brief Inserts a message in the queue
  * @param msg the message to insert in the queue
  */
-void msg_queue_insert(struct lp_msg *msg, rid_t this_rid)
+void msg_queue_insert(struct lp_msg *msg, tid_t this_tid)
 {
-	_Atomic(struct lp_msg *) *list_p = &queues[this_rid].list;
+	_Atomic(struct lp_msg *) *list_p = &queues[this_tid].list;
 	msg->next = atomic_load_explicit(list_p, memory_order_relaxed);
 	while(unlikely(!atomic_compare_exchange_weak_explicit(list_p, &msg->next, msg, memory_order_release,
 	    memory_order_relaxed)))
@@ -131,7 +131,7 @@ void msg_queue_insert(struct lp_msg *msg, rid_t this_rid)
  */
 void msg_queue_insert_self(struct lp_msg *msg)
 {
-	assert(lps[msg->dest].id == rid);
+	assert(atomic_load_explicit(&lps[msg->dest].rid, memory_order_relaxed) == tid);
 	struct q_elem qe = {.t = msg->dest_t, .m = msg};
 	heap_insert(mqp, q_elem_is_before, qe);
 }

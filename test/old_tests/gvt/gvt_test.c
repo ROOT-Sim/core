@@ -22,7 +22,7 @@ static __thread unsigned b_i = 0;
 
 simtime_t msg_queue_time_peek(void)
 {
-	return bound_values[rid][b_i++];
+	return bound_values[tid][b_i++];
 }
 
 struct simulation_configuration global_config = {

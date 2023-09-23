@@ -20,9 +20,9 @@
 #include <mm/distributed_mem.h>
 #include <mm/msg_allocator.h>
 
-static void worker_thread_init(rid_t this_rid)
+static void worker_thread_init(tid_t this_tid)
 {
-	rid = this_rid;
+	tid = this_tid;
 	stats_init();
 	auto_ckpt_init();
 	msg_allocator_init();
@@ -108,7 +108,7 @@ int parallel_simulation(void)
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
 	thr_id_t thrs[global_config.n_threads];
-	rid_t i = global_config.n_threads;
+	tid_t i = global_config.n_threads;
 	while(i--) {
 		if(thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
 			logger(LOG_FATAL, "Unable to create threads!");

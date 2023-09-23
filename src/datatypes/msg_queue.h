@@ -18,5 +18,5 @@ extern void msg_queue_global_fini(void);
 extern void msg_queue_init(void);
 extern void msg_queue_fini(void);
 extern struct lp_msg *msg_queue_extract(void);
-extern void msg_queue_insert(struct lp_msg *msg, rid_t this_rid);
+extern void msg_queue_insert(struct lp_msg *msg, tid_t this_tid);
 extern void msg_queue_insert_self(struct lp_msg *msg);

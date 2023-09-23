@@ -40,14 +40,14 @@ static simtime_t gvt_tests[] = {0.0, 12.12, 23.4, 48.56};
 
 int stats_empty_test(_unused void *arg)
 {
-	rid = test_parallel_thread_id();
+	tid = test_parallel_thread_id();
 	stats_init();
 	return 0;
 }
 
 int stats_single_gvt_test(_unused void *arg)
 {
-	rid = test_parallel_thread_id();
+	tid = test_parallel_thread_id();
 	stats_init();
 	stats_on_gvt(0.0);
 	return 0;
@@ -55,7 +55,7 @@ int stats_single_gvt_test(_unused void *arg)
 
 int stats_multi_gvt_test(_unused void *arg)
 {
-	rid = test_parallel_thread_id();
+	tid = test_parallel_thread_id();
 	stats_init();
 	for(unsigned i = 0; i < sizeof(gvt_tests) / sizeof(*gvt_tests); ++i)
 		stats_on_gvt(gvt_tests[i]);
@@ -64,11 +64,11 @@ int stats_multi_gvt_test(_unused void *arg)
 
 int stats_measures_test(_unused void *arg)
 {
-	rid = test_parallel_thread_id();
+	tid = test_parallel_thread_id();
 	stats_init();
 
 	stats_take(STATS_ROLLBACK, 10);
-	stats_take(STATS_MSG_PROCESSED, rid ? 53 : 73);
+	stats_take(STATS_MSG_PROCESSED, tid ? 53 : 73);
 	stats_take(STATS_MSG_ROLLBACK, 12);
 	stats_take(STATS_MSG_ANTI, 30);
 	stats_take(STATS_MSG_SILENT, 15);

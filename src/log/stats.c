@@ -125,14 +125,14 @@ void stats_init(void)
 	if(global_config.stats_file == NULL)
 		return;
 
-	stats_tmps[rid] = io_file_tmp_get();
-	if(unlikely(stats_tmps[rid] == NULL)) {
+	stats_tmps[tid] = io_file_tmp_get();
+	if(unlikely(stats_tmps[tid] == NULL)) {
 		logger(LOG_ERROR, "Unable to open a temporary file, statistics won't be collected");
 		global_config.stats_file = NULL;
 		return;
 	}
 
-	setvbuf(stats_tmps[rid], NULL, _IOFBF, STATS_BUFFER_ENTRIES * sizeof(stats_cur));
+	setvbuf(stats_tmps[tid], NULL, _IOFBF, STATS_BUFFER_ENTRIES * sizeof(stats_cur));
 }
 
 /**
@@ -180,7 +180,7 @@ static void stats_files_send(void)
 	mpi_blocking_data_send(f_buf, f_size, 0);
 	mm_free(f_buf);
 
-	for(rid_t i = 0; i < global_config.n_threads; ++i) {
+	for(tid_t i = 0; i < global_config.n_threads; ++i) {
 		f_buf = file_memory_load(stats_tmps[i], &f_size);
 		f_size = min(INT_MAX, f_size);
 		mpi_blocking_data_send(f_buf, f_size, 0);
@@ -277,7 +277,7 @@ static void stats_file_final_write(FILE *out_f)
 	file_write_chunk(out_f, buf, buf_size);
 	mm_free(buf);
 
-	for(rid_t i = 0; i < global_config.n_threads; ++i) {
+	for(tid_t i = 0; i < global_config.n_threads; ++i) {
 		buf = file_memory_load(stats_tmps[i], &buf_size);
 		file_write_chunk(out_f, &buf_size, sizeof(buf_size));
 		file_write_chunk(out_f, buf, buf_size);
@@ -312,7 +312,7 @@ void stats_global_fini(void)
 		}
 	}
 
-	for(rid_t i = 0; i < global_config.n_threads; ++i)
+	for(tid_t i = 0; i < global_config.n_threads; ++i)
 		fclose(stats_tmps[i]);
 
 	mm_free(stats_tmps);
@@ -340,7 +340,7 @@ void stats_take(enum stats_thread_type this_stat, uint_fast64_t c)
  */
 void stats_on_gvt(simtime_t gvt)
 {
-	if(global_config.log_level != LOG_SILENT && !rid && !nid) {
+	if(global_config.log_level != LOG_SILENT && !tid && !nid) {
 		if(unlikely(gvt == SIMTIME_MAX))
 			printf("\rVirtual time: infinity");
 		else
@@ -354,10 +354,10 @@ void stats_on_gvt(simtime_t gvt)
 
 	stats_cur.s[STATS_REAL_TIME_GVT] = timer_value(sim_start_ts);
 
-	file_write_chunk(stats_tmps[rid], &stats_cur, sizeof(stats_cur));
+	file_write_chunk(stats_tmps[tid], &stats_cur, sizeof(stats_cur));
 	memset(&stats_cur, 0, sizeof(stats_cur));
 
-	if(rid != 0)
+	if(tid != 0)
 		return;
 
 	struct stats_node stats_node_cur = {.gvt = gvt, .rss = mem_stat_rss_current_get(), .lps_count = n_lps_node};

@@ -17,14 +17,13 @@
 #include <mm/auto_ckpt.h>
 #include <mm/model_allocator.h>
 
+#define LP_RID_IS_NID(processor_id) ((processor_id) >> (sizeof(unsigned) * CHAR_BIT - 1))
+#define LP_RID_TO_NID(processor_id) (nid_t)((processor_id) & ~(1U << (sizeof(unsigned) * CHAR_BIT - 1)))
+#define LP_RID_FROM_NID(this_nid) (((unsigned)(this_nid)) | (1U << (sizeof(unsigned) * CHAR_BIT - 1)))
+
 /// A complete LP context
 struct lp_ctx {
-	struct {
-		/// Set to true if the LP is currently locally hosted
-		bool local : 1;
-		/// The id of the bound thread if @a local is set, the id of the hosting node otherwise
-		unsigned id : 31;
-	};
+	atomic_uint rid;
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
 	/// The pointer set by the model with the SetState() API call
