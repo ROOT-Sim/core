@@ -67,21 +67,6 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 }
 
 /**
- * @brief Take a checkpoint of the state of a LP
- * @param lp the LP to checkpoint
- *
- * The actual checkpoint operation is delegated to the model memory allocator.
- */
-static inline void checkpoint_take(struct lp_ctx *lp)
-{
-	timer_uint t = timer_hr_new();
-	model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.p_msgs));
-	stats_take(STATS_CKPT_SIZE, lp->mm_state.full_ckpt_size);
-	stats_take(STATS_CKPT, 1);
-	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
-}
-
-/**
  * @brief Initializes the processing module in the current LP
  */
 void process_lp_init(struct lp_ctx *lp)
@@ -99,7 +84,7 @@ void process_lp_init(struct lp_ctx *lp)
 	lp->p.bound = 0.0;
 	array_push(lp->p.p_msgs, msg);
 	model_allocator_checkpoint_next_force_full(&lp->mm_state);
-	checkpoint_take(lp);
+	model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.p_msgs));
 }
 
 /**
@@ -202,6 +187,7 @@ static void do_rollback(struct lp_ctx *lp, array_count_t past_i)
 	stats_take(STATS_RECOVERY_TIME, timer_hr_value(t));
 	stats_take(STATS_ROLLBACK, 1);
 	silent_execution(lp, last_i, past_i);
+	auto_ckpt_register_bad(&lp->auto_ckpt);
 }
 
 /**
@@ -314,12 +300,10 @@ static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint32_t last
 {
 	if(last_flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 		handle_remote_anti_msg(lp, msg);
-		auto_ckpt_register_bad(&lp->auto_ckpt);
 		return;
 	} else if(last_flags == (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 		array_count_t past_i = match_anti_msg(&lp->p, msg);
 		do_rollback(lp, past_i);
-		auto_ckpt_register_bad(&lp->auto_ckpt);
 	}
 	msg_allocator_free(msg);
 }
@@ -333,7 +317,6 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
 {
 	array_count_t past_i = match_straggler_msg(&lp->p, msg);
 	do_rollback(lp, past_i);
-	auto_ckpt_register_bad(&lp->auto_ckpt);
 }
 
 /**
@@ -341,16 +324,8 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
  *
  * This function encloses most of the actual parallel/distributed simulation logic.
  */
-void process_msg(void)
+void process_msg(struct lp_msg *msg)
 {
-	timer_uint t = timer_hr_new();
-	struct lp_msg *msg = msg_queue_extract();
-	stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
-	if(unlikely(!msg)) {
-		current_lp = NULL;
-		return;
-	}
-
 	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *lp = &lps[msg->dest];
@@ -360,12 +335,6 @@ void process_msg(void)
 	}
 
 	current_lp = lp;
-
-	if(unlikely(fossil_is_needed(lp))) {
-		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.full_ckpt_size);
-		fossil_lp_collect(lp);
-		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
-	}
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
@@ -380,6 +349,11 @@ void process_msg(void)
 	if(unlikely(lp->p.bound >= msg->dest_t && msg_is_before(msg, array_peek(lp->p.p_msgs))))
 		handle_straggler_msg(lp, msg);
 
+	if(unlikely(fossil_is_needed(lp))) {
+		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.full_ckpt_size);
+		fossil_lp_collect(lp);
+	}
+
 #ifndef NDEBUG
 	current_msg = msg;
 #endif
@@ -390,5 +364,5 @@ void process_msg(void)
 
 	auto_ckpt_register_good(&lp->auto_ckpt);
 	if(auto_ckpt_is_needed(&lp->auto_ckpt))
-		checkpoint_take(lp);
+		model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.p_msgs));
 }

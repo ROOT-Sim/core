@@ -107,9 +107,11 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 	while(true) {
 		mpi_remote_msg_handle();
 
-		unsigned i = 64;
-		while(i--)
-			process_msg();
+		for(unsigned i = 64; i--;) {
+			struct lp_msg *msg = msg_queue_extract();
+			if(likely(msg))
+				process_msg(msg);
+		}
 
 		simtime_t current_gvt = gvt_phase_run();
 		if(unlikely(current_gvt != 0.0)) {
