@@ -19,7 +19,6 @@
 bool sync_thread_barrier(void)
 {
 	bool l;
-	unsigned r;
 
 	static __thread unsigned phase;
 	static atomic_uint cs[2]; // FIXME: this makes this barrier stateful with respect to the threads used
@@ -27,15 +26,19 @@ bool sync_thread_barrier(void)
 
 	if(phase & 2U) {
 		l = atomic_fetch_add_explicit(c, -1, memory_order_release) == 1;
-		do {
+		unsigned r = atomic_load_explicit(c, memory_order_acquire);
+		while(r) {
+			spin_pause();
 			r = atomic_load_explicit(c, memory_order_acquire);
-		} while(r);
+		}
 	} else {
 		l = !atomic_fetch_add_explicit(c, 1, memory_order_release);
-		rid_t thr_cnt = global_config.n_threads;
-		do {
+		tid_t thr_cnt = global_config.n_threads;
+		unsigned r = atomic_load_explicit(c, memory_order_acquire);
+		while(r != thr_cnt) {
+			spin_pause();
 			r = atomic_load_explicit(c, memory_order_acquire);
-		} while(r != thr_cnt);
+		}
 	}
 
 	phase = (phase + 1) & 3U;

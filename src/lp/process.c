@@ -55,13 +55,14 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 	msg->send_t = current_msg->dest_t;
 #endif
 
-	if(lps[receiver].local) {
-		atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
-		msg_queue_insert(msg, lps[receiver].id);
-		array_push(current_lp->p.p_msgs, proc_mark_sent_local(msg));
-	} else {
-		mpi_remote_msg_send(msg, (nid_t)lps[receiver].id);
+	unsigned rid = atomic_load_explicit(&lps[receiver].rid, memory_order_relaxed);
+	if(LP_RID_IS_NID(rid)) {
+		mpi_remote_msg_send(msg, LP_RID_TO_NID(rid));
 		array_push(current_lp->p.p_msgs, proc_mark_sent_remote(msg));
+	} else {
+		atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
+		msg_queue_insert(msg, rid);
+		array_push(current_lp->p.p_msgs, proc_mark_sent_local(msg));
 	}
 }
 
@@ -166,13 +167,14 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 
 		while(proc_is_sent(msg)) {
 			msg = proc_untagged(msg);
-			if(lps[msg->dest].local) {
+			unsigned rid = atomic_load_explicit(&lps[msg->dest].rid, memory_order_relaxed);
+			if(LP_RID_IS_NID(rid)) {
+				mpi_remote_anti_msg_send(msg, LP_RID_TO_NID(rid));
+				msg_allocator_free_at_gvt(msg);
+			} else {
 				uint32_t f = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
 				if(f & MSG_FLAG_PROCESSED)
-					msg_queue_insert(msg, lps[msg->dest].id);
-			} else {
-				mpi_remote_anti_msg_send(msg, lps[msg->dest].id);
-				msg_allocator_free_at_gvt(msg);
+					msg_queue_insert(msg, rid);
 			}
 
 			stats_take(STATS_MSG_ANTI, 1);
@@ -352,6 +354,11 @@ void process_msg(void)
 	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *lp = &lps[msg->dest];
+	if(unlikely(atomic_load_explicit(&lp->rid, memory_order_relaxed) != tid)) {
+		// TODO: reschedule message
+		return;
+	}
+
 	current_lp = lp;
 
 	if(unlikely(fossil_is_needed(lp))) {

@@ -73,10 +73,10 @@ static simtime_t reducing_p[MAX_THREADS];
 static __thread simtime_t gvt_accumulator;
 /// A counter used to synchronize threads during the node-local GVT algorithm
 /** This value is also used to detect the end of the node-local GVT computation */
-static _Atomic rid_t c_a = 0;
+static _Atomic tid_t c_a = 0;
 /// A counter used to synchronize threads during the node-local GVT algorithm
 /** This value is also used to detect an ongoing GVT computation */
-static _Atomic rid_t c_b = 0;
+static _Atomic tid_t c_b = 0;
 /// The count of nodes still involved in a GVT computation
 /** If this is 0 that means that a new GVT computation can be safely started */
 static _Atomic nid_t gvt_nodes;
@@ -160,7 +160,7 @@ static bool gvt_thread_phase_run(void)
 		case thread_phase_C:
 			if(atomic_load_explicit(&c_a, memory_order_relaxed) != global_config.n_threads)
 				break;
-			reducing_p[rid] = gvt_accumulator;
+			reducing_p[tid] = gvt_accumulator;
 			thread_phase = thread_phase_D;
 			atomic_fetch_sub_explicit(&c_b, 1U, memory_order_release);
 			break;
@@ -180,11 +180,11 @@ static bool gvt_node_phase_run(void)
 {
 	static __thread enum node_phase node_phase = node_phase_redux_first;
 	static __thread uint32_t last_seq[2][MAX_NODES];
-	static _Atomic(uint32_t) total_sent[MAX_NODES];
-	static _Atomic(int32_t) total_msg_received;
+	static _Atomic uint32_t total_sent[MAX_NODES];
+	static _Atomic int32_t total_msg_received;
 	static uint32_t remote_msg_to_receive;
-	static _Atomic(rid_t) c_c;
-	static _Atomic(rid_t) c_d;
+	static _Atomic tid_t c_c;
+	static _Atomic tid_t c_d;
 
 	switch(node_phase) {
 		case node_phase_redux_first:
@@ -229,7 +229,7 @@ static bool gvt_node_phase_run(void)
 				if(r)
 					break;
 				uint32_t q = n_nodes / global_config.n_threads + 1;
-				memset(total_sent + rid * q, 0, q * sizeof(*total_sent));
+				memset(total_sent + tid * q, 0, q * sizeof(*total_sent));
 				node_phase = node_phase_redux_second;
 				break;
 			}
@@ -282,7 +282,7 @@ simtime_t gvt_phase_run(void)
 	if(unlikely(atomic_load_explicit(&c_b, memory_order_relaxed)))
 		gvt_start_processing();
 
-	if(unlikely(!rid && !nid)) {
+	if(unlikely(!tid && !nid)) {
 		timer_uint t = timer_new();
 		if(unlikely(global_config.gvt_period < t - gvt_timer &&
 			    !atomic_load_explicit(&gvt_nodes, memory_order_relaxed))) {

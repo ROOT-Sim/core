@@ -61,15 +61,15 @@
 /// Maximum number of threads that can be supported
 #define MAX_THREADS (1 << MAX_THREADS_EXP)
 
-/// Used to identify in a node the computing resources (threads at the moment)
-typedef unsigned rid_t;
-/// Used to identify MPI nodes in a distributed environment
+/// Used to identify a thread inside an MPI rank
+typedef unsigned tid_t;
+/// Used to identify MPI ranks in a distributed environment
 typedef int nid_t;
 
 /// The total number of LPs hosted in the node
 extern lp_id_t n_lps_node;
 /// The identifier of the thread
-extern __thread rid_t rid;
+extern __thread tid_t tid;
 
 /// The total number of MPI nodes in the simulation
 extern nid_t n_nodes;

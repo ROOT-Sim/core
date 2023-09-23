@@ -201,8 +201,12 @@ void mpi_remote_msg_handle(void)
 
 			gvt_remote_msg_receive(msg);
 		}
-		assert(lps[msg->dest].local);
-		msg_queue_insert(msg, lps[msg->dest].id);
+		unsigned rid = atomic_load_explicit(&lps[msg->dest].rid, memory_order_relaxed);
+		if(unlikely(LP_RID_IS_NID(rid))) {
+			//TODO: reschedule
+		} else {
+			msg_queue_insert(msg, rid);
+		}
 	}
 }
 

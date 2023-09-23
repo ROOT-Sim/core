@@ -15,7 +15,6 @@
 /// A pointer to the currently processed LP context
 __thread struct lp_ctx *current_lp;
 /// A pointer to the LP contexts array
-/** Valid entries are contained between #lid_node_first and #lid_node_first + #n_lps_node - 1, limits included */
 struct lp_ctx *lps;
 /// The number of LPs hosted on this node
 lp_id_t n_lps_node;
@@ -38,7 +37,7 @@ _Thread_local bool lp_initialized;
  *
  * Horrible things may happen if @p lp_id is not locally hosted (use #lid_to_nid() to make sure of that!)
  */
-#define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
+#define lid_to_tid(lp_id) ((tid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
 
 /**
  * @brief Compute the first index of a partition in a linear space of indexes
@@ -70,7 +69,7 @@ void lp_global_init(void)
 	lp_id_t lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, global_config.lps);
 	n_lps_node = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps) - lid_node_first;
 
-	lps = mm_alloc(sizeof(*lps) * global_config.lps);
+	lps = mm_aligned_alloc(MEM_DETERMINISTIC_PAGE_SIZE, sizeof(*lps) * global_config.lps);
 
 	if(n_lps_node < global_config.n_threads) {
 		logger(LOG_WARN, "The simulation will run with %u threads instead of the requested %u", n_lps_node,
@@ -84,7 +83,7 @@ void lp_global_init(void)
  */
 void lp_global_fini(void)
 {
-	mm_free(lps);
+	mm_aligned_free(lps);
 }
 
 /**
@@ -95,32 +94,25 @@ void lp_init(void)
 	lp_id_t lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, global_config.lps);
 	lp_id_t lid_node_last = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps);
 
-	for(lp_id_t i = rid; i < global_config.lps; i += global_config.n_threads) {
-		struct lp_ctx *lp = &lps[i];
-
+	for(lp_id_t i = tid; i < global_config.lps; i += global_config.n_threads) {
 		nid_t this_nid = lid_to_nid(i);
-		if(this_nid != nid) {
-			lp->local = false;
-			lp->id = this_nid;
-		} else {
-			lp->local = true;
-			lp->id = lid_to_rid(i);
-		}
+		if(this_nid != nid)
+			atomic_store_explicit(&lps[i].rid, LP_RID_FROM_NID(this_nid), memory_order_relaxed);
+		else
+			atomic_store_explicit(&lps[i].rid, lid_to_tid(i), memory_order_relaxed);
 	}
 
 	sync_thread_barrier();
 
 	for(lp_id_t i = lid_node_first; i < lid_node_last; ++i) {
 		struct lp_ctx *lp = &lps[i];
-		if(lp->id != rid)
+		if(atomic_load_explicit(&lp->rid, memory_order_relaxed) != tid)
 			continue;
 
-		model_allocator_lp_init(&lp->mm_state);
 		lp->state_pointer = NULL;
 		lp->fossil_epoch = 0;
 
-		current_lp = lp;
-
+		model_allocator_lp_init(&lp->mm_state);
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init(lp);
 	}
@@ -133,10 +125,9 @@ void lp_init(void)
  */
 void lp_fini(void)
 {
-	for(lp_id_t i = rid; i < global_config.lps; i += global_config.n_threads) {
+	for(lp_id_t i = tid; i < global_config.lps; i += global_config.n_threads) {
 		struct lp_ctx *lp = &lps[i];
-
-		if(!lp->local)
+		if(LP_RID_IS_NID(atomic_load_explicit(&lp->rid, memory_order_relaxed)))
 			continue;
 
 		process_lp_fini(lp);

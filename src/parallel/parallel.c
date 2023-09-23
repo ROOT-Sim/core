@@ -30,15 +30,15 @@ static void worker_affinity_set(void)
 	if(!global_config.core_binding)
 		return;
 
-	switch(thread_affinity_self_set(rid)) {
+	switch(thread_affinity_self_set(tid)) {
 		case THREAD_AFFINITY_ERROR_RUNTIME:
 			logger(LOG_WARN,
-			    "Unable to set affinity on thread %u; you might have a too restrictive process mask", rid);
+			    "Unable to set affinity on thread %u; you might have a too restrictive process mask", tid);
 			break;
 
 		case THREAD_AFFINITY_ERROR_NOT_SUPPORTED:
 			logger(LOG_WARN,
-			    "Unable to set affinity on thread %u; operation not supported on this platform", rid);
+			    "Unable to set affinity on thread %u; operation not supported on this platform", tid);
 			break;
 
 		default:
@@ -48,11 +48,11 @@ static void worker_affinity_set(void)
 
 /**
  * @brief Initialize the worker thread data structures
- * @param this_rid The numerical identifier of the worker thread
+ * @param this_tid The numerical identifier of the worker thread
  */
-static void worker_thread_init(rid_t this_rid)
+static void worker_thread_init(tid_t this_tid)
 {
-	rid = this_rid;
+	tid = this_tid;
 
 	worker_affinity_set();
 	stats_init();
@@ -164,13 +164,13 @@ int parallel_simulation(void)
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
 	thr_id_t thrs[global_config.n_threads];
-	for(rid_t i = 0; i < global_config.n_threads; ++i)
+	for(tid_t i = 0; i < global_config.n_threads; ++i)
 		if(thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
 			logger(LOG_FATAL, "Unable to create thread number %u!", i);
 			abort();
 		}
 
-	for(rid_t i = 0; i < global_config.n_threads; ++i)
+	for(tid_t i = 0; i < global_config.n_threads; ++i)
 		thread_wait(thrs[i], NULL);
 
 	stats_global_time_take(STATS_GLOBAL_FINI_START);
