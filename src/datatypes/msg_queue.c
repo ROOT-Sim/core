@@ -14,8 +14,10 @@
  */
 #include <datatypes/msg_queue.h>
 
+#include <arch/timer.h>
 #include <core/sync.h>
 #include <datatypes/heap.h>
+#include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
@@ -108,8 +110,11 @@ static inline void msg_queue_insert_queued(void)
  */
 struct lp_msg *msg_queue_extract(void)
 {
+	timer_uint t = timer_hr_new();
 	msg_queue_insert_queued();
-	return likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
+	struct lp_msg *msg = likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
+	stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
+	return msg;
 }
 
 /**

@@ -8,8 +8,9 @@
  */
 #include <mm/buddy/multi.h>
 
-#include <core/core.h>
+#include <arch/timer.h>
 #include <core/intrinsics.h>
+#include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/buddy/buddy.h>
 #include <mm/buddy/ckpt.h>
@@ -133,6 +134,8 @@ void __write_mem(const void *ptr, size_t s)
 // todo: incremental
 void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i)
 {
+	timer_uint t = timer_hr_new();
+
 	struct mm_checkpoint *ckp = mm_alloc(self->full_ckpt_size);
 	ckp->ckpt_size = self->full_ckpt_size;
 
@@ -144,6 +147,10 @@ void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i)
 	while(i--)
 		buddy_ckp = checkpoint_full_take(&array_get_at(self->buddies, i), buddy_ckp);
 	buddy_ckp->orig = NULL;
+
+	stats_take(STATS_CKPT_SIZE, self->full_ckpt_size);
+	stats_take(STATS_CKPT, 1);
+	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 }
 
 void model_allocator_checkpoint_next_force_full(struct mm_state *self)
