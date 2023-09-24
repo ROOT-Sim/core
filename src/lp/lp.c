@@ -97,9 +97,9 @@ void lp_init(void)
 	for(lp_id_t i = tid; i < global_config.lps; i += global_config.n_threads) {
 		nid_t this_nid = lid_to_nid(i);
 		if(this_nid != nid)
-			atomic_store_explicit(&lps[i].rid, LP_RID_FROM_NID(this_nid), memory_order_relaxed);
+			lps[i].rid = LP_RID_FROM_NID(this_nid);
 		else
-			atomic_store_explicit(&lps[i].rid, lid_to_tid(i), memory_order_relaxed);
+			lps[i].rid = lid_to_tid(i);
 	}
 
 	sync_thread_barrier();

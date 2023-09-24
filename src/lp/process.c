@@ -55,7 +55,7 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 	msg->send_t = current_msg->dest_t;
 #endif
 
-	unsigned rid = atomic_load_explicit(&lps[receiver].rid, memory_order_relaxed);
+	unsigned rid = lps[msg->dest].rid;
 	if(LP_RID_IS_NID(rid)) {
 		mpi_remote_msg_send(msg, LP_RID_TO_NID(rid));
 		array_push(current_lp->p.p_msgs, proc_mark_sent_remote(msg));
@@ -152,7 +152,7 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 
 		while(proc_is_sent(msg)) {
 			msg = proc_untagged(msg);
-			unsigned rid = atomic_load_explicit(&lps[msg->dest].rid, memory_order_relaxed);
+			unsigned rid = lps[msg->dest].rid;
 			if(LP_RID_IS_NID(rid)) {
 				mpi_remote_anti_msg_send(msg, LP_RID_TO_NID(rid));
 				msg_allocator_free_at_gvt(msg);
@@ -320,7 +320,7 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
 }
 
 /**
- * @brief Extract and process a message, if available
+ * @brief Process a message
  *
  * This function encloses most of the actual parallel/distributed simulation logic.
  */
@@ -329,7 +329,7 @@ void process_msg(struct lp_msg *msg)
 	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *lp = &lps[msg->dest];
-	if(unlikely(atomic_load_explicit(&lp->rid, memory_order_relaxed) != tid)) {
+	if(unlikely(lp->rid != tid)) {
 		// TODO: reschedule message
 		return;
 	}
