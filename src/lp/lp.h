@@ -23,7 +23,7 @@
 
 /// A complete LP context
 struct lp_ctx {
-	atomic_uint rid;
+	unsigned rid;
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
 	/// The pointer set by the model with the SetState() API call

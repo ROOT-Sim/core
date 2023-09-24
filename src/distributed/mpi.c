@@ -201,7 +201,7 @@ void mpi_remote_msg_handle(void)
 
 			gvt_remote_msg_receive(msg);
 		}
-		unsigned rid = atomic_load_explicit(&lps[msg->dest].rid, memory_order_relaxed);
+		unsigned rid = lps[msg->dest].rid;
 		if(unlikely(LP_RID_IS_NID(rid))) {
 			//TODO: reschedule
 		} else {

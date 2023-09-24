@@ -136,7 +136,7 @@ void msg_queue_insert(struct lp_msg *msg, tid_t this_tid)
  */
 void msg_queue_insert_self(struct lp_msg *msg)
 {
-	assert(atomic_load_explicit(&lps[msg->dest].rid, memory_order_relaxed) == tid);
+	assert(lps[msg->dest].rid == tid);
 	struct q_elem qe = {.t = msg->dest_t, .m = msg};
 	heap_insert(mqp, q_elem_is_before, qe);
 }
