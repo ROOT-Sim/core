@@ -24,36 +24,17 @@
 
 /// The flag used in ScheduleNewEvent() to keep track of silent execution
 static __thread bool silent_processing = false;
-#ifndef NDEBUG
-/// The currently processed message
-/** This is not necessary for normal operation, but it's useful in debug */
-static __thread struct lp_msg *current_msg;
-#endif
 
 #define proc_mark_sent_local(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 1U))
 #define proc_mark_sent_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))
 
-void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
+void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
     unsigned payload_size)
 {
-	if(unlikely(global_config.serial)) {
-		ScheduleNewEvent_serial(receiver, timestamp, event_type, payload, payload_size);
-		return;
-	}
-
 	if(unlikely(silent_processing))
 		return;
 
-	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
-
-#ifndef NDEBUG
-	if(msg_is_before(msg, current_msg)) {
-		logger(LOG_FATAL, "Scheduling a message in the past!");
-		abort();
-	}
-	msg->send = current_lp - lps;
-	msg->send_t = current_msg->dest_t;
-#endif
+	struct lp_msg *msg = common_msg_pack(receiver, timestamp, event_type, payload, payload_size);
 
 	unsigned rid = lps[msg->dest].rid;
 	if(LP_RID_IS_NID(rid)) {
@@ -74,11 +55,9 @@ void process_lp_init(struct lp_ctx *lp)
 	array_init(lp->p.p_msgs);
 	lp->p.early_antis = NULL;
 
-	struct lp_msg *msg = msg_allocator_pack(lp - lps, 0, LP_INIT, NULL, 0U);
+	struct lp_msg *msg = common_msg_pack(lp - lps, 0, LP_INIT, NULL, 0U);
 	msg->raw_flags = MSG_FLAG_PROCESSED;
-#ifndef NDEBUG
-	current_msg = msg;
-#endif
+
 	current_lp = lp;
 	common_msg_process(lp, msg);
 	lp->p.bound = 0.0;
@@ -353,10 +332,6 @@ void process_msg(struct lp_msg *msg)
 		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.full_ckpt_size);
 		fossil_lp_collect(lp);
 	}
-
-#ifndef NDEBUG
-	current_msg = msg;
-#endif
 
 	common_msg_process(lp, msg);
 	lp->p.bound = msg->dest_t;

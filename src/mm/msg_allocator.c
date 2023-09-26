@@ -97,15 +97,3 @@ void msg_allocator_on_gvt(simtime_t current_gvt)
 		}
 	}
 }
-
-/**
- * @brief Allocate a new message and populate it
- * @param receiver the id of the LP which must receive this message
- * @param timestamp the logical time at which this message must be processed
- * @param event_type a field which can be used by the model to distinguish them
- * @param payload the payload to copy into the message
- * @param payload_size the size in bytes of the payload to copy into the message
- * @return a new populated message
- */
-extern struct lp_msg *msg_allocator_pack(lp_id_t receiver, simtime_t timestamp, unsigned event_type,
-    const void *payload, unsigned payload_size);
