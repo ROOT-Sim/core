@@ -43,7 +43,7 @@ static void serial_simulation_init(void)
 
 		lp->state_pointer = NULL;
 
-		struct lp_msg *msg = msg_allocator_pack(i, 0.0, LP_INIT, NULL, 0);
+		struct lp_msg *msg = common_msg_pack(i, 0.0, LP_INIT, NULL, 0);
 		heap_insert(queue, msg_is_before, msg);
 
 		common_msg_process(lp, msg);
@@ -119,15 +119,7 @@ static int serial_simulation_run(void)
 void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
     unsigned payload_size)
 {
-	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
-
-#ifndef NDEBUG
-	if(unlikely(msg_is_before(msg, heap_min(queue)))) {
-		logger(LOG_FATAL, "Sending a message in the PAST!");
-		abort();
-	}
-#endif
-
+	struct lp_msg *msg = common_msg_pack(receiver, timestamp, event_type, payload, payload_size);
 	heap_insert(queue, msg_is_before, msg);
 }
 
