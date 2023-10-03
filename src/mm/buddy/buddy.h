@@ -29,11 +29,13 @@
 
 /// The checkpointable memory context of a single buddy system
 struct buddy_state {
+	/// The next struct buddy_state in the list
+	struct buddy_state *next;
+	/// The memory buffer served to the model
+	struct distr_mem_chunk *chunk;
 	/// The checkpointed binary tree representing the buddy system
 	/** the last char is actually unused */
 	uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
-	/// The memory buffer served to the model
-	struct distr_mem_chunk *chunk;
 	/// Keeps track of memory blocks which have been dirtied by a write
 	block_bitmap dirty[
 		bitmap_required_size(

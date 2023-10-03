@@ -25,7 +25,7 @@
 
 void model_allocator_lp_init(struct mm_state *self)
 {
-	array_init_explicit(self->buddies, 2U);
+	self->buddies = NULL;
 	array_init(self->logs);
 	self->full_ckpt_size = offsetof(struct mm_checkpoint, chkps) + sizeof(struct buddy_state *);
 }
@@ -38,11 +38,11 @@ void model_allocator_lp_fini(struct mm_state *self)
 
 	array_fini(self->logs);
 
-	i = array_count(self->buddies);
-	while(i--)
-		buddy_fini(&array_get_at(self->buddies, i));
-
-	array_fini(self->buddies);
+	for(struct buddy_state *buddy = self->buddies; buddy != NULL;) {
+		struct buddy_state *tmp = buddy;
+		buddy = buddy->next;
+		mm_free(tmp);
+	}
 }
 
 void *rs_malloc(size_t req_size)
@@ -60,20 +60,20 @@ void *rs_malloc(size_t req_size)
 	struct mm_state *self = &current_lp->mm_state;
 	self->full_ckpt_size += 1 << req_blks_exp;
 
-	for(array_count_t i = array_count(self->buddies); i--;) {
-		void *ret = buddy_malloc(&array_get_at(self->buddies, i), req_blks_exp);
+	for(struct buddy_state *buddy = self->buddies; buddy != NULL; buddy = buddy->next) {
+		void *ret = buddy_malloc(buddy, req_blks_exp);
 		if(likely(ret != NULL))
 			return ret;
 	}
 
 	self->full_ckpt_size += offsetof(struct buddy_checkpoint, base_mem);
-	if(array_expand(self->buddies))
-		for(array_count_t i = array_count(self->buddies); i--;)
-			buddy_moved(&array_get_at(self->buddies, i));
 
-	struct buddy_state *new_buddy = &array_get_at(self->buddies, array_count(self->buddies));
-	array_count(self->buddies)++;
+	struct buddy_state *new_buddy = mm_alloc(sizeof(*new_buddy));
 	buddy_init(new_buddy);
+
+	new_buddy->next = self->buddies;
+	self->buddies = new_buddy;
+
 	return buddy_malloc(new_buddy, req_blks_exp);
 }
 
@@ -127,7 +127,7 @@ void *rs_realloc(void *ptr, size_t req_size)
 void __write_mem(const void *ptr, size_t s)
 {
 	struct mm_state *self = &current_lp->mm_state;
-	if(unlikely(!s || array_is_empty(self->buddies)))
+	if(unlikely(!s))
 		return;
 }
 
@@ -143,9 +143,8 @@ void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i)
 	array_push(self->logs, mm_log);
 
 	struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckp->chkps;
-	array_count_t i = array_count(self->buddies);
-	while(i--)
-		buddy_ckp = checkpoint_full_take(&array_get_at(self->buddies, i), buddy_ckp);
+	for(struct buddy_state *buddy = self->buddies; buddy != NULL; buddy = buddy->next)
+		buddy_ckp = checkpoint_full_take(buddy, buddy_ckp);
 	buddy_ckp->orig = NULL;
 
 	stats_take(STATS_CKPT_SIZE, self->full_ckpt_size);
@@ -169,16 +168,13 @@ array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_co
 	self->full_ckpt_size = ckp->ckpt_size;
 	const struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckp->chkps;
 
-	array_count_t k = array_count(self->buddies);
-	while(k--) {
-		struct buddy_state *b = &array_get_at(self->buddies, k);
-		const struct buddy_checkpoint *c = checkpoint_full_restore(&array_get_at(self->buddies, k), buddy_ckp);
-		if(unlikely(c == NULL)) {
-			buddy_init(b);
+	for(struct buddy_state *buddy = self->buddies; buddy != NULL; buddy = buddy->next) {
+		const struct buddy_checkpoint *c = checkpoint_full_restore(buddy, buddy_ckp);
+		if(unlikely(c == buddy_ckp)) {
+			buddy_init(buddy);
 			self->full_ckpt_size += offsetof(struct buddy_checkpoint, base_mem);
-		} else {
-			buddy_ckp = c;
 		}
+		buddy_ckp = c;
 	}
 
 	for(array_count_t j = array_count(self->logs) - 1; j > i; --j)
