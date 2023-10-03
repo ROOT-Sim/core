@@ -152,7 +152,7 @@ struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, st
 const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
 {
 	if(unlikely(ckp->orig != self->chunk))
-		return NULL;
+		return ckp;
 
 	memcpy(self->longest, ckp->longest, sizeof(self->longest));
 
