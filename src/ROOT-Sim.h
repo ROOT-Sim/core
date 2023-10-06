@@ -70,6 +70,10 @@ enum rootsim_event {LP_INIT = 65534, LP_FINI};
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
     unsigned event_size);
 
+/**
+ * @brief Set the LP simulation state main pointer
+ * @param state The state pointer to be passed to ProcessEvent() for the invoker LP
+ */
 extern void SetState(void *new_state);
 
 extern void *rs_malloc(size_t req_size);
