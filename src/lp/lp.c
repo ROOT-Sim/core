@@ -19,10 +19,6 @@ struct lp_ctx *lps;
 /// The number of LPs hosted on this node
 lp_id_t n_lps_node;
 
-#ifndef NDEBUG
-_Thread_local bool lp_initialized;
-#endif
-
 /**
  * @brief Compute the id of the node which hosts a given LP
  * @param lp_id the id of the LP
@@ -116,8 +112,6 @@ void lp_init(void)
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init(lp);
 	}
-
-	lp_initialized_set();
 }
 
 /**
@@ -135,19 +129,4 @@ void lp_fini(void)
 	}
 
 	current_lp = NULL;
-}
-
-/**
- * @brief Set the LP simulation state main pointer
- * @param state The state pointer to be passed to ProcessEvent() for the invoker LP
- */
-void SetState(void *state)
-{
-#ifndef NDEBUG
-	if(unlikely(lp_initialized)) {
-		logger(LOG_FATAL, "SetState() is being called outside the LP_INIT event!");
-		abort();
-	}
-#endif
-	current_lp->state_pointer = state;
 }

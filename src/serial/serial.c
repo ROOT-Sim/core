@@ -13,7 +13,6 @@
 #include <log/stats.h>
 #include <lp/common.h>
 #include <mm/distributed_mem.h>
-#include <mm/msg_allocator.h>
 
 /// The messages queue of the serial runtime
 static heap_declare(struct lp_msg *) queue;
@@ -50,7 +49,6 @@ static void serial_simulation_init(void)
 
 		msg_allocator_free(heap_extract(queue, msg_is_before));
 	}
-	lp_initialized_set();
 }
 
 /**
