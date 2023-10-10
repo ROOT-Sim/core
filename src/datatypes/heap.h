@@ -16,7 +16,7 @@
  * @brief Declares a heap
  * @param type the type of the contained elements
  */
-#define heap_declare(type) dyn_array(type)
+#define heap_declare(type) array_declare(type)
 
 /**
  * @brief Gets the underlying actual array of elements of a binary heap

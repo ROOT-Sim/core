@@ -16,7 +16,7 @@
 /// The message processing data produced by the LP
 struct process_ctx {
 	/// The messages processed in the past by the owner LP
-	dyn_array(struct lp_msg *) p_msgs;
+	array_declare(struct pes_entry) p_msgs;
 	/// The list of remote anti-messages delivered before their original counterpart
 	/** Hopefully this is 99.9% of the time empty */
 	struct lp_msg *early_antis;

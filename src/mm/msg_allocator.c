@@ -14,8 +14,8 @@
 #include <datatypes/array.h>
 #include <gvt/gvt.h>
 
-static __thread dyn_array(struct lp_msg *) free_list = {0};
-static __thread dyn_array(struct lp_msg *) at_gvt_list = {0};
+static __thread array_declare(struct lp_msg *) free_list = {0};
+static __thread array_declare(struct lp_msg *) at_gvt_list = {0};
 
 /**
  * @brief Initialize the message allocator thread-local data structures
