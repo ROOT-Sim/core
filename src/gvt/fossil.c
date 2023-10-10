@@ -33,28 +33,28 @@ void fossil_lp_collect(struct lp_ctx *lp)
 {
 	struct process_ctx *proc_p = &lp->p;
 
-	array_count_t past_i = array_count(proc_p->p_msgs);
+	array_count_t past_i = array_count(proc_p->pes);
 	if(past_i == 0)
 		return;
 
 	simtime_t gvt = fossil_gvt_current;
-	for(const struct lp_msg *msg = array_get_at(proc_p->p_msgs, --past_i); msg->dest_t >= gvt;) {
+	for(struct pes_entry e = array_get_at(proc_p->pes, --past_i); pes_entry_msg_received(e)->dest_t >= gvt;) {
 		do {
 			if(!past_i)
 				return;
-			msg = array_get_at(proc_p->p_msgs, --past_i);
-		} while(proc_is_sent(msg));
+			e = array_get_at(proc_p->pes, --past_i);
+		} while(!pes_entry_is_received(e));
 	}
 
 	past_i = model_allocator_fossil_lp_collect(&lp->mm_state, past_i + 1);
 
 	array_count_t k = past_i;
 	while(k--) {
-		struct lp_msg *msg = array_get_at(proc_p->p_msgs, k);
-		if(!proc_is_sent_local(msg))
-			msg_allocator_free(proc_untagged(msg));
+		struct pes_entry e = array_get_at(proc_p->pes, k);
+		if(!pes_entry_is_sent_local(e))
+			msg_allocator_free(pes_entry_msg(e));
 	}
-	array_truncate_first(proc_p->p_msgs, past_i);
+	array_truncate_first(proc_p->pes, past_i);
 
 	lp->fossil_epoch = fossil_epoch_current;
 }

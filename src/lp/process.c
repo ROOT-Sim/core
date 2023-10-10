@@ -22,11 +22,11 @@
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 
+#define pes_entry_make(msg, tag) ((struct pes_entry){.raw = (tag) | (uintptr_t)(msg)})
+#define pes_entry_msg_unsafe(entry) ((struct lp_msg *)(entry).raw)
+
 /// The flag used in ScheduleNewEvent() to keep track of silent execution
 static __thread bool silent_processing = false;
-
-#define proc_mark_sent_local(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 1U))
-#define proc_mark_sent_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))
 
 void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
     unsigned payload_size)
@@ -39,11 +39,11 @@ void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned e
 	unsigned rid = lps[msg->dest].rid;
 	if(LP_RID_IS_NID(rid)) {
 		mpi_remote_msg_send(msg, LP_RID_TO_NID(rid));
-		array_push(current_lp->p.p_msgs, proc_mark_sent_remote(msg));
+		array_push(current_lp->p.pes, pes_entry_make(msg, PES_ENTRY_SENT_REMOTE));
 	} else {
 		atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
 		msg_queue_insert(msg, rid);
-		array_push(current_lp->p.p_msgs, proc_mark_sent_local(msg));
+		array_push(current_lp->p.pes, pes_entry_make(msg, PES_ENTRY_SENT_LOCAL));
 	}
 }
 
@@ -52,7 +52,7 @@ void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned e
  */
 void process_lp_init(struct lp_ctx *lp)
 {
-	array_init(lp->p.p_msgs);
+	array_init(lp->p.pes);
 	lp->p.early_antis = NULL;
 
 	struct lp_msg *msg = common_msg_pack(lp - lps, 0, LP_INIT, NULL, 0U);
@@ -61,9 +61,9 @@ void process_lp_init(struct lp_ctx *lp)
 	current_lp = lp;
 	common_msg_process(lp, msg);
 	lp->p.bound = 0.0;
-	array_push(lp->p.p_msgs, msg);
+	array_push(lp->p.pes, pes_entry_make(msg, PES_ENTRY_RECEIVED));
 	model_allocator_checkpoint_next_force_full(&lp->mm_state);
-	model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.p_msgs));
+	model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.pes));
 }
 
 /**
@@ -75,17 +75,16 @@ void process_lp_fini(struct lp_ctx *lp)
 	silent_processing = true;
 	global_config.dispatcher(lp - lps, 0, LP_FINI, NULL, 0, lp->state_pointer);
 
-	for(array_count_t i = 0; i < array_count(lp->p.p_msgs); ++i) {
-		struct lp_msg *msg = array_get_at(lp->p.p_msgs, i);
-		if(proc_is_sent_local(msg))
+	for(array_count_t i = 0; i < array_count(lp->p.pes); ++i) {
+		struct pes_entry e = array_get_at(lp->p.pes, i);
+		if(pes_entry_is_sent_local(e))
 			continue;
 
-		bool remote = proc_is_sent_remote(msg);
-		msg = proc_untagged(msg);
-		if(remote || !(atomic_load_explicit(&msg->flags, memory_order_relaxed) & MSG_FLAG_ANTI))
-			msg_allocator_free(msg);
+		if(pes_entry_is_sent_remote(e) ||
+		    !(atomic_load_explicit(&pes_entry_msg_received(e)->flags, memory_order_relaxed) & MSG_FLAG_ANTI))
+			msg_allocator_free(pes_entry_msg(e));
 	}
-	array_fini(lp->p.p_msgs);
+	array_fini(lp->p.pes);
 }
 
 /**
@@ -106,10 +105,11 @@ static inline void silent_execution(const struct lp_ctx *lp, array_count_t last_
 
 	void *state_p = lp->state_pointer;
 	do {
-		const struct lp_msg *msg = array_get_at(lp->p.p_msgs, last_i);
-		while(proc_is_sent(msg))
-			msg = array_get_at(lp->p.p_msgs, ++last_i);
+		struct pes_entry e = array_get_at(lp->p.pes, last_i);
+		while(!pes_entry_is_received(e))
+			e = array_get_at(lp->p.pes, ++last_i);
 
+		const struct lp_msg *msg = pes_entry_msg_received(e);
 		global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, state_p);
 		stats_take(STATS_MSG_SILENT, 1);
 	} while(++last_i < past_i);
@@ -125,12 +125,12 @@ static inline void silent_execution(const struct lp_ctx *lp, array_count_t last_
  */
 static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t past_i)
 {
-	array_count_t p_cnt = array_count(proc_p->p_msgs);
+	array_count_t p_cnt = array_count(proc_p->pes);
 	for(array_count_t i = past_i; i < p_cnt; ++i) {
-		struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
+		struct pes_entry e = array_get_at(proc_p->pes, i);
 
-		while(proc_is_sent(msg)) {
-			msg = proc_untagged(msg);
+		while(!pes_entry_is_received(e)) {
+			struct lp_msg *msg = pes_entry_msg(e);
 			unsigned rid = lps[msg->dest].rid;
 			if(LP_RID_IS_NID(rid)) {
 				mpi_remote_anti_msg_send(msg, LP_RID_TO_NID(rid));
@@ -142,15 +142,15 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 			}
 
 			stats_take(STATS_MSG_ANTI, 1);
-			msg = array_get_at(proc_p->p_msgs, ++i);
+			e = array_get_at(proc_p->pes, ++i);
 		}
 
-		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
+		uint32_t f = atomic_fetch_add_explicit(&pes_entry_msg_received(e)->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(f & MSG_FLAG_ANTI))
-			msg_queue_insert_self(msg);
+			msg_queue_insert_self(pes_entry_msg_received(e));
 		stats_take(STATS_MSG_ROLLBACK, 1);
 	}
-	array_count(proc_p->p_msgs) = past_i;
+	array_count(proc_p->pes) = past_i;
 }
 
 /**
@@ -177,14 +177,12 @@ static void do_rollback(struct lp_ctx *lp, array_count_t past_i)
  */
 static inline array_count_t match_straggler_msg(const struct process_ctx *proc_p, const struct lp_msg *s_msg)
 {
-	array_count_t i = array_count(proc_p->p_msgs) - 1;
-	const struct lp_msg *msg;
-	do {
-		if(!i)
-			return 0;
-		msg = array_get_at(proc_p->p_msgs, --i);
-	} while(proc_is_sent(msg) || msg_is_before(s_msg, msg));
-	return i + 1;
+	for(array_count_t i = array_count(proc_p->pes) - 1; i;) {
+		struct pes_entry e = array_get_at(proc_p->pes, --i);
+		if(pes_entry_is_received(e) && !msg_is_before(s_msg, pes_entry_msg_received(e)))
+			return i + 1;
+	}
+	return 0;
 }
 
 /**
@@ -195,14 +193,13 @@ static inline array_count_t match_straggler_msg(const struct process_ctx *proc_p
  */
 static inline array_count_t match_anti_msg(const struct process_ctx *proc_p, const struct lp_msg *a_msg)
 {
-	array_count_t i = array_count(proc_p->p_msgs) - 1;
-	const struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
-	while(a_msg != msg)
-		msg = array_get_at(proc_p->p_msgs, --i);
+	array_count_t i = array_count(proc_p->pes) - 1;
+	struct pes_entry e = array_get_at(proc_p->pes, i);
+	while(a_msg != pes_entry_msg_unsafe(e))
+		e = array_get_at(proc_p->pes, --i);
 
 	while(i) {
-		msg = array_get_at(proc_p->p_msgs, --i);
-		if(!proc_is_sent(msg))
+		if(pes_entry_is_received(array_get_at(proc_p->pes, --i)))
 			return i + 1;
 	}
 	return i;
@@ -218,31 +215,35 @@ static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_ms
 	// Simplifies flags-based matching, also useful in the early remote anti-messages matching
 	a_msg->raw_flags -= MSG_FLAG_ANTI;
 
+	array_count_t i = array_count(lp->p.pes);
+	if(unlikely(i == 0))
+		goto insert_early_anti;
+
 	uint32_t m_id = a_msg->raw_flags, m_seq = a_msg->m_seq;
-	array_count_t i = array_count(lp->p.p_msgs);
-	struct lp_msg *msg;
-	do {
-		if(unlikely(!i)) {
-			// Sadly this is an early remote anti-message
-			a_msg->next = lp->p.early_antis;
-			lp->p.early_antis = a_msg;
+	simtime_t m_time = a_msg->dest_t;
+
+	for(struct pes_entry e = array_get_at(lp->p.pes, --i); pes_entry_msg_received(e)->dest_t >= m_time;) {
+		if(pes_entry_msg_received(e)->raw_flags == m_id || pes_entry_msg_received(e)->m_seq == m_seq) {
+			while(i) {
+				if(pes_entry_is_received(array_get_at(lp->p.pes, --i))) {
+					i++;
+					break;
+				}
+			}
+			pes_entry_msg_received(e)->raw_flags |= MSG_FLAG_ANTI;
+			do_rollback(lp, i);
+			msg_allocator_free(pes_entry_msg_received(e));
+			msg_allocator_free(a_msg);
 			return;
 		}
-		msg = array_get_at(lp->p.p_msgs, --i);
-	} while(proc_is_sent(msg) || msg->raw_flags != m_id || msg->m_seq != m_seq);
 
-	while(i) {
-		const struct lp_msg *v_msg = array_get_at(lp->p.p_msgs, --i);
-		if(!proc_is_sent(v_msg)) {
-			i++;
-			break;
-		}
+		while(!pes_entry_is_received(e))
+			e = array_get_at(lp->p.pes, --i);
 	}
 
-	msg->raw_flags |= MSG_FLAG_ANTI;
-	do_rollback(lp, i);
-	msg_allocator_free(msg);
-	msg_allocator_free(a_msg);
+insert_early_anti:
+	a_msg->next = lp->p.early_antis;
+	lp->p.early_antis = a_msg;
 }
 
 /**
@@ -318,14 +319,14 @@ void process_msg(struct lp_msg *msg)
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
 		handle_anti_msg(lp, msg, flags);
-		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
+		lp->p.bound = unlikely(array_is_empty(lp->p.pes)) ? -1.0 : lp->p.bound;
 		return;
 	}
 
 	if(unlikely(flags && lp->p.early_antis && check_early_anti_messages(&lp->p, msg)))
 		return;
 
-	if(unlikely(lp->p.bound >= msg->dest_t && msg_is_before(msg, array_peek(lp->p.p_msgs))))
+	if(unlikely(lp->p.bound >= msg->dest_t && msg_is_before(msg, pes_entry_msg_received(array_peek(lp->p.pes)))))
 		handle_straggler_msg(lp, msg);
 
 	if(unlikely(fossil_is_needed(lp))) {
@@ -335,9 +336,9 @@ void process_msg(struct lp_msg *msg)
 
 	common_msg_process(lp, msg);
 	lp->p.bound = msg->dest_t;
-	array_push(lp->p.p_msgs, msg);
+	array_push(lp->p.pes, pes_entry_make(msg, PES_ENTRY_RECEIVED));
 
 	auto_ckpt_register_good(&lp->auto_ckpt);
 	if(auto_ckpt_is_needed(&lp->auto_ckpt))
-		model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.p_msgs));
+		model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.pes));
 }

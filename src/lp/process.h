@@ -13,10 +13,16 @@
 #include <datatypes/array.h>
 #include <lp/msg.h>
 
+struct pes_entry {
+	uintptr_t raw;
+};
+
+enum pes_entry_type { PES_ENTRY_RECEIVED = 0U, PES_ENTRY_SENT_LOCAL = 1U, PES_ENTRY_SENT_REMOTE = 2U };
+
 /// The message processing data produced by the LP
 struct process_ctx {
 	/// The messages processed in the past by the owner LP
-	array_declare(struct pes_entry) p_msgs;
+	array_declare(struct pes_entry) pes;
 	/// The list of remote anti-messages delivered before their original counterpart
 	/** Hopefully this is 99.9% of the time empty */
 	struct lp_msg *early_antis;
@@ -25,10 +31,16 @@ struct process_ctx {
 	simtime_t bound;
 };
 
-#define proc_is_sent(msg_p) (((uintptr_t)(msg_p)) & 3U)
-#define proc_is_sent_local(msg_p) (((uintptr_t)(msg_p)) & 1U)
-#define proc_is_sent_remote(msg_p) (((uintptr_t)(msg_p)) & 2U)
-#define proc_untagged(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) & (UINTPTR_MAX - 3U)))
+#define pes_entry_is_received(entry) !((entry).raw & (PES_ENTRY_SENT_LOCAL | PES_ENTRY_SENT_REMOTE))
+#define pes_entry_is_sent_local(entry) ((entry).raw & PES_ENTRY_SENT_LOCAL)
+#define pes_entry_is_sent_remote(entry) ((entry).raw & PES_ENTRY_SENT_REMOTE)
+#define pes_entry_msg(entry) (struct lp_msg *)((entry).raw & ~(uintptr_t)(PES_ENTRY_SENT_LOCAL | PES_ENTRY_SENT_REMOTE))
+#define pes_entry_msg_received(entry)                                                                                  \
+	__extension__({                                                                                                \
+		assert(pes_entry_is_received(entry));                                                                  \
+		(struct lp_msg *)(entry).raw;                                                                          \
+	})
+
 
 struct lp_ctx; // forward declaration
 
