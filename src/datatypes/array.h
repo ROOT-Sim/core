@@ -24,7 +24,7 @@ typedef uint_least32_t array_count_t;
  * @brief Declares a dynamic array
  * @param type The type of the contained elements
  */
-#define dyn_array(type)                                                                                                \
+#define array_declare(type)                                                                                                \
 	struct {                                                                                                       \
 		type *items;                                                                                           \
 		array_count_t count;                                                                                   \
