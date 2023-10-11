@@ -18,13 +18,13 @@ struct buddy_checkpoint { // todo only log longest[] if changed, or incrementall
 	block_bitmap dirty [
 		bitmap_required_size(
 		// this tracks writes to the allocation tree...
-			(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
+			(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP)) +
 		// ...while this tracks writes to the actual memory buffer
 			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
 		)
 	];
 	/// The checkpointed binary tree representing the buddy system
-	uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
+	uint8_t longest[1U << (B_TOTAL_EXP - B_BLOCK_EXP)];
 	/// The checkpointed memory buffer assigned to the model
 	unsigned char base_mem[];
 };

@@ -23,10 +23,6 @@
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
 #define buddy_allocation_block_compute(req_size) next_exp_of_2(max(req_size, 1U << B_BLOCK_EXP) - 1);
 
-#define buddy_left_child(i) (((i) << 1U) + 1U)
-#define buddy_right_child(i) (((i) << 1U) + 2U)
-#define buddy_parent(i) (((i) - 1U) >> 1U)
-
 /// The checkpointable memory context of a single buddy system
 struct buddy_state {
 	/// The next struct buddy_state in the list
@@ -35,8 +31,8 @@ struct buddy_state {
 	struct distr_mem_chunk *chunk;
 	/// The checkpointed binary tree representing the buddy system
 	/** the last char is actually unused */
-	uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
-	/// Keeps track of memory blocks which have been dirtied by a write
+	uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP))];
+	/*/// Keeps track of memory blocks which have been dirtied by a write
 	block_bitmap dirty[
 		bitmap_required_size(
 		// this tracks writes to the allocation tree
@@ -44,7 +40,7 @@ struct buddy_state {
 		// while this tracks writes to the actual memory buffer
 			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
 		)
-	];
+	];*/
 };
 
 extern void buddy_init(struct buddy_state *self);
