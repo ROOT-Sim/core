@@ -15,22 +15,23 @@
 	__extension__({                                                                                                \
 		bool __vis = false;                                                                                    \
 		uint_fast8_t __l = B_TOTAL_EXP;                                                                        \
-		uint_fast32_t __i = 0;                                                                                 \
+		uint_fast32_t __i = 1;                                                                                 \
 		while(1) {                                                                                             \
-			uint_fast8_t __lon = (longest)[__i];                                                           \
+			uint_fast8_t __lon = (longest)[__i >> 1U];                                                     \
+                        __lon = (__i & 1U) ? __lon & 0x0f : __lon >> 4;                                                \
 			if(!__lon) {                                                                                   \
 				uint_fast32_t __len = 1U << __l;                                                       \
-				uint_fast32_t __o = ((__i + 1) << __l) - (1 << B_TOTAL_EXP);                           \
+				uint_fast32_t __o = (__i << __l) - (1 << B_TOTAL_EXP);                                 \
 				on_visit(__o, __len);                                                                  \
-			} else if(__lon != __l) {                                                                      \
-				__i = buddy_left_child(__i) + __vis;                                                   \
+			} else if(__lon + B_BLOCK_EXP - 1 != __l) {                                                    \
+				__i = (__i << 1U) + __vis;                                                             \
 				__vis = false;                                                                         \
 				__l--;                                                                                 \
 				continue;                                                                              \
 			}                                                                                              \
 			do {                                                                                           \
-				__vis = !(__i & 1U);                                                                   \
-				__i = buddy_parent(__i);                                                               \
+				__vis = __i & 1U;                                                                      \
+				__i >>= 1U;                                                                            \
 				__l++;                                                                                 \
 			} while(__vis);                                                                                \
                                                                                                                        \
