@@ -25,27 +25,21 @@
 
 /// The checkpointable memory context of a single buddy system
 struct buddy_state {
-	/// The next struct buddy_state in the list
-	struct buddy_state *next;
 	/// The memory buffer served to the model
 	struct distr_mem_chunk *chunk;
 	/// The checkpointed binary tree representing the buddy system
 	/** the last char is actually unused */
-	uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP))];
-	/*/// Keeps track of memory blocks which have been dirtied by a write
-	block_bitmap dirty[
-		bitmap_required_size(
-		// this tracks writes to the allocation tree
-			(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
-		// while this tracks writes to the actual memory buffer
-			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
-		)
-	];*/
+	uint8_t longest[1U << (B_TOTAL_EXP - B_BLOCK_EXP)];
+#ifdef ROOTSIM_INCREMENTAL
+	/// Keeps track of memory blocks of the allocation tree which have been dirtied by a write
+	block_bitmap dirty_longest[bitmap_required_size(1U << (B_TOTAL_EXP - 2 * B_BLOCK_EXP))];
+	/// Keeps track of memory blocks of the memory buffer given to the model which have been dirtied by a write
+	block_bitmap dirty_chunk[bitmap_required_size(1U << (B_TOTAL_EXP - B_BLOCK_EXP))];
+#endif
 };
 
 extern void buddy_init(struct buddy_state *self);
 extern void buddy_fini(struct buddy_state *self);
-extern void buddy_moved(struct buddy_state *self);
 extern void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp);
 extern uint_fast32_t buddy_free(void *ptr);
 
