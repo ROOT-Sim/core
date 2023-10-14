@@ -131,11 +131,7 @@ void checkpoint_incremental_restore(struct buddy_state *self, const struct buddy
 
 struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *ret)
 {
-	ret->orig = self->chunk;
-#ifdef ROOTSIM_INCREMENTAL
-	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
-#endif
-	memcpy(ret->longest, self->longest, sizeof(ret->longest));
+	ret->buddy = *self;
 
 #define buddy_block_copy_to_ckp(offset, len)                                                                           \
 	__extension__({                                                                                                \
@@ -152,10 +148,10 @@ struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, st
 
 const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
 {
-	if(unlikely(ckp->orig != self->chunk))
+	if(unlikely(ckp->buddy.chunk != self->chunk))
 		return ckp;
 
-	memcpy(self->longest, ckp->longest, sizeof(self->longest));
+	memcpy(self->longest, ckp->buddy.longest, sizeof(self->longest));
 
 #define buddy_block_copy_from_ckp(offset, len)                                                                         \
 	__extension__({                                                                                                \

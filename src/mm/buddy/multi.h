@@ -10,6 +10,8 @@
 
 #include <datatypes/array.h>
 
+#include <mm/buddy/buddy.h>
+
 #include <assert.h>
 #include <stdalign.h>
 #include <stddef.h>
@@ -18,9 +20,9 @@
 /// The checkpoint for the multiple buddy system allocator
 struct mm_checkpoint {
 	/// The total count of allocated bytes at the moment of the checkpoint
-	uint_fast32_t ckpt_size;
+	uint_fast32_t checkpoints_size;
 	/// The sequence of checkpoints of the allocated buddy systems (see @a buddy_checkpoint)
-	unsigned char chkps[];
+	unsigned char checkpoints[];
 };
 
 /// Binds a checkpoint together with a reference index
@@ -31,10 +33,15 @@ struct mm_log {
 	struct mm_checkpoint *c;
 };
 
+struct mm_buddy_list {
+	struct mm_buddy_list *next;
+	struct buddy_state buddy;
+};
+
 /// The checkpointable memory context assigned to a single LP
 struct mm_state {
 	/// The array of pointers to the allocated buddy systems for the LP
-	struct buddy_state *buddies;
+	struct mm_buddy_list *buddies;
 	/// The array of checkpoints
 	array_declare(struct mm_log) logs;
 	/// The total count of allocated bytes

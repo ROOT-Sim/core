@@ -17,7 +17,7 @@ void buddy_init(struct buddy_state *self)
 	uint_fast8_t node_size = B_TOTAL_EXP - B_BLOCK_EXP + 1;
 	self->longest[0] = node_size;
 	for(uint_fast32_t i = 1; i < sizeof(self->longest) / sizeof(*self->longest); ++i) {
-		node_size -= is_power_of_2(i << 1U);
+		node_size -= is_power_of_2(i);
 		self->longest[i] = node_size | node_size << 4;
 	}
 	self->chunk = distributed_mem_chunk_alloc(self);
@@ -26,11 +26,6 @@ void buddy_init(struct buddy_state *self)
 void buddy_fini(struct buddy_state *self)
 {
 	distributed_mem_chunk_free(self->chunk);
-}
-
-void buddy_moved(struct buddy_state *self)
-{
-	distributed_mem_chunk_update(self->chunk, self);
 }
 
 void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp)
