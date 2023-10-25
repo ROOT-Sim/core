@@ -76,8 +76,8 @@ ctest
 
 ## Compiling and running a model
 
-The ROOT-Sim core is not expected to be used directly to run models (see, for example,
-[cROOT-Sim](https://github.com/ROOT-Sim/cROOT-Sim)). Nevertheless, an implementation of "low-level" models
-can be located in `test\integration`.
+An implementation of test models can be located in `test\integration`.
 The tests can be compiled using the standard `mpicc` compiler, linking against `librscore` and launching
 locally, or using `mpiexec` to run on multiple nodes.
+
+Some example models are available in the [models](https://github.com/ROOT-Sim/models) repository.
