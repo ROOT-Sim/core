@@ -14,13 +14,14 @@
 
 void buddy_init(struct buddy_state *self)
 {
+	self->chunk = distributed_mem_chunk_alloc(self);
+
 	uint_fast8_t node_size = B_TOTAL_EXP - B_BLOCK_EXP + 1;
 	self->longest[0] = node_size;
 	for(uint_fast32_t i = 1; i < sizeof(self->longest) / sizeof(*self->longest); ++i) {
 		node_size -= is_power_of_2(i);
 		self->longest[i] = node_size | node_size << 4;
 	}
-	self->chunk = distributed_mem_chunk_alloc(self);
 }
 
 void buddy_fini(struct buddy_state *self)

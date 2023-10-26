@@ -10,9 +10,9 @@
 
 #include <arch/timer.h>
 #include <datatypes/heap.h>
+#include <distributed/distributed_mem.h>
 #include <log/stats.h>
 #include <lp/common.h>
-#include <mm/distributed_mem.h>
 
 /// The messages queue of the serial runtime
 static heap_declare(struct lp_msg *) queue;

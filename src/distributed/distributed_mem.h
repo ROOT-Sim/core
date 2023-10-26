@@ -4,10 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define DISTR_MEM_CHUNK_EXP 16U
+#define DISTR_MEM_CHUNK_EXP 16
 
 struct distr_mem_chunk {
-	alignas(1UL << DISTR_MEM_CHUNK_EXP) unsigned char mem[1UL << DISTR_MEM_CHUNK_EXP];
+	alignas(1 << DISTR_MEM_CHUNK_EXP) unsigned char mem[1 << DISTR_MEM_CHUNK_EXP];
 };
 
 extern void distributed_mem_global_init(void);

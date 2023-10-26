@@ -11,8 +11,8 @@
 #include <test.h>
 
 #include <core/core.h>
+#include <distributed/distributed_mem.h>
 #include <log/log.h>
-#include <mm/distributed_mem.h>
 
 extern int model_allocator_test(void *);
 extern int model_allocator_test_hard(void *);
