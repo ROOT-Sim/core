@@ -8,8 +8,9 @@
  */
 #pragma once
 
+#include <core/intrinsics.h>
 #include <datatypes/bitmap.h>
-#include <mm/distributed_mem.h>
+#include <distributed/distributed_mem.h>
 
 #include <assert.h>
 #include <stdalign.h>

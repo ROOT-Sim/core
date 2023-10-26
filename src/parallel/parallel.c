@@ -12,12 +12,12 @@
 #include <core/core.h>
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
+#include <distributed/distributed_mem.h>
 #include <distributed/mpi.h>
 #include <gvt/fossil.h>
 #include <gvt/gvt.h>
 #include <gvt/termination.h>
 #include <log/stats.h>
-#include <mm/distributed_mem.h>
 #include <mm/msg_allocator.h>
 
 static void worker_thread_init(tid_t this_tid)

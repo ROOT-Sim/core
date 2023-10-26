@@ -1,4 +1,4 @@
-#include <mm/distributed_mem.h>
+#include <distributed//distributed_mem.h>
 
 #include <arch/mem.h>
 #include <core/core.h>

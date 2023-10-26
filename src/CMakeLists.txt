@@ -9,6 +9,7 @@ set(rscore_srcs
         core/sync.c
         datatypes/msg_queue.c
         distributed/control_msg.c
+        distributed/distributed_mem.c
         gvt/fossil.c
         gvt/gvt.c
         gvt/termination.c
@@ -22,7 +23,6 @@ set(rscore_srcs
         mm/buddy/ckpt.c
         mm/buddy/multi.c
         mm/auto_ckpt.c
-        mm/distributed_mem.c
         mm/msg_allocator.c
         parallel/parallel.c
         serial/serial.c)
