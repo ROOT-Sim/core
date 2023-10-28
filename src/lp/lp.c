@@ -102,7 +102,7 @@ void lp_init(void)
 
 	for(lp_id_t i = lid_node_first; i < lid_node_last; ++i) {
 		struct lp_ctx *lp = &lps[i];
-		if(atomic_load_explicit(&lp->rid, memory_order_relaxed) != tid)
+		if(lp->rid != tid)
 			continue;
 
 		lp->state_pointer = NULL;
@@ -121,7 +121,7 @@ void lp_fini(void)
 {
 	for(lp_id_t i = tid; i < global_config.lps; i += global_config.n_threads) {
 		struct lp_ctx *lp = &lps[i];
-		if(LP_RID_IS_NID(atomic_load_explicit(&lp->rid, memory_order_relaxed)))
+		if(LP_RID_IS_NID(lp->rid))
 			continue;
 
 		process_lp_fini(lp);
