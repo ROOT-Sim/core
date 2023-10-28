@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define DISTR_MEM_CHUNK_EXP 16
+#define DISTR_MEM_CHUNK_EXP 16U
 
 struct distr_mem_chunk {
 	alignas(1 << DISTR_MEM_CHUNK_EXP) unsigned char mem[1 << DISTR_MEM_CHUNK_EXP];

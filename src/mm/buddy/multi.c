@@ -9,19 +9,11 @@
 #include <mm/buddy/multi.h>
 
 #include <arch/timer.h>
-#include <core/intrinsics.h>
 #include <log/stats.h>
 #include <lp/lp.h>
-#include <mm/buddy/buddy.h>
 #include <mm/buddy/ckpt.h>
 
 #include <errno.h>
-
-#ifdef ROOTSIM_INCREMENTAL
-#define is_log_incremental(l) ((uintptr_t)(l).c & 0x1)
-#else
-#define is_log_incremental(l) false
-#endif
 
 void model_allocator_lp_init(struct mm_state *self)
 {
@@ -184,11 +176,6 @@ array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_cou
 	array_count_t log_i = array_count(self->logs) - 1;
 	array_count_t ref_i = array_get_at(self->logs, log_i).ref_i;
 	while(ref_i > tgt_ref_i) {
-		--log_i;
-		ref_i = array_get_at(self->logs, log_i).ref_i;
-	}
-
-	while(is_log_incremental(array_get_at(self->logs, log_i))) {
 		--log_i;
 		ref_i = array_get_at(self->logs, log_i).ref_i;
 	}

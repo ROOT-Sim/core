@@ -31,12 +31,6 @@ struct buddy_state {
 	/// The checkpointed binary tree representing the buddy system
 	/** the last char is actually unused */
 	uint8_t longest[1U << (B_TOTAL_EXP - B_BLOCK_EXP)];
-#ifdef ROOTSIM_INCREMENTAL
-	/// Keeps track of memory blocks of the allocation tree which have been dirtied by a write
-	block_bitmap dirty_longest[bitmap_required_size(1U << (B_TOTAL_EXP - 2 * B_BLOCK_EXP))];
-	/// Keeps track of memory blocks of the memory buffer given to the model which have been dirtied by a write
-	block_bitmap dirty_chunk[bitmap_required_size(1U << (B_TOTAL_EXP - B_BLOCK_EXP))];
-#endif
 };
 
 extern void buddy_init(struct buddy_state *self);
@@ -52,4 +46,3 @@ struct buddy_realloc_res {
 	};
 };
 extern struct buddy_realloc_res buddy_best_effort_realloc(void *ptr, size_t req_size);
-extern void buddy_dirty_mark(const void *ptr, size_t s);

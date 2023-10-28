@@ -47,4 +47,3 @@ struct mm_state {
 	/// The total count of allocated bytes
 	uint_fast32_t full_ckpt_size;
 };
-
