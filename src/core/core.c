@@ -9,6 +9,7 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <core/core.h>
+#include <core/compiler.h>
 
 __thread rid_t rid;
 nid_t n_nodes = 1;
