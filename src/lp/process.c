@@ -223,7 +223,7 @@ static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_ms
 	simtime_t m_time = a_msg->dest_t;
 
 	for(struct pes_entry e = array_get_at(lp->p.pes, --i); pes_entry_msg_received(e)->dest_t >= m_time;) {
-		if(pes_entry_msg_received(e)->raw_flags == m_id || pes_entry_msg_received(e)->m_seq == m_seq) {
+		if(pes_entry_msg_received(e)->raw_flags == m_id && pes_entry_msg_received(e)->m_seq == m_seq) {
 			while(i) {
 				if(pes_entry_is_received(array_get_at(lp->p.pes, --i))) {
 					i++;
@@ -237,8 +237,11 @@ static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_ms
 			return;
 		}
 
-		while(!pes_entry_is_received(e))
+		do {
+			if(unlikely(i == 0))
+				goto insert_early_anti;
 			e = array_get_at(lp->p.pes, --i);
+		} while(!pes_entry_is_received(e));
 	}
 
 insert_early_anti:
