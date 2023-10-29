@@ -22,6 +22,7 @@ set(rscore_srcs
         mm/buddy/buddy.c
         mm/buddy/ckpt.c
         mm/buddy/multi.c
+        mm/buddy/reverse.c
         mm/auto_ckpt.c
         mm/msg_allocator.c
         parallel/parallel.c

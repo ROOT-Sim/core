@@ -9,6 +9,7 @@
 #include <mm/buddy/buddy.h>
 
 #include <core/core.h>
+#include <mm/buddy/reverse.h>
 
 #define is_power_of_2(i) (!((i) & ((i) - 1U)))
 
@@ -38,14 +39,15 @@ void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp)
 	uint_fast8_t node_size = B_TOTAL_EXP; // i = z - 1  z = i + 1
 	uint_fast32_t i = 1;
 	while(node_size > req_blks_exp) {
-		i = (i << 1U) + ((self->longest[i] >> 4U) + B_BLOCK_EXP - 1 < req_blks_exp);
 		/* choose the child with smaller longest value which is still large at least *size* */
+		i = (i << 1) + ((self->longest[i] >> 4) + B_BLOCK_EXP - 1U < req_blks_exp);
 		--node_size;
 	}
+
+	//reverse_allocator_operation_register(self, i);
 	self->longest[i >> 1U] &= i & 1U ? 0xf0 : 0x0f;
 
-
-	unsigned char * ret = self->chunk->mem + (i << node_size) - (1 << B_TOTAL_EXP);
+	unsigned char *ret = self->chunk->mem + (i << node_size) - (1 << B_TOTAL_EXP);
 
 	for(i >>= 1; i; i >>= 1) {
 		uint_fast8_t c = max(self->longest[i] & 0x0f, self->longest[i] >> 4U);
@@ -69,6 +71,7 @@ uint_fast32_t buddy_free(void *ptr)
 	for(; self->longest[i >> 1U] & (i & 1U ? 0x0f : 0xf0); i >>= 1U)
 		++node_size;
 
+	//reverse_allocator_operation_register(self, i);
 	self->longest[i >> 1U] |= i & 1U ? node_size : node_size << 4U;
 	uint_fast32_t ret = (uint_fast32_t)1U << (node_size + B_BLOCK_EXP - 1);
 
@@ -119,4 +122,36 @@ struct buddy_realloc_res buddy_best_effort_realloc(void *ptr, size_t req_size)
 	}
 
 	return ret;
+}
+
+void buddy_operation_reverse(struct buddy_state *self, uint_fast16_t i)
+{
+	// TODO: avoid duplicating code from buddy_malloc() and buddy_free()
+	if(self->longest[i >> 1] & (i & 1 ? 0xf0 : 0x0f)) {
+		self->longest[i >> 1] &= i & 1 ? 0xf0 : 0x0f;
+
+		for(i >>= 1; i; i >>= 1) {
+			uint_fast8_t c = max(self->longest[i] & 0x0f, self->longest[i] >> 4);
+			uint_fast8_t d = self->longest[i >> 1];
+			self->longest[i >> 1] = i & 1 ? (d & 0xf0) | c : (d & 0x0f) | (c << 4);
+		}
+	} else {
+		uint_fast8_t node_size = intrinsics_clz(i) + 2 + B_TOTAL_EXP - B_BLOCK_EXP - sizeof(i) * CHAR_BIT;
+		self->longest[i >> 1] |= i & 1 ? node_size : node_size << 4;
+
+		for(i >>= 1; i; i >>= 1) {
+			uint_fast8_t left_long = self->longest[i] & 0x0f;
+			uint_fast8_t right_long = self->longest[i] >> 4;
+
+			uint_fast8_t c;
+			if(left_long == node_size && right_long == node_size)
+				c = node_size + 1;
+			else
+				c = max(left_long, right_long);
+
+			uint_fast8_t d = self->longest[i >> 1];
+			self->longest[i >> 1] = i & 1 ? (d & 0xf0) | c : (d & 0x0f) | (c << 4);
+			++node_size;
+		}
+	}
 }

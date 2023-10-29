@@ -36,6 +36,7 @@ struct buddy_state {
 extern void buddy_init(struct buddy_state *self);
 extern void buddy_fini(struct buddy_state *self);
 extern void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp);
+extern void buddy_operation_reverse(struct buddy_state *self, uint_fast16_t info);
 extern uint_fast32_t buddy_free(void *ptr);
 
 struct buddy_realloc_res {
