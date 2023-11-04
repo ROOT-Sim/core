@@ -105,14 +105,15 @@ static inline void silent_execution(const struct lp_ctx *lp, array_count_t last_
 
 	void *state_p = lp->state_pointer;
 	do {
-		struct pes_entry e = array_get_at(lp->p.pes, last_i);
-		while(!pes_entry_is_received(e))
-			e = array_get_at(lp->p.pes, ++last_i);
+		struct pes_entry e;
+		do {
+			e = array_get_at(lp->p.pes, last_i++);
+		} while(!pes_entry_is_received(e));
 
 		const struct lp_msg *msg = pes_entry_msg_received(e);
 		global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, state_p);
 		stats_take(STATS_MSG_SILENT, 1);
-	} while(++last_i < past_i);
+	} while(last_i < past_i);
 
 	silent_processing = false;
 	stats_take(STATS_MSG_SILENT_TIME, timer_hr_value(t));
