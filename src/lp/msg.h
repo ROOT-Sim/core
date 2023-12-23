@@ -53,7 +53,7 @@
  * @brief Get the size of the a anti-message data, i.e. the part of the anti-message to be transmitted over MPI
  * @return the size in bytes of the anti-message data
  */
-#define msg_remote_anti_size() (offsetof(struct lp_msg, m_seq) - msg_preamble_size() + sizeof(uint32_t))
+#define msg_remote_anti_size() (offsetof(struct lp_msg, m_type) - msg_preamble_size())
 
 /// A model simulation message
 struct lp_msg {
@@ -69,14 +69,14 @@ struct lp_msg {
 		/// The message unique id, used for inter-node anti messages
 		uint32_t raw_flags;
 	};
+	/// The message sequence number
+	uint32_t m_seq;
 #ifndef NDEBUG
 	/// The sender of the message
 	lp_id_t send;
 	/// The send time of the message
 	simtime_t send_t;
 #endif
-	/// The message sequence number
-	uint32_t m_seq;
 	/// The message type, a user controlled field
 	uint32_t m_type;
 	/// The message payload size
@@ -102,9 +102,6 @@ enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
  */
 static inline bool msg_is_before_extended(const struct lp_msg *restrict a, const struct lp_msg *restrict b)
 {
-	if ((a->raw_flags & MSG_FLAG_ANTI) != (b->raw_flags & MSG_FLAG_ANTI))
-		return (a->raw_flags & MSG_FLAG_ANTI) > (b->raw_flags & MSG_FLAG_ANTI);
-
 	if (a->m_type != b->m_type)
 		return a->m_type > b->m_type;
 

@@ -52,10 +52,10 @@
 
 #ifdef __POSIX
 #include <sched.h>
-#include <unistd.h>
 
 #ifdef __MACOS
 #include <mach/thread_act.h>
+#include <unistd.h>
 
 int thread_affinity_set(thr_id_t thr, unsigned core)
 {
@@ -63,6 +63,12 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 	thread_port_t mach_thread = pthread_mach_thread_np(thr);
 	kern_return_t ret = thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
 	return -(ret != KERN_SUCCESS);
+}
+
+unsigned thread_cores_count(void)
+{
+	long ret = sysconf(_SC_NPROCESSORS_ONLN);
+	return ret < 1 ? 1 : (unsigned)ret;
 }
 
 #else
@@ -87,13 +93,19 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 	return -1;
 }
 
-#endif
-
 unsigned thread_cores_count(void)
 {
-	long ret = sysconf(_SC_NPROCESSORS_ONLN);
-	return ret < 1 ? 1 : (unsigned)ret;
+	cpu_set_t cpuset;
+	sched_getaffinity(0, sizeof(cpuset), &cpuset);
+
+	unsigned cores = 0;
+	for(long i = 0; i < CPU_SETSIZE; ++i)
+		cores += CPU_ISSET(i, &cpuset) != 0;
+
+	return cores < 1 ? 1 : cores;
 }
+
+#endif
 
 int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 {

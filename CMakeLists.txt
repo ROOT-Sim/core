@@ -26,11 +26,15 @@ endif()
 
 find_package(Threads REQUIRED)
 find_package(Python3 3.6 REQUIRED)
-if(NOT DISABLE_MPI)
-    find_package(MPI REQUIRED)
+if(DEFINED WITH_MPI)
+    if(WITH_MPI)
+        find_package(MPI REQUIRED)
+    endif()
+else()
+    find_package(MPI)
 endif()
 
-add_compile_options(-Wall -Wextra -pedantic)
+add_compile_options(-Wall -Wextra -pedantic -fmacro-prefix-map=${CMAKE_SOURCE_DIR}=)
 
 include(CheckLibraryExists)
 CHECK_LIBRARY_EXISTS(m exp "" HAVE_LIB_M)
