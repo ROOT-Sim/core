@@ -55,6 +55,12 @@ void ScheduleRetractableEvent(simtime_t timestamp)
 	*current_lp->retractable_ctx = timestamp;
 }
 
+void retractable_post_silent(const struct lp_ctx *lp, simtime_t now)
+{
+	if(*lp->retractable_ctx <= now) // leq because retractable msgs have the precedence
+		*lp->retractable_ctx = SIMTIME_MAX;
+}
+
 struct lp_msg *retractable_extract(void)
 {
 	struct rq_elem rq = rheap_min(r_queue);
@@ -62,11 +68,6 @@ struct lp_msg *retractable_extract(void)
 	struct lp_msg *ret = msg_allocator_pack(rq.lp - lps, rq.t, LP_RETRACTABLE, NULL, 0);
 	ret->raw_flags = 0;
 	return ret;
-}
-
-simtime_t retractable_min_t(void)
-{
-	return rheap_min(r_queue).t;
 }
 
 bool retractable_is_before(simtime_t normal_t)

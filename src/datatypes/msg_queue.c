@@ -124,25 +124,6 @@ struct lp_msg *msg_queue_extract(void)
 }
 
 /**
- * @brief Peeks the timestamp of the next message from the queue
- * @returns the lowest timestamp of the next message to be processed or SIMTIME_MAX is there's no message to process
- *
- * This returns the lowest timestamp of the next message to be processed for the current thread. This is calculated in a
- * precise fashion since this value is used in the gvt calculation.
- */
-simtime_t msg_queue_time_peek(void)
-{
-	msg_queue_insert_queued();
-
-#ifdef ROOTSIM_RETRACTABLE
-	simtime_t qt = likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
-	return min(retractable_min_t(), qt);
-#else
-	return likely(heap_count(mqp)) ? heap_min(mqp).t : SIMTIME_MAX;
-#endif
-}
-
-/**
  * @brief Inserts a message in the queue
  * @param msg the message to insert in the queue
  */
