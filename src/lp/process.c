@@ -146,8 +146,9 @@ static inline void silent_execution(const struct lp_ctx *lp, array_count_t last_
 	silent_processing = true;
 
 	void *state_p = lp->state_pointer;
+	const struct lp_msg *msg;
 	do {
-		const struct lp_msg *msg = array_get_at(lp->p.p_msgs, last_i);
+		msg = array_get_at(lp->p.p_msgs, last_i);
 		while(is_msg_sent(msg))
 			msg = array_get_at(lp->p.p_msgs, ++last_i);
 
@@ -155,6 +156,7 @@ static inline void silent_execution(const struct lp_ctx *lp, array_count_t last_
 		stats_take(STATS_MSG_SILENT, 1);
 	} while(++last_i < past_i);
 
+	retractable_post_silent(lp, msg->dest_t);
 	silent_processing = false;
 	stats_take(STATS_MSG_SILENT_TIME, timer_hr_value(t));
 }
