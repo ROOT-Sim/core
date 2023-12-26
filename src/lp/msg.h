@@ -63,14 +63,20 @@ struct lp_msg {
 	lp_id_t dest;
 	/// The intended destination logical time of this message
 	simtime_t dest_t;
+	/**
+	 * From the lowest significant bit:
+	 * 2 bits for the message state machine (MSG_FLAGS_ANTI and MSG_FLAGS_PROCESSED)
+	 * 1 bit for the actual GVT phase
+	 * MAX_NODES_BITS for the id of the generating node
+	 * MAX_THREADS_BITS for the id of the generating thread
+	 * the others (60 - MAX_NODES_BITS - MAX_THREADS_BITS) for the progressive counter
+	 */
 	union {
 		/// The flags to handle local anti messages
-		_Atomic uint32_t flags;
+		_Atomic uint64_t flags;
 		/// The message unique id, used for inter-node anti messages
-		uint32_t raw_flags;
+		uint64_t raw_flags;
 	};
-	/// The message sequence number
-	uint32_t m_seq;
 #ifndef NDEBUG
 	/// The sender of the message
 	lp_id_t send;
