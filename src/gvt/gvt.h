@@ -30,8 +30,11 @@ extern void gvt_msg_drain(void);
  */
 static inline void gvt_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
-	msg->m_seq = (remote_msg_seq[gvt_phase][dest_nid]++ << 1) | gvt_phase;
-	msg->raw_flags = (nid << (MAX_THREADS_EXP + 2)) | ((rid + 1) << 2) | gvt_phase;
+	msg->raw_flags =
+	    (gvt_phase << 2) |
+	    ((nid + 1) << 3) |
+	    (rid << (3 + MAX_NODES_BITS)) |
+	    ((uint64_t)remote_msg_seq[gvt_phase][dest_nid]++ << (3 + MAX_NODES_BITS + MAX_THREADS_BITS));
 }
 
 /**
@@ -42,7 +45,7 @@ static inline void gvt_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
 static inline void gvt_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 {
 	++remote_msg_seq[gvt_phase][dest_nid];
-	msg->raw_flags |= gvt_phase << 1U;
+	msg->raw_flags |= gvt_phase;
 }
 
 /**
@@ -51,8 +54,8 @@ static inline void gvt_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
  */
 static inline void gvt_remote_msg_receive(struct lp_msg *msg)
 {
-	++remote_msg_received[msg->raw_flags & 1U];
-	msg->raw_flags &= ~((uint32_t)3U);
+	++remote_msg_received[(msg->raw_flags >> 2U) & 1U];
+	msg->raw_flags &= ~((uint64_t)3U);
 }
 
 /**
@@ -61,7 +64,6 @@ static inline void gvt_remote_msg_receive(struct lp_msg *msg)
  */
 static inline void gvt_remote_anti_msg_receive(struct lp_msg *msg)
 {
-	++remote_msg_received[(msg->raw_flags >> 1U) & 1U];
-	msg->raw_flags &= ~((uint32_t)3U);
+	++remote_msg_received[msg->raw_flags & 1U];
 	msg->raw_flags |= MSG_FLAG_ANTI;
 }
