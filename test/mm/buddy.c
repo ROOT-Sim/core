@@ -54,7 +54,6 @@ static int block_size_test(struct mm_state *mm, unsigned b_exp)
 	}
 	write_allocations(allocations, allocations_cnt, block_size, &b_rng);
 
-	model_allocator_checkpoint_next_force_full(mm);
 	model_allocator_checkpoint_take(mm, 0);
 	b_chk = b_rng;
 

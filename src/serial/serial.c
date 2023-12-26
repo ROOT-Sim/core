@@ -29,7 +29,6 @@ static void serial_simulation_init(void)
 	heap_init(queue);
 
 	lps = mm_alloc(sizeof(*lps) * global_config.lps);
-	memset(lps, 0, sizeof(*lps) * global_config.lps);
 
 	n_lps_node = global_config.lps;
 
@@ -37,17 +36,11 @@ static void serial_simulation_init(void)
 		struct lp_ctx *lp = &lps[i];
 
 		model_allocator_lp_init(&lp->mm_state);
-
-		current_lp = lp;
-
 		lp->state_pointer = NULL;
 
+		current_lp = lp;
 		struct lp_msg *msg = common_msg_pack(i, 0.0, LP_INIT, NULL, 0);
-		heap_insert(queue, msg_is_before, msg);
-
 		common_msg_process(lp, msg);
-
-		msg_allocator_free(heap_extract(queue, msg_is_before));
 	}
 }
 

@@ -22,8 +22,6 @@
 #define MAX_ALLOC_STEP 50
 #define ALLOC_OSCILLATIONS 100
 
-#define FULL_CHK_P 0.2
-
 #define MAX_ALLOC_E (MAX_ALLOC_S / sizeof(unsigned))
 
 
@@ -143,9 +141,6 @@ static bool allocation_cycle(struct mm_state *mm, struct alc *alc, unsigned c, u
 		if(allocation_check(alc, i)) {
 			return true;
 		}
-		if(test_random_double() < FULL_CHK_P) {
-			model_allocator_checkpoint_next_force_full(mm);
-		}
 		model_allocator_checkpoint_take(mm, i);
 	}
 
@@ -178,7 +173,6 @@ int model_allocator_test_hard(_unused void *_)
 
 	struct alc *alc = allocation_all_init();
 
-	model_allocator_checkpoint_next_force_full(&lp->mm_state);
 	model_allocator_checkpoint_take(&lp->mm_state, 0);
 
 	if(allocation_check(alc, 0)) {

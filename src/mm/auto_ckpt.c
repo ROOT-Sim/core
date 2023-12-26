@@ -11,7 +11,6 @@
 #include <mm/auto_ckpt.h>
 
 #include <log/stats.h>
-#include <lp/process.h>
 
 #include <math.h>
 
@@ -72,9 +71,11 @@ void auto_ckpt_on_gvt(void)
  */
 void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 {
-	memset(auto_ckpt, 0, sizeof(*auto_ckpt));
-	auto_ckpt->ckpt_interval = global_config.ckpt_interval ? global_config.ckpt_interval : 256;
 	auto_ckpt->inv_bad_p = 64.0f;
+	auto_ckpt->ckpt_interval = global_config.ckpt_interval ? global_config.ckpt_interval : 256;
+	auto_ckpt->ckpt_rem = auto_ckpt->ckpt_interval; // forces a checkpoint after the first event
+	auto_ckpt->m_bad = 0;
+	auto_ckpt->m_good = 0;
 }
 
 /**
