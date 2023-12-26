@@ -54,16 +54,10 @@ void process_lp_init(struct lp_ctx *lp)
 {
 	array_init(lp->p.pes);
 	lp->p.early_antis = NULL;
-
+	lp->p.bound = -1.0;
 	struct lp_msg *msg = common_msg_pack(lp - lps, 0, LP_INIT, NULL, 0U);
-	msg->raw_flags = MSG_FLAG_PROCESSED;
-
-	current_lp = lp;
-	common_msg_process(lp, msg);
-	lp->p.bound = 0.0;
-	array_push(lp->p.pes, pes_entry_make(msg, PES_ENTRY_RECEIVED));
-	model_allocator_checkpoint_next_force_full(&lp->mm_state);
-	model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.pes));
+	msg->raw_flags = 0;
+	process_msg(msg);
 }
 
 /**

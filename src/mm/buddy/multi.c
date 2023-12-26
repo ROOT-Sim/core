@@ -139,12 +139,6 @@ void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i)
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 }
 
-void model_allocator_checkpoint_next_force_full(struct mm_state *self)
-{
-	(void)self;
-	// TODO: force full checkpointing when incremental state saving is enabled
-}
-
 array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_count_t ref_i)
 {
 	array_count_t i = array_count(self->logs) - 1;
