@@ -52,14 +52,14 @@
 /// The maximum value of the logical simulation time, semantically never
 #define SIMTIME_MAX DBL_MAX
 
-/// The maximum number of supported MPI nodes
-/** FIXME: this is used very limitedly. Consider its removal */
-#define MAX_NODES (1 << 16)
-/// The maximum number of supported threads
-/** FIXME: this is used very limitedly. Consider its removal */
-#define MAX_THREADS_EXP 12
-/// Maximum number of threads that can be supported
-#define MAX_THREADS (1 << MAX_THREADS_EXP)
+/// The bits needed to express the maximum number of supported MPI ranks
+#define MAX_NODES_BITS 16
+/// The maximum number of supported MPI ranks
+#define MAX_NODES ((1 << MAX_NODES_BITS) / 1)
+/// The bits needed to express the maximum number of supported threads
+#define MAX_THREADS_BITS 12
+/// Maximum number of supported threads
+#define MAX_THREADS (1 << MAX_THREADS_BITS)
 
 /// Used to identify a thread inside an MPI rank
 typedef unsigned tid_t;

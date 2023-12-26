@@ -41,7 +41,7 @@ void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned e
 		mpi_remote_msg_send(msg, LP_RID_TO_NID(rid));
 		array_push(current_lp->p.pes, pes_entry_make(msg, PES_ENTRY_SENT_REMOTE));
 	} else {
-		atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
+		msg->raw_flags = 0U;
 		msg_queue_insert(msg, rid);
 		array_push(current_lp->p.pes, pes_entry_make(msg, PES_ENTRY_SENT_LOCAL));
 	}
@@ -131,7 +131,7 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 				mpi_remote_anti_msg_send(msg, LP_RID_TO_NID(rid));
 				msg_allocator_free_at_gvt(msg);
 			} else {
-				uint32_t f = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
+				uint64_t f = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
 				if(f & MSG_FLAG_PROCESSED)
 					msg_queue_insert(msg, rid);
 			}
@@ -140,7 +140,7 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 			e = array_get_at(proc_p->pes, ++i);
 		}
 
-		uint32_t f = atomic_fetch_add_explicit(&pes_entry_msg_received(e)->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
+		uint64_t f = atomic_fetch_add_explicit(&pes_entry_msg_received(e)->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(f & MSG_FLAG_ANTI))
 			msg_queue_insert_self(pes_entry_msg_received(e));
 		stats_take(STATS_MSG_ROLLBACK, 1);
@@ -208,17 +208,15 @@ static inline array_count_t match_anti_msg(const struct process_ctx *proc_p, con
 static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_msg)
 {
 	// Simplifies flags-based matching, also useful in the early remote anti-messages matching
-	a_msg->raw_flags -= MSG_FLAG_ANTI;
+	uint64_t m_id = a_msg->raw_flags -= MSG_FLAG_ANTI;
 
 	array_count_t i = array_count(lp->p.pes);
 	if(unlikely(i == 0))
 		goto insert_early_anti;
 
-	uint32_t m_id = a_msg->raw_flags, m_seq = a_msg->m_seq;
 	simtime_t m_time = a_msg->dest_t;
-
-	for(struct pes_entry e = array_get_at(lp->p.pes, --i); pes_entry_msg_received(e)->dest_t >= m_time;) {
-		if(pes_entry_msg_received(e)->raw_flags == m_id && pes_entry_msg_received(e)->m_seq == m_seq) {
+	for(struct pes_entry e = array_get_at(lp->p.pes, --i); likely(pes_entry_msg_received(e)->dest_t >= m_time);) {
+		if(pes_entry_msg_received(e)->raw_flags == m_id) {
 			while(i) {
 				if(pes_entry_is_received(array_get_at(lp->p.pes, --i))) {
 					i++;
@@ -252,11 +250,11 @@ insert_early_anti:
  */
 static inline bool check_early_anti_messages(struct process_ctx *proc_p, struct lp_msg *msg)
 {
-	uint32_t m_id = msg->raw_flags, m_seq = msg->m_seq;
+	uint64_t m_id = msg->raw_flags;
 	struct lp_msg **prev_p = &proc_p->early_antis;
 	struct lp_msg *a_msg = *prev_p;
 	do {
-		if(a_msg->raw_flags == m_id && a_msg->m_seq == m_seq) {
+		if(a_msg->raw_flags == m_id) {
 			*prev_p = a_msg->next;
 			msg_allocator_free(msg);
 			msg_allocator_free(a_msg);
@@ -274,7 +272,7 @@ static inline bool check_early_anti_messages(struct process_ctx *proc_p, struct 
  * @param msg the received anti-message
  * @param last_flags the original value of the message flags before being modified by the current process_msg() call
  */
-static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint32_t last_flags)
+static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint64_t last_flags)
 {
 	if(last_flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 		handle_remote_anti_msg(lp, msg);
@@ -307,14 +305,9 @@ void process_msg(struct lp_msg *msg)
 	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *lp = &lps[msg->dest];
-	if(unlikely(lp->rid != tid)) {
-		// TODO: reschedule message
-		return;
-	}
-
 	current_lp = lp;
 
-	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
+	uint64_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
 		handle_anti_msg(lp, msg, flags);
 		lp->p.bound = unlikely(array_is_empty(lp->p.pes)) ? -1.0 : lp->p.bound;
