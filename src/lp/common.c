@@ -6,8 +6,8 @@
 __thread const struct lp_msg *current_msg;
 #endif
 
-void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
-    unsigned payload_size)
+__attribute__((hot)) void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type,
+    const void *payload, unsigned payload_size)
 {
 #ifndef NDEBUG
 	if(unlikely(event_type >= LP_INIT)) {

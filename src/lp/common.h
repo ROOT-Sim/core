@@ -41,8 +41,8 @@ static inline void common_msg_process(const struct lp_ctx *lp, const struct lp_m
  * @param payload_size the size in bytes of the payload to copy into the message
  * @return a new populated message
  */
-static inline struct lp_msg *common_msg_pack(lp_id_t receiver, simtime_t timestamp, unsigned event_type,
-    const void *payload, unsigned payload_size)
+__attribute__((hot)) static inline struct lp_msg *common_msg_pack(lp_id_t receiver, simtime_t timestamp,
+    unsigned event_type, const void *payload, unsigned payload_size)
 {
 	struct lp_msg *msg = msg_allocator_alloc(payload_size);
 

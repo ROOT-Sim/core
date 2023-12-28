@@ -28,8 +28,8 @@
 /// The flag used in ScheduleNewEvent() to keep track of silent execution
 static __thread bool silent_processing = false;
 
-void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
-    unsigned payload_size)
+__attribute__((hot)) void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned event_type,
+    const void *payload, unsigned payload_size)
 {
 	if(unlikely(silent_processing))
 		return;
@@ -300,7 +300,7 @@ static void handle_straggler_msg(struct lp_ctx *lp, struct lp_msg *msg)
  *
  * This function encloses most of the actual parallel/distributed simulation logic.
  */
-void process_msg(struct lp_msg *msg)
+__attribute__((hot)) void process_msg(struct lp_msg *msg)
 {
 	gvt_on_msg_extraction(msg->dest_t);
 
