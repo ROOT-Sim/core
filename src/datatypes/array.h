@@ -24,7 +24,7 @@ typedef uint_least32_t array_count_t;
  * @brief Declares a dynamic array
  * @param type The type of the contained elements
  */
-#define array_declare(type)                                                                                                \
+#define array_declare(type)                                                                                            \
 	struct {                                                                                                       \
 		type *items;                                                                                           \
 		array_count_t count;                                                                                   \
@@ -209,7 +209,7 @@ typedef uint_least32_t array_count_t;
  */
 #define array_expand(self)                                                                                             \
 	__extension__({                                                                                                \
-                bool expanded = false;                                                                                 \
+		bool expanded = false;                                                                                 \
 		if(unlikely(array_count(self) >= array_capacity(self))) {                                              \
 			array_capacity(self) *= 2;                                                                     \
 			array_items(self) =                                                                            \
@@ -226,3 +226,23 @@ typedef uint_least32_t array_count_t;
  */
 #define array_lazy_remove_at(self, i)                                                                                  \
 	__extension__({ array_items(self)[(i)] = array_items(self)[--array_count(self)]; })
+
+/**
+ * @brief Clear an array
+ * @param self The dynamic array to clear
+ */
+#define array_clear(self) __extension__({ array_count(self) = 0; })
+
+/**
+ * @brief Push the elements of another array to the end
+ * @param self The dynamic array to insert elements to
+ * @param other The dynamic array to insert elements from
+ */
+#define array_extend(self, other)                                                                                      \
+	__extension__({                                                                                                \
+		_Static_assert(sizeof(*array_items(self)) == sizeof(*array_items(other)));                             \
+		array_count_t c = array_count(other);                                                                  \
+		array_reserve(self, c);                                                                                \
+		memcpy(array_items(self) + array_count(self), array_items(other), sizeof(*array_items(other)) * c);    \
+		array_count(self) += c;                                                                                \
+	})

@@ -75,7 +75,7 @@
 	__extension__({                                                                                                \
 		array_expand(self);                                                                                    \
 		__typeof(array_count(self)) i = array_count(self)++;                                                   \
-		__typeof__(array_items(self)) items = array_items(self);                                               \
+		__typeof(array_items(self)) items = array_items(self);                                               \
 		while(i && cmp_f(elem, items[(i - 1U) / 2U])) {                                                        \
 			items[i] = items[(i - 1U) / 2U];                                                               \
 			i = (i - 1U) / 2U;                                                                             \
@@ -98,7 +98,7 @@
 	__extension__({                                                                                                \
 		array_reserve(self, n);                                                                                \
 		__typeof(array_count(self)) j = n;                                                                     \
-		__typeof__(array_items(self)) items = array_items(self);                                               \
+		__typeof(array_items(self)) items = array_items(self);                                               \
 		while(j--) {                                                                                           \
 			__typeof(array_count(self)) i = array_count(self)++;                                           \
 			while(i && cmp_f((ins)[j], items[(i - 1U) / 2U])) {                                            \
@@ -119,7 +119,7 @@
  */
 #define heap_extract(self, cmp_f)                                                                                      \
 	__extension__({                                                                                                \
-		__typeof__(array_items(self)) items = array_items(self);                                               \
+		__typeof(array_items(self)) items = array_items(self);                                               \
 		__typeof(*array_items(self)) ret = array_items(self)[0];                                               \
 		__typeof(*array_items(self)) last = array_pop(self);                                                   \
 		__typeof(array_count(self)) cnt = array_count(self);                                                   \

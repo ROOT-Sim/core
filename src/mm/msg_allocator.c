@@ -10,19 +10,29 @@
  */
 #include <mm/msg_allocator.h>
 
-#include <core/core.h>
 #include <datatypes/array.h>
 #include <gvt/gvt.h>
 
-static __thread array_declare(struct lp_msg *) free_list = {0};
-static __thread array_declare(struct lp_msg *) at_gvt_list = {0};
+#define MSG_ARRAY_FREE(msg_array)                                                                                      \
+	__extension__({                                                                                                \
+		for(array_count_t i = 0; i < array_count(msg_array); ++i)                                              \
+			mm_free(array_get_at(msg_array, i));                                                           \
+		array_fini(msg_array);                                                                                 \
+	})
+
+static __thread array_declare(struct lp_msg *) free_list;
+static __thread array_declare(struct lp_msg *) free_at_gvt[2];
+static __thread array_declare(struct lp_msg *) free_at_gvt_large[2];
 
 /**
  * @brief Initialize the message allocator thread-local data structures
  */
 void msg_allocator_init(void)
 {
-	array_init(at_gvt_list);
+	array_init_explicit(free_at_gvt_large[0], 4U);
+	array_init_explicit(free_at_gvt_large[1], 4U);
+	array_init(free_at_gvt[0]);
+	array_init(free_at_gvt[1]);
 	array_init(free_list);
 }
 
@@ -31,13 +41,11 @@ void msg_allocator_init(void)
  */
 void msg_allocator_fini(void)
 {
-	while(!array_is_empty(free_list))
-		mm_free(array_pop(free_list));
-	array_fini(free_list);
-
-	while(!array_is_empty(at_gvt_list))
-		mm_free(array_pop(at_gvt_list));
-	array_fini(at_gvt_list);
+	MSG_ARRAY_FREE(free_list);
+	MSG_ARRAY_FREE(free_at_gvt[1]);
+	MSG_ARRAY_FREE(free_at_gvt[0]);
+	MSG_ARRAY_FREE(free_at_gvt_large[1]);
+	MSG_ARRAY_FREE(free_at_gvt_large[0]);
 }
 
 /**
@@ -80,20 +88,23 @@ void msg_allocator_free(struct lp_msg *msg)
  */
 void msg_allocator_free_at_gvt(struct lp_msg *msg)
 {
-	array_push(at_gvt_list, msg);
+	if(likely(msg->pl_size <= MSG_PAYLOAD_BASE_SIZE))
+		array_push(free_at_gvt[gvt_phase], msg);
+	else
+		array_push(free_at_gvt_large[gvt_phase], msg);
 }
 
 /**
  * @brief Free the committed messages after a new GVT has been computed
  * @param current_gvt the latest value of the GVT
  */
-void msg_allocator_on_gvt(simtime_t current_gvt)
+void msg_allocator_on_gvt(void)
 {
-	for(array_count_t i = array_count(at_gvt_list); i-- > 0;) {
-		struct lp_msg *msg = array_get_at(at_gvt_list, i);
-		if(msg->dest_t < current_gvt) {
-			msg_allocator_free(msg);
-			array_lazy_remove_at(at_gvt_list, i);
-		}
-	}
+	_Bool phase = !gvt_phase;
+	for(array_count_t i = 0; i < array_count(free_at_gvt_large[phase]); ++i)
+		mm_free(array_get_at(free_at_gvt_large[phase], i));
+	array_clear(free_at_gvt_large[phase]);
+
+	array_extend(free_list, free_at_gvt[phase]);
+	array_clear(free_at_gvt[phase]);
 }

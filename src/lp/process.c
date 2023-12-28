@@ -127,7 +127,7 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 		while(!pes_entry_is_received(e)) {
 			struct lp_msg *msg = pes_entry_msg(e);
 			unsigned rid = lps[msg->dest].rid;
-			if(LP_RID_IS_NID(rid)) {
+			if(msg->raw_flags >> 2U) {
 				mpi_remote_anti_msg_send(msg, LP_RID_TO_NID(rid));
 				msg_allocator_free_at_gvt(msg);
 			} else {
