@@ -33,7 +33,7 @@ struct lp_ctx {
 	/// The message processing context of this LP
 	struct process_ctx p;
 	/// The memory allocator state of this LP
-	struct mm_state mm_state;
+	struct mm_ctx mm;
 };
 
 extern __thread struct lp_ctx *current_lp;

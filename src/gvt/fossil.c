@@ -46,7 +46,7 @@ void fossil_lp_collect(struct lp_ctx *lp)
 		} while(!pes_entry_is_received(e));
 	}
 
-	past_i = model_allocator_fossil_lp_collect(&lp->mm_state, past_i + 1);
+	past_i = model_allocator_fossil_lp_collect(&lp->mm, past_i + 1);
 
 	array_count_t k = past_i;
 	while(k--) {

@@ -15,13 +15,7 @@
 void buddy_init(struct buddy_state *self)
 {
 	self->chunk = distributed_mem_chunk_alloc(self);
-
-	uint_fast8_t node_size = B_TOTAL_EXP - B_BLOCK_EXP + 1;
-	self->longest[0] = node_size;
-	for(uint_fast32_t i = 1; i < sizeof(self->longest) / sizeof(*self->longest); ++i) {
-		node_size -= is_power_of_2(i);
-		self->longest[i] = node_size | node_size << 4;
-	}
+	buddy_reset(self);
 }
 
 void buddy_fini(struct buddy_state *self)
@@ -120,3 +114,14 @@ struct buddy_realloc_res buddy_best_effort_realloc(void *ptr, size_t req_size)
 
 	return ret;
 }
+
+void buddy_reset(struct buddy_state *self)
+{
+	uint_fast8_t node_size = B_TOTAL_EXP - B_BLOCK_EXP + 1;
+	self->longest[0] = node_size;
+	for(uint_fast32_t i = 1; i < sizeof(self->longest) / sizeof(*self->longest); ++i) {
+		node_size -= is_power_of_2(i);
+		self->longest[i] = node_size | node_size << 4;
+	}
+}
+

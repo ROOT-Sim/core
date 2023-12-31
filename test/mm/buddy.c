@@ -39,7 +39,7 @@ static int check_and_free_allocations(uint64_t **allocations, unsigned allocatio
 	return errs;
 }
 
-static int block_size_test(struct mm_state *mm, unsigned b_exp)
+static int block_size_test(struct mm_ctx *mm, unsigned b_exp)
 {
 	int errs = 0;
 	unsigned block_size = 1 << b_exp;
@@ -81,10 +81,10 @@ int model_allocator_test(_unused void *_)
 
 	struct lp_ctx *lp = test_lp_mock_get();
 	current_lp = lp;
-	model_allocator_lp_init(&lp->mm_state);
+	model_allocator_lp_init(&lp->mm);
 
 	for(unsigned j = B_BLOCK_EXP; j < B_TOTAL_EXP; ++j)
-		errs += block_size_test(&lp->mm_state, j);
+		errs += block_size_test(&lp->mm, j);
 
 	errs += rs_malloc(0) != NULL;
 	errs += rs_calloc(0, sizeof(uint64_t)) != NULL;
@@ -95,7 +95,7 @@ int model_allocator_test(_unused void *_)
 	errs += *mem != 0;
 	rs_free(mem);
 
-	model_allocator_lp_fini(&lp->mm_state);
+	model_allocator_lp_fini(&lp->mm);
 
 	return errs;
 }

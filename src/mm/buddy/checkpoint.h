@@ -17,6 +17,7 @@ struct buddy_checkpoint {
 	unsigned char base_mem[];
 };
 
+#define checkpoint_applies(self, data) ((data)->buddy.chunk == (self)->chunk)
 extern struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *data);
 extern const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *data);
 extern struct buddy_checkpoint *checkpoint_incremental_take(const struct buddy_state *self, struct buddy_checkpoint *data);

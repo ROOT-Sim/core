@@ -108,7 +108,7 @@ void lp_init(void)
 		lp->state_pointer = NULL;
 		lp->fossil_epoch = 0;
 
-		model_allocator_lp_init(&lp->mm_state);
+		model_allocator_lp_init(&lp->mm);
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init(lp);
 	}
@@ -125,7 +125,7 @@ void lp_fini(void)
 			continue;
 
 		process_lp_fini(lp);
-		model_allocator_lp_fini(&lp->mm_state);
+		model_allocator_lp_fini(&lp->mm);
 	}
 
 	current_lp = NULL;

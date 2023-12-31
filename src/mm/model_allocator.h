@@ -13,8 +13,8 @@
 #include <datatypes/array.h>
 #include <mm/buddy/multi.h>
 
-extern void model_allocator_lp_init(struct mm_state *self);
-extern void model_allocator_lp_fini(struct mm_state *self);
-extern void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i);
-extern array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_count_t ref_i);
-extern array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_count_t tgt_ref_i);
+extern void model_allocator_lp_init(struct mm_ctx *self);
+extern void model_allocator_lp_fini(struct mm_ctx *self);
+extern void model_allocator_checkpoint_take(struct mm_ctx *self, array_count_t ref_i);
+extern array_count_t model_allocator_checkpoint_restore(struct mm_ctx *self, array_count_t ref_i);
+extern array_count_t model_allocator_fossil_lp_collect(struct mm_ctx *self, array_count_t tgt_ref_i);
