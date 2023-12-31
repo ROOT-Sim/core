@@ -110,21 +110,22 @@
 	})
 
 /**
- * @brief Extract an element from the heap
+ * @brief Extract an element from the heap from a specific position
  * @param self the heap from where to extract the element
+ * @param pos the index of the element to extract
  * @param cmp_f a comparing function f(a, b) which returns true iff a < b
  * @returns the extracted element
  *
  * For correct operation of the heap you need to always pass the same @a cmp_f both for insertion and extraction
  */
-#define heap_extract(self, cmp_f)                                                                                      \
+#define heap_extract_from(self, pos, cmp_f)                                                                            \
 	__extension__({                                                                                                \
-		__typeof(array_items(self)) items = array_items(self);                                               \
+		__typeof(array_items(self)) items = array_items(self);                                                 \
 		__typeof(*array_items(self)) ret = array_items(self)[0];                                               \
 		__typeof(*array_items(self)) last = array_pop(self);                                                   \
 		__typeof(array_count(self)) cnt = array_count(self);                                                   \
-		__typeof(array_count(self)) i = 1U;                                                                    \
-		__typeof(array_count(self)) j = 0U;                                                                    \
+		__typeof(array_count(self)) j = pos;                                                                    \
+		__typeof(array_count(self)) i = j * 2U + 1U;                                                           \
 		while(i < cnt) {                                                                                       \
 			i += i + 1 < cnt && cmp_f(items[i + 1U], items[i]);                                            \
 			if(!cmp_f(items[i], last))                                                                     \
@@ -135,4 +136,18 @@
 		}                                                                                                      \
 		items[j] = last;                                                                                       \
 		ret;                                                                                                   \
+	})
+
+
+/**
+ * @brief Extract an element from the heap
+ * @param self the heap from where to extract the element
+ * @param cmp_f a comparing function f(a, b) which returns true iff a < b
+ * @returns the extracted element
+ *
+ * For correct operation of the heap you need to always pass the same @a cmp_f both for insertion and extraction
+ */
+#define heap_extract(self, cmp_f)                                                                                      \
+	__extension__({                                                                                                \
+		heap_extract_from(self, 0, cmp_f);                                                                     \
 	})
