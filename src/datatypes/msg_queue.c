@@ -141,3 +141,18 @@ void msg_queue_insert_self(struct lp_msg *msg)
 	struct q_elem qe = {.t = msg->dest_t, .m = msg};
 	heap_insert(mqp, q_elem_is_before, qe);
 }
+
+extern struct lp_msg **msg_queue_extract_all(lp_id_t lp_id, array_count_t *size)
+{
+	array_declare(struct lp_msg *) msgs;
+	array_init_explicit(msgs, 4U);
+	for(array_count_t k = heap_count(mqp); k-- > 0;) {
+		struct lp_msg *m = heap_items(mqp)[k].m;
+		if(m->dest == lp_id) {
+			array_push(msgs, m);
+			heap_extract_from(mqp, k, q_elem_is_before);
+		}
+	}
+	*size = array_count(msgs);
+	return array_items(msgs);
+}
