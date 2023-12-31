@@ -11,18 +11,18 @@
 #include <arch/timer.h>
 #include <log/stats.h>
 #include <lp/lp.h>
-#include <mm/buddy/ckpt.h>
+#include <mm/buddy/checkpoint.h>
 
 #include <errno.h>
 
-void model_allocator_lp_init(struct mm_state *self)
+void model_allocator_lp_init(struct mm_ctx *self)
 {
 	self->buddies = NULL;
 	array_init(self->logs);
 	self->full_ckpt_size = offsetof(struct mm_checkpoint, checkpoints) + sizeof(struct buddy_state *);
 }
 
-void model_allocator_lp_fini(struct mm_state *self)
+void model_allocator_lp_fini(struct mm_ctx *self)
 {
 	array_count_t i = array_count(self->logs);
 	while(i--)
@@ -51,7 +51,7 @@ void *rs_malloc(size_t req_size)
 		return NULL;
 	}
 
-	struct mm_state *self = &current_lp->mm_state;
+	struct mm_ctx *self = &current_lp->mm;
 	self->full_ckpt_size += 1 << req_blks_exp;
 
 	for(struct mm_buddy_list *l = self->buddies; l != NULL; l = l->next) {
@@ -87,7 +87,7 @@ void rs_free(void *ptr)
 	if(unlikely(!ptr))
 		return;
 
-	struct mm_state *self = &current_lp->mm_state;
+	struct mm_ctx *self = &current_lp->mm;
 	self->full_ckpt_size -= buddy_free(ptr);
 }
 
@@ -101,7 +101,7 @@ void *rs_realloc(void *ptr, size_t req_size)
 	if(!ptr)
 		return rs_malloc(req_size);
 
-	struct mm_state *self = &current_lp->mm_state;
+	struct mm_ctx *self = &current_lp->mm;
 	struct buddy_realloc_res ret = buddy_best_effort_realloc(ptr, req_size);
 	if(ret.handled) {
 		self->full_ckpt_size += ret.variation;
@@ -118,54 +118,59 @@ void *rs_realloc(void *ptr, size_t req_size)
 	return new_buffer;
 }
 
-// todo: incremental
-void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i)
+static inline void multi_checkpoint_take(const struct mm_ctx *self, struct mm_checkpoint *ckp)
 {
-	timer_uint t = timer_hr_new();
-
-	struct mm_checkpoint *ckp = mm_alloc(self->full_ckpt_size);
 	ckp->checkpoints_size = self->full_ckpt_size;
-
-	struct mm_log mm_log = {.ref_i = ref_i, .c = ckp};
-	array_push(self->logs, mm_log);
 
 	struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckp->checkpoints;
 	for(struct mm_buddy_list *l = self->buddies; l != NULL; l = l->next)
 		buddy_ckp = checkpoint_full_take(&l->buddy, buddy_ckp);
 	buddy_ckp->buddy.chunk = NULL;
+}
+
+static inline void multi_checkpoint_restore(struct mm_ctx *self, const struct mm_checkpoint *ckp)
+{
+	self->full_ckpt_size = ckp->checkpoints_size;
+	const struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckp->checkpoints;
+
+	for(struct mm_buddy_list *l = self->buddies; l != NULL; l = l->next) {
+		struct buddy_state *buddy = &l->buddy;
+		if(likely(checkpoint_applies(buddy, buddy_ckp)))
+			buddy_ckp = checkpoint_full_restore(buddy, buddy_ckp);
+		else {
+			buddy_reset(buddy);
+			self->full_ckpt_size += offsetof(struct buddy_checkpoint, base_mem);
+		}
+	}
+}
+
+// todo: incremental
+void model_allocator_checkpoint_take(struct mm_ctx *self, array_count_t ref_i)
+{
+	timer_uint t = timer_hr_new();
+
+	struct mm_checkpoint *ckp = mm_alloc(self->full_ckpt_size);
+	multi_checkpoint_take(self, ckp);
+	array_push(self->logs, ((struct mm_log){.ref_i = ref_i, .c = ckp}));
 
 	stats_take(STATS_CKPT_SIZE, self->full_ckpt_size);
 	stats_take(STATS_CKPT, 1);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 }
 
-array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_count_t ref_i)
+array_count_t model_allocator_checkpoint_restore(struct mm_ctx *self, array_count_t ref_i)
 {
 	array_count_t i = array_count(self->logs) - 1;
-	while(array_get_at(self->logs, i).ref_i > ref_i)
-		i--;
-
-	struct mm_checkpoint *ckp = array_get_at(self->logs, i).c;
-	self->full_ckpt_size = ckp->checkpoints_size;
-	const struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckp->checkpoints;
-
-	for(struct mm_buddy_list *l = self->buddies; l != NULL; l = l->next) {
-		const struct buddy_checkpoint *c = checkpoint_full_restore(&l->buddy, buddy_ckp);
-		if(unlikely(c == buddy_ckp)) {
-			buddy_init(&l->buddy);
-			self->full_ckpt_size += offsetof(struct buddy_checkpoint, base_mem);
-		}
-		buddy_ckp = c;
-	}
-
-	for(array_count_t j = array_count(self->logs) - 1; j > i; --j)
-		mm_free(array_get_at(self->logs, j).c);
-
+	struct mm_log log;
+	for(log = array_get_at(self->logs, i); log.ref_i > ref_i; log = array_get_at(self->logs, --i))
+		mm_free(log.c);
 	array_count(self->logs) = i + 1;
-	return array_get_at(self->logs, i).ref_i;
+
+	multi_checkpoint_restore(self, log.c);
+	return log.ref_i;
 }
 
-array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_count_t tgt_ref_i)
+array_count_t model_allocator_fossil_lp_collect(struct mm_ctx *self, array_count_t tgt_ref_i)
 {
 	array_count_t log_i = array_count(self->logs) - 1;
 	array_count_t ref_i = array_get_at(self->logs, log_i).ref_i;

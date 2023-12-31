@@ -20,7 +20,7 @@ set(rscore_srcs
         lp/lp.c
         lp/process.c
         mm/buddy/buddy.c
-        mm/buddy/ckpt.c
+        mm/buddy/checkpoint.c
         mm/buddy/multi.c
         mm/auto_ckpt.c
         mm/msg_allocator.c

@@ -157,7 +157,7 @@ static void do_rollback(struct lp_ctx *lp, array_count_t past_i)
 {
 	timer_uint t = timer_hr_new();
 	send_anti_messages(&lp->p, past_i);
-	array_count_t last_i = model_allocator_checkpoint_restore(&lp->mm_state, past_i);
+	array_count_t last_i = model_allocator_checkpoint_restore(&lp->mm, past_i);
 	stats_take(STATS_RECOVERY_TIME, timer_hr_value(t));
 	stats_take(STATS_ROLLBACK, 1);
 	silent_execution(lp, last_i, past_i);
@@ -321,7 +321,7 @@ __attribute__((hot)) void process_msg(struct lp_msg *msg)
 		handle_straggler_msg(lp, msg);
 
 	if(unlikely(fossil_is_needed(lp))) {
-		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.full_ckpt_size);
+		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm.full_ckpt_size);
 		fossil_lp_collect(lp);
 	}
 
@@ -331,5 +331,5 @@ __attribute__((hot)) void process_msg(struct lp_msg *msg)
 
 	auto_ckpt_register_good(&lp->auto_ckpt);
 	if(auto_ckpt_is_needed(&lp->auto_ckpt))
-		model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.pes));
+		model_allocator_checkpoint_take(&lp->mm, array_count(lp->p.pes));
 }

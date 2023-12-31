@@ -39,7 +39,7 @@ struct mm_buddy_list {
 };
 
 /// The checkpointable memory context assigned to a single LP
-struct mm_state {
+struct mm_ctx {
 	/// The array of pointers to the allocated buddy systems for the LP
 	struct mm_buddy_list *buddies;
 	/// The array of checkpoints

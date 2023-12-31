@@ -35,7 +35,7 @@ static void serial_simulation_init(void)
 	for(lp_id_t i = 0; i < global_config.lps; ++i) {
 		struct lp_ctx *lp = &lps[i];
 
-		model_allocator_lp_init(&lp->mm_state);
+		model_allocator_lp_init(&lp->mm);
 		lp->state_pointer = NULL;
 
 		current_lp = lp;
@@ -53,7 +53,7 @@ static void serial_simulation_fini(void)
 		struct lp_ctx *lp = &lps[i];
 		current_lp = lp;
 		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lp->state_pointer);
-		model_allocator_lp_fini(&lp->mm_state);
+		model_allocator_lp_fini(&lp->mm);
 	}
 
 	for(array_count_t i = 0; i < array_count(queue); ++i)

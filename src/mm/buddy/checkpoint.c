@@ -6,7 +6,7 @@
  * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <mm/buddy/ckpt.h>
+#include <mm/buddy/checkpoint.h>
 
 #include <core/core.h>
 
@@ -61,9 +61,6 @@ struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, st
 
 const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
 {
-	if(unlikely(ckp->buddy.chunk != self->chunk))
-		return ckp;
-
 	memcpy(self->longest, ckp->buddy.longest, sizeof(self->longest));
 
 #define buddy_block_copy_from_ckp(offset, len)                                                                         \
