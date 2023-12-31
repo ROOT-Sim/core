@@ -151,7 +151,7 @@ typedef uint_least32_t array_count_t;
  */
 #define array_remove_at(self, i)                                                                                       \
 	__extension__({                                                                                                \
-		__typeof__(*array_items(self)) __rmval;                                                                \
+		__typeof(*array_items(self)) __rmval;                                                                \
 		array_count(self)--;                                                                                   \
 		__rmval = array_items(self)[(i)];                                                                      \
 		memmove(&(array_items(self)[(i)]), &(array_items(self)[(i) + 1]),                                      \
@@ -175,7 +175,7 @@ typedef uint_least32_t array_count_t;
  * @brief Reduce the size of the dynamic array
  * @param self The target dynamic array
  *
- * The size of the dinamic array is halved if the number of elements is less than a third of the capacity.
+ * The size of the dynamic array is halved if the number of elements is less than a third of the capacity.
  */
 #define array_shrink(self)                                                                                             \
 	__extension__({                                                                                                \
@@ -193,7 +193,7 @@ typedef uint_least32_t array_count_t;
  */
 #define array_reserve(self, n)                                                                                         \
 	__extension__({                                                                                                \
-		__typeof__(array_count(self)) tcnt = array_count(self) + (n);                                          \
+		__typeof(array_count(self)) tcnt = array_count(self) + (n);                                          \
 		if(unlikely(tcnt >= array_capacity(self))) {                                                           \
 			do {                                                                                           \
 				array_capacity(self) *= 2;                                                             \

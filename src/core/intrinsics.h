@@ -19,9 +19,8 @@
  * @param x the number on which to compute this operation
  * @return the count of trailing zeros in the base 2 representation of @a x
  *
- * The argument @a x may be of one of the supported types of the underlying
- * compiler built-ins. Selection of the matching built-in is done statically at
- * compile time. If no matching built-in is found a compilation error is thrown.
+ * The argument @a x may be of one of the supported types of the underlying compiler built-ins. Selection of the
+ * matching built-in is done statically at compile time. If no matching built-in is found a compilation error is thrown.
  */
 #define intrinsics_ctz(x)                                                                                              \
 	__extension__({                                                                                                \
@@ -38,9 +37,8 @@
  * @param x the number on which to compute this operation
  * @return the count of leading zeros in the base 2 representation of @a x
  *
- * The argument @a x may be of one of the supported types of the underlying
- * compiler built-ins. Selection of the matching built-in is done statically at
- * compile time. If no matching built-in is found a compilation error is thrown.
+ * The argument @a x may be of one of the supported types of the underlying compiler built-ins. Selection of the
+ * matching built-in is done statically at compile time. If no matching built-in is found a compilation error is thrown.
  */
 #define intrinsics_clz(x)                                                                                              \
 	__extension__({                                                                                                \
@@ -57,9 +55,8 @@
  * @param x the number on which to compute this operation
  * @return the count of set bits in the base 2 representation of @a x
  *
- * The argument @a x may be of one of the supported types of the underlying
- * compiler built-ins. Selection of the matching built-in is done statically at
- * compile time. If no matching built-in is found a compilation error is thrown.
+ * The argument @a x may be of one of the supported types of the underlying compiler built-ins. Selection of the
+ * matching built-in is done statically at compile time. If no matching built-in is found a compilation error is thrown.
  */
 #define intrinsics_popcount(x)                                                                                         \
 	__extension__({                                                                                                \
