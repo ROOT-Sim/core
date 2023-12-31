@@ -133,13 +133,15 @@ static inline void multi_checkpoint_restore(struct mm_ctx *self, const struct mm
 	self->full_ckpt_size = ckp->checkpoints_size;
 	const struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckp->checkpoints;
 
-	for(struct mm_buddy_list *l = self->buddies; l != NULL; l = l->next) {
+	for(struct mm_buddy_list **p = &self->buddies, *l = *p; l != NULL; l = *p) {
 		struct buddy_state *buddy = &l->buddy;
-		if(likely(checkpoint_applies(buddy, buddy_ckp)))
+		if(likely(checkpoint_applies(buddy, buddy_ckp))) {
 			buddy_ckp = checkpoint_full_restore(buddy, buddy_ckp);
-		else {
-			buddy_reset(buddy);
-			self->full_ckpt_size += offsetof(struct buddy_checkpoint, base_mem);
+			p = &l->next;
+		} else {
+			buddy_fini(buddy);
+			*p = l->next;
+			mm_free(l);
 		}
 	}
 }
