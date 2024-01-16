@@ -13,6 +13,6 @@
 
 #pragma once
 
-__device__ uint	g_n_nodes;
-__device__ uint	g_n_lps;
-__device__ uint	g_nodes_per_lp;
+extern __device__ uint	g_n_nodes;
+extern __device__ uint	g_n_lps;
+extern __device__ uint	g_nodes_per_lp;

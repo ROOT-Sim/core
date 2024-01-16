@@ -50,6 +50,7 @@ if(CMAKE_CUDA_COMPILER)
         set_property(TARGET rscuda PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
     endif()
     set_property(TARGET rscuda PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+    set_property(TARGET rscuda PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 endif()
 
 # Build the core library
