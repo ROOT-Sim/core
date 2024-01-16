@@ -306,7 +306,7 @@ void split_queues(uint lpid) {
 
 			for (uint j = i; j < eq.ql[lpid_left] - 1; j++) {
 				eq.events[index] = eq.events[index + 1];
-				index ++; 
+				index ++;
 			}
 
 			eq.uo[lpid_left] --;
@@ -547,7 +547,7 @@ char append_event_to_queue(Event *event, uint *undo_offset) {
 
 	Event *target_event = get_event(lpid, eq_ql_old);
 	*target_event = *event;
-	
+
 	*undo_offset = eq_ql_old;
 	return 1;
 }

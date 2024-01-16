@@ -11,18 +11,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
+#pragma once
 
-#include "Event.h"
-
-__device__
-char events_are_equal(Event *event_1, Event *event_2) {
-	if (
-	event_1->type != event_2->type ||
-	event_1->sender != event_2->sender ||
-	event_1->receiver != event_2->receiver ||
-	event_1->timestamp != event_2->timestamp) {
-		return 0;
-	}
-
-	return 1;
-}
+__device__ uint	g_n_nodes;
+__device__ uint	g_n_lps;
+__device__ uint	g_nodes_per_lp;

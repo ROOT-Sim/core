@@ -12,17 +12,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 
-#include "Event.h"
+#pragma once
 
-__device__
-char events_are_equal(Event *event_1, Event *event_2) {
-	if (
-	event_1->type != event_2->type ||
-	event_1->sender != event_2->sender ||
-	event_1->receiver != event_2->receiver ||
-	event_1->timestamp != event_2->timestamp) {
-		return 0;
-	}
+#define EVENT_HEADER	"./phold/Event.h"
+#define STATE_HEADER	"./phold/State.h"
+#define MODEL_HEADER	"./phold/model.h"
 
-	return 1;
-}
+#define	OPTM_SYNC	1
+#define ALLOW_ME	1

@@ -12,6 +12,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "kernels.h"
+#include "queues.h"
+
 
 __global__
 void kernel_set_params(
@@ -19,7 +21,7 @@ uint n_nodes, uint n_lps, uint nodes_per_lp,
 uint events_per_node, uint states_per_node, uint antimsgs_per_node,
 int model_params[], uint n_params) {
 	g_n_nodes = n_nodes;
-	g_n_lps = n_lps; 
+	g_n_lps = n_lps;
 	g_nodes_per_lp = nodes_per_lp;
 
 	set_queues_params(events_per_node, states_per_node, antimsgs_per_node);
@@ -46,7 +48,7 @@ void kernel_init_nodes() {
 
 	for (uint i = 0; i < g_nodes_per_lp; i++) {
 		uint nid = lpid * g_nodes_per_lp + i;
-		if (nid < g_n_nodes) { init_node(nid); }		
+		if (nid < g_n_nodes) { init_node(nid); }
 	}
 }
 
@@ -114,7 +116,7 @@ void kernel_roll_back(char *rollback_performed) {
 	uint lpid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (lpid >= g_n_lps) { return; }
 
-	int rollback_timestamp = get_rollback_timestamp(lpid);	
+	int rollback_timestamp = get_rollback_timestamp(lpid);
 	if (get_lpts(lpid) < rollback_timestamp) { return; }
 
 	while (has_processed_event(lpid)) {
@@ -195,7 +197,7 @@ void kernel_adjust_queues_before_split() {
 
 	while (1) {
 		adjust_queues_before_split(next_lpid);
-	
+
 		if (next_lpid % 2 != 0) { break; }
 		next_lpid /= 2;
 	}
@@ -207,7 +209,7 @@ void kernel_split_queues() {
 	if (lpid >= g_n_lps) { return; }
 
 	split_queues(lpid);
-} 
+}
 
 __global__
 void kernel_set_params_after_merge() {
@@ -215,7 +217,7 @@ void kernel_set_params_after_merge() {
 	g_n_lps = g_n_lps / 2 + (g_n_lps % 2 == 0 ? 0 : 1);
 
 	set_queues_params_after_merge();
-}	
+}
 
 __global__
 void kernel_set_params_after_split() {
@@ -253,7 +255,7 @@ void kernel_clean_queues(uint gvt, uint *n_events_cleaned) {
 
 		delete_first_processed_event(lpid);
 
-		n_events ++;		
+		n_events ++;
 		n_states += get_number_states(first_processed_event);
 		n_antimsgs += get_number_antimsgs(first_processed_event);
 	}

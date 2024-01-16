@@ -31,6 +31,27 @@ else()
     set(rscore_srcs ${rscore_srcs} distributed/no_mpi.c)
 endif()
 
+# Add CUDA support
+if(CMAKE_CUDA_COMPILER)
+    set(rscuda_srcs
+            cuda/kernels.cu
+            cuda/main.cu
+            cuda/nelder_mead.cu
+            cuda/nelder_mead_3d.cu
+            cuda/queues.cu
+            cuda/random.cu
+            cuda/statistics.cu
+            cuda/phold/Event.cu # This is model stuff!
+            cuda/phold/model.cu # This is model stuff!
+    )
+    set_source_files_properties(${rscuda_srcs} PROPERTIES LANGUAGE CUDA)
+    add_library(rscuda STATIC ${rscuda_srcs})
+    if(APPLE)
+        set_property(TARGET rscuda PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+    endif()
+    set_property(TARGET rscuda PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+endif()
+
 # Build the core library
 add_library(rscore STATIC ${rscore_srcs})
 
