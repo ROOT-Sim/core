@@ -119,12 +119,17 @@
  */
 #define heap_extract(self, cmp_f)                                                                                      \
 	__extension__({                                                                                                \
+		heap_extract_from(self, cmp_f, 0);                                                                     \
+	})
+
+#define heap_extract_from(self, cmp_f, loc)                                                                            \
+	__extension__({                                                                                                \
 		__typeof__(array_items(self)) items = array_items(self);                                               \
-		__typeof(*array_items(self)) ret = array_items(self)[0];                                               \
+		__typeof(*array_items(self)) ret = array_items(self)[loc];                                             \
 		__typeof(*array_items(self)) last = array_pop(self);                                                   \
 		__typeof(array_count(self)) cnt = array_count(self);                                                   \
-		__typeof(array_count(self)) i = 1U;                                                                    \
-		__typeof(array_count(self)) j = 0U;                                                                    \
+                __typeof(array_count(self)) j = loc;                                                                   \
+		__typeof(array_count(self)) i = j * 2U + 1U;                                                           \
 		while(i < cnt) {                                                                                       \
 			i += i + 1 < cnt && cmp_f(items[i + 1U], items[i]);                                            \
 			if(!cmp_f(items[i], last))                                                                     \

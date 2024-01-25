@@ -24,6 +24,8 @@
 
 /// The flag used in ScheduleNewEvent() to keep track of silent execution
 static __thread bool silent_processing = false;
+static __thread uint_fast64_t local_id = 0;
+
 #ifndef NDEBUG
 /// The currently processed message
 /** This is not necessary for normal operation, but it's useful in debug */
@@ -62,7 +64,11 @@ void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type
 		mpi_remote_msg_send(msg, dest_nid);
 		array_push(current_lp->p.p_msgs, mark_msg_remote(msg));
 	} else {
+#ifdef USE_NON_BLOCKING_ANTI
 		atomic_store_explicit(&msg->flags, 0U, memory_order_relaxed);
+#else
+		msg->raw_flags = (local_id += (1 << (MAX_THREADS_BITS + 1)));
+#endif
 		msg_queue_insert(msg);
 		array_push(current_lp->p.p_msgs, mark_msg_sent(msg));
 	}
@@ -88,6 +94,7 @@ static inline void checkpoint_take(struct lp_ctx *lp)
  */
 void process_lp_init(struct lp_ctx *lp)
 {
+	local_id = rid << 1;
 	array_init(lp->p.p_msgs);
 	lp->p.early_antis = NULL;
 
@@ -120,7 +127,11 @@ void process_lp_fini(struct lp_ctx *lp)
 
 		bool remote = is_msg_remote(msg);
 		msg = unmark_msg(msg);
+#ifdef USE_NON_BLOCKING_ANTI
 		uint64_t flags = atomic_load_explicit(&msg->flags, memory_order_relaxed);
+#else
+		uint64_t flags = msg->raw_flags;
+#endif
 		if(remote || !(flags & MSG_FLAG_ANTI))
 			msg_allocator_free(msg);
 	}
@@ -176,18 +187,28 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 				msg_allocator_free_at_gvt(msg);
 			} else {
 				msg = unmark_msg_sent(msg);
+#ifdef USE_NON_BLOCKING_ANTI
 				uint64_t f =
 				    atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
 				if(f & MSG_FLAG_PROCESSED)
 					msg_queue_insert(msg);
+#else
+				struct lp_msg *anti = msg_allocator_alloc(0);
+				memcpy(msg_remote_data(anti), msg_remote_data(msg), msg_remote_anti_size());
+				anti->raw_flags |= MSG_FLAG_ANTI;
+				msg_queue_insert(anti);
+#endif
 			}
 
 			stats_take(STATS_MSG_ANTI, 1);
 			msg = array_get_at(proc_p->p_msgs, ++i);
 		}
-
+#ifdef USE_NON_BLOCKING_ANTI
 		uint64_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(f & MSG_FLAG_ANTI))
+#else
+		if(!(msg->raw_flags & MSG_FLAG_ANTI))
+#endif
 			msg_queue_insert_self(msg);
 		stats_take(STATS_MSG_ROLLBACK, 1);
 	}
@@ -318,6 +339,7 @@ static inline bool check_early_anti_messages(struct process_ctx *proc_p, struct 
  */
 static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint64_t last_flags)
 {
+#ifdef USE_NON_BLOCKING_ANTI
 	if(last_flags > (MSG_FLAG_ANTI | MSG_FLAG_PROCESSED)) {
 		handle_remote_anti_msg(lp, msg);
 		auto_ckpt_register_bad(&lp->auto_ckpt);
@@ -329,6 +351,11 @@ static void handle_anti_msg(struct lp_ctx *lp, struct lp_msg *msg, uint64_t last
 		auto_ckpt_register_bad(&lp->auto_ckpt);
 	}
 	msg_allocator_free(msg);
+#else
+	handle_remote_anti_msg(lp, msg);
+	auto_ckpt_register_bad(&lp->auto_ckpt);
+
+#endif
 }
 
 /**
@@ -364,7 +391,11 @@ void process_msg(void)
 	struct lp_ctx *lp = &lps[msg->dest];
 	current_lp = lp;
 
+#ifdef USE_NON_BLOCKING_ANTI
 	uint64_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
+#else
+	uint64_t flags = msg->raw_flags;
+#endif
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
 		handle_anti_msg(lp, msg, flags);
 		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;

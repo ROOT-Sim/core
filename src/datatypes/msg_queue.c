@@ -14,8 +14,11 @@
  */
 #include <datatypes/msg_queue.h>
 
+#include <arch/timer.h>
 #include <core/sync.h>
 #include <datatypes/heap.h>
+#include <datatypes/msg_skip_list.h>
+#include <log/stats.h>
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
@@ -43,6 +46,7 @@ struct msg_buffer {
 static struct msg_buffer *queues;
 /// The private thread queue
 static __thread heap_declare(struct q_elem) mqp;
+static __thread struct msg_skip_list msl;
 
 /**
  * @brief Initializes the message queue at the node level
@@ -58,6 +62,7 @@ void msg_queue_global_init(void)
 void msg_queue_init(void)
 {
 	heap_init(mqp);
+	msg_skip_list_init(&msl);
 	atomic_store_explicit(&queues[rid].list, NULL, memory_order_relaxed);
 }
 
@@ -69,6 +74,7 @@ void msg_queue_fini(void)
 	for(array_count_t i = 0; i < heap_count(mqp); ++i)
 		msg_allocator_free(heap_items(mqp)[i].m);
 
+	msg_skip_list_fini(&msl);
 	heap_fini(mqp);
 
 	struct lp_msg *m = atomic_load_explicit(&queues[rid].list, memory_order_relaxed);
@@ -92,9 +98,41 @@ void msg_queue_global_fini(void)
 static inline void msg_queue_insert_queued(void)
 {
 	struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
+scan:
 	while(m != NULL) {
+#ifdef USE_EAGER_REMOVE_ANTI
+		if(m->raw_flags & MSG_FLAG_ANTI) {
+			uint64_t id = m->raw_flags - MSG_FLAG_ANTI;
+#ifdef USE_HEAP
+			for(array_count_t k = 0; k < heap_count(mqp); ++k) {
+				struct q_elem e = array_get_at(mqp, k);
+				if(e.t == m->dest_t && e.m->raw_flags == id) {
+					heap_extract_from(mqp, q_elem_is_before, k);
+					msg_allocator_free(e.m);
+					struct lp_msg *n = m->next;
+					msg_allocator_free(m);
+					m = n;
+					goto scan;
+				}
+			}
+#else
+			struct lp_msg *a;
+			if((a = msg_skip_list_try_anti(&msl, m))) {
+				msg_allocator_free(a);
+				struct lp_msg *n = m->next;
+				msg_allocator_free(m);
+				m = n;
+				continue;
+			}
+#endif
+		}
+#endif
+#ifdef USE_HEAP
 		struct q_elem qe = {.t = m->dest_t, .m = m};
 		heap_insert(mqp, q_elem_is_before, qe);
+#else
+		msg_skip_list_insert(&msl, m);
+#endif
 		m = m->next;
 	}
 }
@@ -108,8 +146,15 @@ static inline void msg_queue_insert_queued(void)
  */
 struct lp_msg *msg_queue_extract(void)
 {
+	timer_uint t = timer_hr_new();
 	msg_queue_insert_queued();
-	return likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
+#ifdef USE_HEAP
+	struct lp_msg *msg = likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
+#else
+	struct lp_msg *msg = msg_skip_list_extract(&msl);
+#endif
+	stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
+	return msg;
 }
 
 /**
@@ -132,6 +177,10 @@ void msg_queue_insert(struct lp_msg *msg)
 void msg_queue_insert_self(struct lp_msg *msg)
 {
 	assert(lid_to_rid(msg->dest) == rid);
+#ifdef USE_HEAP
 	struct q_elem qe = {.t = msg->dest_t, .m = msg};
 	heap_insert(mqp, q_elem_is_before, qe);
+#else
+	msg_skip_list_insert(&msl, msg);
+#endif
 }
