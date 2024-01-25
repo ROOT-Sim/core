@@ -109,6 +109,7 @@ struct simulation_configuration conf = {
     .serial = false,
     .dispatcher = ProcessEvent,
     .committed = CanEnd,
+    .use_gpu = true,
 };
 
 int main(void)
