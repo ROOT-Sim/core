@@ -15,6 +15,7 @@
 #include <cuda/cuda_gpu.h>
 #include <cuda/queues.h>
 #include "model.h"
+#include "settings.h"
 
 __device__ static Nodes nodes;
 
@@ -74,10 +75,13 @@ void init_node(uint nid) {
 __device__ // private
 char handle_event_type_1(Event *event) {
 	uint nid = event->receiver;
+
+#if OPTM_SYNC == 1
 	uint lpid = nid / g_nodes_per_lp;
 
 	if (state_queue_is_full(lpid)) { return 12; }
 	if (antimsg_queue_is_full(lpid)) { return 13; }
+#endif
 
 	curandState_t *cr_state = &(nodes.cr_state[nid]);
 
@@ -98,12 +102,15 @@ char handle_event_type_1(Event *event) {
 		return 11;
 	}
 
+#if OPTM_SYNC == 1
 	append_state_to_queue(&old_state, lpid);
 	append_antimsg_to_queue(&new_event);
+#endif
 
 	return 1;
 }
 
+#if OPTM_SYNC == 1
 __device__ // private
 void reverse_event_type_1(Event *event) {
 	uint nid = event->receiver;
@@ -115,6 +122,7 @@ void reverse_event_type_1(Event *event) {
 	Event *antimsg = delete_last_antimsg(lpid);
 	undo_event(antimsg);
 }
+#endif
 
 __device__
 char handle_event(Event *event) {
@@ -127,6 +135,7 @@ char handle_event(Event *event) {
 	}
 }
 
+#if OPTM_SYNC == 1
 __device__
 void roll_back_event(Event *event) {
 	uint type = event->type;
@@ -145,6 +154,7 @@ __device__
 uint get_number_antimsgs(Event *event) {
 	return 1;
 }
+#endif
 
 __device__
 void collect_statistics(uint nid) {
