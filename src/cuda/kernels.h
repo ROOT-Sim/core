@@ -15,9 +15,9 @@
 #define kernels_h
 
 #include <stdio.h>
-#include "main.h"
+#include "gpu.h"
 #include "queues.h"
-#include "SETTINGS.h"
+#include "phold/settings.h"
 #include MODEL_HEADER
 #include EVENT_HEADER
 

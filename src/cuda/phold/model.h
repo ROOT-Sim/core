@@ -11,16 +11,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-
-#ifndef model_h
-#define model_h
+#pragma once
 
 #include <stdio.h>
-#include "../main.h"
-#include "../queues.h"
 #include "../random.h"
-#include "Event.h"
-#include "State.h"
+#include "event.h"
+#include "state.h"
 
 typedef struct {
 	curandState_t	*cr_state;
@@ -56,5 +52,3 @@ void collect_statistics(uint nid);
 
 __device__
 void print_statistics();
-
-#endif

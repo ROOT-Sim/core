@@ -11,7 +11,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "main.h"
+#include "gpu.h"
 #include <stdio.h>
 #include <time.h>
 #include <cuda.h>
@@ -22,9 +22,9 @@
 #include "statistics.cu"
 
 /* Global variables*/
-__device__ uint		g_n_nodes;
-__device__ uint		g_n_lps;
-__device__ uint		g_nodes_per_lp;
+__device__ uint g_n_nodes;
+__device__ uint g_n_lps;
+__device__ uint g_nodes_per_lp;
 
 static uint nodes_per_lp;
 static uint n_nodes;

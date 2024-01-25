@@ -15,8 +15,8 @@
 #define queues_h
 
 #include <stdio.h>
-#include "main.h"
-#include "SETTINGS.h"
+#include "gpu.h"
+#include "phold/settings.h"
 #include EVENT_HEADER
 #include STATE_HEADER
 

@@ -12,6 +12,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 
+#include "../gpu.h"
+#include "../queues.h"
 #include "model.h"
 
 __device__ static Nodes nodes;
@@ -118,7 +120,7 @@ __device__
 char handle_event(Event *event) {
 	uint type = event->type;
 
-	if (type == 1) { 
+	if (type == 1) {
 		return handle_event_type_1(event);
 	} else {
 		return 0;

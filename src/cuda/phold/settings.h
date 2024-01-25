@@ -12,17 +12,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 
-#ifndef Event_h
-#define Event_h
+#pragma once
 
-typedef struct {
-	uint	type;
-	uint	sender;
-	uint	receiver;
-	int	timestamp;
-} Event;
+#define EVENT_HEADER	"phold/event.h"
+#define STATE_HEADER	"phold/state.h"
+#define MODEL_HEADER	"phold/model.h"
 
-__device__
-char events_are_equal(Event *event_1, Event *event_2);
-
-#endif
+#define	OPTM_SYNC	1
+#define ALLOW_ME	1

@@ -12,7 +12,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 
-#include "Event.h"
+#include "event.h"
 
 __device__
 char events_are_equal(Event *event_1, Event *event_2) {

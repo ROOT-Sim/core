@@ -1,5 +1,5 @@
 /*  This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
+it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -14,9 +14,12 @@
 
 #pragma once
 
-#define EVENT_HEADER	"./phold/Event.h"
-#define STATE_HEADER	"./phold/State.h"
-#define MODEL_HEADER	"./phold/model.h"
+typedef struct {
+	uint	type;
+	uint	sender;
+	uint	receiver;
+	int	timestamp;
+} Event;
 
-#define	OPTM_SYNC	1
-#define ALLOW_ME	1
+__device__
+char events_are_equal(Event *event_1, Event *event_2);
