@@ -13,6 +13,27 @@
 
 #pragma once
 
-extern __device__ uint	g_n_nodes;
-extern __device__ uint	g_n_lps;
-extern __device__ uint	g_nodes_per_lp;
+#include <arch/thread.h>
+#include <ROOT-Sim.h>
+#include <stdbool.h>
+
+#ifdef HAVE_CUDA
+
+#if __cplusplus
+ extern "C" {
+#endif
+
+extern bool gpu_is_available(void);
+extern bool gpu_configure(lp_id_t n_lps);
+extern thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *rid_arg);
+extern void gpu_stop(void);
+
+#if __cplusplus
+ }
+#endif
+
+#else
+
+#define gpu_is_available() (false)
+
+#endif

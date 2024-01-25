@@ -125,6 +125,8 @@ struct simulation_configuration {
 	bool core_binding;
 	/// If set, the simulation will run on the serial runtime
 	bool serial;
+	/// If set, try to use a GPU. If no GPU is found, it is reset at runtime
+	bool use_gpu;
 	/// Function pointer to the dispatching function
 	ProcessEvent_t dispatcher;
 	/// Function pointer to the termination detection function

@@ -11,7 +11,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "queues.h"
+#include <cuda/cuda_gpu.h>
+#include <cuda/queues.h>
 
 __device__ static EQs	eq;
 __device__ static SQs	sq;

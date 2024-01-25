@@ -21,7 +21,9 @@
 #elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
 #define __POSIX
 // todo get rid of this: right now it is needed for pthread_setaffinity_np()
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #define _pure __attribute__((pure))
 
 #if defined(__linux__)

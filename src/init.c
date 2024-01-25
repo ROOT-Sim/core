@@ -19,6 +19,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include <cuda/gpu.h>
 
 /// A flag to check if the core library has been initialized correctly
 static bool configuration_done = false;
@@ -73,6 +74,14 @@ static void print_config(void)
 			fprintf(stderr, "Checkpoint interval: auto\n");
 	}
 
+	fprintf(stderr, "GPU acceleration: %s "
+#ifdef HAVE_CUDA
+	"(available)"
+#else
+	"(not available)"
+#endif
+		"\n", global_config.use_gpu ? "enabled" : "disabled");
+
 	fprintf(stderr, "\x1b[39m");
 
 	fprintf(stderr, "\n");
@@ -117,6 +126,9 @@ int RootsimInit(const struct simulation_configuration *conf)
 
 	if(global_config.termination_time == 0)
 		global_config.termination_time = SIMTIME_MAX;
+
+	if(global_config.use_gpu)
+		global_config.use_gpu = gpu_is_available();
 
 	configuration_done = true;
 

@@ -31,28 +31,6 @@ else()
     set(rscore_srcs ${rscore_srcs} distributed/no_mpi.c)
 endif()
 
-# Add CUDA support
-if(CMAKE_CUDA_COMPILER)
-    set(rscuda_srcs
-            cuda/kernels.cu
-            cuda/gpu.cu
-            cuda/nelder_mead.cu
-            cuda/nelder_mead_3d.cu
-            cuda/queues.cu
-            cuda/random.cu
-            cuda/statistics.cu
-            cuda/phold/event.cu # This is model stuff!
-            cuda/phold/model.cu # This is model stuff!
-    )
-    set_source_files_properties(${rscuda_srcs} PROPERTIES LANGUAGE CUDA)
-    add_library(rscuda STATIC ${rscuda_srcs})
-    if(APPLE)
-        set_property(TARGET rscuda PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
-    endif()
-    set_property(TARGET rscuda PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-    set_property(TARGET rscuda PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-endif()
-
 # Build the core library
 add_library(rscore STATIC ${rscore_srcs})
 
@@ -64,6 +42,29 @@ if(MPI_FOUND)
     target_include_directories(rscore PRIVATE ${MPI_C_INCLUDE_PATH})
     target_compile_options(rscore PRIVATE ${MPI_C_COMPILE_FLAGS})
     target_link_libraries(rscore ${MPI_C_LIBRARIES})
+endif()
+
+# Add CUDA support
+if(CMAKE_CUDA_COMPILER)
+    set(rscuda_srcs
+            cuda/kernels.cu
+            cuda/gpu.cu
+#            cuda/nelder_mead.cu
+            cuda/nelder_mead_3d.cu
+            cuda/queues.cu
+            cuda/random.cu
+#            cuda/statistics.cu
+            cuda/phold/event.cu # This is model stuff!
+            cuda/phold/model.cu # This is model stuff!
+    )
+    set_source_files_properties(${rscuda_srcs} PROPERTIES LANGUAGE CUDA)
+    target_sources(rscore PRIVATE ${rscuda_srcs})
+    if(APPLE)
+        set_property(TARGET rscore PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+    endif()
+    set_property(TARGET rscore PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+    set_property(TARGET rscore PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+    add_compile_definitions(HAVE_CUDA)
 endif()
 
 install(FILES ROOT-Sim.h DESTINATION include)

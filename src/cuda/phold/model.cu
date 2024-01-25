@@ -12,8 +12,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 
-#include "../gpu.h"
-#include "../queues.h"
+#include <cuda/cuda_gpu.h>
+#include <cuda/queues.h>
 #include "model.h"
 
 __device__ static Nodes nodes;

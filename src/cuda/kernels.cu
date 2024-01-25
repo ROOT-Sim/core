@@ -11,8 +11,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "kernels.h"
-#include "queues.h"
+#include <cuda/cuda_gpu.h>
+#include <cuda/kernels.h>
+#include <cuda/queues.h>
 
 
 __global__

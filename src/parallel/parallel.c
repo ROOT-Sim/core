@@ -11,6 +11,7 @@
 #include <arch/thread.h>
 #include <core/core.h>
 #include <core/sync.h>
+#include <cuda/gpu.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
 #include <gvt/fossil.h>
@@ -104,6 +105,12 @@ int parallel_simulation(void)
 	parallel_global_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
+#ifdef HAVE_CUDA
+	thr_id_t gpu_thread;
+	gpu_configure(global_config.lps);
+	thread_start(&gpu_thread, gpu_main_loop, NULL);
+#endif
+
 	thr_id_t thrs[global_config.n_threads];
 	rid_t i = global_config.n_threads;
 	while(i--) {
@@ -120,6 +127,11 @@ int parallel_simulation(void)
 	i = global_config.n_threads;
 	while(i--)
 		thread_wait(thrs[i], NULL);
+
+#ifdef HAVE_CUDA
+	thread_wait(gpu_thread, NULL);
+	gpu_stop();
+#endif
 
 	stats_global_time_take(STATS_GLOBAL_FINI_START);
 	parallel_global_fini();

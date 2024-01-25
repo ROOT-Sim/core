@@ -11,8 +11,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef nelder_mead_3d_h
-#define nelder_mead_3d_h
+#pragma once
 
 #include <stdio.h>
 
@@ -21,5 +20,3 @@ int start, float start_x, float start_y, float start_z, float start_f);
 
 void nm_get_next_point(
 float last_f, float *next_x, float *next_y, float *next_z);
-
-#endif
