@@ -135,6 +135,13 @@ void process_lp_fini(struct lp_ctx *lp)
 		if(remote || !(flags & MSG_FLAG_ANTI))
 			msg_allocator_free(msg);
 	}
+
+	struct lp_msg *m = lp->p.early_antis;
+	while(m) {
+		struct lp_msg *n = m->next;
+		msg_allocator_free(m);
+		m = n;
+	}
 	array_fini(lp->p.p_msgs);
 }
 

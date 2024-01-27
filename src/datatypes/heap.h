@@ -117,19 +117,14 @@
  *
  * For correct operation of the heap you need to always pass the same @a cmp_f both for insertion and extraction
  */
-#define heap_extract(self, cmp_f)                                                                                      \
-	__extension__({                                                                                                \
-		heap_extract_from(self, cmp_f, 0);                                                                     \
-	})
-
-#define heap_extract_from(self, cmp_f, loc)                                                                            \
+#define heap_extract(self, cmp_f)                                                                            \
 	__extension__({                                                                                                \
 		__typeof__(array_items(self)) items = array_items(self);                                               \
-		__typeof(*array_items(self)) ret = array_items(self)[loc];                                             \
+		__typeof(*array_items(self)) ret = array_items(self)[0];                                             \
 		__typeof(*array_items(self)) last = array_pop(self);                                                   \
 		__typeof(array_count(self)) cnt = array_count(self);                                                   \
-                __typeof(array_count(self)) j = loc;                                                                   \
-		__typeof(array_count(self)) i = j * 2U + 1U;                                                           \
+                __typeof(array_count(self)) j = 0;                                                                   \
+		__typeof(array_count(self)) i = 1U;                                                           \
 		while(i < cnt) {                                                                                       \
 			i += i + 1 < cnt && cmp_f(items[i + 1U], items[i]);                                            \
 			if(!cmp_f(items[i], last))                                                                     \
@@ -137,6 +132,34 @@
 			items[j] = items[i];                                                                           \
 			j = i;                                                                                         \
 			i = i * 2U + 1U;                                                                               \
+		}                                                                                                      \
+		items[j] = last;                                                                                       \
+		ret;                                                                                                   \
+	})
+
+
+#define heap_extract_from(self, cmp_f, loc)                                                                            \
+	__extension__({                                                                                                \
+		__typeof__(array_items(self)) items = array_items(self);                                               \
+		__typeof(*array_items(self)) ret = array_items(self)[loc];                                             \
+		__typeof(*array_items(self)) last = array_pop(self);                                                   \
+		__typeof(array_count(self)) cnt = array_count(self);                                                   \
+		__typeof(array_count(self)) j = loc;                                                                   \
+		__typeof(array_count(self)) i = j * 2U + 1U;                                                           \
+		if(j && cmp_f(last, items[(j - 1U) / 2U])) {                                                           \
+			while(j && cmp_f(last, items[(j - 1U) / 2U])) {                                                \
+				items[j] = items[(j - 1U) / 2U];                                                       \
+				j = (j - 1U) / 2U;                                                                     \
+			}                                                                                              \
+		} else {                                                                                               \
+			while(i < cnt) {                                                                               \
+				i += i + 1 < cnt && cmp_f(items[i + 1U], items[i]);                                    \
+				if(!cmp_f(items[i], last))                                                             \
+					break;                                                                         \
+				items[j] = items[i];                                                                   \
+				j = i;                                                                                 \
+				i = i * 2U + 1U;                                                                       \
+			}                                                                                              \
 		}                                                                                                      \
 		items[j] = last;                                                                                       \
 		ret;                                                                                                   \

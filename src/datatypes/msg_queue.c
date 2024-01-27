@@ -25,8 +25,12 @@
 #include <stdalign.h>
 #include <stdatomic.h>
 
+#if defined(USE_NON_BLOCKING_ANTI) || defined(USE_EAGER_REMOVE_ANTI)
 /// Determine an ordering between two elements in a queue
 #define q_elem_is_before(ma, mb)  ((ma).t < (mb).t)
+#else
+#define q_elem_is_before(ma, mb)  ((ma).t < (mb).t || ((ma).t == (mb).t && (ma).m->raw_flags > (mb).m->raw_flags))
+#endif
 
 /// An element in the message queue
 struct q_elem {
@@ -79,8 +83,9 @@ void msg_queue_fini(void)
 
 	struct lp_msg *m = atomic_load_explicit(&queues[rid].list, memory_order_relaxed);
 	while(m != NULL) {
+		struct lp_msg *n = m->next;
 		msg_allocator_free(m);
-		m = m->next;
+		m = n;
 	}
 }
 

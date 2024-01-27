@@ -1,6 +1,7 @@
 #include <datatypes/msg_skip_list.h>
 
 #include <core/intrinsics.h>
+#include <mm/msg_allocator.h>
 
 static _Thread_local uint64_t skiplist_rng_state = 125;
 
@@ -36,6 +37,12 @@ void msg_skip_list_init(struct msg_skip_list *msl)
 
 void msg_skip_list_fini(struct msg_skip_list *msl)
 {
+	struct msg_skip_list_node *n = msl->nodes;
+	array_count_t current = msl->next[0];
+	while(current) {
+		msg_allocator_free(n[current].msg);
+		current = n[current].next[0];
+	}
 	++msl->nodes;
 	mm_free(msl->nodes);
 }
@@ -45,8 +52,12 @@ void msg_skip_list_insert(struct msg_skip_list *msl, struct lp_msg *msg)
 	if(unlikely(msl->free_list == 0))
 		skip_list_expand(msl);
 
-	uint64_t r = random_next() | (1U << MSG_SKIP_LIST_MAX_HEIGHT);
-	unsigned new_l = intrinsics_ctz(r);
+	uint64_t r = random_next();
+	unsigned new_l = 0;
+	while(!(r & 3U)) {
+		new_l++;
+		r >>= 2;
+	}
 
 	struct msg_skip_list_node *n = msl->nodes;
 	struct msg_skip_list_node *insert = &msl->nodes[msl->free_list];
@@ -59,12 +70,20 @@ void msg_skip_list_insert(struct msg_skip_list *msl, struct lp_msg *msg)
 	array_count_t *s = msl->next;
 	unsigned l = MSG_SKIP_LIST_MAX_HEIGHT - 1;
 	for(; l > new_l; --l) {
+#if defined(USE_NON_BLOCKING_ANTI) || defined(USE_EAGER_REMOVE_ANTI)
 		while(s[l] && n[s[l]].msg_t < t)
+#else
+		while(s[l] && (n[s[l]].msg_t < t || (n[s[l]].msg_t == t && n[s[l]].msg->raw_flags > msg->raw_flags)))
+#endif
 			s = n[s[l]].next;
 	}
 
 	do {
+#if defined(USE_NON_BLOCKING_ANTI) || defined(USE_EAGER_REMOVE_ANTI)
 		while(s[l] && n[s[l]].msg_t < t)
+#else
+		while(s[l] && (n[s[l]].msg_t < t || (n[s[l]].msg_t == t && n[s[l]].msg->raw_flags > msg->raw_flags)))
+#endif
 			s = n[s[l]].next;
 
 		insert->next[l] = s[l];
@@ -100,28 +119,27 @@ struct lp_msg *msg_skip_list_try_anti(struct msg_skip_list *msl, const struct lp
 	simtime_t t = msg->dest_t;
 	struct msg_skip_list_node *n = msl->nodes;
 	array_count_t *s = msl->next;
-	array_count_t update[MSG_SKIP_LIST_MAX_HEIGHT];
+	array_count_t *update[MSG_SKIP_LIST_MAX_HEIGHT];
 
 	unsigned l = MSG_SKIP_LIST_MAX_HEIGHT;
-	do {
+	while(l) {
 		--l;
-		while (s[l] && (n[s[l]].msg_t < t || (s[l] && n[s[l]].msg_t == t && n[s[l]].msg->raw_flags != id)))
+		while (s[l] && (n[s[l]].msg_t < t || (n[s[l]].msg_t == t && n[s[l]].msg->raw_flags != id)))
 			s = n[s[l]].next;
 
-		update[l] = s[l];
-	} while(--l);
+		update[l] = &s[l];
+	}
 
-	array_count_t current = update[0];
+	array_count_t current = *update[0];
 	if (!current || n[current].msg->raw_flags != id)
 		return NULL;
 
-	for (unsigned l = 0; l < MSG_SKIP_LIST_MAX_HEIGHT; ++l) {
-		if (n[current].next[l] != current)
-			s[l] = n[current].next[l];
-		else
-			s[l] = update[l];
+	*update[0] = n[current].next[0];
+	for (unsigned l = 1; l < MSG_SKIP_LIST_MAX_HEIGHT; ++l) {
+		if (*update[l] != current)
+			break;
+		*update[l] = n[current].next[l];
 	}
-
 	n[current].next[0] = msl->free_list;
 	msl->free_list = current;
 	return n[current].msg;
