@@ -77,8 +77,8 @@ int main(void)
 {
     conf.lps = NUM_LPS,
     conf.n_threads = NUM_THREADS,
-    conf.termination_time = 500000000,
-    conf.gvt_period = 1000*250,
+    conf.termination_time = 300000000,
+    conf.gvt_period = 1000*50,
     conf.log_level = LOG_INFO,
     conf.stats_file = "phold",
     conf.ckpt_interval = 0,

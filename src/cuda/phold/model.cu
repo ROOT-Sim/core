@@ -220,14 +220,14 @@ extern "C" void align_device_to_host_parallel(unsigned rid){
 		curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
 		simulation_snapshot[i] = *state;
 	}
-	printf("copying data from SIM to HOST by %u from %u to %u\n", rid, start, i);
+	//printf("copying data from SIM to HOST by %u from %u to %u\n", rid, start, i);
 }
 
 
 extern "C" void align_device_to_host(int gvt, unsigned n_blocks, unsigned threads_per_block){
 	copy_nodes_from_host(global_config.lps);
 	cudaDeviceSynchronize();
-	printf("copied memory from HOST to DEVICE\n");
+	printf("aligned memory from HOST to DEVICE\n");
 	
 	kernel_init_queues<<<n_blocks, threads_per_block>>>();
 	cudaDeviceSynchronize();
@@ -247,7 +247,6 @@ extern "C" void align_device_to_host(int gvt, unsigned n_blocks, unsigned thread
 extern "C" void align_host_to_device(int gvt){
 	copy_nodes_to_host(global_config.lps);  
 	cudaDeviceSynchronize();
-	printf("copied memory from DEVICE to HOST\n");
 }
 
 
@@ -264,6 +263,6 @@ extern "C" void align_host_to_device_parallel(int gvt){
 		//process_device_align_msg(i, gvt);
 	}
 
-	printf("copying data from HOST to SIM by %u from %u to %u\n", rid, start, i);
+	//printf("copying data from HOST to SIM by %u from %u to %u\n", rid, start, i);
 }
 

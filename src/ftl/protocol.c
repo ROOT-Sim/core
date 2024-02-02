@@ -47,7 +47,7 @@ void gpu_ended(){ end_gpu = 1;}
 
 unsigned sim_can_end() { return both_ended; }
 
-#define FTL_PERIODS 20
+#define FTL_PERIODS 100
 
 void set_gpu_rid(unsigned rid){ 
 	gpu_rid = rid; 
@@ -191,7 +191,7 @@ void follow_the_leader(simtime_t current_gvt){
 				while(val && ftl_spin_barrier == 2); // all threads -1 will be stucked here 
 				if(val) return;
 			
-				printf("copied memory from CPU SIM to HOST\n");
+				printf("aligned memory from CPU SIM to HOST\n");
 
 				/// perform single threaded actions to alkign device to host
 				align_device_to_host(current_gvt,n_blocks,threads_per_block);
@@ -223,7 +223,8 @@ void follow_the_leader(simtime_t current_gvt){
 					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid)) printf("B MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n", ftl_curr_counter);  
 					
 					align_host_to_device(current_gvt);
-					
+					printf("aligned memory from DEVICE to HOST\n");
+
 					/// wake up CPU threads 
 					pthread_barrier_wait(&xpu_barrier); 
 					
