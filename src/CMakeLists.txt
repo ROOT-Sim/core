@@ -55,6 +55,7 @@ if(CMAKE_CUDA_COMPILER)
             cuda/queues.cu
             cuda/random.cu
 #            cuda/statistics.cu
+            cuda/phold/cpu_curand.cu
             cuda/phold/event.cu # This is model stuff!
             cuda/phold/model.cu # This is model stuff!
     )
