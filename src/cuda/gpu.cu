@@ -10,8 +10,16 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-
+extern "C" {
 #include <ROOT-Sim.h>
+#include <ftl/ftl.h>
+#include <arch/timer.h>
+
+typedef unsigned rid_t;
+extern __thread rid_t rid;
+extern timer_uint gvt_timer;
+extern struct simulation_configuration global_config;
+}
 
 #include "gpu.h"
 #include <stdio.h>
@@ -19,7 +27,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include "kernels.h"
-// #include "nelder_mead.h"
 #include "nelder_mead_3d.h"
 #include "statistics.cu"
 
@@ -36,12 +43,12 @@ static uint events_per_node;
 static uint states_per_node;
 static uint antimsgs_per_node;
 
-static float committed_events_threshold;
 static float inactive_lps_percent;
 static int window_size;
 
-static uint threads_per_block;
-static uint n_blocks;
+uint threads_per_block;
+uint n_blocks;
+timer_uint gpu_gvt_timer;
 
 /* Private functions */
 // XXX Should be either static or moved to an internal header
@@ -93,7 +100,6 @@ static void magic_numbers(int n)
 	//	states_per_node = 15;
 	//	antimsgs_per_node = 30;
 
-	committed_events_threshold = (float)1000 * 1000000;
 	inactive_lps_percent = initial_p1[0];
 	window_size = initial_p2[0];
 
@@ -217,6 +223,7 @@ bool gpu_configure(lp_id_t n_lps)
 
 	cudaEventRecord(start);
 	cudaEventRecord(start_2);
+			
 
 	return true;
 }
@@ -225,11 +232,21 @@ extern "C"
 thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 {
 	(void)args;
-
-	while(1) {
+	rid = (uintptr_t)args;
+	gpu_gvt_timer = timer_new();
+	follow_the_leader(0);	
+	int gvt;
+	while(!sim_can_end()) {
 		// Get minimal timestamp of all next events
-		int gvt = get_gvt(d_ts_temp);
+		gvt = get_gvt(d_ts_temp);
 
+		timer_uint t = timer_new();
+		if(global_config.gvt_period < t - gpu_gvt_timer){
+			printf("GPU GVT  %lf\n", (float)gvt);
+			gpu_gvt_timer = t;
+			follow_the_leader((double)gvt);
+		}
+        	
 		// Delete past events
 		h_n_events_cmt = 0;
 		cudaMemcpy(d_n_events_cmt, &h_n_events_cmt, sizeof(uint), cudaMemcpyHostToDevice);
@@ -240,8 +257,8 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 		total_events += h_n_events_cmt;
 		n_events_since_change += h_n_events_cmt;
 
-		if(total_events > committed_events_threshold) {
-			break;
+		if( ((float)gvt) > global_config.termination_time) {
+			gpu_ended();
 		}
 
 		// Change parameters

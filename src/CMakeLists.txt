@@ -24,7 +24,8 @@ set(rscore_srcs
         mm/buddy/multi.c
         mm/msg_allocator.c
         parallel/parallel.c
-        serial/serial.c)
+        serial/serial.c
+        ftl/protocol.c)
 
 if(MPI_FOUND)
     set(rscore_srcs ${rscore_srcs} distributed/mpi.c)

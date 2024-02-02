@@ -17,6 +17,7 @@
 #include <gvt/fossil.h>
 #include <log/stats.h>
 #include <mm/msg_allocator.h>
+#include <ftl/ftl.h>
 
 static void worker_thread_init(rid_t this_rid)
 {
@@ -60,8 +61,10 @@ static void worker_thread_fini(void)
 static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 {
 	worker_thread_init((uintptr_t)rid_arg);
+	follow_the_leader(0);	
 
-	while(likely(termination_cant_end())) {
+	while(!sim_can_end()) {
+		if(!termination_cant_end()) cpu_ended();
 		mpi_remote_msg_handle();
 
 		unsigned i = 64;
@@ -70,11 +73,12 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 
 		simtime_t current_gvt = gvt_phase_run();
 		if(unlikely(current_gvt != 0.0)) {
+			stats_on_gvt(current_gvt);
+			follow_the_leader(current_gvt);	
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
 			fossil_on_gvt(current_gvt);
 			msg_allocator_on_gvt(current_gvt);
-			stats_on_gvt(current_gvt);
 		}
 	}
 
@@ -108,7 +112,8 @@ int parallel_simulation(void)
 #ifdef HAVE_CUDA
 	thr_id_t gpu_thread;
 	gpu_configure(global_config.lps);
-	thread_start(&gpu_thread, gpu_main_loop, NULL);
+	set_gpu_rid(global_config.n_threads);
+	thread_start(&gpu_thread, gpu_main_loop, (void *)(uintptr_t)global_config.n_threads);
 #endif
 
 	thr_id_t thrs[global_config.n_threads];
