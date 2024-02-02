@@ -344,12 +344,11 @@ void stats_on_gvt(simtime_t gvt)
 	if(global_config.log_level != LOG_SILENT && !rid && !nid) {
 		if(unlikely(gvt == SIMTIME_MAX)){
 			printf("\rVirtual time: infinity");
-			fflush(stdout);
 		}
 		else{
-			printf("CPU GVT  %lf\n", gvt);
-				
+			printf("\rCPU GVT  %lf", gvt);
 		}
+		fflush(stdout);
 	}
 
 	if(global_config.stats_file == NULL)

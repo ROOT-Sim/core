@@ -138,13 +138,18 @@ void msg_queue_insert_self(struct lp_msg *msg)
 
 
 
-void destroy_all_queues(void){
-    printf("Destroying all queues %u\n", rid);
-    struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
-	while(m != NULL) {
-        struct lp_msg *c = m;
-        m = m->next;
+void msg_queue_destroy_all_input_queues(void){
+	/// this are always remote so why bother?
+    struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire); 
 
+	array_count_t m_count = heap_count(mqp);
+	array_count_t k = m_count;
+	if(m_count == 0) return;
+	return;
+	while(k--) {
+		struct lp_msg *msg = array_get_at(mqp, k).m;
+		if(!is_msg_local_sent(msg)) 	msg_allocator_free(unmark_msg(msg));
 	}
-
+	array_truncate_first(mqp, m_count);
+    printf("Destroying inbound queues for %u\n", rid);
 }

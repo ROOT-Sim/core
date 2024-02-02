@@ -20,3 +20,4 @@ extern void msg_queue_fini(void);
 extern struct lp_msg *msg_queue_extract(void);
 extern void msg_queue_insert(struct lp_msg *msg);
 extern void msg_queue_insert_self(struct lp_msg *msg);
+extern void msg_queue_destroy_all_input_queues(void);

@@ -206,14 +206,21 @@ void print_statistics() {
 extern "C" {
 #include <core/core.h>
 #include <lp/expose_lp_state.h>
+extern void process_device_align_msg(unsigned lid, simtime_t time);
 }
 
-extern "C" void align_device_to_host_parallel(unsigned rid, unsigned n_blocks, unsigned threads_per_block){
-    printf("copying data from SIM to HOST %u\n", rid);
-    for(int i=0;i<global_config.lps;i++){
+extern "C" void align_device_to_host_parallel(unsigned rid){
+	int start = -1;
+	int i;
+
+    for(i=0;i<global_config.lps;i++){
+		if(lid_to_rid(i) != rid) continue;
+		if(lid_to_rid(i) != rid && start != -1) break;
+		if(start == -1) start = i;
         curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
         simulation_snapshot[i] = *state;
     }
+    printf("copying data from SIM to HOST by %u from %u to %u\n", rid, start, i);
 }
 
 
@@ -241,12 +248,23 @@ extern "C" void align_host_to_device(int gvt){
     copy_nodes_to_host(global_config.lps);  
 	cudaDeviceSynchronize();
     printf("copied memory from DEVICE to HOST\n");
-    
-    for(int i=0;i<global_config.lps;i++){
+}
+
+
+
+extern "C" void align_host_to_device_parallel(int gvt){
+	int start = -1;
+	int i;
+    for(i=0;i<global_config.lps;i++){
+		if(lid_to_rid(i) != rid && start == -1) continue;
+		if(lid_to_rid(i) != rid && start != -1) break;
+		if(start == -1) start = i;
         curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
         *state = simulation_snapshot[i];
+		//process_device_align_msg(i, gvt);
     }
-    printf("copied memory from HOST to CPU SIM\n");
+
+    printf("copying data from SIM to HOST by %u from %u to %u\n", rid, start, i);
 	
     
 }

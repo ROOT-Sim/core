@@ -54,6 +54,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 			break;
 
 		case EVENT:
+		case LP_REINIT:
 			dest = cpu_random(state, conf.lps);
             ts =  now + lookahead + cpu_random_exp(state, mean);
 			ScheduleNewEvent(dest, ts, EVENT, NULL, 0);

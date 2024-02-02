@@ -40,6 +40,7 @@ __thread unsigned free_rounds = 0;
 unsigned end_gpu = 0;
 unsigned end_cpu = 0;
 unsigned both_ended = 0;
+simtime_t actual_gvt = 0;
 
 void cpu_ended(){ end_cpu = 1;}
 void gpu_ended(){ end_gpu = 1;}
@@ -59,7 +60,7 @@ void set_gpu_rid(unsigned rid){
 }
 
 void align_device_to_host(int gvt, unsigned n_blocks, unsigned threads_per_block);
-void align_device_to_host_parallel(unsigned rid, unsigned n_blocks, unsigned threads_per_block);
+void align_device_to_host_parallel(unsigned rid);
 void destroy_all_queues(void);
 
 void follow_the_leader(simtime_t current_gvt){
@@ -106,9 +107,9 @@ void follow_the_leader(simtime_t current_gvt){
 				/// TODO here the code to decide the winner
 
 				/// CPU WINS
-				if(dummyphase++ & 2){
+				if(dummyphase++ & 1){
 					/// prepare next spin barrier after they wake up
-					__sync_lock_test_and_set(&ftl_curr_counter, gpu_rid-1);
+					__sync_lock_test_and_set(&ftl_curr_counter, gpu_rid);
 					__sync_lock_test_and_set(&ftl_spin_barrier, 1);
 					new_phase = CPU;
 				}
@@ -141,13 +142,24 @@ void follow_the_leader(simtime_t current_gvt){
 			if( current_phase == GPU && rid != gpu_rid) { 
 				pthread_barrier_wait(&xpu_barrier); 
 
-				destroy_all_queues();
+				msg_queue_destroy_all_input_queues();
+				
 				unsigned val = __sync_add_and_fetch(&ftl_curr_counter,-1);
-				printf("spinning before 1 %u %u\n", rid, val);
+				if(!val){  /// i am the last one 
+					/// reinit spin barrier for CPU threads
+					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid)) printf("9 MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n", ftl_curr_counter);  
+					/// unlock all
+					__sync_lock_test_and_set(&ftl_spin_barrier, 2);
+				}
 				while(ftl_spin_barrier == 1);
-				printf("end spinning before 1 %u\n", rid);
 				
+
+				align_host_to_device_parallel(actual_gvt); // the gvt here is wrong
 				
+				val = __sync_add_and_fetch(&ftl_curr_counter,-1);
+				while(val && ftl_spin_barrier == 2); // all threads -1 will be stucked here 
+				if(val) return;
+				while(ftl_spin_barrier == 2);
 				
 				while(current_phase != CHALLENGE);
 				
@@ -162,20 +174,33 @@ void follow_the_leader(simtime_t current_gvt){
 
 	switch(current_phase){
 		case CPU:
-				/// all threads except the master one 
-				if(rid != 0)  {
-					unsigned val = __sync_add_and_fetch(&ftl_curr_counter,-1);
-					while(ftl_spin_barrier == 1);
-					align_device_to_host_parallel(rid,n_blocks,threads_per_block);
-					val = __sync_add_and_fetch(&ftl_curr_counter,-1);
-					printf("spinning before 2 %u %u\n", rid, val);
-					while(ftl_spin_barrier == 2);
-					printf("end spinning before 2 %u\n", rid);
-					return;
+
+				unsigned val = __sync_add_and_fetch(&ftl_curr_counter,-1);
+				while(val && ftl_spin_barrier == 1); // all threads -1 will be stucked here 
+		
+				if(!val){  /// i am the last one 
+					/// reinit spin barrier for CPU threads
+					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid)) printf("A MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n", ftl_curr_counter);  
+					/// unlock all
+					__sync_lock_test_and_set(&ftl_spin_barrier, 2);
 				}
+
+				align_device_to_host_parallel(rid);
+				
+				val = __sync_add_and_fetch(&ftl_curr_counter,-1);
+				while(val && ftl_spin_barrier == 2); // all threads -1 will be stucked here 
+				if(val) return;
+			
+				printf("copied memory from CPU SIM to HOST\n");
+
+				/// perform single threaded actions to alkign device to host
+				align_device_to_host(current_gvt,n_blocks,threads_per_block);
+
+				
 		case GPU:
 
 				ftl_phase old_phase = current_phase;
+				actual_gvt = current_gvt;
 				
 				printf("\n%s phase ended\n", current_phase == CPU ? "CPU": "GPU");
 				printf("\nstarting a new challenge by rid %u curr %u\n", rid, ftl_curr_counter);
@@ -184,42 +209,40 @@ void follow_the_leader(simtime_t current_gvt){
 				end_gpu = end_cpu || end_gpu;
 				both_ended = end_cpu && end_gpu;
 
-				if(old_phase == CPU && rid == 0) {
+				/// the check on rid should be useless
+				if(old_phase == CPU && rid != gpu_rid) {
 					
-					while(ftl_curr_counter); // this matters only for rid 0 (CPU)                
-					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid-1)) printf("MY CAS FAILED AND THIS SHOULD NEVER HAPPEN\n");  
-
-					align_device_to_host_parallel(rid,n_blocks,threads_per_block);
-					__sync_lock_test_and_set(&ftl_spin_barrier, 2);
-
-					while(ftl_curr_counter); // this matters only for rid 0 (CPU)                
-
-					printf("copied memory from CPU SIM to HOST\n");
-
-					align_device_to_host(current_gvt,n_blocks,threads_per_block);
-					
+					/// wake up gpu thread
 					pthread_barrier_wait(&gpu_barrier);
-
 					
 				}
 				
 				if(old_phase == GPU && rid == gpu_rid){
+					/// prepare CPU thread spin barrier for align cpu to host
 					__sync_lock_test_and_set(&ftl_spin_barrier, 1);
-					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid)) printf("MY CAS FAILED AND THIS SHOULD NEVER HAPPEN\n");  
-
+					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid)) printf("B MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n", ftl_curr_counter);  
+					
+					align_host_to_device(current_gvt);
+					
+					/// wake up CPU threads 
 					pthread_barrier_wait(&xpu_barrier); 
-
-					while(ftl_curr_counter); // this matters only for rid 0 (CPU)                
-			   
+					
+					/// wait that threads have cleaned their queues/states
+					while(ftl_curr_counter);
 				}
 				
-				__sync_lock_test_and_set(&ftl_spin_barrier, 0);
-				if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid+1)) printf("MY CAS FAILED AND THIS SHOULD NEVER HAPPEN\n");  
+				/// reinit cpu spin barrier for both cpu/gpu threads
+				if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid+1)) printf("C MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n", ftl_curr_counter);  
+				__sync_lock_test_and_set(&ftl_spin_barrier, 0); /// unlock any thread spinning here (CPU for aligning device to host or host to device)
+				
+				/// reinit gvt timers
 				gvt_timer = timer_new();
 				gpu_gvt_timer = gvt_timer;
-				__sync_lock_test_and_set(&current_phase, CHALLENGE);
-				
+
+				/// start a new challenge
 				printf("\nPrevious phase was %s at %lf ended (%u)\n", old_phase == CPU ? "CPU":"GPU", current_gvt, rid);
+				__sync_lock_test_and_set(&current_phase, CHALLENGE); /// unlock any thread spinning here
+				
 				
 			return;
    }
