@@ -338,15 +338,18 @@ void stats_take(enum stats_thread_type this_stat, uint_fast64_t c)
  * Dumps accumulated statistics to the file and resets the statistics buffer to
  * ready up for the following processing phase
  */
+#include <ftl/ftl.h>
 void stats_on_gvt(simtime_t gvt)
 {
 	if(global_config.log_level != LOG_SILENT && !rid && !nid) {
-		if(unlikely(gvt == SIMTIME_MAX))
+		if(unlikely(gvt == SIMTIME_MAX)){
 			printf("\rVirtual time: infinity");
-		else
-			printf("\rVirtual time: %lf", gvt);
-
-		fflush(stdout);
+			fflush(stdout);
+		}
+		else{
+			printf("CPU GVT  %lf\n", gvt);
+				
+		}
 	}
 
 	if(global_config.stats_file == NULL)

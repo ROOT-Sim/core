@@ -17,6 +17,7 @@ set(rscore_srcs
         log/stats.c
         lp/lp.c
         lp/process.c
+        lp/expose_lp_state.c
         mm/auto_ckpt.c
         mm/buddy/buddy.c
         mm/buddy/ckpt.c

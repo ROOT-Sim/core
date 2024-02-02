@@ -65,7 +65,7 @@ enum node_phase {
 /// The current phase of the node-local GVT algorithm for the current thread
 static __thread enum thread_phase thread_phase = thread_phase_idle;
 /// The timer used to plan the execution of the next GVT algorithm
-static timer_uint gvt_timer;
+timer_uint gvt_timer;
 /// Helper array for the reduction of the node-local GVT
 static simtime_t reducing_p[MAX_THREADS];
 /// This keeps the minimum timestamp of messages extracted by the current thread
