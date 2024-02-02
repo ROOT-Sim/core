@@ -135,3 +135,16 @@ void msg_queue_insert_self(struct lp_msg *msg)
 	struct q_elem qe = {.t = msg->dest_t, .m = msg};
 	heap_insert(mqp, q_elem_is_before, qe);
 }
+
+
+
+void destroy_all_queues(void){
+    printf("Destroying all queues %u\n", rid);
+    struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
+	while(m != NULL) {
+        struct lp_msg *c = m;
+        m = m->next;
+
+	}
+
+}

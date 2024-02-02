@@ -36,6 +36,9 @@ __device__
 void init_node(uint nid);
 
 __device__
+void reinit_node(uint nid, int gvt);
+
+__device__
 char handle_event(Event *event);
 
 __device__

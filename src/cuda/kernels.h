@@ -36,6 +36,10 @@ void kernel_init_queues();
 __global__
 void kernel_init_nodes();
 
+
+__global__
+void kernel_reinit_nodes(int gvt);
+
 __global__
 void kernel_handle_next_event(int gvt, int window_size,
 uint *n_inac_1, uint *n_inac_2, uint *n_inac_3,

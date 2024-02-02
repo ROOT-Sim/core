@@ -53,6 +53,18 @@ void kernel_init_nodes() {
 	}
 }
 
+
+__global__
+void kernel_reinit_nodes(int gvt) {
+	uint lpid = blockIdx.x * blockDim.x + threadIdx.x;
+	if (lpid >= g_n_lps) { return; }
+
+	for (uint i = 0; i < g_nodes_per_lp; i++) {
+		uint nid = lpid * g_nodes_per_lp + i;
+		if (nid < g_n_nodes) { reinit_node(nid,gvt); }
+	}
+}
+
 __global__
 void kernel_handle_next_event(int gvt, int window_size,
 uint *n_inac_1, uint *n_inac_2, uint *n_inac_3,

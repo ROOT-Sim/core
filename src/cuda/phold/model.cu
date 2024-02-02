@@ -14,6 +14,7 @@
 
 #include <cuda/cuda_gpu.h>
 #include <cuda/queues.h>
+#include <cuda/kernels.h>
 #include "model.h"
 #include "settings.h"
 
@@ -23,18 +24,36 @@ __device__ static uint	population;
 __device__ static int	lookahead;
 __device__ static int	mean;
 
+
+curandState_t *simulation_snapshot;
+
 char malloc_nodes(uint n_nodes) {
 	cudaError_t err;
 
 	Nodes h_nodes;
-
-	err = cudaMalloc(&(h_nodes.cr_state),
-		sizeof(curandState_t) * n_nodes);
+	simulation_snapshot = (curandState_t*) malloc(sizeof(curandState_t)*n_nodes);
+	if(!simulation_snapshot) {printf("no memory for HOST side model state\n"); exit(1); }
+	
+	err = cudaMalloc(&(h_nodes.cr_state), sizeof(curandState_t) * n_nodes);
 	if (err != cudaSuccess) { return 0; }
 	cudaMemcpyToSymbol(nodes, &h_nodes, sizeof(Nodes));
 
 	return 1;
 }
+
+void copy_nodes_from_host(uint n_nodes) {
+	Nodes h_nodes;
+	cudaMemcpyFromSymbol(&h_nodes, nodes, sizeof(Nodes));
+	cudaMemcpy(h_nodes.cr_state, simulation_snapshot, sizeof(curandState_t) * n_nodes, cudaMemcpyHostToDevice);
+}
+
+
+void copy_nodes_to_host(uint n_nodes) {
+	Nodes h_nodes;
+	cudaMemcpyFromSymbol(&h_nodes, nodes, sizeof(Nodes));
+	cudaMemcpy(simulation_snapshot, h_nodes.cr_state, sizeof(curandState_t) * n_nodes, cudaMemcpyDeviceToHost);
+}
+
 
 void free_nodes() {
 	Nodes h_nodes;
@@ -69,6 +88,24 @@ void init_node(uint nid) {
 		event.timestamp = i;
 
 		append_event_to_queue(&event);
+	}
+}
+
+
+__device__
+void reinit_node(uint nid, int gvt) {
+	
+	uint n_events = population / g_n_nodes;
+	curandState_t *cr_state = &(nodes.cr_state[nid]);
+
+	for (uint i = 0; i < n_events; i++) {
+        Event new_event;
+        new_event.type = 1;
+        new_event.sender = nid;
+        new_event.receiver = random(cr_state, g_n_nodes);
+        new_event.timestamp = gvt + lookahead + random_exp(cr_state, mean);
+
+        char res = append_event_to_queue(&new_event);
 	}
 }
 
@@ -165,3 +202,52 @@ __device__
 void print_statistics() {
 	printf("STATISTICS NOT AVAILABLE\n");
 }
+
+extern "C" {
+#include <core/core.h>
+#include <lp/expose_lp_state.h>
+}
+
+extern "C" void align_device_to_host_parallel(unsigned rid, unsigned n_blocks, unsigned threads_per_block){
+    printf("copying data from SIM to HOST %u\n", rid);
+    for(int i=0;i<global_config.lps;i++){
+        curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
+        simulation_snapshot[i] = *state;
+    }
+}
+
+
+extern "C" void align_device_to_host(int gvt, unsigned n_blocks, unsigned threads_per_block){
+    copy_nodes_from_host(global_config.lps);
+	cudaDeviceSynchronize();
+    printf("copied memory from HOST to DEVICE\n");
+	
+    kernel_init_queues<<<n_blocks, threads_per_block>>>();
+    cudaDeviceSynchronize();
+	printf("re init queues \n");
+	
+    kernel_reinit_nodes<<<n_blocks, threads_per_block>>>(gvt);
+    cudaDeviceSynchronize();
+	printf("re init nodes \n");
+	
+    kernel_sort_event_queues<<<n_blocks, threads_per_block>>>();
+    cudaDeviceSynchronize();
+    printf("sort queues \n");
+
+}
+
+
+extern "C" void align_host_to_device(int gvt){
+    copy_nodes_to_host(global_config.lps);  
+	cudaDeviceSynchronize();
+    printf("copied memory from DEVICE to HOST\n");
+    
+    for(int i=0;i<global_config.lps;i++){
+        curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
+        *state = simulation_snapshot[i];
+    }
+    printf("copied memory from HOST to CPU SIM\n");
+	
+    
+}
+
