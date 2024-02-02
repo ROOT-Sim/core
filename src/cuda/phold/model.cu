@@ -99,13 +99,13 @@ void reinit_node(uint nid, int gvt) {
 	curandState_t *cr_state = &(nodes.cr_state[nid]);
 
 	for (uint i = 0; i < n_events; i++) {
-        Event new_event;
-        new_event.type = 1;
-        new_event.sender = nid;
-        new_event.receiver = random(cr_state, g_n_nodes);
-        new_event.timestamp = gvt + lookahead + random_exp(cr_state, mean);
+		Event new_event;
+		new_event.type = 1;
+		new_event.sender = nid;
+		new_event.receiver = random(cr_state, g_n_nodes);
+		new_event.timestamp = gvt + lookahead + random_exp(cr_state, mean);
 
-        char res = append_event_to_queue(&new_event);
+		char res = append_event_to_queue(&new_event);
 	}
 }
 
@@ -213,41 +213,41 @@ extern "C" void align_device_to_host_parallel(unsigned rid){
 	int start = -1;
 	int i;
 
-    for(i=0;i<global_config.lps;i++){
+	for(i=0;i<global_config.lps;i++){
 		if(lid_to_rid(i) != rid) continue;
 		if(lid_to_rid(i) != rid && start != -1) break;
 		if(start == -1) start = i;
-        curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
-        simulation_snapshot[i] = *state;
-    }
-    printf("copying data from SIM to HOST by %u from %u to %u\n", rid, start, i);
+		curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
+		simulation_snapshot[i] = *state;
+	}
+	printf("copying data from SIM to HOST by %u from %u to %u\n", rid, start, i);
 }
 
 
 extern "C" void align_device_to_host(int gvt, unsigned n_blocks, unsigned threads_per_block){
-    copy_nodes_from_host(global_config.lps);
+	copy_nodes_from_host(global_config.lps);
 	cudaDeviceSynchronize();
-    printf("copied memory from HOST to DEVICE\n");
+	printf("copied memory from HOST to DEVICE\n");
 	
-    kernel_init_queues<<<n_blocks, threads_per_block>>>();
-    cudaDeviceSynchronize();
+	kernel_init_queues<<<n_blocks, threads_per_block>>>();
+	cudaDeviceSynchronize();
 	printf("re init queues \n");
 	
-    kernel_reinit_nodes<<<n_blocks, threads_per_block>>>(gvt);
-    cudaDeviceSynchronize();
+	kernel_reinit_nodes<<<n_blocks, threads_per_block>>>(gvt);
+	cudaDeviceSynchronize();
 	printf("re init nodes \n");
 	
-    kernel_sort_event_queues<<<n_blocks, threads_per_block>>>();
-    cudaDeviceSynchronize();
-    printf("sort queues \n");
+	kernel_sort_event_queues<<<n_blocks, threads_per_block>>>();
+	cudaDeviceSynchronize();
+	printf("sort queues \n");
 
 }
 
 
 extern "C" void align_host_to_device(int gvt){
-    copy_nodes_to_host(global_config.lps);  
+	copy_nodes_to_host(global_config.lps);  
 	cudaDeviceSynchronize();
-    printf("copied memory from DEVICE to HOST\n");
+	printf("copied memory from DEVICE to HOST\n");
 }
 
 
@@ -255,17 +255,15 @@ extern "C" void align_host_to_device(int gvt){
 extern "C" void align_host_to_device_parallel(int gvt){
 	int start = -1;
 	int i;
-    for(i=0;i<global_config.lps;i++){
+	for(i=0;i<global_config.lps;i++){
 		if(lid_to_rid(i) != rid && start == -1) continue;
 		if(lid_to_rid(i) != rid && start != -1) break;
 		if(start == -1) start = i;
-        curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
-        *state = simulation_snapshot[i];
+		curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
+		*state = simulation_snapshot[i];
 		//process_device_align_msg(i, gvt);
-    }
+	}
 
-    printf("copying data from SIM to HOST by %u from %u to %u\n", rid, start, i);
-	
-    
+	printf("copying data from HOST to SIM by %u from %u to %u\n", rid, start, i);
 }
 
