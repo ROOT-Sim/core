@@ -194,7 +194,7 @@ void follow_the_leader(simtime_t current_gvt){
 				printf("aligned memory from CPU SIM to HOST\n");
 
 				/// perform single threaded actions to alkign device to host
-				align_device_to_host(current_gvt,n_blocks,threads_per_block);
+				align_device_to_host((int)current_gvt,n_blocks,threads_per_block);
 
 				
 		case GPU:
