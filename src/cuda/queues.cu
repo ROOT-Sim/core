@@ -14,7 +14,7 @@
 #include <cuda/cuda_gpu.h>
 #include <cuda/queues.h>
 
-__device__ static EQs	eq;
+__device__  EQs	eq;
 __device__ static SQs	sq;
 __device__ static AMQs	amq;
 

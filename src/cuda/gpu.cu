@@ -39,7 +39,7 @@ static uint nodes_per_lp;
 static uint n_nodes;
 static uint n_lps;
 
-static uint events_per_node;
+uint events_per_node;
 static uint states_per_node;
 static uint antimsgs_per_node;
 
@@ -49,6 +49,12 @@ static int window_size;
 uint threads_per_block;
 uint n_blocks;
 timer_uint gpu_gvt_timer;
+
+
+uint get_n_nodes(){return n_nodes;}
+uint get_n_lps(){return n_lps;}
+uint get_n_nodes_per_lp(){return nodes_per_lp;}
+
 
 /* Private functions */
 // XXX Should be either static or moved to an internal header
@@ -247,6 +253,7 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 			gpu_gvt_timer = t;
 			follow_the_leader((double)gvt);
 		}
+		
         	
 		// Delete past events
 		h_n_events_cmt = 0;
@@ -261,7 +268,8 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 		if( ((float)gvt) > global_config.termination_time) {
 			gpu_ended();
 		}
-
+		
+		
 		// Change parameters
 		cudaEventRecord(stop_2);
 		cudaEventSynchronize(stop_2);
