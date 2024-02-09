@@ -25,7 +25,18 @@ __device__ static int	lookahead;
 __device__ static int	mean;
 
 
+extern uint events_per_node;
+extern __device__ EQs	eq;
+extern uint get_n_nodes();
+extern uint get_n_lps();
+extern uint get_n_nodes_per_lp();
+
+
+
 curandState_t *simulation_snapshot;
+uint *sim_bo;
+uint *sim_uo;
+Event *sim_events;
 
 char malloc_nodes(uint n_nodes) {
 	cudaError_t err;
@@ -52,6 +63,18 @@ void copy_nodes_to_host(uint n_nodes) {
 	Nodes h_nodes;
 	cudaMemcpyFromSymbol(&h_nodes, nodes, sizeof(Nodes));
 	cudaMemcpy(simulation_snapshot, h_nodes.cr_state, sizeof(curandState_t) * n_nodes, cudaMemcpyDeviceToHost);
+	
+	EQs h_eq;
+	cudaMemcpyFromSymbol(&h_eq, eq, sizeof(EQs));
+	if(!sim_bo) sim_bo = (uint*)malloc(sizeof(uint) * n_nodes);
+	if(!sim_uo) sim_uo = (uint*)malloc(sizeof(uint) * n_nodes);
+	if(!sim_events) sim_events = (Event*)malloc(sizeof(Event) * n_nodes * events_per_node);
+	
+	cudaMemcpy(sim_bo, h_eq.bo, sizeof(uint) * n_nodes, cudaMemcpyDeviceToHost);
+	cudaMemcpy(sim_uo, h_eq.uo, sizeof(uint) * n_nodes, cudaMemcpyDeviceToHost);
+	cudaMemcpy(sim_events, h_eq.events, sizeof(Event) * n_nodes * events_per_node, cudaMemcpyDeviceToHost);
+
+
 }
 
 
@@ -220,7 +243,7 @@ extern "C" void align_device_to_host_parallel(unsigned rid){
 		curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
 		simulation_snapshot[i] = *state;
 	}
-	//printf("copying data from SIM to HOST by %u from %u to %u\n", rid, start, i);
+	printf("copying data from SIM to HOST by %u from %u to %u\n", rid, start, i);
 }
 
 
@@ -244,14 +267,15 @@ extern "C" void align_device_to_host(int gvt, unsigned n_blocks, unsigned thread
 }
 
 
-extern "C" void align_host_to_device(int gvt){
+extern "C" void align_host_to_device(simtime_t gvt){
 	copy_nodes_to_host(global_config.lps);  
 	cudaDeviceSynchronize();
 }
 
 
 
-extern "C" void align_host_to_device_parallel(int gvt){
+
+extern "C" void align_host_to_device_parallel(simtime_t gvt){
 	int start = -1;
 	int i;
 	for(i=0;i<global_config.lps;i++){
