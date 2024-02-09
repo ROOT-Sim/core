@@ -409,46 +409,44 @@ void process_msg(void)
  */
 void process_device_align_msg(unsigned lid, simtime_t time)
 {
+	if(rid == 20) printf("GPU THREAD IS WORKING HERE!!!!\n");
 	if(rid != lid_to_rid(lid))
 	printf("ALIGNING %u by %u with check %u\n", lid, rid, lid_to_rid(lid));
 	struct lp_msg *msg = msg_allocator_pack(lid, time, LP_REINIT, NULL, 0);
-	msg->flags = 0;
+	
+		
 	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *lp = &lps[msg->dest];
+
+	array_count_t m_count, k;
+	k = m_count = array_count(lp->p.p_msgs);
+	
+	
+	while(k--) {
+		struct lp_msg *ms = array_get_at(lp->p.p_msgs, k);
+		//if(!is_msg_sent(ms)) msg_allocator_free_at_gvt(unmark_msg(ms));
+	}
+	
+	array_truncate_first(lp->p.p_msgs, m_count);
+	
+	lp->p.early_antis = NULL;
+	msg->raw_flags = MSG_FLAG_PROCESSED;
+
 	current_lp = lp;
-
-	if(unlikely(fossil_is_needed(lp))) {
-		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.full_ckpt_size);
-		fossil_lp_collect(lp);
-		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
-	}
-
-	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
-	if(unlikely(flags & MSG_FLAG_ANTI)) {
-		handle_anti_msg(lp, msg, flags);
-		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
-		return;
-	}
-
-	if(unlikely(flags && lp->p.early_antis && check_early_anti_messages(&lp->p, msg)))
-		return;
-
-	if(unlikely(lp->p.bound >= msg->dest_t && msg_is_before(msg, array_peek(lp->p.p_msgs))))
-		handle_straggler_msg(lp, msg);
 
 #ifndef NDEBUG
 	current_msg = msg;
 #endif
 
 	common_msg_process(lp, msg);
+
 	
 	lp->p.bound = msg->dest_t;
 	array_push(lp->p.p_msgs, msg);
 
-	auto_ckpt_register_good(&lp->auto_ckpt);
-	if(auto_ckpt_is_needed(&lp->auto_ckpt))
-		checkpoint_take(lp);
+	model_allocator_checkpoint_next_force_full(&lp->mm_state);
+	checkpoint_take(lp);
 
 	termination_on_msg_process(lp, msg->dest_t);
 }

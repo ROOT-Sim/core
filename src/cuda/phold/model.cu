@@ -284,7 +284,7 @@ extern "C" void align_host_to_device_parallel(simtime_t gvt){
 		if(start == -1) start = i;
 		curandState_t *state = (curandState_t*) get_lp_state_base_pointer(i);
 		*state = simulation_snapshot[i];
-		//process_device_align_msg(i, gvt);
+		process_device_align_msg(i, gvt);
 	}
 
 	//printf("copying data from HOST to SIM by %u from %u to %u\n", rid, start, i);
