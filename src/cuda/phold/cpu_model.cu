@@ -31,7 +31,7 @@ extern "C" {
 unsigned int mean = 10000;
 
 extern "C" {
-static simtime_t lookahead = 0.0;
+static simtime_t lookahead = 1000;
 
 struct simulation_configuration conf;
 
@@ -40,8 +40,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 {
 	lp_id_t dest;
 	curandState_t *state = (curandState_t *)s;
-    unsigned int ts = 0;
-    
+    simtime_t ts = 0;
+    int incr = 0;
 	switch(event_type) {
 		case LP_INIT:
 			state = (curandState_t *)rs_malloc(sizeof(curandState_t));
@@ -49,13 +49,16 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
             cpu_curand_init(me, 0, 0, state);
 			SetState(state);
 
-            ts =  now + lookahead + cpu_random_exp(state, mean);
+			incr =  cpu_random_exp(state, mean);
+            ts =  1.0*(now + lookahead + incr);
 			ScheduleNewEvent(me, ts, EVENT, NULL, 0);
 			break;
 
 		case EVENT:
-			dest = cpu_random(state, conf.lps);
-            ts =  now + lookahead + cpu_random_exp(state, mean);
+			dest =  cpu_random(state, conf.lps);
+			incr =  cpu_random_exp(state, mean);
+            ts =  1.0*(now + lookahead + incr);
+			if(ts < now) printf("overflow ?? %d %f now %f\n", incr, ts, now);
 			ScheduleNewEvent(dest, ts, EVENT, NULL, 0);
 			break;
 
@@ -78,7 +81,7 @@ int main(void)
     conf.lps = NUM_LPS,
     conf.n_threads = NUM_THREADS,
     conf.termination_time = 300000000,
-    conf.gvt_period = 1000*50,
+    conf.gvt_period = 1000*500,
     conf.log_level = LOG_INFO,
     conf.stats_file = "phold",
     conf.ckpt_interval = 0,
