@@ -286,7 +286,18 @@ extern "C" void align_host_to_device_parallel(simtime_t gvt){
 		*state = simulation_snapshot[i];
 		process_device_align_msg(i, gvt);
 	}
-
-	//printf("copying data from HOST to SIM by %u from %u to %u\n", rid, start, i);
+	if(rid < get_n_lps()){
+		uint base_idx  = rid*get_n_nodes_per_lp()*events_per_node;
+		uint start_idx = sim_bo[rid];
+		uint end_idx   = sim_uo[rid];
+		if(rid == 0) printf("base %u start %u end %u size %u\n", base_idx, start_idx, end_idx, get_n_nodes_per_lp()*events_per_node); 
+		while(start_idx != end_idx){
+			Event *cur = sim_events+base_idx+start_idx++;
+			custom_schedule_for_gpu(cur->sender, cur->receiver, (simtime_t) cur->timestamp, cur->type, NULL, 0);
+			start_idx = start_idx % (get_n_nodes_per_lp()*events_per_node);
+		}
+	}
+	
+	printf("copying data from HOST to SIM by %u from %u to %u GPULPS %u\n", rid, start, i,get_n_lps());
 }
 
