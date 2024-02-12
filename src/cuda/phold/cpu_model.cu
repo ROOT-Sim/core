@@ -32,6 +32,7 @@ extern "C" {
 unsigned int mean = 10000;
 
 extern "C" {
+#include <unistd.h>
 static simtime_t lookahead = 1000;
 
 struct simulation_configuration conf;
@@ -65,7 +66,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 			if(ts > 131238342.000000){
 			//	asm("int $3");
 			}
-
+            //usleep(5);
 			ScheduleNewEvent(dest, ts, EVENT, NULL, 0);
 			break;
 

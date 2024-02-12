@@ -151,5 +151,5 @@ void msg_queue_destroy_all_input_queues(void){
 		//msg_allocator_free(unmark_msg(msg)); // TODO recheck this (is_msg_local)
 	}
 	array_truncate_first(mqp, m_count);
-    printf("Destroying inbound queues for %u %u\n", rid, heap_count(mqp));
+    printf("Destroying inbound queues for rid %u old %u new %u\n", rid, m_count, heap_count(mqp));
 }

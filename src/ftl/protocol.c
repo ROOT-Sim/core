@@ -47,7 +47,7 @@ void gpu_ended(){ end_gpu = 1;}
 
 unsigned sim_can_end() { return both_ended; }
 
-#define FTL_PERIODS 50000
+#define FTL_PERIODS 10
 
 void set_gpu_rid(unsigned rid){ 
 	gpu_rid = rid; 
@@ -160,6 +160,7 @@ void follow_the_leader(simtime_t current_gvt){
 				//if(val) return;
 				while(ftl_spin_barrier == 2);
 				
+                if(!val) printf("resynch with GPU at %'lf\n", actual_gvt);
 				
 				while(current_phase != CHALLENGE);
 				

@@ -289,21 +289,28 @@ extern "C" void align_host_to_device_parallel(simtime_t gvt){
 		*state = simulation_snapshot[i];
 		process_device_align_msg(i, gvt);
 	}
+    
+    uint pushed_events= 0;
 	if(rid < get_n_lps()){
-		uint zero_idx  = rid*get_n_nodes_per_lp()*events_per_node;
-		uint base_idx  = sim_bo[rid];
-		uint start_idx = sim_so[rid];
-		uint end_idx   = sim_uo[rid];
-		if(rid == 0) printf("base %u start %u end %u size %u\n", base_idx, start_idx, end_idx, get_n_nodes_per_lp()*events_per_node); 
-		while(start_idx != end_idx){
-			uint effective = (base_idx+start_idx) % (get_n_nodes_per_lp()*events_per_node);
-			Event *cur = sim_events+zero_idx+effective;
-			printf("A scheduling for %u a message from %u at %u\n", cur->receiver, cur->sender, cur->timestamp);
-			custom_schedule_for_gpu(gvt, cur->sender, cur->receiver, (simtime_t) cur->timestamp, 2, NULL, 0);
-			start_idx++;
-		}
+        start = -1;
+        for(i=0;i<get_n_lps()/global_config.n_threads;i++){	
+            uint lp = rid * (get_n_lps()/global_config.n_threads) + i;
+            uint zero_idx  = lp*get_n_nodes_per_lp()*events_per_node;
+            uint base_idx  = sim_bo[lp];
+            uint start_idx = sim_so[lp];
+            uint end_idx   = sim_uo[lp];
+            //if(rid == 0) printf("base %u start %u end %u size %u\n", base_idx, start_idx, end_idx, get_n_nodes_per_lp()*events_per_node); 
+            while(start_idx != end_idx){
+                uint effective = (base_idx+start_idx) % (get_n_nodes_per_lp()*events_per_node);
+                Event *cur = sim_events+zero_idx+effective;
+                //printf("A scheduling for %u a message from %u at %u\n", cur->receiver, cur->sender, cur->timestamp);
+                custom_schedule_for_gpu(gvt, cur->sender, cur->receiver, (simtime_t) cur->timestamp, 2, NULL, 0);
+                start_idx++;
+                pushed_events++;
+            }
+        }
 	}
 	
-	printf("copying data from HOST to SIM by %u from %u to %u GPULPS %u\n", rid, start, i,get_n_lps());
+	printf("copying data from HOST to SIM by %u from %u to %u GPULPS %u -- events pushed %u\n", rid, start, i,get_n_lps(), pushed_events);
 }
 

@@ -368,8 +368,8 @@ void process_msg(void)
 	struct lp_ctx *lp = &lps[msg->dest];
 	current_lp = lp;
 
-	if(lp->p.bound == -1 && msg->m_type != LP_INIT && msg->dest_t > 20493359.000000 && !silent_processing)
-		asm("int $3");
+	//if(lp->p.bound == -1 && msg->m_type != LP_INIT && msg->dest_t > 20493359.000000 && !silent_processing)
+	//	asm("int $3");
 	
 
 	if(unlikely(fossil_is_needed(lp))) {

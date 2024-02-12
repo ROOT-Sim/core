@@ -15,7 +15,7 @@ void* get_lp_state_base_pointer(unsigned int i){
 
 
 void custom_schedule_for_gpu(simtime_t gvt, unsigned sen, unsigned rec, simtime_t ts, unsigned type, void *pay, unsigned long size){
-	printf("B scheduling for %u a message from %u at %f\n", rec, sen, ts);
+	//printf("B scheduling for %u a message from %u at %f\n", rec, sen, ts);
 	if(gvt > ts) printf("GVT creeepy %lf %lf %lf\n", lps[rec].p.bound, ts, gvt);
 	if(lps[rec].p.bound > ts) printf("BOUND creeepy %lf %lf %lf\n", lps[rec].p.bound, ts, gvt);
 	struct lp_msg *msg = msg_allocator_pack(rec, ts, type, pay, size);
