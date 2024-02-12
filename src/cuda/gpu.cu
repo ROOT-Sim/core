@@ -158,6 +158,8 @@ static float min_rate = 1000;
 static cudaEvent_t start, stop, start_1, stop_1, start_2, stop_2;
 static float exec_time;
 
+
+#include <locale.h>
 extern "C"
 bool gpu_configure(lp_id_t n_lps)
 {
@@ -240,6 +242,7 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 	(void)args;
 	rid = (uintptr_t)args;
 	gpu_gvt_timer = timer_new();
+    setlocale(LC_NUMERIC, "");
 	follow_the_leader(0);	
 	int gvt;
 	while(!sim_can_end()) {
@@ -248,7 +251,7 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 
 		timer_uint t = timer_new();
 		if(global_config.gvt_period < t - gpu_gvt_timer){
-			printf("\n\t\t\t\t\tGPU GVT  %lf", (float)gvt);
+			printf("\n\t\t\t\t\tGPU GVT  %'lf", (float)gvt);
 			fflush(stdout);
 			gpu_gvt_timer = t;
 			follow_the_leader((simtime_t)gvt);

@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
-
+#include <locale.h>
 /// The number of entries to keep in the stdio buffers before flushing a temporary statistics file to disk
 #define STATS_BUFFER_ENTRIES (1024)
 
@@ -341,12 +341,13 @@ void stats_take(enum stats_thread_type this_stat, uint_fast64_t c)
 #include <ftl/ftl.h>
 void stats_on_gvt(simtime_t gvt)
 {
+    
 	if(global_config.log_level != LOG_SILENT && !rid && !nid) {
 		if(unlikely(gvt == SIMTIME_MAX)){
 			printf("\rVirtual time: infinity");
 		}
 		else{
-			printf("\nCPU GVT  %lf", gvt);
+			printf("\nCPU GVT  %'lf", gvt);
 		}
 		fflush(stdout);
 	}
