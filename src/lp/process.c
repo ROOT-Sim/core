@@ -358,11 +358,19 @@ void process_msg(void)
 		current_lp = NULL;
 		return;
 	}
+	
+	if(msg->dest_t > 131238342.000000){
+		//asm("int $3");
+	}
 
 	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *lp = &lps[msg->dest];
 	current_lp = lp;
+
+	if(lp->p.bound == -1 && msg->m_type != LP_INIT && msg->dest_t > 20493359.000000 && !silent_processing)
+		asm("int $3");
+	
 
 	if(unlikely(fossil_is_needed(lp))) {
 		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.full_ckpt_size);

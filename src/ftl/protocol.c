@@ -30,7 +30,7 @@ extern uint threads_per_block;
 extern uint n_blocks;
 
 
-unsigned dummyphase = 1;
+unsigned dummyphase = 0;
 
 
 __thread unsigned gvt_rounds  = 0;
@@ -47,7 +47,7 @@ void gpu_ended(){ end_gpu = 1;}
 
 unsigned sim_can_end() { return both_ended; }
 
-#define FTL_PERIODS 100
+#define FTL_PERIODS 50000
 
 void set_gpu_rid(unsigned rid){ 
 	gpu_rid = rid; 
@@ -138,28 +138,28 @@ void follow_the_leader(simtime_t current_gvt){
 				while(current_phase != CHALLENGE);
 			} 
 			
-			/// CPU wins GPU loses
+			/// GPU wins CPU loses
 			if( current_phase == GPU && rid != gpu_rid) { 
 				pthread_barrier_wait(&xpu_barrier); 
 
 				msg_queue_destroy_all_input_queues();
 				
 				unsigned val = __sync_add_and_fetch(&ftl_curr_counter,-1);
-				if(!val){  /// i am the last one 
+				if(val == 1){  /// i am the last one 
 					/// reinit spin barrier for CPU threads
-					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid)) printf("9 MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n", ftl_curr_counter);  
+					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 1,  gpu_rid)) printf("9 MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 1 vs %u\n", ftl_curr_counter);  
 					/// unlock all
 					__sync_lock_test_and_set(&ftl_spin_barrier, 2);
 				}
 				while(ftl_spin_barrier == 1);
 				
-
 				align_host_to_device_parallel(actual_gvt); // the gvt here is wrong
 				
 				val = __sync_add_and_fetch(&ftl_curr_counter,-1);
-				while(val && ftl_spin_barrier == 2); // all threads -1 will be stucked here 
-				if(val) return;
+				//while(val && ftl_spin_barrier == 2); // all threads -1 will be stucked here 
+				//if(val) return;
 				while(ftl_spin_barrier == 2);
+				
 				
 				while(current_phase != CHALLENGE);
 				
@@ -220,7 +220,7 @@ void follow_the_leader(simtime_t current_gvt){
 				if(old_phase == GPU && rid == gpu_rid){
 					/// prepare CPU thread spin barrier for align cpu to host
 					__sync_lock_test_and_set(&ftl_spin_barrier, 1);
-					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid)) printf("B MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n", ftl_curr_counter);  
+					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0,  gpu_rid+1)) printf("B MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n", ftl_curr_counter);  
 					
 					align_host_to_device(current_gvt);
 					printf("aligned memory from DEVICE to HOST\n");

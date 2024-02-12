@@ -35,6 +35,7 @@ extern uint get_n_nodes_per_lp();
 
 curandState_t *simulation_snapshot;
 uint *sim_bo;
+uint *sim_so;
 uint *sim_uo;
 Event *sim_events;
 
@@ -67,10 +68,12 @@ void copy_nodes_to_host(uint n_nodes) {
 	EQs h_eq;
 	cudaMemcpyFromSymbol(&h_eq, eq, sizeof(EQs));
 	if(!sim_bo) sim_bo = (uint*)malloc(sizeof(uint) * n_nodes);
+	if(!sim_so) sim_so = (uint*)malloc(sizeof(uint) * n_nodes);
 	if(!sim_uo) sim_uo = (uint*)malloc(sizeof(uint) * n_nodes);
 	if(!sim_events) sim_events = (Event*)malloc(sizeof(Event) * n_nodes * events_per_node);
 	
 	cudaMemcpy(sim_bo, h_eq.bo, sizeof(uint) * n_nodes, cudaMemcpyDeviceToHost);
+	cudaMemcpy(sim_so, h_eq.so, sizeof(uint) * n_nodes, cudaMemcpyDeviceToHost);
 	cudaMemcpy(sim_uo, h_eq.uo, sizeof(uint) * n_nodes, cudaMemcpyDeviceToHost);
 	cudaMemcpy(sim_events, h_eq.events, sizeof(Event) * n_nodes * events_per_node, cudaMemcpyDeviceToHost);
 
@@ -287,14 +290,17 @@ extern "C" void align_host_to_device_parallel(simtime_t gvt){
 		process_device_align_msg(i, gvt);
 	}
 	if(rid < get_n_lps()){
-		uint base_idx  = rid*get_n_nodes_per_lp()*events_per_node;
-		uint start_idx = sim_bo[rid];
+		uint zero_idx  = rid*get_n_nodes_per_lp()*events_per_node;
+		uint base_idx  = sim_bo[rid];
+		uint start_idx = sim_so[rid];
 		uint end_idx   = sim_uo[rid];
 		if(rid == 0) printf("base %u start %u end %u size %u\n", base_idx, start_idx, end_idx, get_n_nodes_per_lp()*events_per_node); 
 		while(start_idx != end_idx){
-			Event *cur = sim_events+base_idx+start_idx++;
-			custom_schedule_for_gpu(cur->sender, cur->receiver, (simtime_t) cur->timestamp, cur->type, NULL, 0);
-			start_idx = start_idx % (get_n_nodes_per_lp()*events_per_node);
+			uint effective = (base_idx+start_idx) % (get_n_nodes_per_lp()*events_per_node);
+			Event *cur = sim_events+zero_idx+effective;
+			printf("A scheduling for %u a message from %u at %u\n", cur->receiver, cur->sender, cur->timestamp);
+			custom_schedule_for_gpu(gvt, cur->sender, cur->receiver, (simtime_t) cur->timestamp, 2, NULL, 0);
+			start_idx++;
 		}
 	}
 	

@@ -148,7 +148,7 @@ void msg_queue_destroy_all_input_queues(void){
 
 	while(k--) {
 		struct lp_msg *msg = array_get_at(mqp, k).m;
-		msg_allocator_free(unmark_msg(msg)); // TODO recheck this (is_msg_local)
+		//msg_allocator_free(unmark_msg(msg)); // TODO recheck this (is_msg_local)
 	}
 	array_truncate_first(mqp, m_count);
     printf("Destroying inbound queues for %u %u\n", rid, heap_count(mqp));

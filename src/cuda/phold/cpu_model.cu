@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 #define EVENT 1
+#define GPU_EVENT 2
 
 unsigned int mean = 10000;
 
@@ -54,11 +55,17 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 			ScheduleNewEvent(me, ts, EVENT, NULL, 0);
 			break;
 
+		case GPU_EVENT:
 		case EVENT:
 			dest =  cpu_random(state, conf.lps);
 			incr =  cpu_random_exp(state, mean);
             ts =  1.0*(now + lookahead + incr);
 			if(ts < now) printf("overflow ?? %d %f now %f\n", incr, ts, now);
+			
+			if(ts > 131238342.000000){
+			//	asm("int $3");
+			}
+
 			ScheduleNewEvent(dest, ts, EVENT, NULL, 0);
 			break;
 
