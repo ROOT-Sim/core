@@ -30,7 +30,7 @@ extern uint threads_per_block;
 extern uint n_blocks;
 
 
-unsigned dummyphase = 0;
+unsigned dummyphase = 1;
 
 
 __thread unsigned gvt_rounds  = 0;
@@ -60,7 +60,7 @@ void set_gpu_rid(unsigned rid){
 }
 
 void align_device_to_host(int gvt, unsigned n_blocks, unsigned threads_per_block);
-void align_device_to_host_parallel(unsigned rid);
+void align_device_to_host_parallel(unsigned rid, simtime_t gvt);
 void destroy_all_queues(void);
 
 void follow_the_leader(simtime_t current_gvt){
@@ -186,7 +186,7 @@ void follow_the_leader(simtime_t current_gvt){
 					__sync_lock_test_and_set(&ftl_spin_barrier, 2);
 				}
 
-				align_device_to_host_parallel(rid);
+				align_device_to_host_parallel(rid, current_gvt);
 				
 				val = __sync_add_and_fetch(&ftl_curr_counter,-1);
 				while(val && ftl_spin_barrier == 2); // all threads -1 will be stucked here 

@@ -199,7 +199,7 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
  * @param proc_p the message processing data for the LP that has to rollback
  * @param past_i the index in @a proc_p of the last validly processed message
  */
-static void do_rollback(struct lp_ctx *lp, array_count_t past_i)
+void do_rollback(struct lp_ctx *lp, array_count_t past_i)
 {
 	timer_uint t = timer_hr_new();
 	send_anti_messages(&lp->p, past_i);

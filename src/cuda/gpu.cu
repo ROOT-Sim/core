@@ -54,6 +54,7 @@ timer_uint gpu_gvt_timer;
 uint get_n_nodes(){return n_nodes;}
 uint get_n_lps(){return n_lps;}
 uint get_n_nodes_per_lp(){return nodes_per_lp;}
+uint get_n_blocks(){return n_blocks;}
 
 
 /* Private functions */

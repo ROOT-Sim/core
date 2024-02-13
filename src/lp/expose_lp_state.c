@@ -1,4 +1,5 @@
 #include <lp/lp.h>
+#include <lp/process.h>
 #include <lp/msg.h>
 #include <mm/msg_allocator.h>
 #include <datatypes/msg_queue.h>
@@ -12,6 +13,23 @@
 void* get_lp_state_base_pointer(unsigned int i){
     return lps[i].state_pointer;
 } 
+
+
+void align_lp_state_to_gvt(simtime_t gvt, unsigned l){
+	struct lp_ctx *lp = lps+l;
+    array_count_t i = array_count(lp->p.p_msgs);
+	if(!i) return;
+    
+    const struct lp_msg *msg;
+    do{
+		msg = array_get_at(lp->p.p_msgs, --i);
+        
+	} while(is_msg_sent(msg) || gvt < msg->dest_t);
+	
+    i++;
+    do_rollback(lp, i);
+	termination_on_lp_rollback(lp, gvt);
+}
 
 
 void custom_schedule_for_gpu(simtime_t gvt, unsigned sen, unsigned rec, simtime_t ts, unsigned type, void *pay, unsigned long size){
