@@ -11,46 +11,15 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#pragma once
+#ifndef nelder_mead_h
+#define nelder_mead_h
 
 #include <stdio.h>
-#include "event.h"
-#include "state.h"
+#include <float.h>
 
-typedef struct {
-	curandState_t	*cr_state;
-} Nodes;
+void nm_start(int start, double start_x, double start_y, double start_f);
+void nm_get_next_point(double last_f, double *next_x, double *next_y);
+void nm_init(double (*func_)(double, double, int, double*, int), double max_wall_step_, double *dp_);
+void nm_optimize(double *x, double *y);
 
-char malloc_nodes(uint n_nodes);
-
-void free_nodes();
-
-__device__
-void set_model_params(int params[], uint n_params);
-
-__device__
-int get_lookahead();
-
-__device__
-void init_node(uint nid);
-
-__device__
-void reinit_node(uint nid, int gvt);
-
-__device__
-char handle_event(Event *event);
-
-__device__
-void roll_back_event(Event *event);
-
-__device__
-uint get_number_states(Event *event);
-
-__device__
-uint get_number_antimsgs(Event *event);
-
-__device__
-void collect_statistics(uint nid);
-
-__device__
-void print_statistics();
+#endif

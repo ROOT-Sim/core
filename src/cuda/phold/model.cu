@@ -17,6 +17,7 @@
 #include <cuda/kernels.h>
 #include "model.h"
 #include "settings.h"
+#include "../random.h"
 
 __device__ static Nodes nodes;
 
@@ -50,9 +51,9 @@ char malloc_nodes(uint n_nodes) {
 	if(!sim_uo) sim_uo = (uint*)malloc(sizeof(uint) * n_nodes);
 	if(!sim_ql) sim_ql = (uint*)malloc(sizeof(uint) * n_nodes);
 	if(!sim_events) sim_events = (Event*)malloc(sizeof(Event) * n_nodes * events_per_node);
-    
+
 	if(!simulation_snapshot) {printf("no memory for HOST side model state\n"); exit(1); }
-	
+
 	err = cudaMalloc(&(h_nodes.cr_state), sizeof(curandState_t) * n_nodes);
 	if (err != cudaSuccess) { return 0; }
 	cudaMemcpyToSymbol(nodes, &h_nodes, sizeof(Nodes));
@@ -71,10 +72,10 @@ void copy_nodes_to_host(uint n_nodes) {
 	Nodes h_nodes;
 	cudaMemcpyFromSymbol(&h_nodes, nodes, sizeof(Nodes));
 	cudaMemcpy(simulation_snapshot, h_nodes.cr_state, sizeof(curandState_t) * n_nodes, cudaMemcpyDeviceToHost);
-	
+
 	EQs h_eq;
 	cudaMemcpyFromSymbol(&h_eq, eq, sizeof(EQs));
-	
+
 	cudaMemcpy(sim_bo, h_eq.bo, sizeof(uint) * n_nodes, cudaMemcpyDeviceToHost);
 	cudaMemcpy(sim_so, h_eq.so, sizeof(uint) * n_nodes, cudaMemcpyDeviceToHost);
 	cudaMemcpy(sim_uo, h_eq.uo, sizeof(uint) * n_nodes, cudaMemcpyDeviceToHost);
@@ -123,7 +124,7 @@ void init_node(uint nid) {
 
 __device__
 void reinit_node(uint nid, int gvt) {
-	
+
 	uint n_events = population / g_n_nodes;
 	curandState_t *cr_state = &(nodes.cr_state[nid]);
 
@@ -258,15 +259,15 @@ extern "C" void align_device_to_host(int gvt, unsigned n_blocks, unsigned thread
 	copy_nodes_from_host(global_config.lps);
 	cudaDeviceSynchronize();
 	printf("aligned memory from HOST to DEVICE\n");
-	
+
 	kernel_init_queues<<<n_blocks, threads_per_block>>>();
 	cudaDeviceSynchronize();
 	printf("re init queues \n");
-	
+
 	kernel_reinit_nodes<<<n_blocks, threads_per_block>>>(gvt);
 	cudaDeviceSynchronize();
 	printf("re init nodes \n");
-	
+
 	kernel_sort_event_queues<<<n_blocks, threads_per_block>>>();
 	cudaDeviceSynchronize();
 	printf("sort queues \n");
@@ -274,15 +275,15 @@ extern "C" void align_device_to_host(int gvt, unsigned n_blocks, unsigned thread
 }
 
 
-extern "C" void align_host_to_device(simtime_t gvt){
-	copy_nodes_to_host(global_config.lps);  
+extern "C" void align_host_to_device(simtime_t gvt) {
+	copy_nodes_to_host(global_config.lps);
 	cudaDeviceSynchronize();
 }
 
 
 
 
-extern "C" void align_host_to_device_parallel(simtime_t gvt){
+extern "C" void align_host_to_device_parallel(simtime_t gvt) {
 	int start = -1;
 	int i;
 	for(i=0;i<global_config.lps;i++){
@@ -294,16 +295,16 @@ extern "C" void align_host_to_device_parallel(simtime_t gvt){
 		process_device_align_msg(i, gvt);
 	}
 	printf("copying states from HOST to SIM by %u from %u to %u\n", rid, start, i);
-    
+
     uint pushed_events= 0;
 	if(rid < get_n_lps()){
-        for(i=0;i<get_n_lps()/global_config.n_threads;i++){	
+        for(i=0;i<get_n_lps()/global_config.n_threads;i++){
             uint lp = rid * (get_n_lps()/global_config.n_threads) + i;
             uint zero_idx  = lp*get_n_nodes_per_lp()*events_per_node;
             uint base_idx  = sim_bo[lp];
             uint start_idx = sim_so[lp];
             uint end_idx   = sim_uo[lp];
-            //if(rid == 0) printf("base %u start %u end %u size %u\n", base_idx, start_idx, end_idx, get_n_nodes_per_lp()*events_per_node); 
+            //if(rid == 0) printf("base %u start %u end %u size %u\n", base_idx, start_idx, end_idx, get_n_nodes_per_lp()*events_per_node);
             while(start_idx != end_idx){
                 uint effective = (base_idx+start_idx) % (get_n_nodes_per_lp()*events_per_node);
                 Event *cur = sim_events+zero_idx+effective;
@@ -313,9 +314,8 @@ extern "C" void align_host_to_device_parallel(simtime_t gvt){
                 pushed_events++;
             }
         }
-        printf("copying events from HOST to SIM by %u from %u to %u GPU #LPS %u -- events pushed %u\n", 
+        printf("copying events from HOST to SIM by %u from %u to %u GPU #LPS %u -- events pushed %u\n",
             rid, rid * (get_n_lps()/global_config.n_threads),rid * (get_n_lps()/global_config.n_threads)+get_n_lps()/global_config.n_threads-1, get_n_lps(), pushed_events);
 	}
-	
-}
 
+}

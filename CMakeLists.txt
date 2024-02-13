@@ -35,7 +35,7 @@ else()
     find_package(MPI)
 endif()
 
-add_compile_options(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=)
+#add_compile_options(-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=)
 
 include(CheckLibraryExists)
 CHECK_LIBRARY_EXISTS(m exp "" HAVE_LIB_M)

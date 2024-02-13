@@ -138,9 +138,9 @@ void msg_queue_insert_self(struct lp_msg *msg)
 
 
 
-void msg_queue_destroy_all_input_queues(void){
+void msg_queue_destroy_all_input_queues(void) {
 	/// this are always remote so why bother?
-    struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire); 
+    struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
 
 	array_count_t m_count = heap_count(mqp);
 	array_count_t k = m_count;

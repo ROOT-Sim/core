@@ -25,7 +25,10 @@ set(rscore_srcs
         mm/msg_allocator.c
         parallel/parallel.c
         serial/serial.c
-        ftl/protocol.c)
+        ftl/protocol.c
+        ftl/cmp_speed.c
+        ftl/nelder_mead.c
+)
 
 if(MPI_FOUND)
     set(rscore_srcs ${rscore_srcs} distributed/mpi.c)
