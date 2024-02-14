@@ -4,15 +4,16 @@
 #include "nelder_mead.h"
 #include "ftl.h"
 
-#define DATAPOINTS 10
+#define DATAPOINTS 1024
 
 struct datapoint {
-	struct data_point_raw data[DATAPOINTS];
 	unsigned current;
+	unsigned capacity;
+	struct data_point_raw *data;
 };
 
-static struct datapoint gpu_data = {0};
-static struct datapoint cpu_data = {0};
+static struct datapoint gpu_data = {0,0};
+static struct datapoint cpu_data = {0,0};
 
 static const double wall_step_s = 1.0;
 static const double min_param = 0.2;
@@ -179,37 +180,49 @@ static double cmp_speeds(struct data_point_raw *a, int len_a, struct data_point_
 
 bool is_cpu_faster(void)
 {
-	if(cpu_data.current) {
+	if(cpu_data.current == 0) {
 		printf("Not enough CPU data!\n");
 		return false;
 	}
-	if(gpu_data.current) {
+	if(gpu_data.current == 0) {
 		printf("Not enough GPU data!\n");
 		return true;
 	}
 	return 0.5 <= cmp_speeds(cpu_data.data, cpu_data.current, gpu_data.data, gpu_data.current);
 }
 
+
 void register_cpu_data(double wall_s, double gvt)
 {
+	
+	if(cpu_data.capacity == cpu_data.current){
+		unsigned size = !cpu_data.capacity ? DATAPOINTS : cpu_data.capacity*2;
+		cpu_data.capacity = size;
+		cpu_data.data = realloc(cpu_data.data, sizeof(struct data_point_raw)*size);
+	}
+	
+
+	
 	printf("\nRegistering CPU data: wall %f gvt %f", wall_s, gvt);
     cpu_data.data[cpu_data.current].wall_s = wall_s;
     cpu_data.data[cpu_data.current].gvt = gvt;
     cpu_data.current++;
-
-    if(cpu_data.current == DATAPOINTS)
-	    cpu_data.current = 0;
 }
 
 void register_gpu_data(double wall_s, double gvt)
 {
+	if(gpu_data.capacity == gpu_data.current){
+		unsigned size = !gpu_data.capacity ? DATAPOINTS : gpu_data.capacity*2;
+		gpu_data.capacity = size;
+		gpu_data.data = realloc(gpu_data.data, sizeof(struct data_point_raw)*size);
+	}
+	
+	
 	printf("\nRegistering GPU data: wall %f gvt %f", wall_s, gvt);
+
     gpu_data.data[gpu_data.current].wall_s = wall_s;
     gpu_data.data[gpu_data.current].gvt = gvt;
     gpu_data.current++;
-
-    if(gpu_data.current == DATAPOINTS)
-	    gpu_data.current = 0;
 }
 
 void reset_ftl_series(void)

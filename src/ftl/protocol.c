@@ -81,13 +81,14 @@ void set_gpu_rid(unsigned rid)
 	pthread_barrier_init(&gpu_barrier, NULL, 2);
 }
 
+static timer_uint wall_clock_timer;
+	
 void align_device_to_host(int gvt, unsigned n_blocks, unsigned threads_per_block);
 void align_device_to_host_parallel(unsigned rid, simtime_t gvt);
 void destroy_all_queues(void);
 
 void follow_the_leader(simtime_t current_gvt)
 {
-	static timer_uint wall_clock_timer;
 
 	switch(current_phase) {
 		case INIT:
@@ -101,6 +102,7 @@ void follow_the_leader(simtime_t current_gvt)
 				printf("gpu has initialized its stuff\n");
 				printf("starting a new challenge\n");
 				gvt_timer = timer_new();
+				wall_clock_timer = gvt_timer;
 				gpu_gvt_timer = gvt_timer;
 				__sync_lock_test_and_set(&current_phase, CHALLENGE);
 			}
@@ -113,11 +115,10 @@ void follow_the_leader(simtime_t current_gvt)
 		case CHALLENGE:
 
 			/// collect samples here
-			wall_clock_timer = timer_new();
 			if(WHO_AM_I == GPU_THREAD)
-				register_gpu_data((double)wall_clock_timer / 1000000, current_gvt);
+				register_gpu_data((double)(timer_new()-wall_clock_timer) / 1000000, current_gvt);
 			if(WHO_AM_I == CPU_MAIN_THREAD)
-				register_cpu_data((double)wall_clock_timer / 1000000, current_gvt);
+				register_cpu_data((double)(timer_new()-wall_clock_timer) / 1000000, current_gvt);
 			
 			if((++gvt_rounds % FTL_PERIODS))
 				return;
@@ -205,13 +206,11 @@ void follow_the_leader(simtime_t current_gvt)
 			return;
 
 		case GPU:
-			wall_clock_timer = timer_new();
-			register_gpu_data((double)wall_clock_timer / 1000000, current_gvt);
+			register_gpu_data((double)(timer_new()-wall_clock_timer) / 1000000, current_gvt);
 			break;
 		case CPU:
 			if(WHO_AM_I == CPU_MAIN_THREAD){
-				wall_clock_timer = timer_new();
-				register_cpu_data((double)wall_clock_timer / 1000000, current_gvt);
+				register_cpu_data((double)(timer_new()-wall_clock_timer) / 1000000, current_gvt);
 			}
 			break;
 		case END:
