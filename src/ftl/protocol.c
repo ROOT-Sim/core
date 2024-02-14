@@ -82,7 +82,7 @@ void set_gpu_rid(unsigned rid)
 }
 
 static timer_uint wall_clock_timer;
-	
+
 void align_device_to_host(int gvt, unsigned n_blocks, unsigned threads_per_block);
 void align_device_to_host_parallel(unsigned rid, simtime_t gvt);
 void destroy_all_queues(void);
@@ -119,7 +119,7 @@ void follow_the_leader(simtime_t current_gvt)
 				register_gpu_data((double)(timer_new()-wall_clock_timer) / 1000000, current_gvt);
 			if(WHO_AM_I == CPU_MAIN_THREAD)
 				register_cpu_data((double)(timer_new()-wall_clock_timer) / 1000000, current_gvt);
-			
+
 			if((++gvt_rounds % FTL_PERIODS))
 				return;
 
@@ -136,13 +136,13 @@ void follow_the_leader(simtime_t current_gvt)
 				ftl_phase new_phase;
 				printf("\nthe challenge is completed RID %u\n", rid);
 				// printf("the barrier val should be always 0 : %u\n", ftl_curr_counter);
-				
+
 			#if USE_DUMMY_CMP_SPEED == 0
 				if(is_cpu_faster()) { /// CPU WINS
 			#else
 				if(++dummyphase & 1){
 			#endif       /// prepare next spin barrier after they wake up
-			
+
 					__sync_lock_test_and_set(&ftl_curr_counter, gpu_rid);
 					__sync_lock_test_and_set(&ftl_spin_barrier, 1);
 					new_phase = CPU;
@@ -151,9 +151,6 @@ void follow_the_leader(simtime_t current_gvt)
 				}
 
 				printf("the winner is %s\n", new_phase == CPU ? "CPU" : "GPU");
-
-				// Reset the time series, to avoid mixing data from different phases
-				reset_ftl_series();
 
 				/// realing gvt timers for both cpu and gpu threads
 				gvt_timer = timer_new();

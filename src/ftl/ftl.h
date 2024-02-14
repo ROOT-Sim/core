@@ -26,4 +26,3 @@ extern void set_gpu_rid(unsigned);
 extern bool is_cpu_faster(void);
 extern void register_cpu_data(double wall_s, double gvt);
 extern void register_gpu_data(double wall_s, double gvt);
-extern void reset_ftl_series(void);
