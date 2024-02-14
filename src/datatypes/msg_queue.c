@@ -112,6 +112,35 @@ struct lp_msg *msg_queue_extract(void)
 	return likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
 }
 
+struct lp_msg *msg_queue_min(void)
+{
+	msg_queue_insert_queued();
+	return likely(heap_count(mqp)) ? heap_min(mqp).m : NULL;
+}
+
+array_count_t msg_queue_count(void)
+{
+	msg_queue_insert_queued();
+	return heap_count(mqp);
+}
+
+array_count_t msg_queue_count_filter(simtime_t gvt)
+{
+    unsigned cnt = 0;
+	for(unsigned i=0; i<heap_count(mqp); i++){
+        struct lp_msg *msg = array_get_at(mqp,i).m;
+        if(msg->m_type == LP_REINIT) continue;
+        if(msg->m_type == LP_INIT) continue;
+        if(msg->m_type == LP_FINI) continue;
+        if(msg->flags & MSG_FLAG_ANTI) continue; 
+        if(msg->dest_t < gvt) {printf("found event valid (no antimessage)\n");continue;}
+        cnt++;
+    }
+    return cnt;
+}
+
+
+
 /**
  * @brief Inserts a message in the queue
  * @param msg the message to insert in the queue
@@ -139,7 +168,7 @@ void msg_queue_insert_self(struct lp_msg *msg)
 
 
 void msg_queue_destroy_all_input_queues(void) {
-	/// this are always remote so why bother?
+	/// this are always remote so why bother? // TODO
     struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
 
 	array_count_t m_count = heap_count(mqp);
@@ -151,5 +180,14 @@ void msg_queue_destroy_all_input_queues(void) {
 		//msg_allocator_free(unmark_msg(msg)); // TODO recheck this (is_msg_local)
 	}
 	array_truncate_first(mqp, m_count);
-    printf("Destroying inbound queues for rid %u old %u new %u\n", rid, m_count, heap_count(mqp));
+    //printf("Destroying inbound queues for rid %u old %u new %u\n", rid, m_count, heap_count(mqp));
+}
+
+
+int msg_queue_iterate_over_msg(int (*func)(struct lp_msg*, simtime_t), simtime_t gvt){
+    int cnt = 0;
+    for(unsigned i=0;i<array_count(mqp);i++){
+        cnt += func(array_items(mqp)[i].m, gvt);
+    }
+	return cnt;
 }
