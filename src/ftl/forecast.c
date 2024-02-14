@@ -12,8 +12,8 @@ struct datapoint {
 	struct data_point_raw *data;
 };
 
-static struct datapoint gpu_data = {0};
-static struct datapoint cpu_data = {0};
+static struct datapoint gpu_data = {0,0,NULL};
+static struct datapoint cpu_data = {0,0,NULL};
 
 static const double wall_step_s = 1.0;
 static const double min_param = 0.2;
@@ -199,10 +199,10 @@ void register_cpu_data(double wall_s, double gvt)
 		cpu_data.capacity = size;
 		void *tmp = realloc(cpu_data.data, sizeof(struct data_point_raw) * size);
 		if(!tmp) {
-            printf("Failed to allocate memory for CPU data, datapoint skipped\n");
-            return;
-        }
-	    cpu_data.data = tmp;
+			printf("Failed to allocate memory for CPU data, datapoint skipped\n");
+			return;
+		 }
+		cpu_data.data = tmp;
 	}
 
 	printf("\nRegistering CPU data: wall %f gvt %f", wall_s, gvt);
@@ -218,10 +218,10 @@ void register_gpu_data(double wall_s, double gvt)
 		gpu_data.capacity = size;
 		void *tmp = realloc(gpu_data.data, sizeof(struct data_point_raw) * size);
 		if(!tmp) {
-            printf("Failed to allocate memory for GPU data, datapoint skipped\n");
-            return;
-        }
-	    gpu_data.data = tmp;
+			printf("Failed to allocate memory for GPU data, datapoint skipped\n");
+			return;
+		}
+		gpu_data.data = tmp;
 	}
 
 	printf("\nRegistering GPU data: wall %f gvt %f", wall_s, gvt);

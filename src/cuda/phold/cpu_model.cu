@@ -44,6 +44,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 	curandState_t *state = (curandState_t *)s;
     simtime_t ts = 0;
     int incr = 0;
+	(void)content;
+	(void)size;
 	switch(event_type) {
 		case LP_INIT:
 			state = (curandState_t *)rs_malloc(sizeof(curandState_t));
@@ -56,17 +58,11 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 			ScheduleNewEvent(me, ts, EVENT, NULL, 0);
 			break;
 
-		case GPU_EVENT:
 		case EVENT:
 			dest =  cpu_random(state, conf.lps);
 			incr =  cpu_random_exp(state, mean);
             ts =  1.0*(now + lookahead + incr);
 			if(ts < now) printf("overflow ?? %d %f now %f\n", incr, ts, now);
-			
-			if(ts > 131238342.000000){
-			//	asm("int $3");
-			}
-            //usleep(5);
 			ScheduleNewEvent(dest, ts, EVENT, NULL, 0);
 			break;
 
@@ -79,7 +75,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 	}
 }
 
-bool CanEnd(lp_id_t me, const void *snapshot){ return false; }
+bool CanEnd(lp_id_t me, const void *snapshot){ (void)me; (void)snapshot; return false; }
 
 }
 

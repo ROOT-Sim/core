@@ -51,10 +51,10 @@ uint n_blocks;
 timer_uint gpu_gvt_timer;
 
 
-uint get_n_nodes(){return n_nodes;}
-uint get_n_lps(){return n_lps;}
-uint get_n_nodes_per_lp(){return nodes_per_lp;}
-uint get_n_blocks(){return n_blocks;}
+extern "C" uint get_n_nodes(){return n_nodes;}
+extern "C" uint get_n_lps(){return n_lps;}
+extern "C" uint get_n_nodes_per_lp(){return nodes_per_lp;}
+extern "C" uint get_n_blocks(){return n_blocks;}
 
 
 /* Private functions */
@@ -255,7 +255,9 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 			printf("\n\t\t\t\t\tGPU GVT  %'lf", (float)gvt);
 			fflush(stdout);
 			gpu_gvt_timer = t;
-			follow_the_leader((simtime_t)gvt);
+
+			follow_the_leader((simtime_t)gvt*1.0);
+
 		}
 		
         	
@@ -411,7 +413,7 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 		cudaError_t err = cudaGetLastError();
 		if(err != cudaSuccess) {
 			printf("FATAL ERROR: %s\n", cudaGetErrorString(err));
-			return NULL;
+			exit(1);
 		}
 
 		// Sort

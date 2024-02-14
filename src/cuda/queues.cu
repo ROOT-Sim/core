@@ -572,8 +572,8 @@ void undo_event(Event *event) {
 		}
 	}
 
-	printf("ERROR: undo_event(Event %7d %7d)\n",
-		event->sender, event->receiver);
+	printf("ERROR: undo_event(Event %7d %7d %d)\n",
+		event->sender, event->receiver, event->timestamp);
 	asm("trap;");
 }
 #endif
