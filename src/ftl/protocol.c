@@ -41,6 +41,13 @@ __thread unsigned gvt_rounds = 0;
 __thread unsigned free_rounds = 0;
 
 
+#define GPU_THREAD 0
+#define CPU_THREAD 1
+#define CPU_MAIN_THREAD 2
+
+#define WHO_AM_I  ( (rid != gpu_rid) + (rid == 0))
+
+
 unsigned end_gpu = 0;
 unsigned end_cpu = 0;
 unsigned both_ended = 0;
@@ -61,6 +68,8 @@ unsigned sim_can_end()
 }
 
 #define FTL_PERIODS 10
+#define USE_DUMMY_CMP_SPEED 0
+
 
 void set_gpu_rid(unsigned rid)
 {
@@ -103,9 +112,13 @@ void follow_the_leader(simtime_t current_gvt)
 
 		case CHALLENGE:
 
-			/// TODO collect samples here
-			// AP: We don't know who invoked the function here, so we can't collect, right?
-
+			/// collect samples here
+			wall_clock_timer = timer_new();
+			if(WHO_AM_I == GPU_THREAD)
+				register_gpu_data((double)wall_clock_timer / 1000000, current_gvt);
+			if(WHO_AM_I == CPU_MAIN_THREAD)
+				register_cpu_data((double)wall_clock_timer / 1000000, current_gvt);
+			
 			if((++gvt_rounds % FTL_PERIODS))
 				return;
 
@@ -122,9 +135,13 @@ void follow_the_leader(simtime_t current_gvt)
 				ftl_phase new_phase;
 				printf("\nthe challenge is completed RID %u\n", rid);
 				// printf("the barrier val should be always 0 : %u\n", ftl_curr_counter);
-
+				
+			#if USE_DUMMY_CMP_SPEED == 0
 				if(is_cpu_faster()) { /// CPU WINS
-					/// prepare next spin barrier after they wake up
+			#else
+				if(++dummyphase & 1){
+			#endif       /// prepare next spin barrier after they wake up
+			
 					__sync_lock_test_and_set(&ftl_curr_counter, gpu_rid);
 					__sync_lock_test_and_set(&ftl_spin_barrier, 1);
 					new_phase = CPU;
@@ -165,7 +182,7 @@ void follow_the_leader(simtime_t current_gvt)
 					/// reinit spin barrier for CPU threads
 					if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 1, gpu_rid))
 						printf("9 MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 1 vs %u\n",
-						    ftl_curr_counter);
+							ftl_curr_counter);
 					/// unlock all
 					__sync_lock_test_and_set(&ftl_spin_barrier, 2);
 				}
@@ -192,8 +209,10 @@ void follow_the_leader(simtime_t current_gvt)
 			register_gpu_data((double)wall_clock_timer / 1000000, current_gvt);
 			break;
 		case CPU:
-			wall_clock_timer = timer_new();
-			register_cpu_data((double)wall_clock_timer / 1000000, current_gvt);
+			if(WHO_AM_I == CPU_MAIN_THREAD){
+				wall_clock_timer = timer_new();
+				register_cpu_data((double)wall_clock_timer / 1000000, current_gvt);
+			}
 			break;
 		case END:
 			break;
@@ -216,7 +235,7 @@ void follow_the_leader(simtime_t current_gvt)
 				/// reinit spin barrier for CPU threads
 				if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0, gpu_rid))
 					printf("A MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n",
-					    ftl_curr_counter);
+						ftl_curr_counter);
 				/// unlock all
 				__sync_lock_test_and_set(&ftl_spin_barrier, 2);
 			}
@@ -260,7 +279,7 @@ void follow_the_leader(simtime_t current_gvt)
 				__sync_lock_test_and_set(&ftl_spin_barrier, 1);
 				if(!__sync_bool_compare_and_swap(&ftl_curr_counter, 0, gpu_rid + 1))
 					printf("B MY CAS FAILED AND THIS SHOULD NEVER HAPPEN 0 vs %u\n",
-					    ftl_curr_counter);
+						ftl_curr_counter);
 
 				align_host_to_device(current_gvt);
 				printf("aligned memory from DEVICE to HOST\n");
@@ -286,7 +305,7 @@ void follow_the_leader(simtime_t current_gvt)
 
 			/// start a new challenge
 			printf("\nPrevious phase was %s at %lf ended (%u)\n", old_phase == CPU ? "CPU" : "GPU",
-			    current_gvt, rid);
+				current_gvt, rid);
 			__sync_lock_test_and_set(&current_phase, CHALLENGE); /// unlock any thread spinning here
 
 

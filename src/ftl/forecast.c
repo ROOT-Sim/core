@@ -4,7 +4,7 @@
 #include "nelder_mead.h"
 #include "ftl.h"
 
-#define DATAPOINTS 100
+#define DATAPOINTS 10
 
 struct datapoint {
 	struct data_point_raw data[DATAPOINTS];
