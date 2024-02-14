@@ -12,8 +12,8 @@ struct datapoint {
 	struct data_point_raw *data;
 };
 
-static struct datapoint gpu_data = {0,0};
-static struct datapoint cpu_data = {0,0};
+static struct datapoint gpu_data = {0,0,NULL};
+static struct datapoint cpu_data = {0,0,NULL};
 
 static const double wall_step_s = 1.0;
 static const double min_param = 0.2;

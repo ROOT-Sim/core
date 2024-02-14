@@ -432,7 +432,7 @@ void process_device_align_msg(unsigned lid, simtime_t time)
 	
 	
 	while(k--) {
-		struct lp_msg *ms = array_get_at(lp->p.p_msgs, k);
+		struct lp_msg *ms = array_get_at(lp->p.p_msgs, k); // TODO
 		//if(!is_msg_sent(ms)) msg_allocator_free_at_gvt(unmark_msg(ms));
 	}
 	
