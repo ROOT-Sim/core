@@ -11,8 +11,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef nelder_mead_h
-#define nelder_mead_h
+#pragma once
 
 #include <stdio.h>
 #include <float.h>
@@ -21,5 +20,3 @@ void nm_start(int start, double start_x, double start_y, double start_f);
 void nm_get_next_point(double last_f, double *next_x, double *next_y);
 void nm_init(double (*func_)(double, double, int, double*, int), double max_wall_step_, double *dp_);
 void nm_optimize(double *x, double *y);
-
-#endif

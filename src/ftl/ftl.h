@@ -23,4 +23,7 @@ extern void gpu_ended(void);
 extern unsigned sim_can_end(void);
 extern void set_gpu_rid(unsigned);
 
-extern double cmp_speeds(struct data_point_raw *a, int len_a, struct data_point_raw *b, int len_b);
+extern bool is_cpu_faster(void);
+extern void register_cpu_data(double wall_s, double gvt);
+extern void register_gpu_data(double wall_s, double gvt);
+extern void reset_ftl_series(void);

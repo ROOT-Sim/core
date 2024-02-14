@@ -26,7 +26,7 @@ set(rscore_srcs
         parallel/parallel.c
         serial/serial.c
         ftl/protocol.c
-        ftl/cmp_speed.c
+        ftl/forecast.c
         ftl/nelder_mead.c
 )
 

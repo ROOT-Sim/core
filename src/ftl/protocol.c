@@ -78,6 +78,8 @@ void destroy_all_queues(void);
 
 void follow_the_leader(simtime_t current_gvt)
 {
+	static timer_uint wall_clock_timer;
+
 	switch(current_phase) {
 		case INIT:
 			gvt_rounds = 0;
@@ -100,7 +102,9 @@ void follow_the_leader(simtime_t current_gvt)
 			return;
 
 		case CHALLENGE:
+
 			/// TODO collect samples here
+			// AP: We don't know who invoked the function here, so we can't collect, right?
 
 			if((++gvt_rounds % FTL_PERIODS))
 				return;
@@ -119,22 +123,19 @@ void follow_the_leader(simtime_t current_gvt)
 				printf("\nthe challenge is completed RID %u\n", rid);
 				// printf("the barrier val should be always 0 : %u\n", ftl_curr_counter);
 
-
-				/// TODO here the code to decide the winner
-
-				/// CPU WINS
-				if(dummyphase++ & 1) {
+				if(is_cpu_faster()) { /// CPU WINS
 					/// prepare next spin barrier after they wake up
 					__sync_lock_test_and_set(&ftl_curr_counter, gpu_rid);
 					__sync_lock_test_and_set(&ftl_spin_barrier, 1);
 					new_phase = CPU;
-				}
-				/// GPU WINS
-				else {
+				} else { /// GPU WINS
 					new_phase = GPU;
 				}
 
 				printf("the winner is %s\n", new_phase == CPU ? "CPU" : "GPU");
+
+				// Reset the time series, to avoid mixing data from different phases
+				reset_ftl_series();
 
 				/// realing gvt timers for both cpu and gpu threads
 				gvt_timer = timer_new();
@@ -180,15 +181,23 @@ void follow_the_leader(simtime_t current_gvt)
 				if(!val)
 					printf("resynch with GPU at %'lf\n", actual_gvt);
 
-				while(current_phase != CHALLENGE)
-					;
+				while(current_phase != CHALLENGE);
 
 			} // all cpu threads go to sleep
 
 			return;
-	}
 
-	/// TODO maybe collect samples also here ??
+		case GPU:
+			wall_clock_timer = timer_new();
+			register_gpu_data((double)wall_clock_timer / 1000000, current_gvt);
+			break;
+		case CPU:
+			wall_clock_timer = timer_new();
+			register_cpu_data((double)wall_clock_timer / 1000000, current_gvt);
+			break;
+		case END:
+			break;
+	}
 
 	if((++free_rounds % FTL_PERIODS))
 		return;
