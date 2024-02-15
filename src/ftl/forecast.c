@@ -18,7 +18,7 @@ static struct datapoint cpu_data = {0,0,NULL};
 static const double wall_step_s = 1.0;
 static const double min_param = 0.2;
 static const double max_param = 0.8;
-static const int forecast_steps = 10;
+static int forecast_steps = DEFAULT_FORECAST_STEPS;
 static const double phi = 0.9;
 
 
@@ -101,12 +101,15 @@ static double forecast(double alpha, double beta, int max_wall_step, double dp[m
 {
 	alpha = clamp(alpha);
 	beta = clamp(beta);
-
+	
 	double ss[max_wall_step], bs[max_wall_step];
 
 	ss[0] = dp[0];
 	bs[0] = dp[1] - dp[0];
-
+	
+	if(max_wall_step < DEFAULT_FORECAST_STEPS) forecast_steps = max_wall_step;
+	else forecast_steps = DEFAULT_FORECAST_STEPS;
+	
 	if(!train)
 		printf("wall_step,ss,dp\n");
 
@@ -205,7 +208,7 @@ void register_cpu_data(double wall_s, double gvt)
 		cpu_data.data = tmp;
 	}
 
-	printf("\nRegistering CPU data: wall %f gvt %f", wall_s, gvt);
+	//printf("\nRegistering CPU data: wall %f gvt %f", wall_s, gvt);
     cpu_data.data[cpu_data.current].wall_s = wall_s;
     cpu_data.data[cpu_data.current].gvt = gvt;
     cpu_data.current++;
@@ -224,7 +227,7 @@ void register_gpu_data(double wall_s, double gvt)
 		gpu_data.data = tmp;
 	}
 
-	printf("\nRegistering GPU data: wall %f gvt %f", wall_s, gvt);
+	//printf("\nRegistering GPU data: wall %f gvt %f", wall_s, gvt);
 
     gpu_data.data[gpu_data.current].wall_s = wall_s;
     gpu_data.data[gpu_data.current].gvt = gvt;

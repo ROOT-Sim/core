@@ -28,7 +28,6 @@ extern "C" {
 #endif
 
 #define EVENT 1
-#define GPU_EVENT 2
 
 unsigned int mean = 10000;
 
@@ -38,25 +37,27 @@ static simtime_t lookahead = 1000;
 
 struct simulation_configuration conf;
 
-static int current_cpu_model_phase_cnt = 0;
+static int hot_phase_count = 0;
 
 static uint get_receiver(uint me, curandState_t *cr_state, int now)
 {
-	int hot = (now / PHASE_WINDOW_SIZE);
+	int cur_hot_phase = (now / PHASE_WINDOW_SIZE);
+	int hot = cur_hot_phase%HOT_PHASE_PERIOD;
+	
 	if(me == 0){
-		if(hot > current_cpu_model_phase_cnt){
-			current_cpu_model_phase_cnt = hot;
-		if(hot & 1)
-			printf("CPU: ENTER COLD PHASE at wall clock time %f\n", gimme_current_time_please());
-		else
-			printf("CPU: ENTER HOT PHASE at wall clock time %f\n", gimme_current_time_please());
+		if(hot == 0 && cur_hot_phase > hot_phase_count){
+			hot_phase_count = cur_hot_phase;
+			printf("CPU: ENTER HOT PHASE at wall clock time %f %d\n", gimme_current_time_please(), hot);
+		}
+		else if(hot == 1 && cur_hot_phase > hot_phase_count){
+			hot_phase_count = cur_hot_phase;
+			printf("CPU: ENTER COLD PHASE at wall clock time %f %d\n", gimme_current_time_please(), hot);
 		}
 	}
-	hot = hot % 2;
 	
-	if(hot == 0)
-		return cpu_random(cr_state, HOT_FRACTION * conf.lps);
-	return cpu_random(cr_state, conf.lps);
+	if(!(hot))
+		return (unsigned int) cpu_random(cr_state, HOT_FRACTION * conf.lps)/(HOT_FRACTION);
+	return (unsigned int) cpu_random(cr_state, conf.lps);
 }
 
 
@@ -108,8 +109,8 @@ int main(void)
 {
     conf.lps = NUM_LPS,
     conf.n_threads = NUM_THREADS,
-    conf.termination_time = 300000000,
-    conf.gvt_period = 1000*500,
+    conf.termination_time = END_SIM_GVT,
+    conf.gvt_period = GVT_PERIOD,
     conf.log_level = LOG_INFO,
     conf.stats_file = "phold",
     conf.ckpt_interval = 0,

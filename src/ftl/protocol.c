@@ -68,8 +68,7 @@ unsigned sim_can_end()
 	return both_ended;
 }
 
-#define FTL_PERIODS 10
-#define USE_DUMMY_CMP_SPEED 1
+#define USE_DUMMY_CMP_SPEED 0
 
 
 #define ALL_THREADS_CNT (gpu_rid + 1)
@@ -166,7 +165,7 @@ void follow_the_leader(simtime_t current_gvt)
 			if(WHO_AM_I == CPU_MAIN_THREAD)
 				register_cpu_data((double)(timer_new() - wall_clock_timer) / 1000000, current_gvt);
 
-			if((++gvt_rounds % FTL_PERIODS))
+			if((++gvt_rounds % CHALLENGE_PERIODS))
 				return;
 
 			/// the challenge is going to end

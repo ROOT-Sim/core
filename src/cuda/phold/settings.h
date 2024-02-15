@@ -18,8 +18,11 @@
 #define STATE_HEADER	"phold/state.h"
 #define MODEL_HEADER	"phold/model.h"
 
-#define PHASE_WINDOW_SIZE 10000
+#define PHASE_WINDOW_SIZE 40000000
 #define HOT_FRACTION 0.1
+#define HOT_PHASE_PERIOD 2
+
+
 
 #define	OPTM_SYNC	1
 #define ALLOW_ME	1

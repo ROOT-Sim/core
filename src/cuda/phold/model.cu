@@ -117,27 +117,29 @@ void reinit_node(uint nid, int gvt) {
 	}
 }
 
-__device__
-static int current_cpu_model_phase_cnt = 0;
+__device__ static int hot_phase_count = 0;
+
 
 __device__
 static uint get_receiver(uint me, curandState_t *cr_state, int now)
 {
-	int hot = (now / PHASE_WINDOW_SIZE);
+	int cur_hot_phase = (now / PHASE_WINDOW_SIZE);
+	int hot = cur_hot_phase%HOT_PHASE_PERIOD;
+
 	if(me == 0){
-		if(hot > current_cpu_model_phase_cnt){
-			current_cpu_model_phase_cnt = hot;
-		if(hot & 1)
-			printf("GPU: ENTER HOT PHASE at wall clock time %f\n", 0.);
-		else
-			printf("GPU: ENTER HOT PHASE at wall clock time %f\n", 0.);
-		}
+			if(hot == 0 && cur_hot_phase > hot_phase_count){
+				hot_phase_count = cur_hot_phase;
+				printf("\t\t\t\t\tGPU: ENTER HOT PHASE at wall clock time %f %d\n", 0., hot);
+			}
+			if(hot == 1 && cur_hot_phase > hot_phase_count){
+				hot_phase_count = cur_hot_phase;
+				printf("\t\t\t\t\tGPU: ENTER COLD PHASE at wall clock time %f %d\n", 0., hot);
+			}
 	}
-	hot = hot % 2;
 
 
-    if(hot == 0)
-	    return random(cr_state, HOT_FRACTION * g_n_nodes);
+	if(!(hot))
+	    return random(cr_state, HOT_FRACTION * g_n_nodes)/(HOT_FRACTION);
     return random(cr_state, g_n_nodes);
 }
 
@@ -274,7 +276,7 @@ void copy_nodes_to_host(uint n_nodes) {
 	cudaMemcpy(sim_ql, h_eq.ql, sizeof(uint) * n_nodes, cudaMemcpyDeviceToHost);
 	cudaMemcpy(sim_events, h_eq.events, sizeof(Event) * n_nodes * events_per_node, cudaMemcpyDeviceToHost);
 	cudaDeviceSynchronize();
-	printf("transferring mem frm DEV t HST\n");
+	//printf("transferring mem frm DEV t HST\n");
 
 }
 
