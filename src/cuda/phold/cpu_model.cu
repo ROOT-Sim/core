@@ -9,12 +9,13 @@
 extern "C" {
 
 #include <ROOT-Sim.h>
-
+#include <ftl/ftl.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "cpu_curand.h"
+#include "settings.h"
 }
 
 
@@ -36,6 +37,25 @@ extern "C" {
 static simtime_t lookahead = 1000;
 
 struct simulation_configuration conf;
+
+static int current_cpu_model_phase = 0;
+
+static uint get_receiver(uint me, curandState_t *cr_state, int now)
+{
+	int hot = (now / PHASE_WINDOW_SIZE) % 2;
+	if(me == 0 && hot == 0 && current_cpu_model_phase == 1) {
+		current_cpu_model_phase = 0;
+		printf("CPU: ENTER HOT PHASE at wall clock time %f\n", gimme_current_time_please());
+	} else if(me == 0 && hot == 1 && current_cpu_model_phase == 0) {
+		current_cpu_model_phase = 1;
+		printf("CPU: ENTER COLD PHASE at wall clock time %f\n", gimme_current_time_please());
+	}
+
+	if(current_cpu_model_phase == 0)
+		return cpu_random(cr_state, HOT_FRACTION * conf.lps);
+	return cpu_random(cr_state, conf.lps);
+}
+
 
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *content, unsigned size,
     void *s)
@@ -59,7 +79,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 			break;
 
 		case EVENT:
-			dest =  cpu_random(state, conf.lps);
+//			dest =  cpu_random(state, conf.lps);
+			dest =  get_receiver(me, state, (int)now);
 			incr =  cpu_random_exp(state, mean);
             ts =  1.0*(now + lookahead + incr);
 			if(ts < now) printf("overflow ?? %d %f now %f\n", incr, ts, now);
@@ -97,4 +118,3 @@ int main(void)
 	RootsimInit(&conf);
 	return RootsimRun();
 }
-

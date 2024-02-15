@@ -22,6 +22,7 @@ extern void cpu_ended(void);
 extern void gpu_ended(void);
 extern unsigned sim_can_end(void);
 extern void set_gpu_rid(unsigned);
+extern double gimme_current_time_please(void);
 
 extern bool is_cpu_faster(void);
 extern void register_cpu_data(double wall_s, double gvt);
