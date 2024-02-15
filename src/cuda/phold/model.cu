@@ -118,21 +118,25 @@ void reinit_node(uint nid, int gvt) {
 }
 
 __device__
-static int current_gpu_model_phase = 0;
+static int current_cpu_model_phase_cnt = 0;
 
 __device__
 static uint get_receiver(uint me, curandState_t *cr_state, int now)
 {
-	int hot = (now / PHASE_WINDOW_SIZE) % 2;
-    if(me == 0 && hot == 0 && current_gpu_model_phase == 1) {
-	    current_gpu_model_phase = 0;
-	    printf("GPU: ENTER HOT PHASE at wall clock time %f\n", 0.);
-    } else if(me == 0 && hot == 1 && current_gpu_model_phase == 0) {
-	    current_gpu_model_phase = 1;
-	    printf("GPU: ENTER HOT PHASE at wall clock time %f\n", 0.);
-    }
+	int hot = (now / PHASE_WINDOW_SIZE);
+	if(me == 0){
+		if(hot > current_cpu_model_phase_cnt){
+			current_cpu_model_phase_cnt = hot;
+		if(hot & 1)
+			printf("GPU: ENTER HOT PHASE at wall clock time %f\n", 0.);
+		else
+			printf("GPU: ENTER HOT PHASE at wall clock time %f\n", 0.);
+		}
+	}
+	hot = hot % 2;
 
-    if(current_gpu_model_phase == 0)
+
+    if(hot == 0)
 	    return random(cr_state, HOT_FRACTION * g_n_nodes);
     return random(cr_state, g_n_nodes);
 }

@@ -38,20 +38,23 @@ static simtime_t lookahead = 1000;
 
 struct simulation_configuration conf;
 
-static int current_cpu_model_phase = 0;
+static int current_cpu_model_phase_cnt = 0;
 
 static uint get_receiver(uint me, curandState_t *cr_state, int now)
 {
-	int hot = (now / PHASE_WINDOW_SIZE) % 2;
-	if(me == 0 && hot == 0 && current_cpu_model_phase == 1) {
-		current_cpu_model_phase = 0;
-		printf("CPU: ENTER HOT PHASE at wall clock time %f\n", gimme_current_time_please());
-	} else if(me == 0 && hot == 1 && current_cpu_model_phase == 0) {
-		current_cpu_model_phase = 1;
-		printf("CPU: ENTER COLD PHASE at wall clock time %f\n", gimme_current_time_please());
+	int hot = (now / PHASE_WINDOW_SIZE);
+	if(me == 0){
+		if(hot > current_cpu_model_phase_cnt){
+			current_cpu_model_phase_cnt = hot;
+		if(hot & 1)
+			printf("CPU: ENTER COLD PHASE at wall clock time %f\n", gimme_current_time_please());
+		else
+			printf("CPU: ENTER HOT PHASE at wall clock time %f\n", gimme_current_time_please());
+		}
 	}
-
-	if(current_cpu_model_phase == 0)
+	hot = hot % 2;
+	
+	if(hot == 0)
 		return cpu_random(cr_state, HOT_FRACTION * conf.lps);
 	return cpu_random(cr_state, conf.lps);
 }

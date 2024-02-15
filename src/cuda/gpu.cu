@@ -252,7 +252,7 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 
 		timer_uint t = timer_new();
 		if(global_config.gvt_period < t - gpu_gvt_timer){
-			printf("\n\t\t\t\t\tGPU GVT  %'lf", (float)gvt);
+			printf("\t\t\t\t\tGPU GVT  %'lf\n", (float)gvt);
 			fflush(stdout);
 			gpu_gvt_timer = t;
 
