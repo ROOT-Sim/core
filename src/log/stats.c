@@ -347,7 +347,7 @@ void stats_on_gvt(simtime_t gvt)
 			printf("Virtual time: infinity\n");
 		}
 		else{
-			printf("CPU GVT  %'lf\n", gvt);
+			printf("CPU GVT  %lf,%lu\n", gvt, timer_new()/1000);
 		}
 		fflush(stdout);
 	}

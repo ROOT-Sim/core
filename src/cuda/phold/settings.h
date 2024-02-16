@@ -18,6 +18,8 @@
 #define STATE_HEADER	"phold/state.h"
 #define MODEL_HEADER	"phold/model.h"
 
+#define GVT_PERIOD 	(500*1000)
+#define END_SIM_GVT  (100*1000*1000)
 #define PHASE_WINDOW_SIZE 40000000
 #define HOT_FRACTION 0.1
 #define HOT_PHASE_PERIOD 2
