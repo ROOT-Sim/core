@@ -76,10 +76,12 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 			if(state == NULL) abort();
             cpu_curand_init(me, 0, 0, state);
 			SetState(state);
-
-			incr =  cpu_random_exp(state, mean);
-            ts =  1.0*(now + lookahead + incr);
-			ScheduleNewEvent(me, ts, EVENT, NULL, 0);
+			
+			for(int i=0;i<FAN_OUT;i++){
+				incr =  cpu_random_exp(state, mean);
+				ts =  1.0*(now + lookahead + incr);
+				ScheduleNewEvent(me, ts, EVENT, NULL, 0);
+			}
 			break;
 
 		case EVENT:
