@@ -93,7 +93,7 @@ bool gpu_is_available(void)
 
 static void magic_numbers(int n)
 {
-	nodes_per_lp = pow(2, (int)initial_p3[0]);
+	nodes_per_lp = 8;//pow(2, (int)initial_p3[0]);
 	n_nodes = n;
 	n_lps = n_nodes / nodes_per_lp;
 
@@ -232,7 +232,7 @@ bool gpu_configure(lp_id_t n_lps)
 
 	cudaEventRecord(start);
 	cudaEventRecord(start_2);
-
+			
 
 	return true;
 }
@@ -244,23 +244,24 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 	rid = (uintptr_t)args;
 	gpu_gvt_timer = timer_new();
     setlocale(LC_NUMERIC, "");
-	follow_the_leader(0);
-	int gvt;
+	follow_the_leader(0);	
+	int gvt, prev_gvt = 0;
 	while(!sim_can_end()) {
 		// Get minimal timestamp of all next events
 		gvt = get_gvt(d_ts_temp);
 
 		timer_uint t = timer_new();
 		if(global_config.gvt_period < t - gpu_gvt_timer){
-			printf("\t\t\t\t\tGPU GVT  %lf, %f\n", (float)gvt, gimme_current_time_please());
+			printf("\t\t\t\t\tGPU GVT  %.2g, (%.2g, %u), %.2g, %lu\n", (float)gvt, (float)(gvt - prev_gvt), global_config.gvt_period, (float)(gvt - prev_gvt) / global_config.gvt_period, t/1000);
+            prev_gvt = gvt;
 			fflush(stdout);
 			gpu_gvt_timer = t;
 
 			follow_the_leader((simtime_t)gvt*1.0);
 
 		}
-
-
+		
+        	
 		// Delete past events
 		h_n_events_cmt = 0;
 		cudaMemcpy(d_n_events_cmt, &h_n_events_cmt, sizeof(uint), cudaMemcpyHostToDevice);
@@ -274,90 +275,90 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 		if( ((float)gvt) > global_config.termination_time) {
 			gpu_ended();
 		}
-
-
+		
+		
 		// Change parameters
-		cudaEventRecord(stop_2);
-		cudaEventSynchronize(stop_2);
-		cudaEventElapsedTime(&exec_time, start_2, stop_2);
-		float current_rate = n_events_since_change / exec_time / 1000;
+		//cudaEventRecord(stop_2);
+		//cudaEventSynchronize(stop_2);
+		//cudaEventElapsedTime(&exec_time, start_2, stop_2);
+		//float current_rate = n_events_since_change / exec_time / 1000;
 
-		if(warm_up == 0 && exec_time > 200) {
-			warm_up = 1;
+		//if(warm_up == 0 && exec_time > 200) {
+		//	warm_up = 1;
 
-			n_events_since_change = 0;
-			cudaEventRecord(start_2);
+		//	n_events_since_change = 0;
+		//	cudaEventRecord(start_2);
 
-			flag_continue = 1;
-		} else if(warm_up == 1 && exec_time > 300) {
-			warm_up = 0;
+		//	flag_continue = 1;
+		//} else if(warm_up == 1 && exec_time > 300) {
+		//	warm_up = 0;
 
-			//			printf("%4.2f %6d %2u %10.3f %10.0f %10d",
-			//				inactive_lps_percent, window_size,
-			//				nodes_per_lp, current_rate, total_events, gvt);
+		//	//			printf("%4.2f %6d %2u %10.3f %10.0f %10d",
+		//	//				inactive_lps_percent, window_size,
+		//	//				nodes_per_lp, current_rate, total_events, gvt);
 
-			if(current_rate < min_rate) {
-				min_rate = current_rate;
-				//				printf(" --> MIN");
-			} else if(current_rate > max_rate) {
-				max_rate = current_rate;
-				//				printf(" --> MAX");
-			}
+		//	if(current_rate < min_rate) {
+		//		min_rate = current_rate;
+		//		//				printf(" --> MIN");
+		//	} else if(current_rate > max_rate) {
+		//		max_rate = current_rate;
+		//		//				printf(" --> MAX");
+		//	}
 
-			//			printf("\n");
+		//	//			printf("\n");
 
-			if(setup < 4) {
-				nm_start(setup, initial_p1[setup], initial_p2[setup], initial_p3[setup], current_rate);
+		//	if(setup < 4) {
+		//		nm_start(setup, initial_p1[setup], initial_p2[setup], initial_p3[setup], current_rate);
 
-				setup++;
-				if(setup < 4) {
-					inactive_lps_percent = initial_p1[setup];
-					window_size = initial_p2[setup];
-					change_nodes_per_lp(initial_p3[setup], d_can_split);
+		//		setup++;
+		//		if(setup < 4) {
+		//			inactive_lps_percent = initial_p1[setup];
+		//			window_size = initial_p2[setup];
+		//			change_nodes_per_lp(initial_p3[setup], d_can_split);
 
-					n_events_since_change = 0;
-					cudaEventRecord(start_2);
-					flag_continue = 1;
-				}
-			}
+		//			n_events_since_change = 0;
+		//			cudaEventRecord(start_2);
+		//			flag_continue = 1;
+		//		}
+		//	}
 
-			if(flag_continue == 0) {
-				float next_p1, next_p2, next_p3;
+		//	if(flag_continue == 0) {
+		//		float next_p1, next_p2, next_p3;
 
-				char flag = 0;
+		//		char flag = 0;
 
-				while(flag == 0) {
-					nm_get_next_point(current_rate, &next_p1, &next_p2, &next_p3);
+		//		while(flag == 0) {
+		//			nm_get_next_point(current_rate, &next_p1, &next_p2, &next_p3);
 
-					flag = 1;
+		//			flag = 1;
 
-					if(next_p1 < 0 || next_p1 > 1 || next_p2 < 0 || next_p3 < 0) {
-						flag = 0;
-						current_rate = 0;
-						continue;
-					}
+		//			if(next_p1 < 0 || next_p1 > 1 || next_p2 < 0 || next_p3 < 0) {
+		//				flag = 0;
+		//				current_rate = 0;
+		//				continue;
+		//			}
 
-					inactive_lps_percent = next_p1;
-					window_size = next_p2;
-					char res = change_nodes_per_lp(next_p3, d_can_split);
-					if(res == 0) {
-						flag = 0;
-						current_rate = 0;
-						continue;
-					}
-				}
+		//			inactive_lps_percent = next_p1;
+		//			window_size = next_p2;
+		//			char res = change_nodes_per_lp(next_p3, d_can_split);
+		//			if(res == 0) {
+		//				flag = 0;
+		//				current_rate = 0;
+		//				continue;
+		//			}
+		//		}
 
-				n_events_since_change = 0;
-				cudaEventRecord(start_2);
+		//		n_events_since_change = 0;
+		//		cudaEventRecord(start_2);
 
-				flag_continue = 1;
-			}
-		}
+		//		flag_continue = 1;
+		//	}
+		//}
 
-		if(flag_continue == 1) {
-			flag_continue = 0;
-			continue;
-		}
+		//if(flag_continue == 1) {
+		//	flag_continue = 0;
+		//	continue;
+		//}
 
 		// Handle next event
 		while(1) {
