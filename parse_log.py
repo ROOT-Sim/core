@@ -28,6 +28,8 @@ with open(log_path, 'r') as file:
             if in_challenge:
                 continue
             # Extract GVT data
+            if "GPU" in line and "GVT" in line:
+                line = " ".join(line.split(",")[0].split(" ")[0:2]+[",".join(line.split(",")[-2:])])
             match = re.search(r'GVT\s+(\d+\.\d+),\s*(\d+\.\d+)', line)
             print(line)
             if match:

@@ -2,8 +2,9 @@ import pandas as pd
 import subprocess
 import sys
 
-max_x = 25
-max_y = 2*1000*1000*10
+max_x = 65
+max_y = 4*10*1000*1000
+phase_period = 2000000
 
 # Load the dataset
 data_path = sys.argv[1]
@@ -31,6 +32,8 @@ set xrange [0:{max_x}]
 set yrange [0:{max_y}]
 set key below
 set bmargin 5.5
+set ytics {phase_period}
+set grid noxtics ytics
 """
 
 # Initialize variables to keep track of the current phase and its start

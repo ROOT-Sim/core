@@ -29,6 +29,9 @@
 
 #define NUM_LPS (8192*4)
 
+#define CPU_ENABLED true
+#define GPU_ENABLED false
+
 
 #define	OPTM_SYNC	1
 #define ALLOW_ME	1
