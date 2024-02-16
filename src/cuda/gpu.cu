@@ -232,7 +232,7 @@ bool gpu_configure(lp_id_t n_lps)
 
 	cudaEventRecord(start);
 	cudaEventRecord(start_2);
-			
+
 
 	return true;
 }
@@ -244,7 +244,7 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 	rid = (uintptr_t)args;
 	gpu_gvt_timer = timer_new();
     setlocale(LC_NUMERIC, "");
-	follow_the_leader(0);	
+	follow_the_leader(0);
 	int gvt;
 	while(!sim_can_end()) {
 		// Get minimal timestamp of all next events
@@ -252,15 +252,15 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 
 		timer_uint t = timer_new();
 		if(global_config.gvt_period < t - gpu_gvt_timer){
-			printf("\t\t\t\t\tGPU GVT  %lf, %lu\n", (float)gvt, t/1000);
+			printf("\t\t\t\t\tGPU GVT  %lf, %f\n", (float)gvt, gimme_current_time_please());
 			fflush(stdout);
 			gpu_gvt_timer = t;
 
 			follow_the_leader((simtime_t)gvt*1.0);
 
 		}
-		
-        	
+
+
 		// Delete past events
 		h_n_events_cmt = 0;
 		cudaMemcpy(d_n_events_cmt, &h_n_events_cmt, sizeof(uint), cudaMemcpyHostToDevice);
@@ -274,8 +274,8 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 		if( ((float)gvt) > global_config.termination_time) {
 			gpu_ended();
 		}
-		
-		
+
+
 		// Change parameters
 		cudaEventRecord(stop_2);
 		cudaEventSynchronize(stop_2);
