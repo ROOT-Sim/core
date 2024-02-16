@@ -25,6 +25,9 @@
 #define HOT_PHASE_PERIOD 2
 
 
+#define CPU_ENABLED true
+#define GPU_ENABLED false
+
 
 #define	OPTM_SYNC	1
 #define ALLOW_ME	1
