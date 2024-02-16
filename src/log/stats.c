@@ -341,13 +341,14 @@ void stats_take(enum stats_thread_type this_stat, uint_fast64_t c)
 #include <ftl/ftl.h>
 void stats_on_gvt(simtime_t gvt)
 {
-
+    static double prev_gvt;
 	if(global_config.log_level != LOG_SILENT && !rid && !nid) {
 		if(unlikely(gvt == SIMTIME_MAX)){
 			printf("Virtual time: infinity\n");
 		}
 		else{
-			printf("CPU GVT  %lf,%f\n", gvt, gimme_current_time_please());
+			printf("CPU GVT  %.2g, %.2g, %lu\n", gvt, (float)(gvt - prev_gvt) / global_config.gvt_period, timer_new()/1000);
+            prev_gvt = gvt;
 		}
 		fflush(stdout);
 	}

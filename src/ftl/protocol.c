@@ -127,7 +127,6 @@ extern unsigned get_n_lps();
 
 double gimme_current_time_please(void)
 {
-	if(!wall_clock_timer) wall_clock_timer = timer_new();
 	return (double)(timer_new() - wall_clock_timer) / 1000000;
 }
 

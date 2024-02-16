@@ -88,7 +88,7 @@ void init_node(uint nid) {
 	uint n_events = population / g_n_nodes;
 	if (nid < population % g_n_nodes) { n_events += 1; }
 
-	for (uint i = 0; i < FAN_OUT; i++) {
+	for (uint i = 0; i < n_events; i++) {
 		Event event;
 		event.type = 1;
 		event.sender = nid;

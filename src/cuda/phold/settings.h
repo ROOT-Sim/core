@@ -19,15 +19,11 @@
 #define MODEL_HEADER	"phold/model.h"
 
 #define GVT_PERIOD 	(500*1000)
-#define END_SIM_GVT  (30*1000*1000)
-#define PHASE_WINDOW_SIZE 2000000
-
-#define FAN_OUT 5
-
-#define HOT_FRACTION 0.05
+#define END_SIM_GVT  (100*1000*1000)
+#define PHASE_WINDOW_SIZE 40000000
+#define HOT_FRACTION 0.01
 #define HOT_PHASE_PERIOD 2
 
-#define NUM_LPS (8192*4)
 
 
 #define	OPTM_SYNC	1

@@ -417,7 +417,7 @@ void process_msg(void)
  */
 void process_device_align_msg(unsigned lid, simtime_t time)
 {
-	if(rid == 20) printf("GPU THREAD IS WORKING HERE!!!!\n");
+	//if(rid == 20) printf("GPU THREAD IS WORKING HERE!!!!\n");
 	if(rid != lid_to_rid(lid))
 	printf("ALIGNING %u by %u with check %u\n", lid, rid, lid_to_rid(lid));
 	struct lp_msg *msg = msg_allocator_pack(lid, time, LP_REINIT, NULL, 0);

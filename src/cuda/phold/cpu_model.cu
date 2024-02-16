@@ -20,7 +20,7 @@ extern "C" {
 
 
 #ifndef NUM_LPS
-#define NUM_LPS 8192
+#define NUM_LPS (1024 * 512)
 #endif
 
 #ifndef NUM_THREADS
@@ -56,7 +56,7 @@ static uint get_receiver(uint me, curandState_t *cr_state, int now)
 	}
 	
 	if(!(hot))
-		return (unsigned int) cpu_random(cr_state, HOT_FRACTION * conf.lps)/(HOT_FRACTION);
+		return (unsigned int) cpu_random(cr_state, HOT_FRACTION * conf.lps) / (HOT_FRACTION);
 	return (unsigned int) cpu_random(cr_state, conf.lps);
 }
 
@@ -76,12 +76,10 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *co
 			if(state == NULL) abort();
             cpu_curand_init(me, 0, 0, state);
 			SetState(state);
-			
-			for(int i=0;i<FAN_OUT;i++){
-				incr =  cpu_random_exp(state, mean);
-				ts =  1.0*(now + lookahead + incr);
-				ScheduleNewEvent(me, ts, EVENT, NULL, 0);
-			}
+
+			incr =  cpu_random_exp(state, mean);
+            ts =  1.0*(now + lookahead + incr);
+			ScheduleNewEvent(me, ts, EVENT, NULL, 0);
 			break;
 
 		case EVENT:
@@ -106,16 +104,9 @@ bool CanEnd(lp_id_t me, const void *snapshot){ (void)me; (void)snapshot; return 
 
 }
 
-#define CPU  1
-#define GPU  2
-#define FTL  3
 
-int main(int argc, char *argv[])
-{	
-	int mode = 1;
-	if(argc == 2){
-		mode = atoi(argv[1]);
-	}
+int main(void)
+{
     conf.lps = NUM_LPS,
     conf.n_threads = NUM_THREADS,
     conf.termination_time = END_SIM_GVT,
@@ -125,8 +116,8 @@ int main(int argc, char *argv[])
     conf.ckpt_interval = 0,
     conf.core_binding = true,
     conf.serial = false,
-	conf.use_gpu = mode & GPU,
-    conf.use_cpu = mode & CPU,
+    conf.use_gpu = true,
+    conf.use_cpu = true,
     conf.dispatcher = ProcessEvent,
     conf.committed = CanEnd,
 	RootsimInit(&conf);
