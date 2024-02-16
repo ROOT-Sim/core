@@ -35,7 +35,7 @@ static int resample(struct data_point_raw *a, int len_a, struct data_point_raw *
 
 	for(int i = 0; i < 2; i++) {
 		int idx = 0;
-		double prev_gvt = dp_r[i][0].wall_s < wall_step_s ? dp_r[i][0].gvt : 0;
+		double prev_gvt = 0;
 		double prev_gvt_wall_s = 0;
 		double prev_speed = 0;
 		int prev_idx = -1;
@@ -50,8 +50,8 @@ static int resample(struct data_point_raw *a, int len_a, struct data_point_raw *
 			}
 			prev_idx = idx;
 			double gvt = dp_r[i][idx + 1].gvt;
-			// printf("%.2f, %.2f, %.2f, %.2f\n", gvt, prev_gvt, wall_s, prev_gvt_wall_s);
 			double speed = (gvt - prev_gvt) / (dp_r[i][idx + 1].wall_s - prev_gvt_wall_s);
+			printf("%.2f, %.2f, %.2f, %.2f -> %.2f\n", gvt, prev_gvt, wall_s, prev_gvt_wall_s, speed);
 			dp[i][wall_step] = speed;
 
 			prev_gvt = gvt;
@@ -64,10 +64,7 @@ static int resample(struct data_point_raw *a, int len_a, struct data_point_raw *
 		dp_out[wall_step] = dp[1][wall_step] - dp[0][wall_step];
 
 	for(int wall_step = 0; wall_step < max_wall_step; wall_step++) {
-		for(int i = 0; i < 2; i++) {
-			printf("%.2f: %.2f, %.2f; %.2f\n", (wall_step + 1) * wall_step_s, dp[0][wall_step],
-			    dp[1][wall_step], dp_out[wall_step]);
-		}
+		printf("%.2f: %.2f, %.2f; %.2f\n", (wall_step + 1) * wall_step_s, dp[0][wall_step], dp[1][wall_step], dp_out[wall_step]);
 	}
 	return 0;
 }
@@ -131,14 +128,15 @@ static double forecast(double alpha, double beta, int max_wall_step, double dp[m
 			double forecast = ss[last_data_step] + phi_sum * bs[last_data_step];
 			double curr_h_err = dp[last_data_step + h] - forecast;
 			err += curr_h_err;
-			// printf("error at %d + %d: %.2f - %.2f = %.2f\n", last_data_step, h, dp[last_data_step + h],
-			// forecast, fabs(dp[last_data_step + h] - forecast));
+			//printf("error at %d + %d: %.2f - %.2f = %.2f\n", last_data_step, h, dp[last_data_step + h],
+			 //forecast, fabs(dp[last_data_step + h] - forecast));
 			curr_step_err += curr_h_err;
 		}
 		errs[last_data_step] = curr_step_err;
 	}
 
-	printf("total err: %.2f, per window: %.2f\n", err, err / (max_wall_step - forecast_steps - 1));
+    if (!train)
+	  printf("alpha: %.2f, beta: %.2f, total err: %.2f, per window: %.2f\n", alpha, beta, err, err / (max_wall_step - forecast_steps - 1));
 
 	if(train)
 		return -fabs(err); // nm implementation maximizes
@@ -159,6 +157,10 @@ static double forecast(double alpha, double beta, int max_wall_step, double dp[m
 	printf(
 	    "forecast over the next %.2f wall seconds is a difference of %.2f gvt units per wall second with stddev %.2f\n",
 	    wall_step_s * forecast_steps, sum_forecast * scale, err_stddev * scale);
+
+    if (isnan(err_stddev)) {
+      return sum_forecast < 0 ? 1.0 : 0.0;
+    }
 
 	double a_faster_prob = 1 - norm_cdf(sum_forecast, 0.0, err_stddev);
 	// printf("a is faster with a probability of %.2f\n", a_faster_prob);
@@ -191,6 +193,15 @@ bool is_cpu_faster(void)
 		printf("Not enough GPU data!\n");
 		return true;
 	}
+
+    for (int i = 0; i < cpu_data.current; i++) {
+      printf("CPU: %.2f, %.2f\n", cpu_data.data[i].wall_s, cpu_data.data[i].gvt);
+    }
+
+    for (int i = 0; i < cpu_data.current; i++) {
+      printf("GPU: %.2f, %.2f\n", gpu_data.data[i].wall_s, gpu_data.data[i].gvt);
+    }
+
 	return 0.5 <= cmp_speeds(cpu_data.data, cpu_data.current, gpu_data.data, gpu_data.current);
 }
 
