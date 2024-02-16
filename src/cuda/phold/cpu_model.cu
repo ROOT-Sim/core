@@ -117,6 +117,7 @@ int main(void)
     conf.core_binding = true,
     conf.serial = false,
     conf.use_gpu = true,
+    conf.use_cpu = true,
     conf.dispatcher = ProcessEvent,
     conf.committed = CanEnd,
 	RootsimInit(&conf);

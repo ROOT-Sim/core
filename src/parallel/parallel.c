@@ -110,36 +110,44 @@ int parallel_simulation(void)
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
 #ifdef HAVE_CUDA
+	
 	thr_id_t gpu_thread;
-	gpu_configure(global_config.lps);
-	set_gpu_rid(global_config.n_threads);
-	thread_start(&gpu_thread, gpu_main_loop, (void *)(uintptr_t)global_config.n_threads);
+	if(global_config.use_gpu){
+		gpu_configure(global_config.lps);
+		set_gpu_rid(global_config.n_threads);
+		thread_start(&gpu_thread, gpu_main_loop, (void *)(uintptr_t)global_config.n_threads);
+	}
 #endif
+	
 
 	thr_id_t thrs[global_config.n_threads];
 	rid_t i = global_config.n_threads;
-	while(i--) {
-		if(thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
-			logger(LOG_FATAL, "Unable to create threads!");
-			abort();
+	if(global_config.use_cpu){
+		while(i--) {
+			if(thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
+				logger(LOG_FATAL, "Unable to create threads!");
+				abort();
+			}
+			if(global_config.core_binding && thread_affinity_set(thrs[i], i)) {
+				logger(LOG_FATAL, "Unable to set thread affinity!");
+				abort();
+			}
 		}
-		if(global_config.core_binding && thread_affinity_set(thrs[i], i)) {
-			logger(LOG_FATAL, "Unable to set thread affinity!");
-			abort();
-		}
-	}
-
 	i = global_config.n_threads;
 	while(i--)
 		thread_wait(thrs[i], NULL);
-
+	}
+	
 #ifdef HAVE_CUDA
-	thread_wait(gpu_thread, NULL);
-	gpu_stop();
+	if(global_config.use_gpu){
+		thread_wait(gpu_thread, NULL);
+		gpu_stop();
+	}
 #endif
 
-	stats_global_time_take(STATS_GLOBAL_FINI_START);
-	parallel_global_fini();
-
+	if(global_config.use_cpu){
+		stats_global_time_take(STATS_GLOBAL_FINI_START);
+		parallel_global_fini();
+	}
 	return 0;
 }

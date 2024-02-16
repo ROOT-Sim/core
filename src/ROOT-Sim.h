@@ -127,6 +127,8 @@ struct simulation_configuration {
 	bool serial;
 	/// If set, try to use a GPU. If no GPU is found, it is reset at runtime
 	bool use_gpu;
+	/// If not set, try to use a GPU only
+	bool use_cpu;
 	/// Function pointer to the dispatching function
 	ProcessEvent_t dispatcher;
 	/// Function pointer to the termination detection function

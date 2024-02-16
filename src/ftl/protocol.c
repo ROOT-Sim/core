@@ -65,6 +65,8 @@ void gpu_ended()
 
 unsigned sim_can_end()
 {
+	if(!global_config.use_gpu) return end_cpu;
+	if(!global_config.use_cpu) return end_gpu;
 	return both_ended;
 }
 
@@ -130,6 +132,8 @@ double gimme_current_time_please(void)
 
 void follow_the_leader(simtime_t current_gvt)
 {
+	if(!global_config.use_gpu) return;
+	if(!global_config.use_cpu) return;
 	switch(current_phase) {
 		case INIT:
 			gvt_rounds = 0;
