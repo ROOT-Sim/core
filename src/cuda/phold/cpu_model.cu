@@ -104,9 +104,16 @@ bool CanEnd(lp_id_t me, const void *snapshot){ (void)me; (void)snapshot; return 
 
 }
 
+#define CPU  1
+#define GPU  2
+#define FTL  3
 
-int main(void)
-{
+int main(int argc, char *argv[])
+{	
+	int mode = 1;
+	if(argc == 2){
+		mode = atoi(argv[1]);
+	}
     conf.lps = NUM_LPS,
     conf.n_threads = NUM_THREADS,
     conf.termination_time = END_SIM_GVT,
@@ -116,8 +123,8 @@ int main(void)
     conf.ckpt_interval = 0,
     conf.core_binding = true,
     conf.serial = false,
-    conf.use_gpu = true,
-    conf.use_cpu = true,
+	conf.use_gpu = mode & GPU,
+    conf.use_cpu = mode & CPU,
     conf.dispatcher = ProcessEvent,
     conf.committed = CanEnd,
 	RootsimInit(&conf);
