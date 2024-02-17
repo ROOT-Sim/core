@@ -2,8 +2,9 @@ import pandas as pd
 import subprocess
 import sys
 
-max_x = 25
-max_y = 2*1000*1000*10
+max_x = 120
+max_y = 33*1000*1000
+phase_period = 4*1000*1000
 
 # Load the dataset
 data_path = sys.argv[1]
@@ -18,7 +19,7 @@ set terminal pdfcairo enhanced color size 5in,3in font "Linux Libertine, 12"
 set output '{out_file}'
 
 set style line 1 lt 1 lw 2 lc rgb "blue" # Solid line
-set style line 2 dt 2 lw 2 lc rgb "blue" # Dashed line
+set style line 2 dt "." lw 2 lc rgb "blue" # Dashed line
 
 set style line 101 lc rgb "black" lt 1 lw 2 # Line style for border
 
@@ -31,6 +32,8 @@ set xrange [0:{max_x}]
 set yrange [0:{max_y}]
 set key below
 set bmargin 5.5
+set ytics {phase_period}
+set grid noxtics ytics
 """
 
 # Initialize variables to keep track of the current phase and its start

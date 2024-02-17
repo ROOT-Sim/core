@@ -245,14 +245,16 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 	gpu_gvt_timer = timer_new();
     setlocale(LC_NUMERIC, "");
 	follow_the_leader(0);	
-	int gvt, prev_gvt = 0;
+	int gvt = 0, prev_gvt = 0;
+
 	while(!sim_can_end()) {
 		// Get minimal timestamp of all next events
 		gvt = get_gvt(d_ts_temp);
 
 		timer_uint t = timer_new();
 		if(global_config.gvt_period < t - gpu_gvt_timer){
-			printf("\t\t\t\t\tGPU GVT  %.2g, (%.2g, %u), %.2g, %lu\n", (float)gvt, (float)(gvt - prev_gvt), global_config.gvt_period, (float)(gvt - prev_gvt) / global_config.gvt_period, t/1000);
+			printf("\t\t\t\t\tGPU GVT  %.2g, (%.2g, %u), %.2g, %lu, %lf, %f\n", (float)gvt, (float)(gvt - prev_gvt), global_config.gvt_period,
+			(float)(gvt - prev_gvt) / global_config.gvt_period, t/1000, (double)gvt, gimme_current_time_please());
             prev_gvt = gvt;
 			fflush(stdout);
 			gpu_gvt_timer = t;
