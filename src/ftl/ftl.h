@@ -32,9 +32,3 @@ extern void register_gpu_data(double wall_s, double gvt);
 #define DEFAULT_FORECAST_STEPS 10
 #define CHALLENGE_PERIODS 20
 #define FTL_PERIODS 20
-
-#if DEFAULT_FORECAST_STEPS >= FTL_PERIODS
-
-#error FORECAST STEPS SHOULD BE LOWER THAN  FTL PERIODS
-
-#endif

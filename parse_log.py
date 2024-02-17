@@ -12,12 +12,17 @@ y_value = 0
 x_value = 0
 line_style = 0
 
+last_before_challenge = None
+
 with open(log_path, 'r') as file:
     for line in file:
         if "Starting challenge" in line:
             in_challenge = True
         elif "the challenge is completed" in line:
             in_challenge = False
+            if last_before_challenge:
+                last_before_challenge[2] = 1 - last_before_challenge[2]
+                data.append(last_before_challenge)
         elif "ENTER COLD PHASE" in line:
             background_phase = 0
             data.append([x_value, y_value, line_style, background_phase])
@@ -28,7 +33,7 @@ with open(log_path, 'r') as file:
             if in_challenge:
                 continue
             # Extract GVT data
-            if "GPU" in line and "GVT" in line:
+            if ("GPU" in line or "CPU" in line) and "GVT" in line:
                 line = " ".join(line.split(",")[0].split(" ")[0:2]+[",".join(line.split(",")[-2:])])
             match = re.search(r'GVT\s+(\d+\.\d+),\s*(\d+\.\d+)', line)
             print(line)
@@ -37,7 +42,8 @@ with open(log_path, 'r') as file:
                 x_value = float(match.group(2))
                 line_style = 1 if "GPU GVT" in line else 0  # 0 for dashed (GPU), 1 for solid (CPU)
                 # Append the extracted data along with the current background phase
-                data.append([x_value, y_value, line_style, background_phase])
+                last_before_challenge = [x_value, y_value, line_style, background_phase]
+                data.append(last_before_challenge)
 
 # Create a pandas DataFrame
 df = pd.DataFrame(data, columns=['x', 'y', 'line_style', 'background_phase'])

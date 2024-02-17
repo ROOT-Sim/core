@@ -24,8 +24,7 @@ void align_lp_state_to_gvt(simtime_t gvt, unsigned l){
     const struct lp_msg *msg;
     do{
 		msg = array_get_at(lp->p.p_msgs, --i);
-        
-	} while(is_msg_sent(msg) || gvt < msg->dest_t);
+	} while((is_msg_sent(msg) || gvt < msg->dest_t) && i);
 	
     i++;
     do_rollback(lp, i);

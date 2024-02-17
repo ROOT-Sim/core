@@ -2,9 +2,9 @@ import pandas as pd
 import subprocess
 import sys
 
-max_x = 65
-max_y = 4*10*1000*1000
-phase_period = 2000000
+max_x = 120
+max_y = 33*1000*1000
+phase_period = 4*1000*1000
 
 # Load the dataset
 data_path = sys.argv[1]
@@ -19,7 +19,7 @@ set terminal pdfcairo enhanced color size 5in,3in font "Linux Libertine, 12"
 set output '{out_file}'
 
 set style line 1 lt 1 lw 2 lc rgb "blue" # Solid line
-set style line 2 dt 2 lw 2 lc rgb "blue" # Dashed line
+set style line 2 dt "." lw 2 lc rgb "blue" # Dashed line
 
 set style line 101 lc rgb "black" lt 1 lw 2 # Line style for border
 
