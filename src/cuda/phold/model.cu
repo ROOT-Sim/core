@@ -127,11 +127,11 @@ static uint get_receiver(uint me, curandState_t *cr_state, int now)
 	int hot = cur_hot_phase%HOT_PHASE_PERIOD;
 
 	if(me == 0){
-			if(hot == 0 && cur_hot_phase > hot_phase_count){
+			if(hot == 0 && cur_hot_phase > hot_phase_count && ENABLE_HOT){
 				hot_phase_count = cur_hot_phase;
 				printf("\t\t\t\t\tGPU: ENTER HOT PHASE at wall clock time %f %d\n", 0., hot);
 			}
-			if(hot == 1 && cur_hot_phase > hot_phase_count){
+			else if(!ENABLE_HOT || (hot == 1 && cur_hot_phase > hot_phase_count)){
 				hot_phase_count = cur_hot_phase;
 				printf("\t\t\t\t\tGPU: ENTER COLD PHASE at wall clock time %f %d\n", 0., hot);
 			}
