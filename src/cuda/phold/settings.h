@@ -24,6 +24,7 @@
 #define HOT_FRACTION 0.01
 #define HOT_PHASE_PERIOD 2
 
+#define ENABLE_HOT  1
 
 #define CPU_ENABLED true
 #define GPU_ENABLED false

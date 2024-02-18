@@ -138,7 +138,7 @@ static uint get_receiver(uint me, curandState_t *cr_state, int now)
 	}
 
 
-	if(!(hot))
+	if(!(hot) && ENABLE_HOT)
 	    return random(cr_state, HOT_FRACTION * g_n_nodes)/(HOT_FRACTION);
     return random(cr_state, g_n_nodes);
 }

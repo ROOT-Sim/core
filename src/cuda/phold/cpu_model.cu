@@ -55,7 +55,8 @@ static uint get_receiver(uint me, curandState_t *cr_state, int now)
 		}
 	}
 	
-	if(!(hot))
+	
+	if(!(hot) && ENABLE_HOT)
 		return (unsigned int) cpu_random(cr_state, HOT_FRACTION * conf.lps) / (HOT_FRACTION);
 	return (unsigned int) cpu_random(cr_state, conf.lps);
 }
