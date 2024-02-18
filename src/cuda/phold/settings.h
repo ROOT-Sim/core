@@ -18,9 +18,9 @@
 #define STATE_HEADER	"phold/state.h"
 #define MODEL_HEADER	"phold/model.h"
 
-#define GVT_PERIOD 	(500*1000)
-#define END_SIM_GVT  (100*1000*1000)
-#define PHASE_WINDOW_SIZE 40000000
+#define GVT_PERIOD 	(200*1000)
+#define END_SIM_GVT  (26*1000*1000)
+#define PHASE_WINDOW_SIZE (8*1000*1000)
 #define HOT_FRACTION 0.01
 #define HOT_PHASE_PERIOD 2
 
@@ -29,6 +29,8 @@
 #define CPU_ENABLED true
 #define GPU_ENABLED false
 
+//#define NUM_THREADS 19
+#define NUM_LPS (1024 * 38)
 
 #define	OPTM_SYNC	1
 #define ALLOW_ME	1

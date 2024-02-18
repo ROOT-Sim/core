@@ -2,9 +2,9 @@ import pandas as pd
 import subprocess
 import sys
 
-max_x = 120
-max_y = 33*1000*1000
-phase_period = 4*1000*1000
+max_x = 260
+max_y = 64*1000*1000
+phase_period = 8*1000*1000
 
 # Load the dataset
 data_path = sys.argv[1]
