@@ -60,6 +60,7 @@ const char *const stats_names[] = {
     [STATS_APPROX_HANDLER_STATE_SIZE] = "approx handler state size",
     [STATS_APPROX_HANDLER_TIME] = "approx handler time",
     [STATS_MSG_ROLLBACK] = "rolled back messages",
+    [STATS_ROLLBACK] = "rollbacks",
     [STATS_MSG_REMOTE_RECEIVED] = "remote messages received",
     [STATS_MSG_SILENT] = "silent messages",
     [STATS_CKPT] = "checkpoints",

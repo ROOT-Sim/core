@@ -257,6 +257,13 @@ void clean_buffers_on_gvt(struct mm_state *state, simtime_t time_barrier)
 	}
 }
 
+bool ApproximatedMemoryCheck(const void *base){
+	const unsigned char *p = base;
+	struct dymelor_area *m_area = (struct dymelor_area *)(p - *(uint_least32_t *)(p - sizeof(uint_least32_t)));
+	uint_least32_t i = (p - m_area->area) >> m_area->chk_size_exp;
+	return bitmap_check(m_area->core_bitmap, i);
+}
+
 void ApproximatedMemoryMark(const void *base, bool is_core)
 {
 	// FIXME: check base belongs to the LP memory allocator

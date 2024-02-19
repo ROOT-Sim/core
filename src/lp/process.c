@@ -198,6 +198,8 @@ static void do_rollback(struct process_data *proc_p, array_count_t past_i)
 	array_count_t last_i = model_allocator_checkpoint_restore(past_i);
 	silent_execution(proc_p, last_i, past_i);
 	approximated_lp_on_rollback();
+	stats_take(STATS_ROLLBACK, 1);
+
 }
 
 static inline array_count_t match_straggler_msg(const struct process_data *proc_p, const struct lp_msg *s_msg)
