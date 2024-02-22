@@ -85,7 +85,12 @@ struct dymelor_ctx_checkpoint *checkpoint_full_take(const struct mm_state *ctx, 
 void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_checkpoint *state_ckpt)
 {
 	timer_uint t = timer_hr_new();
+	void *tmp;
+
 	bool approximated = state_ckpt->approximated;
+	if(approximated) 
+		tmp = global_config.pre_restore(current_lp - lps, current_lp->lib_ctx->state_s);
+
 	const struct dymelor_area_checkpoint *ckpt = (const struct dymelor_area_checkpoint *)state_ckpt->data;
 	for(unsigned i = 0; i < sizeof(ctx->areas) / sizeof(*ctx->areas); ++i) {
 		struct dymelor_area *area = ctx->areas[i];
@@ -149,7 +154,9 @@ void checkpoint_full_restore(struct mm_state *ctx, const struct dymelor_ctx_chec
 	stats_take(STATS_RESTORE_TIME, t2 - t);
 
 	if(approximated) {
-		global_config.restore(current_lp - lps, current_lp->lib_ctx->state_s);
+		struct lib_ctx torestore_ctx  = *current_lp->lib_ctx;
+		global_config.restore(current_lp - lps, current_lp->lib_ctx->state_s, tmp);
+		*current_lp->lib_ctx = torestore_ctx;
 		stats_take(STATS_APPROX_HANDLER_STATE_SIZE, used_mem - ctx->approx_used_mem);
 		stats_take(STATS_APPROX_HANDLER_TIME, timer_hr_value(t2));
 	}
