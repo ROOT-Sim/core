@@ -45,7 +45,7 @@ static void worker_thread_init(rid_t this_rid)
 
 static void worker_thread_fini(void)
 {
-	gvt_msg_drain();
+	// gvt_msg_drain(); FIXME: workaround because the flush is bugged with the termination code in this branch
 
 	if(sync_thread_barrier()) {
 		stats_dump();
@@ -74,8 +74,8 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 			process_msg();
 		}
 
-		simtime_t current_gvt;
-		if(unlikely(current_gvt = gvt_phase_run())) {
+		simtime_t current_gvt = gvt_phase_run();
+		if(unlikely(current_gvt != 0.0)) {
 			approximated_on_gvt();
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
