@@ -19,11 +19,7 @@
 #define MODEL_HEADER	"phold/model.h"
 
 #define GVT_PERIOD 	(200*1000)
-#define END_SIM_GVT  (64*1000*1000)
-#define PHASE_WINDOW_SIZE (8*1000*1000)
 #define HOT_FRACTION 0.01
-
-#define HOT_PHASE_PERIOD 2
 
 #define CPU_ENABLED true
 #define GPU_ENABLED false

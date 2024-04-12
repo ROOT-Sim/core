@@ -1,3 +1,6 @@
 #define NUM_THREADS 23
-#define NUM_LPS (1024 * 256)
+#define NUM_LPS (512*1024)
 #define ENABLE_HOT 1
+#define PHASE_WINDOW_SIZE (8*1000*100)
+#define HOT_PHASE_PERIOD 2
+#define END_SIM_GVT  (32*1000*100)
