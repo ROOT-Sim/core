@@ -243,7 +243,7 @@ thrd_ret_t THREAD_CALL_CONV gpu_main_loop(void *args)
 	(void)args;
 	rid = (uintptr_t)args;
 	gpu_gvt_timer = timer_new();
-    setlocale(LC_NUMERIC, "");
+//    setlocale(LC_NUMERIC, "");
 	follow_the_leader(0);	
 	int gvt = 0, prev_gvt = 0;
 
