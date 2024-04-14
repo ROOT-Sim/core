@@ -35,7 +35,7 @@ static_assert(
 	sizeof(((struct buddy_checkpoint *)0)->longest),
 	"longest and base_mem are not contiguous, this will break incremental checkpointing");
 
-extern struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *data);
-extern const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *data);
+extern struct buddy_checkpoint *buddy_checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *data);
+extern const struct buddy_checkpoint *buddy_checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *data);
 extern struct buddy_checkpoint *checkpoint_incremental_take(const struct buddy_state *self, struct buddy_checkpoint *data);
 extern const struct buddy_checkpoint * checkpoint_incremental_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp);

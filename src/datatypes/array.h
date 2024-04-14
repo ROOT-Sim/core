@@ -143,7 +143,6 @@ typedef uint_least32_t array_count_t;
 		__rmval = array_items(self)[(i)];                                                                      \
 		memmove(&(array_items(self)[(i)]), &(array_items(self)[(i) + 1]),                                      \
 		    sizeof(*array_items(self)) * (array_count(self) - (i)));                                           \
-		array_shrink(self);                                                                                    \
 		__rmval;                                                                                               \
 	})
 

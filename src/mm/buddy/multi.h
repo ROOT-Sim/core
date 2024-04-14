@@ -2,7 +2,7 @@
  * @file mm/buddy/multi.h
  *
  * @brief Handling of multiple buddy systems
- *
+ * TODO: move under mm folder since now this is not anymore buddy specific
  * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
@@ -34,7 +34,7 @@ struct mm_log {
 /// The checkpointable memory context assigned to a single LP
 struct mm_state {
 	/// The array of pointers to the allocated buddy systems for the LP
-	dyn_array(struct buddy_state *) buddies;
+	dyn_array(uintptr_t) buffers;
 	/// The array of checkpoints
 	dyn_array(struct mm_log) logs;
 	/// The total count of allocated bytes

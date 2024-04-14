@@ -21,6 +21,7 @@ set(rscore_srcs
         mm/buddy/buddy.c
         mm/buddy/ckpt.c
         mm/buddy/multi.c
+        mm/large/large.c
         mm/msg_allocator.c
         parallel/parallel.c
         serial/serial.c)

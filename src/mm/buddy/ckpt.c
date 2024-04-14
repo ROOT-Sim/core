@@ -128,7 +128,7 @@ void checkpoint_incremental_restore(struct buddy_state *self, const struct buddy
 
 #endif
 
-struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *ret)
+struct buddy_checkpoint *buddy_checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *ret)
 {
 	ret->orig = self;
 #ifdef ROOTSIM_INCREMENTAL
@@ -149,7 +149,7 @@ struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, st
 	return (struct buddy_checkpoint *)ptr;
 }
 
-const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
+const struct buddy_checkpoint *buddy_checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
 {
 	if(unlikely(ckp->orig != self))
 		return NULL;
