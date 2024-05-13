@@ -41,8 +41,8 @@ enum stats_thread_type {
 	STATS_MSG_EXTRACTION,
 	/// The count of rollbacks
 	STATS_ROLLBACK,
-	/// The time spent for recovery from a rollback: checkpoint restore and anti-message sending activities
-	STATS_RECOVERY_TIME,
+	/// The time spent for recovery from a rollback
+	STATS_ROLLBACK_TIME,
 	/// The count of rollbacked message, i.e. the already processed messages whose effect has been invalidated
 	STATS_MSG_ROLLBACK,
 	/// The count of taken checkpoints
@@ -59,6 +59,8 @@ enum stats_thread_type {
 	STATS_MSG_ANTI,
 	/// The real time elapsed since last GVT computation
 	STATS_REAL_TIME_GVT, // used internally, don't use elsewhere
+
+	STATS_FOSSIL_TIME,
 	/// Used to count the members of this enum
 	STATS_COUNT
 };

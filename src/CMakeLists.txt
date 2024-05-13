@@ -9,6 +9,7 @@ set(rscore_srcs
         core/sync.c
         datatypes/msg_queue.c
         distributed/control_msg.c
+        gvt/auto_fossil.c
         gvt/fossil.c
         gvt/gvt.c
         gvt/termination.c

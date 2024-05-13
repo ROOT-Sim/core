@@ -13,6 +13,7 @@
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
+#include <gvt/auto_fossil.h>
 #include <gvt/fossil.h>
 #include <log/stats.h>
 #include <mm/msg_allocator.h>
@@ -24,6 +25,7 @@ static void worker_thread_init(rid_t this_rid)
 	auto_ckpt_init();
 	msg_allocator_init();
 	msg_queue_init();
+	auto_fossil_init();
 	sync_thread_barrier();
 	lp_init();
 
@@ -69,6 +71,7 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 
 		simtime_t current_gvt = gvt_phase_run();
 		if(unlikely(current_gvt != 0.0)) {
+			auto_fossil_on_gvt();
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
 			fossil_on_gvt(current_gvt);

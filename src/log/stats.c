@@ -59,7 +59,7 @@ const char *const stats_names[] = {
     [STATS_MSG_PROCESSED_TIME] = "processed messages time",
     [STATS_MSG_EXTRACTION] = "messages extraction time",
     [STATS_ROLLBACK] = "rollbacks",
-    [STATS_RECOVERY_TIME] = "recovery time",
+    [STATS_ROLLBACK_TIME] = "rollback time",
     [STATS_MSG_ROLLBACK] = "rolled back messages",
     [STATS_CKPT] = "checkpoints",
     [STATS_CKPT_TIME] = "checkpoints time",
@@ -67,7 +67,8 @@ const char *const stats_names[] = {
     [STATS_MSG_SILENT] = "silent messages",
     [STATS_MSG_SILENT_TIME] = "silent messages time",
     [STATS_MSG_ANTI] = "anti messages",
-    [STATS_REAL_TIME_GVT] = "gvt real time"
+    [STATS_REAL_TIME_GVT] = "gvt real time",
+    [STATS_FOSSIL_TIME] = "fossil collection time"
 };
 
 /// The first timestamp ever collected for this simulation run

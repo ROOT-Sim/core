@@ -16,7 +16,7 @@
 #include <stdlib.h>
 
 #ifndef NUM_LPS
-#define NUM_LPS 8192
+#define NUM_LPS 65536
 #endif
 
 #ifndef NUM_THREADS
@@ -100,8 +100,8 @@ bool CanEnd(_unused lp_id_t me, _unused const void *snapshot)
 struct simulation_configuration conf = {
     .lps = NUM_LPS,
     .n_threads = NUM_THREADS,
-    .termination_time = 1000,
-    .gvt_period = 1000,
+    .termination_time = 10000,
+    .gvt_period = 100000,
     .log_level = LOG_INFO,
     .stats_file = "phold",
     .ckpt_interval = 0,

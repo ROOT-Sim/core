@@ -13,6 +13,7 @@
 #include <arch/timer.h>
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
+#include <gvt/auto_fossil.h>
 #include <gvt/fossil.h>
 #include <gvt/gvt.h>
 #include <log/stats.h>
@@ -204,9 +205,9 @@ static void do_rollback(struct lp_ctx *lp, array_count_t past_i)
 	timer_uint t = timer_hr_new();
 	send_anti_messages(&lp->p, past_i);
 	array_count_t last_i = model_allocator_checkpoint_restore(&lp->mm_state, past_i);
-	stats_take(STATS_RECOVERY_TIME, timer_hr_value(t));
-	stats_take(STATS_ROLLBACK, 1);
 	silent_execution(lp, last_i, past_i);
+	stats_take(STATS_ROLLBACK_TIME, timer_hr_value(t));
+	stats_take(STATS_ROLLBACK, 1);
 }
 
 /**
@@ -364,10 +365,12 @@ void process_msg(void)
 	struct lp_ctx *lp = &lps[msg->dest];
 	current_lp = lp;
 
-	if(unlikely(fossil_is_needed(lp))) {
+	if(unlikely(auto_fossil_is_needed(msg->dest_t - lp->p.bound))) {
+		timer_uint t = timer_hr_new();
 		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.full_ckpt_size);
 		fossil_lp_collect(lp);
 		lp->p.bound = unlikely(array_is_empty(lp->p.p_msgs)) ? -1.0 : lp->p.bound;
+		stats_take(STATS_FOSSIL_TIME, timer_hr_value(t));
 	}
 
 	uint32_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
