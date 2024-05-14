@@ -3,6 +3,7 @@
 #include <log/stats.h>
 
 __thread simtime_t auto_fossil_threshold;
+simtime_t auto_fossil_threshold_init;
 
 enum auto_fossil_state {
 	FORWARD_DOUBLING_STEP = 0,
@@ -16,7 +17,7 @@ __thread struct {
 } auto_fossil_ctx;
 
 void auto_fossil_init(void) {
-	auto_fossil_threshold = 2.5;
+	auto_fossil_threshold = auto_fossil_threshold_init;
 	auto_fossil_ctx.last_cost = UINT64_MAX;
 	auto_fossil_ctx.step = 1.0;
 	auto_fossil_ctx.state = FORWARD_DOUBLING_STEP;

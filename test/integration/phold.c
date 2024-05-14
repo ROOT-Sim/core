@@ -20,7 +20,7 @@
 #endif
 
 #ifndef NUM_THREADS
-#define NUM_THREADS 0
+#define NUM_THREADS 22
 #endif
 
 #define EVENT 1
@@ -111,8 +111,11 @@ struct simulation_configuration conf = {
     .committed = CanEnd,
 };
 
-int main(void)
+extern simtime_t auto_fossil_threshold_init;
+
+int main(int argc, char *argv[])
 {
+	sscanf(argv[1], "%lf", &auto_fossil_threshold_init);
 	RootsimInit(&conf);
 	return RootsimRun();
 }
