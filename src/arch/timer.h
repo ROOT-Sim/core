@@ -97,6 +97,14 @@ static inline timer_uint timer_hr_new(void)
 	return __rdtsc();
 }
 
+#elif defined(__ARM_ARCH_ISA_A64)
+
+static inline timer_uint timer_hr_new(void) {
+    uint64_t cntvct;
+    asm volatile ("mrs %0, cntvct_el0; " : "=r"(cntvct) :: "memory");
+    return cntvct;
+}
+
 #else
 
 static inline timer_uint timer_hr_new(void)
