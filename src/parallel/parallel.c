@@ -40,8 +40,6 @@ static void worker_thread_init(rid_t this_rid)
 
 static void worker_thread_fini(void)
 {
-	gvt_msg_drain();
-
 	if(sync_thread_barrier()) {
 		stats_dump();
 		stats_global_time_take(STATS_GLOBAL_EVENTS_END);
