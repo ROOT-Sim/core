@@ -365,7 +365,7 @@ void process_msg(void)
 	struct lp_ctx *lp = &lps[msg->dest];
 	current_lp = lp;
 
-	if(unlikely(auto_fossil_is_needed(msg->dest_t - lp->p.bound))) {
+	if(unlikely(fossil_is_needed(lp) && auto_fossil_is_needed(msg->dest_t - lp->p.bound))) {
 		timer_uint t = timer_hr_new();
 		auto_ckpt_recompute(&lp->auto_ckpt, lp->mm_state.full_ckpt_size);
 		fossil_lp_collect(lp);
