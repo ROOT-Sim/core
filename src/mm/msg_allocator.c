@@ -15,7 +15,7 @@
 
 #define MSG_ARRAY_FREE(msg_array)                                                                                      \
 	__extension__({                                                                                                \
-		for(array_count_t i = 0; i < array_count(msg_array); ++i)                                              \
+		for(array_count_t i = array_count(msg_array); i--;)                                                    \
 			mm_free(array_get_at(msg_array, i));                                                           \
 		array_fini(msg_array);                                                                                 \
 	})
@@ -100,8 +100,8 @@ void msg_allocator_free_at_gvt(struct lp_msg *msg)
  */
 void msg_allocator_on_gvt(void)
 {
-	_Bool phase = !gvt_phase;
-	for(array_count_t i = 0; i < array_count(free_at_gvt_large[phase]); ++i)
+	bool phase = !gvt_phase;
+	for(array_count_t i = array_count(free_at_gvt_large[phase]); i--;)
 		mm_free(array_get_at(free_at_gvt_large[phase], i));
 	array_clear(free_at_gvt_large[phase]);
 

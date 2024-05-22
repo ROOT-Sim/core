@@ -110,8 +110,8 @@ int parallel_simulation(void)
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 
 	thr_id_t thrs[global_config.n_threads];
-	tid_t i = global_config.n_threads;
-	while(i--) {
+
+	for(tid_t i = global_config.n_threads; i--;) {
 		if(thread_start(&thrs[i], parallel_thread_run, (void *)(uintptr_t)i)) {
 			logger(LOG_FATAL, "Unable to create threads!");
 			abort();
@@ -122,8 +122,7 @@ int parallel_simulation(void)
 		}
 	}
 
-	i = global_config.n_threads;
-	while(i--)
+	for(tid_t i = global_config.n_threads; i--;)
 		thread_wait(thrs[i], NULL);
 
 	stats_global_time_take(STATS_GLOBAL_FINI_START);
