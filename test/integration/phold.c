@@ -16,11 +16,11 @@
 #include <stdlib.h>
 
 #ifndef NUM_LPS
-#define NUM_LPS 65536
+#define NUM_LPS 8192
 #endif
 
 #ifndef NUM_THREADS
-#define NUM_THREADS 22
+#define NUM_THREADS 0
 #endif
 
 #define EVENT 1
@@ -100,8 +100,8 @@ bool CanEnd(_unused lp_id_t me, _unused const void *snapshot)
 struct simulation_configuration conf = {
     .lps = NUM_LPS,
     .n_threads = NUM_THREADS,
-    .termination_time = 10000,
-    .gvt_period = 100000,
+    .termination_time = 1000,
+    .gvt_period = 1000,
     .log_level = LOG_INFO,
     .stats_file = "phold",
     .ckpt_interval = 0,
@@ -111,11 +111,8 @@ struct simulation_configuration conf = {
     .committed = CanEnd,
 };
 
-extern simtime_t auto_fossil_threshold_init;
-
-int main(int argc, char *argv[])
+int main(void)
 {
-	sscanf(argv[1], "%lf", &auto_fossil_threshold_init);
 	RootsimInit(&conf);
 	return RootsimRun();
 }
