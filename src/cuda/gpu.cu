@@ -87,6 +87,8 @@ bool gpu_is_available(void)
 
 	if (devices > 0 && ret == cudaSuccess)
 		return true;
+	printf("cannod find any CUDA device\n");
+	exit(1);
 	return false;
 }
 
