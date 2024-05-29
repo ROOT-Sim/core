@@ -28,6 +28,7 @@ set(rscore_srcs
         ftl/protocol.c
         ftl/forecast.c
         ftl/nelder_mead.c
+		ftl/ftl_heuristics/leader_monitor.c
 )
 
 if(MPI_FOUND)

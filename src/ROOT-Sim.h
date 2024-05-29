@@ -68,6 +68,10 @@ typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, c
  */
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
+
+typedef bool (*FTL_heuristics_t)(simtime_t);
+
+
 enum rootsim_event {LP_INIT = 65534, LP_FINI, LP_REINIT};
 
 /**
@@ -103,6 +107,14 @@ enum log_level {
 	LOG_SILENT //!< Emit no message during the simulation
 };
 
+
+typedef enum ftl_heuristic_switch{
+    EMPTY=0,
+    MONITOR_LEADER,
+	AIMD
+} ftl_h;
+
+
 /// A set of configurable values used by other modules
 struct simulation_configuration {
 	/// The number of LPs to be used in the simulation
@@ -133,6 +145,8 @@ struct simulation_configuration {
 	ProcessEvent_t dispatcher;
 	/// Function pointer to the termination detection function
 	CanEnd_t committed;
+    /// Function implementing the ftl heuristics for scheduling a challenge
+    ftl_h ftl_heuristic;
 };
 
 extern int RootsimInit(const struct simulation_configuration *conf);

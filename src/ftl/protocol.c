@@ -4,6 +4,8 @@
 #include <core/core.h>
 #include <datatypes/msg_queue.h>
 #include <ftl/ftl.h>
+#include <ftl/ftl_heuristics/leader_monitor.h>
+#include <ftl/ftl_heuristics/aimd.h>
 #include <log/log.h>
 
 /// This is the id of the GPU thread
@@ -49,10 +51,11 @@ __thread unsigned free_rounds = 0;
 #define WHO_AM_I ((rid != gpu_rid) + (rid == 0))
 
 
-unsigned end_gpu = 0;
-unsigned end_cpu = 0;
-unsigned both_ended = 0;
-simtime_t actual_gvt = 0;
+volatile unsigned FTL_PERIODS = 0;
+volatile unsigned end_gpu = 0;
+volatile unsigned end_cpu = 0;
+volatile unsigned both_ended = 0;
+volatile simtime_t actual_gvt = 0;
 
 void cpu_ended()
 {
@@ -78,6 +81,10 @@ unsigned sim_can_end()
 #define CPU_THREADS_CNT (gpu_rid)
 
 
+static bool empty_heuristic(simtime_t current_gvt){ return true;}
+
+FTL_heuristics_t ftl_heuristic_func = NULL;
+
 void set_gpu_rid(unsigned my_rid)
 {
 	gpu_rid = my_rid;
@@ -86,6 +93,30 @@ void set_gpu_rid(unsigned my_rid)
 
 	pthread_barrier_init(&xpu_barrier, NULL, ALL_THREADS_CNT);
 	pthread_barrier_init(&gpu_barrier, NULL, GPU_THREADS_CNT + 1);
+
+
+	switch(global_config.ftl_heuristic){
+		case EMPTY:
+			FTL_PERIODS = CHALLENGE_PERIODS; //3 //5 //10
+			ftl_heuristic_func = empty_heuristic;
+			break;
+		case MONITOR_LEADER:
+			FTL_PERIODS = 3;
+			ftl_heuristic_func = leader_monitor;
+			init_leader_monitor();
+			break;
+		case AIMD:
+			FTL_PERIODS = CHALLENGE_PERIODS; //3 //5 //10
+			ftl_heuristic_func = empty_heuristic;
+			break;
+		default:
+			printf("unknown ftl heuristic\n");
+			exit(1);
+			break;
+	}
+	
+
+
 	__sync_synchronize();
 }
 
@@ -212,7 +243,10 @@ void follow_the_leader(simtime_t current_gvt)
 				/// realing gvt timers for both cpu and gpu threads
 				gvt_timer = timer_new();
 				gpu_gvt_timer = gvt_timer;
+				reset_leader_monitor(-1.0);
 
+				FTL_PERIODS = recompute_ftl_periods(new_phase, FTL_PERIODS);
+				printf("NEW FTL PERIODS %u\n", FTL_PERIODS);
 				ftl_transition(CHALLENGE, new_phase);
 			}
 
@@ -283,10 +317,10 @@ void follow_the_leader(simtime_t current_gvt)
 			break;
 	}
 
-	if((++free_rounds % FTL_PERIODS))
-		return;
+	if((++free_rounds % FTL_PERIODS)) return;
+	if(!end_cpu && !end_gpu && !ftl_heuristic_func(current_gvt)) return;
 	free_rounds = 0;
-
+	
 	unsigned val;
 	ftl_phase old_phase;
 
