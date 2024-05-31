@@ -109,7 +109,7 @@ enum log_level {
 
 
 typedef enum ftl_heuristic_switch{
-    EMPTY=0,
+    PERIODIC=0,
     MONITOR_LEADER,
 	AIMD
 } ftl_h;

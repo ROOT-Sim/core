@@ -131,7 +131,6 @@ int RootsimInit(const struct simulation_configuration *conf)
 	if(global_config.use_gpu)
 		global_config.use_gpu = gpu_is_available();
 	
-	global_config.ftl_heuristic = AIMD;
 	configuration_done = true;
 
 	return 0;

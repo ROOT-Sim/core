@@ -93,10 +93,11 @@ void set_gpu_rid(unsigned my_rid)
 
 	pthread_barrier_init(&xpu_barrier, NULL, ALL_THREADS_CNT);
 	pthread_barrier_init(&gpu_barrier, NULL, GPU_THREADS_CNT + 1);
+	global_config.ftl_heuristic = PERIODIC;
 
 
 	switch(global_config.ftl_heuristic){
-		case EMPTY:
+		case PERIODIC:
 			FTL_PERIODS = CHALLENGE_PERIODS; //3 //5 //10
 			ftl_heuristic_func = empty_heuristic;
 			break;
