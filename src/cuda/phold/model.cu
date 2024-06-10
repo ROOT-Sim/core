@@ -19,6 +19,7 @@
 #include <cuda/random.h>
 #include "model.h"
 #include "settings.h"
+#include "settings_gpu.h"
 
 
 __device__ static Nodes nodes;

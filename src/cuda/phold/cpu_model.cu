@@ -33,6 +33,7 @@ unsigned int mean = 10000;
 
 extern "C" {
 #include <unistd.h>
+#include "settings_cpu.h"
 static simtime_t lookahead = 1000;
 
 struct simulation_configuration conf;
