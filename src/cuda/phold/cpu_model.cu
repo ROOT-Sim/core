@@ -43,23 +43,8 @@ static int hot_phase_count = 0;
 static uint get_receiver(uint me, curandState_t *cr_state, int now)
 {
 	int cur_hot_phase = (now / PHASE_WINDOW_SIZE);
-	int hot = cur_hot_phase%HOT_PHASE_PERIOD;
-	
-	if(me == 0){
-		if(hot == 0 && cur_hot_phase > hot_phase_count && ENABLE_HOT){
-			hot_phase_count = cur_hot_phase;
-			printf("CPU: ENTER HOT PHASE at wall clock time %f %d\n", gimme_current_time_please(), hot);
-		}
-		else if(!ENABLE_HOT || (hot == 1 && cur_hot_phase > hot_phase_count)){
-			hot_phase_count = cur_hot_phase;
-			printf("CPU: ENTER COLD PHASE at wall clock time %f %d\n", gimme_current_time_please(), hot);
-		}
-	}
-	
-	
-	if(!(hot) && ENABLE_HOT)
-		return (unsigned int) cpu_random(cr_state, HOT_FRACTION * conf.lps) / (HOT_FRACTION);
-	return (unsigned int) cpu_random(cr_state, conf.lps);
+	double HOT_FRACTION = load_trace[cur_hot_phase];
+	return (unsigned int) cpu_random(cr_state, HOT_FRACTION * conf.lps) / (HOT_FRACTION);
 }
 
 
@@ -110,11 +95,21 @@ bool CanEnd(lp_id_t me, const void *snapshot){ (void)me; (void)snapshot; return 
 #define GPU  2
 #define FTL  3
 
+
+#define PERIODIC 0
+#define MONITOR_LEADER 1
+#define AIMD 2
+
 int main(int argc, char *argv[])
 {	
 	int mode = 1;
-	if(argc == 2){
+	int ftlh = 0;
+	if(argc >= 2){
 		mode = atoi(argv[1]);
+	}
+	if(argc == 3){
+		ftlh = atoi(argv[2]);
+		if(ftlh > 2) { printf("unknown ftl_h\n");exit(1);}
 	}
     conf.lps = NUM_LPS,
     conf.n_threads = NUM_THREADS,
@@ -129,6 +124,7 @@ int main(int argc, char *argv[])
     conf.use_cpu = mode & CPU,
     conf.dispatcher = ProcessEvent,
     conf.committed = CanEnd,
+	conf.ftl_heuristic = ftlh_map[ftlh],
 	RootsimInit(&conf);
 	return RootsimRun();
 }
