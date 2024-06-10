@@ -22,6 +22,9 @@ static int forecast_steps = DEFAULT_FORECAST_STEPS;
 static const double phi = 0.9;
 
 
+double last_cpu_speed = 0;
+double last_gpu_speed = 0;
+
 static int resample(struct data_point_raw *a, int len_a, struct data_point_raw *b, int len_b, int max_wall_step,
     double *dp_out)
 {
@@ -62,10 +65,16 @@ static int resample(struct data_point_raw *a, int len_a, struct data_point_raw *
 
 	for(int wall_step = 0; wall_step < max_wall_step; wall_step++)
 		dp_out[wall_step] = dp[1][wall_step] - dp[0][wall_step];
-
+	last_cpu_speed = 0;
+	last_gpu_speed = 0;
+	
 	for(int wall_step = 0; wall_step < max_wall_step; wall_step++) {
 		printf("%.2f: %.2f, %.2f; %.2f\n", (wall_step + 1) * wall_step_s, dp[0][wall_step], dp[1][wall_step], dp_out[wall_step]);
+		last_cpu_speed += dp[0][wall_step];
+		last_gpu_speed += dp[1][wall_step];
 	}
+	last_cpu_speed /= max_wall_step;
+	last_gpu_speed /= max_wall_step; 
 	return 0;
 }
 

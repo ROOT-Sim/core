@@ -93,20 +93,21 @@ void set_gpu_rid(unsigned my_rid)
 
 	pthread_barrier_init(&xpu_barrier, NULL, ALL_THREADS_CNT);
 	pthread_barrier_init(&gpu_barrier, NULL, GPU_THREADS_CNT + 1);
-	global_config.ftl_heuristic = PERIODIC;
-
-
+	
 	switch(global_config.ftl_heuristic){
 		case PERIODIC:
 			FTL_PERIODS = CHALLENGE_PERIODS; //3 //5 //10
 			ftl_heuristic_func = empty_heuristic;
-			break;
+			printf("adopting ftl heuristic PERIODIC\n");
+		break;
 		case MONITOR_LEADER:
+			printf("adopting ftl heuristic MONITOR LEADER\n");
 			FTL_PERIODS = 3;
 			ftl_heuristic_func = leader_monitor;
 			init_leader_monitor();
 			break;
 		case AIMD:
+			printf("adopting ftl heuristic AIMD\n");
 			FTL_PERIODS = CHALLENGE_PERIODS; //3 //5 //10
 			ftl_heuristic_func = empty_heuristic;
 			break;
@@ -148,6 +149,8 @@ static inline int ftl_transition(enum ftl_phase curr, enum ftl_phase next)
 
 unsigned challenge_count = 0;
 
+extern double last_cpu_speed;
+extern double last_gpu_speed;
 
 static timer_uint wall_clock_timer;
 
@@ -244,10 +247,15 @@ void follow_the_leader(simtime_t current_gvt)
 				/// realing gvt timers for both cpu and gpu threads
 				gvt_timer = timer_new();
 				gpu_gvt_timer = gvt_timer;
-				reset_leader_monitor(-1.0);
-
-				FTL_PERIODS = recompute_ftl_periods(new_phase, FTL_PERIODS);
-				printf("NEW FTL PERIODS %u\n", FTL_PERIODS);
+				if(new_phase == CPU)
+					reset_leader_monitor(last_cpu_speed);
+				else
+					reset_leader_monitor(last_gpu_speed);
+					
+				if(global_config.ftl_heuristic == AIMD){
+					FTL_PERIODS = recompute_ftl_periods(new_phase, FTL_PERIODS);
+					printf("NEW FTL PERIODS %u\n", FTL_PERIODS);
+				}
 				ftl_transition(CHALLENGE, new_phase);
 			}
 

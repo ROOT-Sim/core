@@ -111,9 +111,11 @@ enum log_level {
 typedef enum ftl_heuristic_switch{
     PERIODIC=0,
     MONITOR_LEADER,
-	AIMD
+	AIMD,
+    LAST = -1 
 } ftl_h;
 
+static const enum ftl_heuristic_switch ftlh_map[] = {PERIODIC, MONITOR_LEADER, AIMD};
 
 /// A set of configurable values used by other modules
 struct simulation_configuration {
