@@ -11,8 +11,8 @@ jobs:
   doc_coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
       - name: Initialize Environment
         uses: ROOT-Sim/ci-actions/init@v1.2
       - name: Generate Documentation
@@ -24,11 +24,11 @@ jobs:
         with:
           build-path: docs
       - name: Comment PR
-        uses: actions/github-script@v3
+        uses: actions/github-script@v7
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,

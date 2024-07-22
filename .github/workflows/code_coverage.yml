@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Fetch ROOT-Sim repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Initialize Environment
         uses: ROOT-Sim/ci-actions/init@v1.2
       - name: Build & Test
@@ -25,7 +25,8 @@ jobs:
       - name: Generate coverage report
         run: find ${{ runner.workspace }}/build/ -name "*.gcda" -exec gcov -abcfu {} \;
       - name: Upload coverage report
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}

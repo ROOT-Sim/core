@@ -29,7 +29,7 @@ jobs:
             type: Release
     steps:
       - name: Checkpout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Initialize Environment
         uses: ROOT-Sim/ci-actions/init@v1.2
       - name: Build & Test
