@@ -5,7 +5,7 @@
  *
  * All the facilities to collect, gather, and dump statistics are implemented in this module.
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -37,6 +37,8 @@ enum stats_thread_type {
 	STATS_MSG_PROCESSED,
 	/// The time spent inside the model dispatcher function
 	STATS_MSG_PROCESSED_TIME,
+	/// The time spent processing message extractions from the message queue
+	STATS_MSG_EXTRACTION,
 	/// The count of rollbacks
 	STATS_ROLLBACK,
 	/// The time spent for recovery from a rollback: checkpoint restore and anti-message sending activities

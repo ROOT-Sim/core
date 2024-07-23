@@ -5,14 +5,13 @@
  *
  * LP construction functions
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
 
 #include <arch/platform.h>
 #include <core/core.h>
-#include <lib/random/random.h>
 #include <lp/msg.h>
 #include <lp/process.h>
 #include <mm/auto_ckpt.h>
@@ -22,8 +21,6 @@
 struct lp_ctx {
 	/// The termination time of this LP, handled by the termination module
 	simtime_t termination_t;
-	/// The additional libraries context of this LP
-	struct rng_ctx *rng_ctx;
 	/// The pointer set by the model with the SetState() API call
 	void *state_pointer;
 	/// The housekeeping epoch number

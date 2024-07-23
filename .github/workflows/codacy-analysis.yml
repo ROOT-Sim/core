@@ -1,5 +1,8 @@
 name: Codacy Code Scan
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ "master", "develop" ]
@@ -7,9 +10,6 @@ on:
     branches: [ "master", "develop" ]
   schedule:
     - cron: '20 2 * * 3'
-
-permissions:
-  contents: read
 
 jobs:
   codacy-security-scan:
@@ -20,17 +20,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Run Codacy Analysis CLI
-        uses: codacy/codacy-analysis-cli-action@v4.1.0
+        uses: actions/checkout@v4
+      - name: Run Codacy Analysis CLI (cppcheck)
+        uses: codacy/codacy-analysis-cli-action@v4.4.5
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          tool: cppcheck
           verbose: true
-          output: results.sarif
+          output: cppcheck.sarif
           format: sarif
           gh-code-scanning-compat: true
           max-allowed-issues: 2147483647
-      - name: Upload SARIF results file
-        uses: github/codeql-action/upload-sarif@v2
+      - name: Run Codacy Analysis CLI (bandit)
+        uses: codacy/codacy-analysis-cli-action@v4.4.5
         with:
-          sarif_file: results.sarif
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          tool: bandit
+          verbose: true
+          output: bandit.sarif
+          format: sarif
+          gh-code-scanning-compat: true
+          max-allowed-issues: 2147483647
+      - name: Upload SARIF results file (cppcheck)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: cppcheck.sarif
+          category: codacy
+      - name: Upload SARIF results file (bandit)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit.sarif
+          category: codacy

@@ -5,7 +5,7 @@
  *
  * All facilities to collect, gather, and dump statistics are implemented in this module.
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <log/stats.h>
@@ -15,7 +15,6 @@
 #include <arch/timer.h>
 #include <distributed/mpi.h>
 #include <log/file.h>
-#include <mm/mm.h>
 
 #include <assert.h>
 #include <stdint.h>
@@ -58,6 +57,7 @@ static_assert(sizeof(struct stats_thread) == 8 * STATS_COUNT && sizeof(struct st
 const char *const stats_names[] = {
     [STATS_MSG_PROCESSED] = "processed messages",
     [STATS_MSG_PROCESSED_TIME] = "processed messages time",
+    [STATS_MSG_EXTRACTION] = "messages extraction time",
     [STATS_ROLLBACK] = "rollbacks",
     [STATS_RECOVERY_TIME] = "recovery time",
     [STATS_MSG_ROLLBACK] = "rolled back messages",

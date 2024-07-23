@@ -5,7 +5,7 @@
  *
  * This module implements the simulator initialization routines
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <arch/thread.h>
@@ -90,7 +90,7 @@ static void print_config(void)
  */
 int RootsimInit(const struct simulation_configuration *conf)
 {
-	memcpy(&global_config, conf, sizeof(struct simulation_configuration));
+	memcpy(&global_config, conf, sizeof(global_config));
 
 	if(unlikely(global_config.lps == 0)) {
 		fprintf(stderr, "You must specify the total number of Logical Processes\n");

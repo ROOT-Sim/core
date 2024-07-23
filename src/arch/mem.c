@@ -6,7 +6,7 @@
  * This module implements some memory related utilities such as memory
  * statistics retrieval in a platform independent way
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <arch/mem.h>
@@ -66,6 +66,7 @@ static long linux_page_size;
 
 int mem_stat_setup(void)
 {
+	/* Flawfinder: ignore */
 	proc_stat_fd = open("/proc/self/statm", O_RDONLY);
 	if(proc_stat_fd == -1)
 		return -1;
@@ -76,7 +77,9 @@ int mem_stat_setup(void)
 
 size_t mem_stat_rss_current_get(void)
 {
+	/* Flawfinder: ignore */
 	char res[40]; // sufficient for two 64 bit base 10 numbers and a space
+	/* Flawfinder: ignore */
 	if(__builtin_expect(lseek(proc_stat_fd, 0, SEEK_SET) == -1 || read(proc_stat_fd, res, sizeof(res) - 1) == -1, 0))
 		return (size_t)0;
 

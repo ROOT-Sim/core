@@ -1,5 +1,8 @@
 name: "CodeQL"
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ "master", "develop" ]
@@ -22,9 +25,9 @@ jobs:
         language: [ 'cpp', 'python' ]
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
     - name: Initialize Environment
@@ -37,4 +40,4 @@ jobs:
         build-type: Debug
         run-test: false
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
