@@ -14,7 +14,6 @@
  */
 #include <datatypes/msg_queue.h>
 
-#include <arch/timer.h>
 #include <core/sync.h>
 #include <datatypes/heap.h>
 #include <log/stats.h>
@@ -113,7 +112,11 @@ struct lp_msg *msg_queue_extract(void)
 {
 	timer_uint t = timer_hr_new();
 	msg_queue_insert_queued();
-	struct lp_msg *msg = likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
+	struct lp_msg *msg = NULL;
+	if(likely(heap_count(mqp))) {
+		msg = heap_extract(mqp, q_elem_is_before).m;
+		msg->cost = t;
+	}
 	stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
 	return msg;
 }
@@ -142,17 +145,19 @@ void msg_queue_insert_self(struct lp_msg *msg)
 	heap_insert(mqp, q_elem_is_before, qe);
 }
 
-extern struct lp_msg **msg_queue_extract_all(lp_id_t lp_id, array_count_t *size)
+/**
+ * @brief Scan the local thread queue, and reinserts messages that do not belong anymore to the thread queue
+ */
+void msg_queue_local_rebind(void)
 {
-	array_declare(struct lp_msg *) msgs;
-	array_init_explicit(msgs, 4U);
-	for(array_count_t k = heap_count(mqp); k-- > 0;) {
+	msg_queue_insert_queued();
+	for(array_count_t k = heap_count(mqp); k--;) {
 		struct lp_msg *m = heap_items(mqp)[k].m;
-		if(m->dest == lp_id) {
-			array_push(msgs, m);
+		unsigned rid = lps[m->dest].rid;
+		if(rid != tid) {
+			assert(!LP_RID_IS_NID(rid));
 			heap_extract_from(mqp, k, q_elem_is_before);
+			msg_queue_insert(m, rid);
 		}
 	}
-	*size = array_count(msgs);
-	return array_items(msgs);
 }

@@ -240,7 +240,7 @@ typedef uint_least32_t array_count_t;
  */
 #define array_extend(self, other)                                                                                      \
 	__extension__({                                                                                                \
-		_Static_assert(sizeof(*array_items(self)) == sizeof(*array_items(other)));                             \
+		_Static_assert(sizeof(*array_items(self)) == sizeof(*array_items(other)), "Incompatible arrays!");     \
 		array_count_t c = array_count(other);                                                                  \
 		array_reserve(self, c);                                                                                \
 		memcpy(array_items(self) + array_count(self), array_items(other), sizeof(*array_items(other)) * c);    \

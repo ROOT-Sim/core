@@ -19,6 +19,7 @@
 #include <gvt/termination.h>
 #include <log/stats.h>
 #include <mm/msg_allocator.h>
+#include <rebind/rebind.h>
 
 /**
  * @brief Set the affinity of the current worker thread to the core it is supposed to run on
@@ -119,6 +120,7 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 			msg_allocator_on_gvt();
 			fossil_on_gvt(current_gvt);
 			stats_on_gvt(current_gvt);
+			rebind_on_gvt();
 			if(unlikely(termination_on_gvt(current_gvt)))
 				break;
 		}
@@ -139,6 +141,7 @@ static void parallel_global_init(void)
 	lp_global_init();
 	msg_queue_global_init();
 	gvt_global_init();
+	rebind_global_init();
 }
 
 /**
@@ -146,6 +149,7 @@ static void parallel_global_init(void)
  */
 static void parallel_global_fini(void)
 {
+	rebind_global_fini();
 	msg_queue_global_fini();
 	lp_global_fini();
 	distributed_mem_global_fini();

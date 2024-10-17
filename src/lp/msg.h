@@ -10,6 +10,7 @@
  */
 #pragma once
 
+#include <arch/timer.h>
 #include <core/core.h>
 
 #include <limits.h>
@@ -59,6 +60,8 @@
 struct lp_msg {
 	/// The next element in the message list (used in the message queue)
 	struct lp_msg *next;
+	/// The measured cost to process this message
+	timer_uint cost;
 	/// The id of the recipient LP
 	lp_id_t dest;
 	/// The intended destination logical time of this message

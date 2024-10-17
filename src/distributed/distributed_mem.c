@@ -101,7 +101,7 @@ void *distributed_mem_chunk_ref(const struct distr_mem_chunk *chk)
 	return atomic_load_explicit(&chunks_refs[chk - all_chunks], memory_order_relaxed);
 }
 
-extern bool distributed_mem_is_contained(const void *ptr)
+bool distributed_mem_is_contained(const void *ptr)
 {
  	return (uintptr_t)ptr - (uintptr_t)all_chunks < distr_mem_size;
 }

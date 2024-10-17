@@ -57,6 +57,7 @@ void process_lp_init(struct lp_ctx *lp)
 	lp->p.bound = -1.0;
 	struct lp_msg *msg = common_msg_pack(lp - lps, 0, LP_INIT, NULL, 0U);
 	msg->raw_flags = 0;
+	msg->cost = timer_hr_new();
 	process_msg(msg);
 }
 
@@ -190,8 +191,10 @@ static inline array_count_t match_anti_msg(const struct process_ctx *proc_p, con
 {
 	array_count_t i = array_count(proc_p->pes) - 1;
 	struct pes_entry e = array_get_at(proc_p->pes, i);
-	while(a_msg != pes_entry_msg_unsafe(e))
+	while(a_msg != pes_entry_msg_unsafe(e)) {
+		assert(i);
 		e = array_get_at(proc_p->pes, --i);
+	}
 
 	while(i) {
 		if(pes_entry_is_received(array_get_at(proc_p->pes, --i)))
@@ -306,6 +309,7 @@ __attribute__((hot)) void process_msg(struct lp_msg *msg)
 
 	struct lp_ctx *lp = &lps[msg->dest];
 	current_lp = lp;
+	assert(lp->rid == tid);
 
 	uint64_t flags = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_PROCESSED, memory_order_relaxed);
 	if(unlikely(flags & MSG_FLAG_ANTI)) {
@@ -332,4 +336,6 @@ __attribute__((hot)) void process_msg(struct lp_msg *msg)
 	auto_ckpt_register_good(&lp->auto_ckpt);
 	if(auto_ckpt_is_needed(&lp->auto_ckpt))
 		model_allocator_checkpoint_take(&lp->mm, array_count(lp->p.pes));
+
+	msg->cost = timer_hr_value(msg->cost);
 }
