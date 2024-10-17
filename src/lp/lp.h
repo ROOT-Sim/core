@@ -23,9 +23,12 @@
 
 /// A complete LP context
 struct lp_ctx {
+	/// The resource identifier on which this LP is bound TODO: make rid its own struct for safety
 	unsigned rid;
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
+	/// The estimated 'cost' of this LP; the amount of time spent in successful forward execution each GVT phase
+	timer_uint cost;
 	/// The pointer set by the model with the SetState() API call
 	void *state_pointer;
 	/// The automatic checkpointing interval selection data
@@ -34,8 +37,11 @@ struct lp_ctx {
 	struct process_ctx p;
 	/// The memory allocator state of this LP
 	struct mm_ctx mm;
+	/// A pointer to another LP bound to the same thread, or NULL if this is the last in the chain
+	struct lp_ctx *next;
 };
 
+extern __thread struct lp_ctx *thread_first_lp;
 extern __thread struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
 

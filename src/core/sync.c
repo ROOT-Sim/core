@@ -28,13 +28,13 @@ bool sync_thread_barrier(void)
 	if(phase & 2U) {
 		l = atomic_fetch_add_explicit(c, -1, memory_order_acq_rel) == 1;
 		do {
-			r = atomic_load_explicit(c, memory_order_relaxed);
+			r = atomic_load_explicit(c, memory_order_acquire);
 		} while(r);
 	} else {
 		l = !atomic_fetch_add_explicit(c, 1, memory_order_acq_rel);
 		tid_t thr_cnt = global_config.n_threads;
 		do {
-			r = atomic_load_explicit(c, memory_order_relaxed);
+			r = atomic_load_explicit(c, memory_order_acquire);
 		} while(r != thr_cnt);
 	}
 

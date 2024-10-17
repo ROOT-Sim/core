@@ -25,6 +25,7 @@ set(rscore_srcs
         mm/auto_ckpt.c
         mm/msg_allocator.c
         parallel/parallel.c
+        rebind/rebind.c
         serial/serial.c)
 
 if(MPI_FOUND)

@@ -21,4 +21,4 @@ extern void msg_queue_fini(void);
 extern struct lp_msg *msg_queue_extract(void);
 extern void msg_queue_insert(struct lp_msg *msg, tid_t this_tid);
 extern void msg_queue_insert_self(struct lp_msg *msg);
-extern struct lp_msg **msg_queue_extract_all(lp_id_t lp_id, array_count_t *size);
+extern void msg_queue_local_rebind(void);

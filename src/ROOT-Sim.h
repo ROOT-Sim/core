@@ -107,14 +107,16 @@ struct simulation_configuration {
 	enum log_level log_level;
 	/// The checkpointing interval
 	unsigned ckpt_interval;
-	/// File where to write logged information: if not NULL, output is redirected to this file
-	FILE *logfile;
-	/// Path to the statistics file. If NULL, no statistics are produced.
-	const char *stats_file;
+	/// The rebind check period expressed in GVT periods - 1; actual rebind may be carried out less often than this
+	unsigned rebind_check_each_gvt;
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
 	/// If set, the simulation will run on the serial runtime
 	bool serial;
+	/// File where to write logged information: if not NULL, output is redirected to this file
+	FILE *logfile;
+	/// Path to the statistics file. If NULL, no statistics are produced.
+	const char *stats_file;
 	/// Function pointer to the dispatching function
 	ProcessEvent_t dispatcher;
 };

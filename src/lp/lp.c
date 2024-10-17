@@ -12,6 +12,8 @@
 
 #include <core/sync.h>
 
+/// A pointer to the first LP bound to this thread
+__thread struct lp_ctx *thread_first_lp;
 /// A pointer to the currently processed LP context
 __thread struct lp_ctx *current_lp;
 /// A pointer to the LP contexts array
@@ -29,11 +31,12 @@ lp_id_t n_lps_node;
 /**
  * @brief Compute the id of the thread which hosts a given LP
  * @param lp_id the id of the LP
+ * @param lid_node_first the id of the first LP bound to this node
  * @return the id of the thread which hosts the LP identified by @p lp_id
  *
  * Horrible things may happen if @p lp_id is not locally hosted (use #lid_to_nid() to make sure of that!)
  */
-#define lid_to_tid(lp_id) ((tid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
+#define lid_to_tid(lp_id, lid_node_first) ((tid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
 
 /**
  * @brief Compute the first index of a partition in a linear space of indexes
@@ -95,23 +98,30 @@ void lp_init(void)
 		if(this_nid != nid)
 			lps[i].rid = LP_RID_FROM_NID(this_nid);
 		else
-			lps[i].rid = lid_to_tid(i);
+			lps[i].rid = lid_to_tid(i, lid_node_first);
 	}
 
 	sync_thread_barrier();
 
+	struct lp_ctx **head = &thread_first_lp;
 	for(lp_id_t i = lid_node_first; i < lid_node_last; ++i) {
 		struct lp_ctx *lp = &lps[i];
 		if(lp->rid != tid)
 			continue;
 
+		*head = lp;
+		head = &lp->next;
+
 		lp->state_pointer = NULL;
 		lp->fossil_epoch = 0;
+		lp->cost = 0;
 
 		model_allocator_lp_init(&lp->mm);
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init(lp);
+
 	}
+	*head = NULL;
 }
 
 /**
@@ -119,11 +129,7 @@ void lp_init(void)
  */
 void lp_fini(void)
 {
-	for(lp_id_t i = tid; i < global_config.lps; i += global_config.n_threads) {
-		struct lp_ctx *lp = &lps[i];
-		if(LP_RID_IS_NID(lp->rid))
-			continue;
-
+	for(struct lp_ctx *lp = thread_first_lp; lp; lp = lp->next) {
 		process_lp_fini(lp);
 		model_allocator_lp_fini(&lp->mm);
 	}
