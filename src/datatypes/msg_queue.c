@@ -27,7 +27,7 @@
 #define q_elem_is_before(ma, mb)  ((ma).t < (mb).t)
 
 /// An element in the message queue
-struct q_elem {
+struct msg_queue_elem {
 	/// The timestamp of the message
 	simtime_t t;
 	/// The message enqueued
@@ -43,7 +43,7 @@ struct msg_buffer {
 /// The buffers vector
 static struct msg_buffer *queues;
 /// The private thread queue
-static __thread heap_declare(struct q_elem) mqp;
+static __thread heap_declare(struct msg_queue_elem) mqp;
 
 /**
  * @brief Initializes the message queue at the node level
@@ -95,7 +95,7 @@ static inline void msg_queue_insert_queued(void)
 {
 	struct lp_msg *m = atomic_exchange_explicit(&queues[tid].list, NULL, memory_order_acquire);
 	while(m != NULL) {
-		struct q_elem qe = {.t = m->dest_t, .m = m};
+		struct msg_queue_elem qe = {.t = m->dest_t, .m = m};
 		heap_insert(mqp, q_elem_is_before, qe);
 		m = m->next;
 	}
@@ -114,7 +114,9 @@ struct lp_msg *msg_queue_extract(void)
 	msg_queue_insert_queued();
 	struct lp_msg *msg = NULL;
 	if(likely(heap_count(mqp))) {
-		msg = heap_extract(mqp, q_elem_is_before).m;
+		msg = heap_min(mqp).m;
+		__builtin_prefetch(msg);
+		heap_extract(mqp, q_elem_is_before);
 		msg->cost = t;
 	}
 	stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
@@ -141,7 +143,7 @@ void msg_queue_insert(struct lp_msg *msg, tid_t this_tid)
 void msg_queue_insert_self(struct lp_msg *msg)
 {
 	assert(lps[msg->dest].rid == tid);
-	struct q_elem qe = {.t = msg->dest_t, .m = msg};
+	struct msg_queue_elem qe = {.t = msg->dest_t, .m = msg};
 	heap_insert(mqp, q_elem_is_before, qe);
 }
 

@@ -151,7 +151,7 @@ typedef uint_least32_t array_count_t;
  */
 #define array_remove_at(self, i)                                                                                       \
 	__extension__({                                                                                                \
-		__typeof(*array_items(self)) __rmval;                                                                \
+		__typeof(*array_items(self)) __rmval;                                                                  \
 		array_count(self)--;                                                                                   \
 		__rmval = array_items(self)[(i)];                                                                      \
 		memmove(&(array_items(self)[(i)]), &(array_items(self)[(i) + 1]),                                      \
@@ -193,7 +193,7 @@ typedef uint_least32_t array_count_t;
  */
 #define array_reserve(self, n)                                                                                         \
 	__extension__({                                                                                                \
-		__typeof(array_count(self)) tcnt = array_count(self) + (n);                                          \
+		__typeof(array_count(self)) tcnt = array_count(self) + (n);                                            \
 		if(unlikely(tcnt >= array_capacity(self))) {                                                           \
 			do {                                                                                           \
 				array_capacity(self) *= 2;                                                             \
