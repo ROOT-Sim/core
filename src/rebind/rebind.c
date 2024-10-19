@@ -128,6 +128,8 @@ static void rebind_compute(void)
 
 	msg_queue_local_rebind();
 
+	sync_thread_barrier();
+
 	// leaks heap_min(partitionings).subsets, freed in rebind_phase_run()
 }
 
@@ -192,7 +194,6 @@ static void rebind_phase_run(void)
 			if(!atomic_flag_test_and_set_explicit(&rebind_do_reset, memory_order_relaxed)) {
 				if(!heap_is_empty(partitionings)) {
 					binding_last_score = score_compute(last_total, last_max);
-					printf("\n%lf\n", binding_last_score);
 					mm_free(heap_min(partitionings).subsets);
 					heap_count(partitionings) = 0;
 				}
