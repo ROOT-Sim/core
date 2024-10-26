@@ -108,7 +108,7 @@ struct simulation_configuration {
 	/// The checkpointing interval
 	unsigned ckpt_interval;
 	/// The rebind check period expressed in GVT periods - 1; actual rebind may be carried out less often than this
-	unsigned rebind_check_each_gvt;
+	unsigned rebind_gvt_interval;
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
 	/// If set, the simulation will run on the serial runtime

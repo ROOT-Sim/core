@@ -58,6 +58,7 @@ static void worker_thread_init(tid_t this_tid)
 	worker_affinity_set();
 	stats_init();
 	auto_ckpt_init();
+	rebind_init();
 	msg_allocator_init();
 	msg_queue_init();
 	sync_thread_barrier();
