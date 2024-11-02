@@ -8,7 +8,7 @@
  */
 #include <test.h>
 
-#include <ROOT-Sim.h>
+#include <includes/ROOT-Sim.h>
 
 #include <math.h>
 #include <stdint.h>

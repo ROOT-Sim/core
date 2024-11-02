@@ -11,8 +11,6 @@
 #include <test.h>
 
 #include <lp/lp.h>
-#include <mm/buddy/buddy.h>
-#include <mock.h>
 
 #include <stdlib.h>
 
@@ -79,12 +77,12 @@ int model_allocator_test(_unused void *_)
 {
 	int errs = 0;
 
-	struct lp_ctx *lp = test_lp_mock_get();
-	current_lp = lp;
-	model_allocator_lp_init(&lp->mm);
+	struct lp_ctx lp;
+	current_lp = &lp;
+	model_allocator_lp_init(&lp.mm);
 
 	for(unsigned j = B_BLOCK_EXP; j < B_TOTAL_EXP; ++j)
-		errs += block_size_test(&lp->mm, j);
+		errs += block_size_test(&lp.mm, j);
 
 	errs += rs_malloc(0) != NULL;
 	errs += rs_calloc(0, sizeof(uint64_t)) != NULL;
@@ -95,7 +93,7 @@ int model_allocator_test(_unused void *_)
 	errs += *mem != 0;
 	rs_free(mem);
 
-	model_allocator_lp_fini(&lp->mm);
+	model_allocator_lp_fini(&lp.mm);
 
 	return errs;
 }

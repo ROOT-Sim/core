@@ -10,7 +10,7 @@
 
 #include <test.h>
 
-#include <ROOT-Sim.h>
+#include <includes/ROOT-Sim.h>
 
 #define N_LPS 256
 #define MAX_BUFFERS 256

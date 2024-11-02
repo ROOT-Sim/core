@@ -39,6 +39,7 @@ add_library(rscore STATIC ${rscore_srcs})
 
 target_compile_definitions(rscore PRIVATE ROOTSIM_VERSION="${PROJECT_VERSION}")
 target_include_directories(rscore PRIVATE .)
+target_include_directories(rscore INTERFACE includes)
 target_link_libraries(rscore ${CMAKE_THREAD_LIBS_INIT} ${EXTRA_LIBS})
 
 if(MPI_FOUND)
@@ -47,5 +48,5 @@ if(MPI_FOUND)
     target_link_libraries(rscore ${MPI_C_LIBRARIES})
 endif()
 
-install(FILES ROOT-Sim.h DESTINATION include)
+install(FILES includes/ROOT-Sim.h DESTINATION include)
 install(TARGETS rscore LIBRARY DESTINATION lib)

@@ -33,8 +33,11 @@ struct mm_log {
 	struct mm_checkpoint *c;
 };
 
+/// A list of structs @a buddy_state
 struct mm_buddy_list {
+	/// Pointer to next element in the list
 	struct mm_buddy_list *next;
+	/// The buddy_state struct in this list node
 	struct buddy_state buddy;
 };
 

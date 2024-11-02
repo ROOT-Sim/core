@@ -11,7 +11,6 @@
 #include <test.h>
 
 #include <lp/lp.h>
-#include <mock.h>
 
 #include <stdlib.h>
 
@@ -167,13 +166,13 @@ static bool allocation_cycle(struct mm_ctx *mm, struct alc *alc, unsigned c, uns
 
 int model_allocator_test_hard(_unused void *_)
 {
-	struct lp_ctx *lp = test_lp_mock_get();
-	current_lp = lp;
-	model_allocator_lp_init(&lp->mm);
+	struct lp_ctx lp;
+	current_lp = &lp;
+	model_allocator_lp_init(&lp.mm);
 
 	struct alc *alc = allocation_all_init();
 
-	model_allocator_checkpoint_take(&lp->mm, 0);
+	model_allocator_checkpoint_take(&lp.mm, 0);
 
 	if(allocation_check(alc, 0)) {
 		return -1;
@@ -184,17 +183,17 @@ int model_allocator_test_hard(_unused void *_)
 		unsigned u = test_random_range(MAX_ALLOC_PHASES - 1) + 1;
 		unsigned d = test_random_range(u);
 
-		if(allocation_cycle(&lp->mm, alc, c, u, d)) {
+		if(allocation_cycle(&lp.mm, alc, c, u, d)) {
 			return -1;
 		}
 
 		c = d;
 	}
 
-	model_allocator_checkpoint_restore(&lp->mm, 0);
+	model_allocator_checkpoint_restore(&lp.mm, 0);
 
 	allocation_all_fini(alc);
-	model_allocator_lp_fini(&lp->mm);
+	model_allocator_lp_fini(&lp.mm);
 
 	return 0;
 }

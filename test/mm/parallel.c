@@ -11,7 +11,6 @@
 #include <test.h>
 
 #include <lp/lp.h>
-#include "mock.h"
 
 #include <string.h>
 
@@ -136,9 +135,9 @@ static void bin_test(struct bin_info *p)
 
 int parallel_malloc_test(_unused void *_)
 {
-	struct lp_ctx *lp = test_lp_mock_get();
-	current_lp = lp;
-	model_allocator_lp_init(&lp->mm);
+	struct lp_ctx lp;
+	current_lp = &lp;
+	model_allocator_lp_init(&lp.mm);
 
 	struct bin_info p;
 	p.size = (1 << (B_BLOCK_EXP + 1));
@@ -179,7 +178,7 @@ int parallel_malloc_test(_unused void *_)
 
 	free(p.m);
 
-	model_allocator_lp_fini(&lp->mm);
+	model_allocator_lp_fini(&lp.mm);
 
 	return 0;
 }

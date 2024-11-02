@@ -17,9 +17,9 @@
 #include <mm/auto_ckpt.h>
 #include <mm/model_allocator.h>
 
-#define LP_RID_IS_NID(processor_id) ((processor_id) >> (sizeof(unsigned) * CHAR_BIT - 1))
-#define LP_RID_TO_NID(processor_id) (nid_t)((processor_id) & ~(1U << (sizeof(unsigned) * CHAR_BIT - 1)))
-#define LP_RID_FROM_NID(this_nid) (((unsigned)(this_nid)) | (1U << (sizeof(unsigned) * CHAR_BIT - 1)))
+#define LP_RID_IS_NID(resource_id) ((resource_id) >> (sizeof(unsigned) * CHAR_BIT - 1))
+#define LP_RID_TO_NID(resource_id) (nid_t)((resource_id) & ~(1U << (sizeof(unsigned) * CHAR_BIT - 1)))
+#define LP_RID_FROM_NID(node_id) (((unsigned)(node_id)) | (1U << (sizeof(unsigned) * CHAR_BIT - 1)))
 
 /// A complete LP context
 struct lp_ctx {

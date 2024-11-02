@@ -15,8 +15,6 @@
 #include <parallel/parallel.h>
 #include <serial/serial.h>
 
-#include <ROOT-Sim.h>
-
 #include <inttypes.h>
 #include <string.h>
 
@@ -105,9 +103,9 @@ int RootsimInit(const struct simulation_configuration *conf)
 
 	log_init(global_config.logfile);
 
-	if (global_config.serial)
+	if(global_config.serial)
 		global_config.n_threads = 1;
-	else if (global_config.n_threads == 0)
+	else if(global_config.n_threads == 0)
 		global_config.n_threads = thread_cores_count();
 
 	if(global_config.termination_time == 0)
