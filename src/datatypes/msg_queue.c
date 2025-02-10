@@ -73,8 +73,9 @@ void msg_queue_fini(void)
 
 	struct lp_msg *m = atomic_load_explicit(&queues[rid].list, memory_order_relaxed);
 	while(m != NULL) {
+		struct lp_msg *next = m->next;
 		msg_allocator_free(m);
-		m = m->next;
+		m = next;
 	}
 }
 
