@@ -8,7 +8,7 @@ import os
 import re
 
 year = datetime.datetime.now().year
-ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_PATH = os.getcwd()
 
 for root, _, files in os.walk(ROOT_PATH):
     for file_name in files:
@@ -19,6 +19,7 @@ for root, _, files in os.walk(ROOT_PATH):
             continue
 
         file_path = os.path.join(root, file_name)
+        print("Updatigng copyright in ", file_path)
         with open(file_path, 'r', encoding='utf-8') as f:
             file_text = f.read()
 
