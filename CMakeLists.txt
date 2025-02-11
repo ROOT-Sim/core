@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 cmake_minimum_required(VERSION 3.12)
 project("ROOT-Sim core" LANGUAGES C DESCRIPTION "A General-Purpose Multi-threaded Parallel/Distributed Simulation Library")
@@ -25,12 +25,16 @@ if(MSVC)
 endif()
 
 find_package(Threads REQUIRED)
-find_package(Python REQUIRED)
-if(NOT DISABLE_MPI)
-    find_package(MPI REQUIRED)
+find_package(Python3 3.6 REQUIRED)
+if(DEFINED WITH_MPI)
+    if(WITH_MPI)
+        find_package(MPI REQUIRED)
+    endif()
+else()
+    find_package(MPI)
 endif()
 
-add_compile_options(-Wall -Wextra -pedantic)
+add_compile_options(-Wall -Wextra -pedantic -fmacro-prefix-map=${CMAKE_SOURCE_DIR}=)
 
 include(CheckLibraryExists)
 CHECK_LIBRARY_EXISTS(m exp "" HAVE_LIB_M)

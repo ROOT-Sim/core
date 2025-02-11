@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 set(rscore_srcs
         arch/io.c
@@ -12,9 +12,6 @@ set(rscore_srcs
         gvt/fossil.c
         gvt/gvt.c
         gvt/termination.c
-        lib/random/random.c
-        lib/random/xxtea.c
-        lib/topology/topology.c
         log/file.c
         log/log.c
         log/stats.c
@@ -28,7 +25,7 @@ set(rscore_srcs
         parallel/parallel.c
         serial/serial.c)
 
-if(NOT DISABLE_MPI)
+if(MPI_FOUND)
     set(rscore_srcs ${rscore_srcs} distributed/mpi.c)
 else()
     set(rscore_srcs ${rscore_srcs} distributed/no_mpi.c)
@@ -41,7 +38,7 @@ target_compile_definitions(rscore PRIVATE ROOTSIM_VERSION="${PROJECT_VERSION}")
 target_include_directories(rscore PRIVATE .)
 target_link_libraries(rscore ${CMAKE_THREAD_LIBS_INIT} ${EXTRA_LIBS})
 
-if(NOT DISABLE_MPI)
+if(MPI_FOUND)
     target_include_directories(rscore PRIVATE ${MPI_C_INCLUDE_PATH})
     target_compile_options(rscore PRIVATE ${MPI_C_COMPILE_FLAGS})
     target_link_libraries(rscore ${MPI_C_LIBRARIES})

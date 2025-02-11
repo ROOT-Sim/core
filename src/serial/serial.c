@@ -3,14 +3,13 @@
  *
  * @brief Sequential simulation engine
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <serial/serial.h>
 
 #include <arch/timer.h>
 #include <datatypes/heap.h>
-#include <lib/random/random.h>
 #include <log/stats.h>
 #include <lp/common.h>
 #include <mm/msg_allocator.h>
@@ -41,13 +40,10 @@ static void serial_simulation_init(void)
 		model_allocator_lp_init(&lp->mm_state);
 
 		current_lp = lp;
-		lp->rng_ctx = rs_malloc(sizeof(*lp->rng_ctx));
-		random_lib_lp_init(i, lp->rng_ctx);
 
 		lp->state_pointer = NULL;
 
 		struct lp_msg *msg = msg_allocator_pack(i, 0.0, LP_INIT, NULL, 0);
-		msg->raw_flags = 0;
 		heap_insert(queue, msg_is_before, msg);
 
 		common_msg_process(lp, msg);
@@ -62,7 +58,7 @@ static void serial_simulation_init(void)
  */
 static void serial_simulation_fini(void)
 {
-	for(uint64_t i = 0; i < global_config.lps; ++i) {
+	for(lp_id_t i = 0; i < global_config.lps; ++i) {
 		struct lp_ctx *lp = &lps[i];
 		current_lp = lp;
 		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lp->state_pointer);
@@ -109,7 +105,10 @@ static int serial_simulation_run(void)
 			last_vt = timer_new();
 		}
 
-		msg_allocator_free(heap_extract(queue, msg_is_before));
+		timer_uint t = timer_hr_new();
+		struct lp_msg *to_free = heap_extract(queue, msg_is_before);
+		stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
+		msg_allocator_free(to_free);
 	}
 
 	stats_dump();
@@ -129,7 +128,6 @@ void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned eve
     unsigned payload_size)
 {
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
-	msg->raw_flags = 0;
 
 #ifndef NDEBUG
 	if(unlikely(msg_is_before(msg, heap_min(queue)))) {
