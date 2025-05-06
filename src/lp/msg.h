@@ -11,6 +11,7 @@
 #pragma once
 
 #include <core/core.h>
+#include <core/output.h>
 
 #include <limits.h>
 #include <stdatomic.h>
@@ -81,6 +82,8 @@ struct lp_msg {
 	uint32_t m_type;
 	/// The message payload size
 	uint32_t pl_size;
+	/// Data for committed output
+	output_array_t *outputs;
 	/// The initial part of the payload
 	unsigned char pl[MSG_PAYLOAD_BASE_SIZE];
 	/// The continuation of the payload
