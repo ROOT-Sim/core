@@ -68,7 +68,24 @@ typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, c
  */
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
-enum rootsim_event {LP_INIT = 65534, LP_FINI};
+/**
+ * @brief Perform output operations.
+ * @param me The logical process ID of the LP performing the output
+ * @param output_type Numerical output type
+ * @param output_content The output content
+ * @param output_size The size (in bytes) of the output content
+ *
+ * This function is called by the simulation kernel whenever an event is committed, during the handling of which
+ * an output operation had been scheduled by the simulation model using the ScheduleOutput() function.
+ * This function will receive the same data that was passed to the ScheduleOutput() function.
+ *
+ * @warning The memory pointed by output_content is not a copy, and is owned by the simulation kernel. It will be
+ * freed by the simulation kernel after the function returns.
+ * @warning The function shall not perform any memory-managed allocation (e.g. using rs_malloc).
+ */
+typedef void (*PerformOutput_t)(lp_id_t me, unsigned output_type, const void *output_content, unsigned output_size);
+
+enum rootsim_event { LP_INIT = 65534, LP_FINI };
 
 /**
  * @brief API to inject a new event in the simulation
@@ -88,18 +105,27 @@ extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned eve
 
 extern void SetState(void *new_state);
 
+/**
+ * @brief API to schedule a new output event, to be executed only once the event being currently executed is committed
+ *
+ * @param output_type Numerical output type to be passed to the output handling function
+ * @param output_content The output content
+ * @param output_size The size (in bytes) of the output content
+ */
+extern void ScheduleOutput(unsigned output_type, const void *output_content, unsigned output_size);
+
 extern void *rs_malloc(size_t req_size);
 extern void *rs_calloc(size_t nmemb, size_t size);
 extern void rs_free(void *ptr);
 extern void *rs_realloc(void *ptr, size_t req_size);
 
 enum log_level {
-	LOG_TRACE,  //!< The logging level reserved to very low priority messages
-	LOG_DEBUG,  //!< The logging level reserved to useful debug messages
-	LOG_INFO,   //!< The logging level reserved to useful runtime messages
-	LOG_WARN,   //!< The logging level reserved to unexpected, non deal breaking conditions
-	LOG_ERROR,  //!< The logging level reserved to unexpected, problematic conditions
-	LOG_FATAL,   //!< The logging level reserved to unexpected, fatal conditions
+	LOG_TRACE, //!< The logging level reserved to very low priority messages
+	LOG_DEBUG, //!< The logging level reserved to useful debug messages
+	LOG_INFO,  //!< The logging level reserved to useful runtime messages
+	LOG_WARN,  //!< The logging level reserved to unexpected, non deal breaking conditions
+	LOG_ERROR, //!< The logging level reserved to unexpected, problematic conditions
+	LOG_FATAL, //!< The logging level reserved to unexpected, fatal conditions
 	LOG_SILENT //!< Emit no message during the simulation
 };
 
@@ -129,6 +155,8 @@ struct simulation_configuration {
 	ProcessEvent_t dispatcher;
 	/// Function pointer to the termination detection function
 	CanEnd_t committed;
+	/// Function pointer to the output handling function
+	PerformOutput_t perform_output;
 };
 
 extern int RootsimInit(const struct simulation_configuration *conf);

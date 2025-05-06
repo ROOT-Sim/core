@@ -23,12 +23,10 @@
 #include <serial/serial.h>
 
 /// The flag used in ScheduleNewEvent() to keep track of silent execution
-static __thread bool silent_processing = false;
-#ifndef NDEBUG
+__thread bool silent_processing = false;
 /// The currently processed message
 /** This is not necessary for normal operation, but it's useful in debug */
-static __thread struct lp_msg *current_msg;
-#endif
+__thread struct lp_msg *current_msg;
 
 #define mark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))
 #define mark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 1U))
@@ -93,9 +91,7 @@ void process_lp_init(struct lp_ctx *lp)
 
 	struct lp_msg *msg = msg_allocator_pack(lp - lps, 0, LP_INIT, NULL, 0U);
 	msg->raw_flags = MSG_FLAG_PROCESSED;
-#ifndef NDEBUG
 	current_msg = msg;
-#endif
 	current_lp = lp;
 	common_msg_process(lp, msg);
 	lp->p.bound = 0.0;
@@ -383,9 +379,7 @@ void process_msg(void)
 	if(unlikely(lp->p.bound >= msg->dest_t && msg_is_before(msg, array_peek(lp->p.p_msgs))))
 		handle_straggler_msg(lp, msg);
 
-#ifndef NDEBUG
 	current_msg = msg;
-#endif
 
 	common_msg_process(lp, msg);
 	lp->p.bound = msg->dest_t;

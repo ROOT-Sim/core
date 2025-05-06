@@ -11,6 +11,7 @@
 #pragma once
 
 #include <core/core.h>
+#include <core/output.h>
 
 #include <limits.h>
 #include <stdatomic.h>
@@ -81,6 +82,8 @@ struct lp_msg {
 	uint32_t m_type;
 	/// The message payload size
 	uint32_t pl_size;
+	/// Data for committed output
+	output_array_t *outputs;
 	/// The initial part of the payload
 	unsigned char pl[MSG_PAYLOAD_BASE_SIZE];
 	/// The continuation of the payload
@@ -102,10 +105,10 @@ enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
  */
 static inline bool msg_is_before_extended(const struct lp_msg *restrict a, const struct lp_msg *restrict b)
 {
-	if (a->m_type != b->m_type)
+	if(a->m_type != b->m_type)
 		return a->m_type > b->m_type;
 
-	if (a->pl_size != b->pl_size)
+	if(a->pl_size != b->pl_size)
 		return a->pl_size < b->pl_size;
 
 	return memcmp(a->pl, b->pl, a->pl_size) > 0;
