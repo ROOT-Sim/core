@@ -17,23 +17,13 @@ void ScheduleOutput(unsigned output_type, const void *output_content, unsigned o
 		return;
 
 	char *content = mm_alloc(output_size);
-
-	if(__builtin_expect(output_size && !content, 0)) {
-		logger(LOG_FATAL, "Out of memory!");
-		abort(); // TODO: this can be criticized as xmalloc() in gcc. We shall dump partial stats before.
-	}
 	memcpy(content, output_content, output_size);
 
 	struct output_data data = {.type = output_type, .content = content, .size = output_size};
 
 	output_array_t *outputs = current_msg->outputs;
 	if(!outputs) {
-		outputs = mm_alloc(sizeof(output_array_t)); // Alloc array and then init
-		if(__builtin_expect(!outputs, 0)) {
-			logger(LOG_FATAL, "Out of memory!");
-			abort(); // TODO: this can be criticized as xmalloc() in gcc. We shall dump partial stats
-			         // before.
-		}
+		outputs = mm_alloc(sizeof(output_array_t));
 		array_init(*outputs);
 		current_msg->outputs = outputs;
 	}
