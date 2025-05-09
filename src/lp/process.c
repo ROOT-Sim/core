@@ -115,7 +115,11 @@ void process_lp_fini(struct lp_ctx *lp)
 			continue;
 
 		bool remote = is_msg_remote(msg);
+		bool past = is_msg_past(msg);
 		msg = unmark_msg(msg);
+		if(past)
+			execute_outputs(msg);
+
 		uint32_t flags = atomic_load_explicit(&msg->flags, memory_order_relaxed);
 		if(remote || !(flags & MSG_FLAG_ANTI))
 			msg_allocator_free(msg);

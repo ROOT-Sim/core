@@ -25,3 +25,11 @@ typedef dyn_array(struct output_data) output_array_t;
  * @param output_array the output_data from the message
  */
 void free_msg_outputs(output_array_t *output_array);
+
+struct lp_msg;
+
+/**
+ * @brief Invoke the output callback on all outputs stored in the message.
+ * @param msg the message to execute outputs from
+ */
+void execute_outputs(struct lp_msg *msg);

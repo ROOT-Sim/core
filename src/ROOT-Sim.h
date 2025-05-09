@@ -111,6 +111,8 @@ extern void SetState(void *new_state);
  * @param output_type Numerical output type to be passed to the output handling function
  * @param output_content The output content
  * @param output_size The size (in bytes) of the output content
+ * 
+ * @warning This function shall not be called during the handling of LP_FINI events, as it will produce no output.
  */
 extern void ScheduleOutput(unsigned output_type, const void *output_content, unsigned output_size);
 
