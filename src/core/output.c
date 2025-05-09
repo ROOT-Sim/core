@@ -2,6 +2,7 @@
 #include <core/core.h>
 #include <core/output.h>
 #include <lp/msg.h>
+#include <lp/process.h>
 
 extern __thread bool silent_processing;
 extern __thread struct lp_msg *current_msg;
@@ -43,7 +44,7 @@ void execute_outputs(struct lp_msg *msg)
 		mm_free(data.content);
 	}
 
-	array_count(*outputs) = 0;
+	array_count(*outputs) = 0; // Necessary to avoid double freeing the array elements.
 }
 
 void free_msg_outputs(output_array_t *output_array)
@@ -58,4 +59,18 @@ void free_msg_outputs(output_array_t *output_array)
 
 	array_fini(*output_array);
 	mm_free(output_array);
+}
+
+void execute_outputs_batch(struct lp_msg **msg_array, array_count_t size)
+{
+	// Since dyn_arrays are unnamed structs, we work with the items element
+	for(array_count_t i = 0; i < size; i++) {
+		struct lp_msg *marked_msg = msg_array[i];
+		struct lp_msg *msg = unmark_msg(marked_msg);
+		if(msg->dest_t > global_config.termination_time) {
+			return;
+		}
+		if(is_msg_past(marked_msg))
+			execute_outputs(msg);
+	}
 }
