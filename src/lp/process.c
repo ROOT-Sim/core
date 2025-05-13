@@ -187,6 +187,7 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 		}
 
 		uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
+		committed_output_on_rollback(msg);
 		if(!(f & MSG_FLAG_ANTI))
 			msg_queue_insert_self(msg);
 		stats_take(STATS_MSG_ROLLBACK, 1);

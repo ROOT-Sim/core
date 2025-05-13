@@ -33,3 +33,13 @@ struct lp_msg;
  * @param msg the message to execute outputs from
  */
 void execute_outputs(struct lp_msg *msg);
+
+/**
+ * @brief Handle rolling-back of a message
+ * @param msg the rolled-back
+ *
+ * This function is called when a message is rolled back. It frees the output data
+ * stored in the message, as they are no longer valid.
+ * The output array is not freed, as it can still be used in the future.
+ */
+void committed_output_on_rollback(struct lp_msg *msg);
