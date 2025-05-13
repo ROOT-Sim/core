@@ -20,8 +20,7 @@ extern __thread struct lp_msg *current_msg;
 void ScheduleOutput(unsigned output_type, const void *output_content, unsigned output_size)
 {
 	if(unlikely(global_config.serial)) {
-		// Call the dispatcher directly
-		// TODO
+		global_config.perform_output(current_msg->dest, output_type, output_content, output_size);
 		return;
 	}
 

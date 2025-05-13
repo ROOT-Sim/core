@@ -106,12 +106,14 @@ extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned eve
 extern void SetState(void *new_state);
 
 /**
- * @brief API to schedule a new output event, to be executed only once the event being currently executed is committed
+ * @brief API to schedule a new output event to execute once the event being currently executed is committed
+ *
+ * This function makes a copy of the data in @p output_content , which stays owned by the caller.
  *
  * @param output_type Numerical output type to be passed to the output handling function
  * @param output_content The output content
  * @param output_size The size (in bytes) of the output content
- * 
+ *
  * @warning This function shall not be called during the handling of LP_FINI events, as it will produce no output.
  */
 extern void ScheduleOutput(unsigned output_type, const void *output_content, unsigned output_size);
