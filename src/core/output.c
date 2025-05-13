@@ -1,3 +1,13 @@
+/**
+ * @file output.c
+ *
+ * @brief Committed output management functions
+ *
+ * This module implements the facilities for committed output
+ *
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <ROOT-Sim.h>
 #include <core/core.h>
 #include <core/output.h>
