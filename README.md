@@ -44,7 +44,8 @@ library.
 The core successfully compiles on x86 and ARM architectures, using either GCC or Clang compilers, on Linux, Windows,
 and macOS.
 A compiler supporting the C11 standard is required, such as GCC 8 or later. MSVC on Windows does not correctly
-implement the full C11 standard (e.g., `stdatomic.h` is not provided) and cannot be therefore used to build the project.
+implement the full C11 standard (e.g., `stdatomic.h` is not provided, or has a minimal implementation for lock-free
+objects only in latest versions) and cannot be therefore used to build the project.
 Windows users are encouraged to use clang.
 
 MPI is a mandatory dependency of the project, used to support simulations runs on distributed systems.

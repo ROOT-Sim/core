@@ -20,7 +20,7 @@ else()
     message(WARNING "LTO is not supported")
 endif()
 
-if(MSVC)
+if(MSVC AND NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
     message(FATAL_ERROR "You are using the MSVC compiler, which does not properly implement C11. Please consider switching to clang.")
 endif()
 
