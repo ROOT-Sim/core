@@ -22,18 +22,18 @@ jobs:
             compiler: gcc
         include:
           - os: macos-latest
-            compiler: gcc-11
+            compiler: gcc-14
             type: Debug
           - os: macos-latest
-            compiler: gcc-11
+            compiler: gcc-14
             type: Release
     steps:
       - name: Checkpout repository
         uses: actions/checkout@v4
       - name: Initialize Environment
-        uses: ROOT-Sim/ci-actions/init@v1.2
+        uses: ROOT-Sim/ci-actions/init@v1.5
       - name: Build & Test
-        uses: ROOT-Sim/ci-actions/cmake@v1.2
+        uses: ROOT-Sim/ci-actions/cmake@v1.5
         with:
           build-dir: ${{ runner.workspace }}/build
           cc: ${{ matrix.compiler }}
