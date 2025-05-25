@@ -78,7 +78,7 @@ static void worker_thread_init(tid_t this_tid)
  */
 static void worker_thread_fini(void)
 {
-	gvt_msg_drain();
+	gvt_msg_barrier();
 
 	if(sync_thread_barrier()) {
 		stats_dump();

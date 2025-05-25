@@ -58,8 +58,6 @@ void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
 
 void mpi_remote_msg_handle(void) {}
 
-void mpi_remote_msg_drain(void) {}
-
 void mpi_reduce_u32_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
 {
 	*result = values[0];
@@ -83,6 +81,18 @@ bool mpi_reduce_double_min_done(void)
 void mpi_blocking_reduce_u64_max(uint64_t *val_p)
 {
 	(void)val_p;
+}
+
+void mpi_allgather_int_single(int send_value, int all_values[n_nodes])
+{
+	all_values[0] = send_value;
+}
+
+void mpi_allgatherv_u64(int send_count, uint64_t send_values[send_count], int all_count[n_nodes],
+    uint64_t all_values[], const int displacements[n_nodes])
+{
+	assert(send_count <= all_count[0]);
+	memcpy(&all_values[displacements[0]], send_values, all_count[0] * sizeof(*send_values));
 }
 
 void mpi_node_barrier(void) {}

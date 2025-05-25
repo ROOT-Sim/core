@@ -77,5 +77,5 @@ extern nid_t n_nodes;
 extern nid_t nid;
 
 /// A string keeping the textual representation of the version of the core
-extern char *core_version;
+extern const char *core_version;
 extern struct simulation_configuration global_config;

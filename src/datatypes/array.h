@@ -17,6 +17,8 @@
 
 /// The initial size of dynamic arrays expressed in the number of elements
 #define INIT_SIZE_ARRAY 8U
+/// The maximum size of a dynamic array (in number of elements)
+#define ARRAY_COUNT_MAX UINT_LEAST32_MAX
 /// The type used to handle dynamic arrays count of elements and capacity
 typedef uint_least32_t array_count_t;
 

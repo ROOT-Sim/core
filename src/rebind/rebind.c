@@ -50,25 +50,21 @@ static __thread enum rebind_thread_phase rebind_thread_phase;
 /// The score of the last binding; this initialization value force the rebinding to act at least once
 static double binding_last_score = -DBL_MAX;
 
-// TODO: document
-#define update_score(local_total, total_var, max_var)                                                                  \
-	__extension__({                                                                                                \
-		weight_type c = 0;                                                                                     \
-		while(c < local_total && !atomic_compare_exchange_weak_explicit(&max_var, &c, local_total,             \
-					     memory_order_relaxed, memory_order_relaxed))                              \
-			spin_pause();                                                                                  \
-		atomic_fetch_add_explicit(&total_var, local_total, memory_order_relaxed);                              \
-	})
+static inline void score_update(weight_type local_total, _Atomic weight_type *total_var, _Atomic weight_type *max_var)
+{
+	weight_type c = 0;
+	while(c < local_total && !atomic_compare_exchange_weak_explicit(max_var, &c, local_total, memory_order_relaxed,
+				     memory_order_relaxed))
+		spin_pause();
+	atomic_fetch_add_explicit(total_var, local_total, memory_order_relaxed);
+}
 
-// TODO: document
-#define score_compute(total_var, max_var)                                                                              \
-	__extension__({                                                                                                \
-		weight_type wtot = atomic_load_explicit(&total_var, memory_order_relaxed);                             \
-		weight_type wmax = atomic_load_explicit(&max_var, memory_order_relaxed);                               \
-                                                                                                                       \
-		assert(wmax *global_config.n_threads >= wtot);                                                         \
-		wtot != 0 ? (double)(wmax * global_config.n_threads) / (double)wtot - 1.0 : 0.0;                       \
-	})
+static inline double score_compute(_Atomic weight_type *total_var, _Atomic weight_type *max_var) {
+	weight_type wtot = atomic_load_explicit(total_var, memory_order_relaxed);
+	weight_type wmax = atomic_load_explicit(max_var, memory_order_relaxed);
+	assert(wmax * global_config.n_threads >= wtot);
+	return wtot != 0 ? (double)(wmax * global_config.n_threads) / (double)wtot - 1.0 : 0.0;
+}
 
 /**
  * @brief Update the state of partial partitioning after a merge
@@ -91,17 +87,6 @@ static void partitioning_update(unsigned k, struct partitioning *p)
 	}
 	// update the differencing
 	p->differencing = p->subsets[0].weight - p->subsets[k - 1].weight;
-}
-
-/**
- * @brief Compare two partial partitionings
- *
- * Will cause the qsort to order the partitionings from the highest differencing to the lowest one
- */
-static int partitioning_qsort_cmp(const void *a, const void *b)
-{
-	const struct partitioning *p1 = a, *p2 = b;
-	return (p1->differencing < p2->differencing) - (p1->differencing > p2->differencing);
 }
 
 /**
@@ -143,9 +128,9 @@ static void karmarkar_karp_init(void)
  */
 static void karmarkar_karp_run(void)
 {
-	unsigned k = global_config.n_threads;
-	qsort(partitionings.items, partitionings.count, sizeof(*partitionings.items), partitioning_qsort_cmp);
+	heap_heapify_from_array(partitionings, partitioning_cmp);
 
+	unsigned k = global_config.n_threads;
 	do {
 		struct partitioning p1 = heap_extract(partitionings, partitioning_cmp);
 		struct partitioning p2 = heap_extract(partitionings, partitioning_cmp);
@@ -193,7 +178,7 @@ static void rebind_compute(void)
 	}
 
 	static _Atomic weight_type total_cost = 0, max_local_cost = 0;
-	update_score(w, total_cost, max_local_cost);
+	score_update(w, &total_cost, &max_local_cost);
 
 	// barrier needed to make sure threads applied the new binding and updated their cost
 	if(sync_thread_barrier()) {
@@ -208,7 +193,7 @@ static void rebind_compute(void)
 	// flight while the messages are being rebound in the queues
 	if(sync_thread_barrier()) {
 		// one lucky thread updates the binding score
-		binding_last_score = score_compute(total_cost, max_local_cost) + REBINDING_SCORE_THRESHOLD;
+		binding_last_score = score_compute(&total_cost, &max_local_cost) + REBINDING_SCORE_THRESHOLD;
 		atomic_store_explicit(&total_cost, 0U, memory_order_relaxed);
 		atomic_store_explicit(&max_local_cost, 0U, memory_order_relaxed);
 	}
@@ -251,16 +236,16 @@ static void rebind_phase_run(void)
 				for(struct lp_ctx *lp = thread_first_lp; lp; lp = lp->next)
 					w += lp->cost;
 
-				update_score(w, total_cost, max_local_cost);
+				score_update(w, &total_cost, &max_local_cost);
 			}
 			break;
 
 		case rebind_thread_phase_B:
 			// TODO: improve decision criteria for rebinding
-			if(score_compute(total_cost, max_local_cost) > binding_last_score)
+			if(score_compute(&total_cost, &max_local_cost) > binding_last_score)
 				rebind_compute();
 			// Update moving average; clearly dividing only the last estimate will make it in average
-			// 4 times bigger than the correct estimation, but everything is proportional so we don't care
+			// 8 times bigger than the correct estimation, but everything is proportional so we don't care
 			for(struct lp_ctx *lp = thread_first_lp; lp; lp = lp->next)
 				lp->cost = lp->cost * 7 / 8;
 			break;

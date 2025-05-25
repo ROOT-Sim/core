@@ -202,35 +202,41 @@ array_count_t model_allocator_serialize_size(const struct mm_ctx *self)
 	return ret;
 }
 
-void model_allocator_serialize_dump(const struct mm_ctx *self, unsigned char *data)
+void *model_allocator_serialize_dump(const struct mm_ctx *self, void *data)
 {
-	multi_checkpoint_take(self, (struct mm_checkpoint *)data);
-	data += self->full_ckpt_size;
-	memcpy(data, &array_count(self->logs), sizeof(array_count(self->logs)));
-	data += sizeof(array_count(self->logs));
+	char *ptr = data;
+	multi_checkpoint_take(self, (struct mm_checkpoint *)ptr);
+	ptr += self->full_ckpt_size;
+	memcpy(ptr, &array_count(self->logs), sizeof(array_count(self->logs)));
+	ptr += sizeof(array_count(self->logs));
 	for(array_count_t i = 0; i < array_count(self->logs); ++i) {
 		struct mm_log log = array_get_at(self->logs, i);
-		memcpy(data, &log.ref_i, sizeof(log.ref_i));
-		data += sizeof(log.ref_i);
-		memcpy(data, log.c, log.c->checkpoints_size);
-		data += log.c->checkpoints_size;
+		memcpy(ptr, &log.ref_i, sizeof(log.ref_i));
+		ptr += sizeof(log.ref_i);
+		memcpy(ptr, log.c, log.c->checkpoints_size);
+		ptr += log.c->checkpoints_size;
 	}
+	return ptr;
 }
 
-const unsigned char *model_allocator_serialize_restore(struct mm_ctx *self, const unsigned char *data)
+const unsigned char *model_allocator_serialize_restore(struct mm_ctx *self, const void *data)
 {
-	const struct mm_checkpoint *ckp = (const struct mm_checkpoint *)data;
+	const unsigned char *ptr = data;
+	const struct mm_checkpoint *ckp = (const struct mm_checkpoint *)ptr;
 	multi_checkpoint_restore(self, ckp);
-	data += ckp->checkpoints_size;
-	array_count_t c = *(const array_count_t *)data;
-	data += sizeof(array_count_t);
-	while(c--) {
-		struct mm_log log = {.ref_i = *(const array_count_t *)data};
-		data += sizeof(array_count_t);
-		array_count_t s = *(const array_count_t *)data;
-		struct mm_checkpoint *ckp = mm_alloc(s);
-		memcpy(ckp, data, s);
-		data += s;
+	ptr += ckp->checkpoints_size;
+	array_count_t count;
+	memcpy(&count, ptr, sizeof(count));
+	ptr += sizeof(count);
+	while(count--) {
+		array_count_t ref_i;
+		memcpy(&ref_i, ptr, sizeof(ref_i));
+		ptr += sizeof(ref_i);
+		array_count_t s = *(const array_count_t *)ptr;
+		struct mm_checkpoint *c = mm_alloc(s);
+		memcpy(c, ptr, s);
+		ptr += s;
+		struct mm_log log = {.ref_i = ref_i, .c = c};
 		array_push(self->logs, log);
 	}
 	return data;

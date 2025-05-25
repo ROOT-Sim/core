@@ -26,11 +26,9 @@ enum {
 };
 
 /// Array of control codes values to be able to get their address for MPI_Send()
-static const enum msg_ctrl_code ctrl_msgs[] = {
-	[MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
-	[MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
-	[MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
-};
+static const enum msg_ctrl_code ctrl_msgs[] = {[MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
+    [MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
+    [MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION};
 
 /// The MPI request associated with the non blocking scatter gather collective
 static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
@@ -202,11 +200,8 @@ void mpi_remote_msg_handle(void)
 			gvt_remote_msg_receive(msg);
 		}
 		unsigned rid = lps[msg->dest].rid;
-		if(unlikely(LP_RID_IS_NID(rid))) {
-			//TODO: reschedule
-		} else {
-			msg_queue_insert(msg, rid);
-		}
+		assert(!LP_RID_IS_NID(rid));
+		msg_queue_insert(msg, rid);
 	}
 }
 
@@ -247,7 +242,7 @@ void mpi_remote_msg_drain(void)
 		}
 		MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 
-		if(size == msg_remote_anti_size())
+		if(unlikely(size == msg_remote_anti_size()))
 			gvt_remote_anti_msg_receive(msg);
 		else
 			gvt_remote_msg_receive(msg);
@@ -314,6 +309,18 @@ void mpi_blocking_reduce_u64_max(uint64_t *val_p)
 	MPI_Allreduce(MPI_IN_PLACE, val_p, 1, MPI_UINT64_T, MPI_MAX, MPI_COMM_WORLD);
 }
 
+void mpi_allgather_int_single(int send_value, int all_values[n_nodes])
+{
+	MPI_Allgather(&send_value, 1, MPI_INT, all_values, 1, MPI_INT, MPI_COMM_WORLD);
+}
+
+void mpi_allgatherv_u64(int send_count, uint64_t send_values[send_count], int all_count[n_nodes], uint64_t all_values[],
+    const int displacements[n_nodes])
+{
+	MPI_Allgatherv(send_values, send_count, MPI_UINT64_T, all_values, all_count, displacements, MPI_UINT64_T,
+	    MPI_COMM_WORLD);
+}
+
 /**
  * @brief A node barrier
  */
@@ -347,7 +354,7 @@ void *mpi_blocking_data_rcv(int *data_size_p, nid_t src)
 {
 	MPI_Status status;
 	MPI_Message mpi_msg;
-	MPI_Mprobe(src, RS_DATA_TAG, MPI_COMM_WORLD, &mpi_msg, &status);
+	MPI_Mprobe(src == -1 ? MPI_ANY_SOURCE : src, RS_DATA_TAG, MPI_COMM_WORLD, &mpi_msg, &status);
 	int data_size;
 	MPI_Get_count(&status, MPI_BYTE, &data_size);
 	char *ret = mm_alloc(data_size);

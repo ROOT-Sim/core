@@ -13,6 +13,7 @@
 #include <stdlib.h>
 
 #include <datatypes/msg_queue.h>
+#include <lp/lp.h> // to initialize lps, which is used in msg_queue.c
 
 #define N_THREADS 0
 #define THREAD_REPS 100000
@@ -36,6 +37,7 @@ static int msg_queue_test_global_fini(_unused void *_)
 static int msg_queue_test(_unused void *_)
 {
 	tid = test_parallel_thread_id();
+	lps[tid].rid = tid;
 	msg_queue_init();
 
 	atomic_fetch_add_explicit(&barrier_init, 1U, memory_order_relaxed);
@@ -45,8 +47,9 @@ static int msg_queue_test(_unused void *_)
 	for(unsigned i = THREAD_REPS; i--;) {
 		struct lp_msg *msg = malloc(sizeof(*msg));
 		memset(msg, 0, sizeof(*msg));
+		msg->dest = test_random_range(N_THREADS);
 		msg->dest_t = (double)test_random_range(THREAD_REPS);
-		msg_queue_insert(msg, test_random_range(N_THREADS));
+		msg_queue_insert(msg, msg->dest);
 		atomic_fetch_add_explicit(&msg_missing, 1U, memory_order_relaxed);
 	}
 
@@ -65,13 +68,18 @@ static int msg_queue_test(_unused void *_)
 		atomic_fetch_sub_explicit(&msg_missing, 1U, memory_order_relaxed);
 	}
 
+	// todo check iteration and rebinding capabilities
 	msg_queue_fini();
 	return ret;
 }
 
 int main(void)
 {
+	lps = malloc(sizeof(*lps) * test_thread_cores_count());
+
 	test("Message queue test: initialization", msg_queue_test_global_init, NULL);
 	test_parallel("Message queue test: extractions", msg_queue_test, NULL, N_THREADS);
 	test("Message queue test: finalization", msg_queue_test_global_fini, NULL);
+
+	free(lps);
 }

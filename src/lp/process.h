@@ -34,6 +34,7 @@ struct process_ctx {
 #define pes_entry_is_received(entry) !((entry).raw & (PES_ENTRY_SENT_LOCAL | PES_ENTRY_SENT_REMOTE))
 #define pes_entry_is_sent_local(entry) ((entry).raw & PES_ENTRY_SENT_LOCAL)
 #define pes_entry_is_sent_remote(entry) ((entry).raw & PES_ENTRY_SENT_REMOTE)
+#define pes_entry_make(msg, tag) ((struct pes_entry){.raw = (tag) | (uintptr_t)(msg)})
 #define pes_entry_msg(entry) (struct lp_msg *)((entry).raw & ~(uintptr_t)(PES_ENTRY_SENT_LOCAL | PES_ENTRY_SENT_REMOTE))
 #define pes_entry_msg_received(entry)                                                                                  \
 	__extension__({                                                                                                \
@@ -48,6 +49,7 @@ extern void process_lp_init(struct lp_ctx *lp);
 extern void process_lp_fini(struct lp_ctx *lp);
 
 extern void process_msg(struct lp_msg *msg);
+extern bool process_early_anti_message_check(struct process_ctx *proc_p, struct lp_msg *msg);
 
 extern void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
     unsigned payload_size);

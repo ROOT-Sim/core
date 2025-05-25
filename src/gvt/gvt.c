@@ -91,7 +91,7 @@ __thread uint32_t remote_msg_seq[2][MAX_NODES];
 __thread uint32_t remote_msg_received[2];
 
 /**
- * @brief Initializes the gvt module in the node
+ * @brief Initialize the gvt module in the node
  */
 void gvt_global_init(void)
 {
@@ -99,7 +99,7 @@ void gvt_global_init(void)
 }
 
 /**
- * @brief Handles a MSG_CTRL_GVT_START control message
+ * @brief Handle a MSG_CTRL_GVT_START control message
  *
  * Called by the MPI layer in response to a MSG_CTRL_GVT_START control message,
  * but also internally to start a new reduction
@@ -111,7 +111,7 @@ void gvt_start_processing(void)
 }
 
 /**
- * @brief Handles a MSG_CTRL_GVT_DONE control message
+ * @brief Handle a MSG_CTRL_GVT_DONE control message
  *
  * Called by the MPI layer in response to a MSG_CTRL_GVT_DONE control message
  */
@@ -121,7 +121,7 @@ void gvt_on_done_ctrl_msg(void)
 }
 
 /**
- * @brief Informs the GVT subsystem that a new message is being processed
+ * @brief Inform the GVT subsystem that a new message is being processed
  * @param msg_t the timestamp of the message being processed
  *
  * Called by the process layer when processing a new message; used in the actual GVT calculation
@@ -203,14 +203,19 @@ static bool gvt_node_phase_run(void)
 			for(nid_t i = n_nodes - 1; i >= 0; --i)
 				atomic_fetch_add_explicit(&total_sent[i],
 				    remote_msg_seq[!gvt_phase][i] - last_seq[!gvt_phase][i], memory_order_relaxed);
-			memcpy(last_seq[!gvt_phase], remote_msg_seq[!gvt_phase], sizeof(uint32_t) * n_nodes);
+			memcpy(last_seq[!gvt_phase], remote_msg_seq[!gvt_phase], sizeof(**last_seq) * n_nodes);
 
+			// make it so the check in gvt_node_sent_wait will fail, even if no messages need to be
+			// received, until the node running the collective sum_scatter exits gvt_node_sent_reduce_wait
 			atomic_fetch_add_explicit(&total_msg_received, 1U, memory_order_relaxed);
 			// synchronizes total_sent and sent values zeroing
 			if(atomic_fetch_add_explicit(&c_c, 1U, memory_order_acq_rel) != global_config.n_threads - 1) {
 				gvt_node_phase = gvt_node_sent_wait;
 				break;
 			}
+			_Static_assert(sizeof(uint32_t) == sizeof(_Atomic uint32_t) &&
+					   _Alignof(uint32_t) <= _Alignof(_Atomic uint32_t),
+			    "Cast of total_sent is broken!");
 			mpi_reduce_u32_sum_scatter((uint32_t *)total_sent, &remote_msg_to_receive);
 			gvt_node_phase = gvt_node_sent_reduce_wait;
 			break;
@@ -295,13 +300,13 @@ simtime_t gvt_phase_run(void)
 }
 
 /**
- * @brief Cleanup the distributed state of the GVT algorithm
+ * @brief Wait for in-flight messages and clear the distributed state of the GVT algorithm
  *
  * This function flushes the remaining remote messages, moreover it makes sure
  * that all the nodes complete the potentially ongoing GVT algorithm so that
  * MPI collectives are inactive.
  */
-void gvt_msg_drain(void)
+void gvt_msg_barrier(void)
 {
 	if(sync_thread_barrier())
 		mpi_node_barrier();
@@ -310,6 +315,6 @@ void gvt_msg_drain(void)
 	for(int i = 0; i < 2; ++i) { // flush both gvt phases
 		gvt_timer = 0;       // this satisfies the timer condition
 		while(!gvt_phase_run())
-			mpi_remote_msg_drain();
+			mpi_remote_msg_handle();
 	}
 }

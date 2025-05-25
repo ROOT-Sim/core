@@ -27,7 +27,6 @@ extern void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid);
 extern void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl);
 extern void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest);
 extern void mpi_remote_msg_handle(void);
-extern void mpi_remote_msg_drain(void);
 
 extern void mpi_reduce_u32_sum_scatter(const uint32_t values[n_nodes], uint32_t *result);
 extern bool mpi_reduce_u32_sum_scatter_done(void);
@@ -37,6 +36,9 @@ extern bool mpi_reduce_double_min_done(void);
 
 extern void mpi_blocking_reduce_u64_max(uint64_t *val_p);
 
+extern void mpi_allgather_int_single(int send_value, int all_values[n_nodes]);
+extern void mpi_allgatherv_u64(int send_count, uint64_t send_values[send_count], int all_count[n_nodes],
+    uint64_t all_values[], const int displacements[n_nodes]);
 extern void mpi_node_barrier(void);
 extern void mpi_blocking_data_send(const void *data, int data_size, nid_t dest);
 extern void *mpi_blocking_data_rcv(int *data_size_p, nid_t src);

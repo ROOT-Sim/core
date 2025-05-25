@@ -14,4 +14,4 @@ __thread tid_t tid;
 nid_t n_nodes = 1;
 nid_t nid;
 
-char *core_version = ROOTSIM_VERSION;
+const char *core_version = ROOTSIM_VERSION;

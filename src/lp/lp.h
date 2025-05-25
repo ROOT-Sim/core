@@ -21,6 +21,10 @@
 #define LP_RID_TO_NID(resource_id) (nid_t)((resource_id) & ~(1U << (sizeof(unsigned) * CHAR_BIT - 1)))
 #define LP_RID_FROM_NID(node_id) (((unsigned)(node_id)) | (1U << (sizeof(unsigned) * CHAR_BIT - 1)))
 
+#define lp_plain_data(lp) (&(lp)->cost)
+#define lp_plain_data_size(lp)                                                                                         \
+	(offsetof(struct lp_ctx, auto_ckpt) + sizeof(struct auto_ckpt) - offsetof(struct lp_ctx, cost))
+
 /// A complete LP context
 struct lp_ctx {
 	/// The resource identifier on which this LP is bound TODO: make rid its own struct for safety

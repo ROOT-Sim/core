@@ -68,7 +68,9 @@ void lp_global_init(void)
 	lp_id_t lid_node_first = partition_start(nid, n_nodes, lid_to_nid, 0, global_config.lps);
 	n_lps_node = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps) - lid_node_first;
 
-	lps = mm_aligned_alloc(MEM_DETERMINISTIC_PAGE_SIZE, sizeof(*lps) * global_config.lps);
+	size_t lps_size = sizeof(*lps) * global_config.lps;
+	size_t lps_pages = (lps_size + MEM_DETERMINISTIC_PAGE_SIZE - 1) / MEM_DETERMINISTIC_PAGE_SIZE;
+	lps = mm_aligned_alloc(MEM_DETERMINISTIC_PAGE_SIZE, lps_pages * MEM_DETERMINISTIC_PAGE_SIZE);
 
 	if(n_lps_node < global_config.n_threads) {
 		logger(LOG_WARN, "The simulation will run with %u threads instead of the requested %u", n_lps_node,
@@ -94,11 +96,15 @@ void lp_init(void)
 	lp_id_t lid_node_last = partition_start(nid + 1, n_nodes, lid_to_nid, 0, global_config.lps);
 
 	for(lp_id_t i = tid; i < global_config.lps; i += global_config.n_threads) {
+		struct lp_ctx *lp = &lps[i];
 		nid_t this_nid = lid_to_nid(i);
+
 		if(this_nid != nid)
-			lps[i].rid = LP_RID_FROM_NID(this_nid);
+			lp->rid = LP_RID_FROM_NID(this_nid);
 		else
-			lps[i].rid = lid_to_tid(i, lid_node_first);
+			lp->rid = lid_to_tid(i, lid_node_first);
+
+		lp->next = NULL;
 	}
 
 	sync_thread_barrier();
@@ -119,7 +125,6 @@ void lp_init(void)
 		model_allocator_lp_init(&lp->mm);
 		auto_ckpt_lp_init(&lp->auto_ckpt);
 		process_lp_init(lp);
-
 	}
 	*head = NULL;
 }

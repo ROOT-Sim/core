@@ -20,5 +20,5 @@ extern array_count_t model_allocator_checkpoint_restore(struct mm_ctx *self, arr
 extern array_count_t model_allocator_fossil_lp_collect(struct mm_ctx *self, array_count_t tgt_ref_i);
 
 extern array_count_t model_allocator_serialize_size(const struct mm_ctx *self);
-extern void model_allocator_serialize_dump(const struct mm_ctx *self, unsigned char *data);
-extern const unsigned char *model_allocator_serialize_restore(struct mm_ctx *self, const unsigned char *data);
+extern void *model_allocator_serialize_dump(const struct mm_ctx *self, void *data);
+extern const unsigned char *model_allocator_serialize_restore(struct mm_ctx *self, const void *data);

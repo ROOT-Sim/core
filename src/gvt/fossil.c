@@ -11,6 +11,7 @@
 
 #include <mm/msg_allocator.h>
 
+/// The fossil collection epoch, i.e.: the number of times fossil_on_gvt() has been called
 __thread unsigned fossil_epoch_current;
 /// The value of the last GVT, kept here for easier fossil collection operations
 static __thread simtime_t fossil_gvt_current;
@@ -49,15 +50,15 @@ void fossil_lp_collect(struct lp_ctx *lp)
 	past_i = model_allocator_fossil_lp_collect(&lp->mm, past_i + 1);
 
 	timer_uint cost = 0;
-	array_count_t k = past_i;
-	while(k--) {
-		struct pes_entry e = array_get_at(proc_p->pes, k);
-		if(!pes_entry_is_sent_local(e)) {
-			struct lp_msg *m = pes_entry_msg(e);
-			if(!pes_entry_is_sent_remote(e))
-				cost += m->cost;
-			msg_allocator_free(m);
-		}
+	for(array_count_t k = past_i; k;) {
+		struct pes_entry e = array_get_at(proc_p->pes, --k);
+		if(pes_entry_is_sent_local(e))
+			continue;
+
+		struct lp_msg *m = pes_entry_msg(e);
+		if(pes_entry_is_received(e))
+			cost += m->cost;
+		msg_allocator_free(m);
 	}
 	array_truncate_first(proc_p->pes, past_i);
 

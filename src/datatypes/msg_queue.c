@@ -24,7 +24,7 @@
 #include <stdatomic.h>
 
 /// Determine an ordering between two elements in a queue
-#define q_elem_is_before(ma, mb)  ((ma).t < (mb).t)
+#define q_elem_is_before(ma, mb) ((ma).t < (mb).t)
 
 /// An element in the message queue
 struct msg_queue_elem {
@@ -129,6 +129,7 @@ struct lp_msg *msg_queue_extract(void)
  */
 void msg_queue_insert(struct lp_msg *msg, tid_t this_tid)
 {
+	assert(lps[msg->dest].rid == this_tid);
 	_Atomic(struct lp_msg *) *list_p = &queues[this_tid].list;
 	msg->next = atomic_load_explicit(list_p, memory_order_relaxed);
 	while(unlikely(!atomic_compare_exchange_weak_explicit(list_p, &msg->next, msg, memory_order_release,
@@ -162,4 +163,36 @@ void msg_queue_local_rebind(void)
 			msg_queue_insert(m, rid);
 		}
 	}
+}
+
+/**
+ * @brief Iterate over messages in the local thread queue
+ * @param prev_delete If set, the last visited message is deleted from the queue
+ * @param iter_state A pointer to a counter to track the iteration state
+ * @return A pointer to the currently iterated message, or NULL if the iteration is over
+ *
+ * The first time this function is called, iter_state must point to a variable initialized to ARRAY_COUNT_MAX.
+ * iter_state should then be left untouched until the iterations are over.
+ * prev_delete has no effect the first time this function is called.
+ */
+struct lp_msg *msg_queue_iter(bool prev_delete, array_count_t *iter_state)
+{
+	array_count_t i = *iter_state;
+	if(i == ARRAY_COUNT_MAX) {
+		msg_queue_insert_queued();
+		i = 0;
+	} else {
+		if(prev_delete)
+			heap_extract_from(mqp, i, q_elem_is_before);
+		else
+			++i;
+	}
+
+	if(i < array_count(mqp)) {
+		*iter_state = i;
+		return array_get_at(mqp, i).m;
+	}
+
+	*iter_state = ARRAY_COUNT_MAX;
+	return NULL;
 }

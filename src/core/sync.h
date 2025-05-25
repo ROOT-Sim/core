@@ -29,10 +29,13 @@ typedef atomic_flag spinlock_t;
 
 /**
  * @def spin_pause()
- * @brief Tells the compiler that we are inside a spin loop
+ * @brief Tells the CPU that we are inside a spin loop
  */
 #if defined(__x86_64__) || defined(__i386__)
 #define spin_pause() _mm_pause()
+#elif defined(__arm__)
+// apparently this is the best way to achieve the desired behavior on ARM
+#define spin_pause() __asm__ __volatile__("isb\n")
 #else
 #define spin_pause()
 #endif

@@ -25,6 +25,7 @@ set(rscore_srcs
         mm/auto_ckpt.c
         mm/msg_allocator.c
         parallel/parallel.c
+        rebind/migration.c
         rebind/rebind.c
         serial/serial.c)
 

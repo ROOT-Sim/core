@@ -22,7 +22,6 @@
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 
-#define pes_entry_make(msg, tag) ((struct pes_entry){.raw = (tag) | (uintptr_t)(msg)})
 #define pes_entry_msg_unsafe(entry) ((struct lp_msg *)(entry).raw)
 
 /// The flag used in ScheduleNewEvent() to keep track of silent execution
@@ -122,6 +121,7 @@ static inline void silent_execution(const struct lp_ctx *lp, array_count_t last_
 static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t past_i)
 {
 	array_count_t p_cnt = array_count(proc_p->pes);
+	array_count(proc_p->pes) = past_i;
 	for(array_count_t i = past_i; i < p_cnt; ++i) {
 		struct pes_entry e = array_get_at(proc_p->pes, i);
 
@@ -132,7 +132,8 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 				mpi_remote_anti_msg_send(msg, LP_RID_TO_NID(rid));
 				msg_allocator_free_at_gvt(msg);
 			} else {
-				uint64_t f = atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
+				uint64_t f =
+				    atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);
 				if(f & MSG_FLAG_PROCESSED)
 					msg_queue_insert(msg, rid);
 			}
@@ -141,12 +142,12 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 			e = array_get_at(proc_p->pes, ++i);
 		}
 
-		uint64_t f = atomic_fetch_add_explicit(&pes_entry_msg_received(e)->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
+		struct lp_msg *msg = pes_entry_msg_received(e);
+		uint64_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
 		if(!(f & MSG_FLAG_ANTI))
-			msg_queue_insert_self(pes_entry_msg_received(e));
+			msg_queue_insert_self(msg);
 		stats_take(STATS_MSG_ROLLBACK, 1);
 	}
-	array_count(proc_p->pes) = past_i;
 }
 
 /**
@@ -250,12 +251,15 @@ insert_early_anti:
  * @param proc_p the message processing data of the current LP
  * @param a_msg the remote message to check
  * @return true if the message has been matched with an early remote anti-message, false otherwise
+ *
+ * Assumes proc_p->early_antis is not NULL (so this should be checked before calling this)
  */
-static inline bool check_early_anti_messages(struct process_ctx *proc_p, struct lp_msg *msg)
+bool process_early_anti_message_check(struct process_ctx *proc_p, struct lp_msg *msg)
 {
 	uint64_t m_id = msg->raw_flags;
 	struct lp_msg **prev_p = &proc_p->early_antis;
 	struct lp_msg *a_msg = *prev_p;
+	assert(a_msg);
 	do {
 		if(a_msg->raw_flags == m_id) {
 			*prev_p = a_msg->next;
@@ -318,7 +322,7 @@ __attribute__((hot)) void process_msg(struct lp_msg *msg)
 		return;
 	}
 
-	if(unlikely(flags && lp->p.early_antis && check_early_anti_messages(&lp->p, msg)))
+	if(unlikely(flags && lp->p.early_antis && process_early_anti_message_check(&lp->p, msg)))
 		return;
 
 	if(unlikely(lp->p.bound >= msg->dest_t && msg_is_before(msg, pes_entry_msg_received(array_peek(lp->p.pes)))))
