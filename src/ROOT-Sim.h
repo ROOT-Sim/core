@@ -103,6 +103,11 @@ enum log_level {
 	LOG_SILENT //!< Emit no message during the simulation
 };
 
+enum synchronization_algorithm {
+	SERIAL = 1, //!< The simulation runs on the serial runtime
+	TIME_WARP, //!< The simulation runs using the optimistic Time Warp algorithm
+};
+
 /// A set of configurable values used by other modules
 struct simulation_configuration {
 	/// The number of LPs to be used in the simulation
@@ -123,7 +128,12 @@ struct simulation_configuration {
 	unsigned ckpt_interval;
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
-	/// If set, the simulation will run on the serial runtime
+	/// Specify what synchronization algorithm we are using
+	enum synchronization_algorithm synchronization;
+	/**
+	 * @deprecated since 3.1.0
+	 * If set, the simulation will run on the serial runtime
+	 */
 	bool serial;
 	/// Function pointer to the dispatching function
 	ProcessEvent_t dispatcher;

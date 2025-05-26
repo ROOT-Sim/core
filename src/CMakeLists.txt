@@ -22,7 +22,7 @@ set(rscore_srcs
         mm/buddy/ckpt.c
         mm/buddy/multi.c
         mm/msg_allocator.c
-        parallel/parallel.c
+        parallel/timewarp.c
         serial/serial.c)
 
 if(MPI_FOUND)

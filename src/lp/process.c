@@ -38,7 +38,7 @@ static __thread struct lp_msg *current_msg;
 void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
     unsigned payload_size)
 {
-	if(unlikely(global_config.serial)) {
+	if(unlikely(global_config.synchronization == SERIAL)) {
 		ScheduleNewEvent_serial(receiver, timestamp, event_type, payload, payload_size);
 		return;
 	}

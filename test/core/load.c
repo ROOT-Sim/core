@@ -27,10 +27,24 @@ static struct simulation_configuration conf = {
     .committed = NULL,
 };
 
+static const struct simulation_configuration no_synchronization = {
+	.lps = 1,
+	.dispatcher = DummyProcessEvent,
+	.committed = DummyCanEnd,
+};
+
 static const struct simulation_configuration valid_conf = {
-    .lps = 1,
-    .dispatcher = DummyProcessEvent,
-    .committed = DummyCanEnd,
+	.lps = 1,
+	.dispatcher = DummyProcessEvent,
+	.committed = DummyCanEnd,
+	.synchronization = TIME_WARP,
+};
+
+static const struct simulation_configuration deprecated_conf = {
+	.lps = 1,
+	.dispatcher = DummyProcessEvent,
+	.committed = DummyCanEnd,
+	.serial = true,
 };
 
 static int run_rootsim(_unused void *_)
@@ -61,6 +75,13 @@ int main(void)
 	conf.committed = NULL;
 	test_xf("CanEnd not set", init_rootsim, &conf);
 	test_xf("Start simulation with no CanEnd", run_rootsim, NULL);
+
+	memcpy(&conf, &no_synchronization, sizeof(conf));
+	test_xf("No synchronization algorithm", init_rootsim, &conf);
+	test_xf("Start simulation with no synchronization algorithm", run_rootsim, NULL);
+
+	memcpy(&conf, &deprecated_conf, sizeof(conf));
+	test("Legacy serial flag", init_rootsim, &conf);
 
 	memcpy(&conf, &valid_conf, sizeof(conf));
 	test("Initialization", init_rootsim, &conf);

@@ -85,7 +85,7 @@ void termination_on_gvt(simtime_t current_gvt)
  */
 void RootsimStop(void)
 {
-	if(global_config.serial) {
+	if(global_config.synchronization == SERIAL) {
 		global_config.termination_time = -1.0;
 		return;
 	}
