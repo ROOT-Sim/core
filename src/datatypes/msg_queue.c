@@ -9,7 +9,7 @@
  * then cheap, while extractions simply empty the buffer into the private queue. This way the critically thread locked
  * code is minimal.
  *
- * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <datatypes/msg_queue.h>
