@@ -1,5 +1,5 @@
 /**
- * @file test/tests/mm/stress.c
+ * @file test/mm/parallel.c
  *
  * @brief Test: stress test the model memory allocator
  *

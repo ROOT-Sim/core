@@ -1,13 +1,7 @@
 # SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 
-# Retrieve and make available the testing framework
-include(FetchContent)
-FetchContent_Declare(rstest
-        GIT_REPOSITORY https://github.com/ROOT-Sim/testing-framework.git
-        GIT_TAG        origin/master
-        )
-FetchContent_MakeAvailable(rstest)
+include(test-lib.cmake)
 
 # Visibility tests
 test_program(visibility_weak visibility/visibility_weak.c)

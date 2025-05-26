@@ -1,5 +1,5 @@
 /**
- * @file test/tests/core/sync.c
+ * @file test/core/sync.c
  *
  * @brief Test: synchronization primitives test
  *

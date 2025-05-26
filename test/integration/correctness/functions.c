@@ -1,5 +1,5 @@
 /**
- * @file test/tests/integration/correctness/functions.c
+ * @file test/integration/correctness/functions.c
  *
  * @brief Helper functions of the model used to verify the runtime correctness
  *

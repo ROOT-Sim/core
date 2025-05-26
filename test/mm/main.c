@@ -1,5 +1,5 @@
 /**
- * @file test/tests/mm/main.c
+ * @file test/mm/main.c
  *
  * @brief Test: Main program of the mm test
  *

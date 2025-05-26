@@ -1,5 +1,5 @@
 /**
-* @file test/framework/mock.c
+* @file test/mock.c
 *
 * @brief Mocking module
 *

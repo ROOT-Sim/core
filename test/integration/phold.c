@@ -1,5 +1,5 @@
 /**
- * @file test/tests/integration/phold.c
+ * @file test/integration/phold.c
  *
  * @brief A simple and stripped phold implementation
  *

@@ -1,5 +1,5 @@
 /**
- * @file test/tests/mm/buddy.c
+ * @file test/mm/buddy.c
  *
  * @brief Test: rollbackable buddy system allocator
  *

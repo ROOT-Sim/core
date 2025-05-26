@@ -1,5 +1,5 @@
 /**
- * @file test/tests/gvt/termination.c
+ * @file test/gvt/termination.c
  *
  * @brief Test: termination detection module
  *
