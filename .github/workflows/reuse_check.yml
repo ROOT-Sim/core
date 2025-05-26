@@ -11,6 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkpout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: REUSE check
-        uses: ROOT-Sim/ci-actions/reuse-check@v1.2
+        uses: ROOT-Sim/ci-actions/reuse-check@v1.5.3

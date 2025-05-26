@@ -5,7 +5,7 @@
  *
  * Core ROOT-Sim functionalities
  *
- * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -44,15 +44,10 @@
 #define CACHE_LINE_SIZE 64
 #endif
 
-#ifndef _MSC_VER
 /// Optimize the branch as likely taken
 #define likely(exp) __builtin_expect(!!(exp), 1)
 /// Optimize the branch as likely not taken
 #define unlikely(exp) __builtin_expect((exp), 0)
-#else
-#define likely(exp) (exp)
-#define unlikely(exp) (exp)
-#endif
 
 /// The maximum value of the logical simulation time, semantically never
 #define SIMTIME_MAX DBL_MAX

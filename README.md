@@ -3,7 +3,7 @@
 _Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/)
 Research Group_
 
-[![Build Status](https://github.com/ROOT-Sim/core/workflows/ROOT-Sim%20core%20CI/badge.svg)](https://github.com/ROOT-Sim/core/actions)
+[![Build Status](https://github.com/ROOT-Sim/core/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/ROOT-Sim/core/actions)
 [![codecov](https://codecov.io/gh/ROOT-Sim/core/branch/master/graph/badge.svg)](https://codecov.io/gh/ROOT-Sim/core)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/7519f016f3d942b9b12c6ed03ae4ecf8)](https://www.codacy.com/gh/ROOT-Sim/core/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ROOT-Sim/core&amp;utm_campaign=Badge_Grade)
 [![doc coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Froot-sim.github.io%2Fcore%2Fdocs%2Fmaster.json)](https://root-sim.github.io/core/docs/)
@@ -44,7 +44,8 @@ library.
 The core successfully compiles on x86 and ARM architectures, using either GCC or Clang compilers, on Linux, Windows,
 and macOS.
 A compiler supporting the C11 standard is required, such as GCC 8 or later. MSVC on Windows does not correctly
-implement the full C11 standard (e.g., `stdatomic.h` is not provided) and cannot be therefore used to build the project.
+implement the full C11 standard (e.g., `stdatomic.h` is not provided, or has a minimal implementation for lock-free
+objects only in latest versions) and cannot be therefore used to build the project.
 Windows users are encouraged to use clang.
 
 MPI is a mandatory dependency of the project, used to support simulations runs on distributed systems.
