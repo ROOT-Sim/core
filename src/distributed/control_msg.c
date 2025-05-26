@@ -14,7 +14,7 @@
  * @brief Handle a received control message
  * @param ctrl the tag of the received control message
  */
-void control_msg_process(enum msg_ctrl_code ctrl)
+void control_msg_process(const enum msg_ctrl_code ctrl)
 {
 	switch(ctrl) {
 		case MSG_CTRL_GVT_START:

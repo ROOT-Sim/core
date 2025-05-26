@@ -48,7 +48,7 @@ void msg_allocator_fini(void)
  * Since this module relies on the member lp_msg.pl_size (see @a msg_allocator_free()), it has writing responsibility
  * on it.
  */
-struct lp_msg *msg_allocator_alloc(unsigned payload_size)
+struct lp_msg *msg_allocator_alloc(const unsigned payload_size)
 {
 	struct lp_msg *ret;
 	if(unlikely(payload_size > MSG_PAYLOAD_BASE_SIZE)) {
@@ -87,7 +87,7 @@ void msg_allocator_free_at_gvt(struct lp_msg *msg)
  * @brief Free the committed messages after a new GVT has been computed
  * @param current_gvt the latest value of the GVT
  */
-void msg_allocator_on_gvt(simtime_t current_gvt)
+void msg_allocator_on_gvt(const simtime_t current_gvt)
 {
 	for(array_count_t i = array_count(at_gvt_list); i-- > 0;) {
 		struct lp_msg *msg = array_get_at(at_gvt_list, i);

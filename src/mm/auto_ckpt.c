@@ -54,10 +54,10 @@ void auto_ckpt_on_gvt(void)
 	if(unlikely(global_config.ckpt_interval))
 		return;
 
-	uint64_t ckpt_cost = stats_retrieve(STATS_CKPT_TIME);
-	uint64_t ckpt_size = stats_retrieve(STATS_CKPT_SIZE);
-	uint64_t sil_count = stats_retrieve(STATS_MSG_SILENT);
-	uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
+	const uint64_t ckpt_cost = stats_retrieve(STATS_CKPT_TIME);
+	const uint64_t ckpt_size = stats_retrieve(STATS_CKPT_SIZE);
+	const uint64_t sil_count = stats_retrieve(STATS_MSG_SILENT);
+	const uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
 
 	if(likely(sil_count))
 		ackpt.inv_sil_avg_cost = EXP_AVG(16.0, ackpt.inv_sil_avg_cost, (double)sil_count / (double)sil_cost);
@@ -82,7 +82,7 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
  * @param auto_ckpt a pointer to the auto checkpoint context of the current LP
  * @param state_size the size in bytes of the checkpoint-able state of the current LP
  */
-void auto_ckpt_recompute(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size)
+void auto_ckpt_recompute(struct auto_ckpt *auto_ckpt, const uint_fast32_t state_size)
 {
 	if(unlikely(!auto_ckpt->m_bad || global_config.ckpt_interval))
 		return;

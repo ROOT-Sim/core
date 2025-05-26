@@ -29,7 +29,7 @@ void model_allocator_lp_init(struct mm_state *self)
 	self->full_ckpt_size = offsetof(struct mm_checkpoint, chkps) + sizeof(struct buddy_state *);
 }
 
-void model_allocator_lp_fini(struct mm_state *self)
+void model_allocator_lp_fini(const struct mm_state *self)
 {
 	array_count_t i = array_count(self->logs);
 	while(i--)
@@ -49,7 +49,7 @@ void *rs_malloc(size_t req_size)
 	if(unlikely(!req_size))
 		return NULL;
 
-	uint_fast8_t req_blks_exp = buddy_allocation_block_compute(req_size);
+	const uint_fast8_t req_blks_exp = buddy_allocation_block_compute(req_size);
 	if(unlikely(req_blks_exp > B_TOTAL_EXP)) {
 		errno = ENOMEM;
 		logger(LOG_WARN, "LP %p requested a memory block bigger than %u!", current_lp, 1U << B_TOTAL_EXP);
@@ -78,9 +78,9 @@ void *rs_malloc(size_t req_size)
 	return buddy_malloc(new_buddy, req_blks_exp);
 }
 
-void *rs_calloc(size_t nmemb, size_t size)
+void *rs_calloc(const size_t nmemb, const size_t size)
 {
-	size_t tot = nmemb * size;
+	const size_t tot = nmemb * size;
 	void *ret = rs_malloc(tot);
 
 	if(likely(ret))
@@ -89,11 +89,11 @@ void *rs_calloc(size_t nmemb, size_t size)
 	return ret;
 }
 
-static inline struct buddy_state *buddy_find_by_address(struct mm_state *self, const void *ptr)
+static inline struct buddy_state *buddy_find_by_address(const struct mm_state *self, const void *ptr)
 {
 	array_count_t l = 0, h = array_count(self->buddies) - 1;
 	while(1) {
-		array_count_t m = (l + h) / 2;
+		const array_count_t m = (l + h) / 2;
 		struct buddy_state *b = array_get_at(self->buddies, m);
 		if(ptr < (void *)b)
 			h = m - 1;
@@ -142,7 +142,7 @@ void *rs_realloc(void *ptr, size_t req_size)
 	return new_buffer;
 }
 
-void __write_mem(const void *ptr, size_t s)
+void __write_mem(const void *ptr, const size_t s)
 {
 	struct mm_state *self = &current_lp->mm_state;
 	if(unlikely(!s || array_is_empty(self->buddies)))
@@ -162,7 +162,7 @@ void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i)
 	struct mm_checkpoint *ckp = mm_alloc(self->full_ckpt_size);
 	ckp->ckpt_size = self->full_ckpt_size;
 
-	struct mm_log mm_log = {.ref_i = ref_i, .c = ckp};
+	const struct mm_log mm_log = {.ref_i = ref_i, .c = ckp};
 	array_push(self->logs, mm_log);
 
 	struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckp->chkps;
@@ -172,19 +172,19 @@ void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_i)
 	buddy_ckp->orig = NULL;
 }
 
-void model_allocator_checkpoint_next_force_full(struct mm_state *self)
+void model_allocator_checkpoint_next_force_full(const struct mm_state *self)
 {
 	(void)self;
 	// TODO: force full checkpointing when incremental state saving is enabled
 }
 
-array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_count_t ref_i)
+array_count_t model_allocator_checkpoint_restore(struct mm_state *self, const array_count_t ref_i)
 {
 	array_count_t i = array_count(self->logs) - 1;
 	while(array_get_at(self->logs, i).ref_i > ref_i)
 		i--;
 
-	struct mm_checkpoint *ckp = array_get_at(self->logs, i).c;
+	const struct mm_checkpoint *ckp = array_get_at(self->logs, i).c;
 	self->full_ckpt_size = ckp->ckpt_size;
 	const struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckp->chkps;
 
@@ -207,7 +207,7 @@ array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_co
 	return array_get_at(self->logs, i).ref_i;
 }
 
-array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, array_count_t tgt_ref_i)
+array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, const array_count_t tgt_ref_i)
 {
 	array_count_t log_i = array_count(self->logs) - 1;
 	array_count_t ref_i = array_get_at(self->logs, log_i).ref_i;

@@ -126,7 +126,7 @@ void gvt_on_done_ctrl_msg(void)
  *
  * Called by the process layer when processing a new message; used in the actual GVT calculation
  */
-void gvt_on_msg_extraction(simtime_t msg_t)
+void gvt_on_msg_extraction(const simtime_t msg_t)
 {
 	if(unlikely(gvt_accumulator > msg_t))
 		gvt_accumulator = msg_t;
@@ -223,12 +223,12 @@ static bool gvt_node_phase_run(void)
 			break;
 		case node_sent_wait:
 			{
-				int32_t r = atomic_fetch_add_explicit(&total_msg_received,
+				const int32_t r = atomic_fetch_add_explicit(&total_msg_received,
 				    remote_msg_received[!gvt_phase], memory_order_relaxed);
 				remote_msg_received[!gvt_phase] = 0;
 				if(r)
 					break;
-				uint32_t q = n_nodes / global_config.n_threads + 1;
+				const uint32_t q = n_nodes / global_config.n_threads + 1;
 				memset(total_sent + rid * q, 0, q * sizeof(*total_sent));
 				node_phase = node_phase_redux_second;
 				break;
@@ -283,7 +283,7 @@ simtime_t gvt_phase_run(void)
 		gvt_start_processing();
 
 	if(unlikely(!rid && !nid)) {
-		timer_uint t = timer_new();
+		const timer_uint t = timer_new();
 		if(unlikely(global_config.gvt_period < t - gvt_timer &&
 			    !atomic_load_explicit(&gvt_nodes, memory_order_relaxed))) {
 			gvt_timer = t;

@@ -37,7 +37,7 @@ void fossil_lp_collect(struct lp_ctx *lp)
 	if(past_i == 0)
 		return;
 
-	simtime_t gvt = fossil_gvt_current;
+	const simtime_t gvt = fossil_gvt_current;
 	for(const struct lp_msg *msg = array_get_at(proc_p->p_msgs, --past_i); msg->dest_t >= gvt;) {
 		do {
 			if(!past_i)

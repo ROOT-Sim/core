@@ -35,7 +35,7 @@ struct bin_info {
 	size_t size, bins;
 };
 
-static void mem_init(unsigned char *ptr, size_t size)
+static void mem_init(unsigned char *ptr, const size_t size)
 {
 	if(!size)
 		return;
@@ -51,7 +51,7 @@ static void mem_init(unsigned char *ptr, size_t size)
 	ptr[size - 1] = j ^ (j >> 8);
 }
 
-static int mem_check(const unsigned char *ptr, size_t size)
+static int mem_check(const unsigned char *ptr, const size_t size)
 {
 	if(!size)
 		return 0;
@@ -77,7 +77,7 @@ static int zero_check(void *p, size_t size)
 		size -= sizeof(*ptr);
 	}
 
-	unsigned char *ptr2 = (unsigned char *)ptr;
+	const unsigned char *ptr2 = (unsigned char *)ptr;
 	while(size > 0) {
 		if(*ptr2++)
 			return -1;
@@ -90,7 +90,7 @@ static int zero_check(void *p, size_t size)
  * Allocate a bin with malloc(), realloc() or memalign().
  * r must be a random number >= 1024.
  */
-static void bin_alloc(struct bin *m, size_t size, unsigned r)
+static void bin_alloc(struct bin *m, const size_t size, unsigned r)
 {
 	test_assert(mem_check(m->ptr, m->size) == 0);
 
@@ -129,7 +129,7 @@ static void bin_free(struct bin *m)
 	m->size = 0;
 }
 
-static void bin_test(struct bin_info *p)
+static void bin_test(const struct bin_info *p)
 {
 	for(size_t b = 0; b < p->bins; b++)
 		test_assert(mem_check(p->m[b].ptr, p->m[b].size) == 0);
@@ -159,15 +159,15 @@ int parallel_malloc_test(_unused void *_)
 		unsigned actions = test_random_range(ACTIONS_MAX);
 
 		for(unsigned j = 0; j < actions; j++) {
-			unsigned bin = test_random_range(p.bins);
+			const unsigned bin = test_random_range(p.bins);
 			bin_free(&p.m[bin]);
 		}
 		i += actions;
 		actions = test_random_range(ACTIONS_MAX);
 
 		for(unsigned j = 0; j < actions; j++) {
-			unsigned bin = test_random_range(p.bins);
-			uint64_t action = test_random_u();
+			const unsigned bin = test_random_range(p.bins);
+			const uint64_t action = test_random_u();
 			bin_alloc(&p.m[bin], test_random_range(p.size) + 1, action);
 			bin_test(&p);
 		}

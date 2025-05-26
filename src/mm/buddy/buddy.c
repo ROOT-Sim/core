@@ -21,7 +21,7 @@ void buddy_init(struct buddy_state *self)
 	}
 }
 
-void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp)
+void *buddy_malloc(struct buddy_state *self, const uint_fast8_t req_blks_exp)
 {
 	if(unlikely(self->longest[0] < req_blks_exp))
 		return NULL;
@@ -43,7 +43,7 @@ void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp)
 	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 #endif
 
-	uint_fast32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
+	const uint_fast32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
 
 	while(i) {
 		i = buddy_parent(i);
@@ -66,7 +66,7 @@ uint_fast32_t buddy_free(struct buddy_state *self, void *ptr)
 		++node_size;
 
 	self->longest[i] = node_size;
-	uint_fast32_t ret = (uint_fast32_t)1U << node_size;
+	const uint_fast32_t ret = (uint_fast32_t)1U << node_size;
 #ifdef ROOTSIM_INCREMENTAL
 	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
 
@@ -97,18 +97,18 @@ uint_fast32_t buddy_free(struct buddy_state *self, void *ptr)
 	return ret;
 }
 
-struct buddy_realloc_res buddy_best_effort_realloc(struct buddy_state *self, void *ptr, size_t req_size)
+struct buddy_realloc_res buddy_best_effort_realloc(const struct buddy_state *self, void *ptr, size_t req_size)
 {
 	uint_fast8_t node_size = B_BLOCK_EXP;
-	uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
+	const uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
 	uint_fast32_t i = o + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
 	for(; self->longest[i]; i = buddy_parent(i))
 		++node_size;
 
-	uint_fast8_t req_blks_exp = buddy_allocation_block_compute(req_size);
+	const uint_fast8_t req_blks_exp = buddy_allocation_block_compute(req_size);
 
-	struct buddy_realloc_res ret;
+	struct buddy_realloc_res ret = {0};
 
 	if(node_size == req_blks_exp) {
 		// todo: we can do much better than this
@@ -125,11 +125,10 @@ struct buddy_realloc_res buddy_best_effort_realloc(struct buddy_state *self, voi
 	return ret;
 }
 
-void buddy_dirty_mark(struct buddy_state *self, const void *ptr, size_t s)
+void buddy_dirty_mark(const struct buddy_state *self, const void *ptr, size_t s)
 {
-        // TODO: consider using ptrdiff_t here
-        uintptr_t diff = (uintptr_t)ptr - (uintptr_t)self->base_mem;
-	uint_fast32_t i = (diff >> B_BLOCK_EXP) + (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
+        const uintptr_t diff = ptr - (void *)self->base_mem;
+	const uint_fast32_t i = (diff >> B_BLOCK_EXP) + (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 
 	s += diff & ((1 << B_BLOCK_EXP) - 1);
 	--s;

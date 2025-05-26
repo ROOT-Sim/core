@@ -87,7 +87,7 @@ static _Thread_local struct stats_thread stats_cur;
  * @brief Take a lifetime event time value
  * @param this_stat The type of event just occurred
  */
-void stats_global_time_take(enum stats_global_type this_stat)
+void stats_global_time_take(const enum stats_global_type this_stat)
 {
 	stats_glob_cur.timestamps[this_stat] = timer_value(sim_start_ts);
 }
@@ -149,7 +149,7 @@ static void stats_files_receive(FILE *out_f)
 		struct stats_global *sg_p = mpi_blocking_data_rcv(&buf_size, j);
 		if(likely(out_f != NULL))
 			file_write_chunk(out_f, sg_p, buf_size);
-		uint64_t iters = sg_p->threads_count + 1; // +1 for node stats
+		const uint64_t iters = sg_p->threads_count + 1; // +1 for node stats
 		mm_free(sg_p);
 
 		for(uint64_t i = 0; i < iters; ++i) {
@@ -251,7 +251,7 @@ static void stats_files_send(void)
  */
 static void stats_file_final_write(FILE *out_f)
 {
-	uint16_t endian_check = 61455U;
+	const uint16_t endian_check = 61455U;
 	file_write_chunk(out_f, &endian_check, sizeof(endian_check));
 
 	int64_t n = STATS_COUNT;
@@ -325,7 +325,7 @@ void stats_global_fini(void)
  * @param this_stat the statistics type to add the sample to
  * @param c the sample to sum
  */
-void stats_take(enum stats_thread_type this_stat, uint_fast64_t c)
+void stats_take(const enum stats_thread_type this_stat, const uint_fast64_t c)
 {
 	stats_cur.s[this_stat] += c;
 }
@@ -375,7 +375,7 @@ void stats_dump(void)
 			puts("");
 			fflush(stdout);
 		}
-		double t = (double)timer_value(sim_start_ts) / 1000000.0;
+		const double t = (double)timer_value(sim_start_ts) / 1000000.0;
 		logger(LOG_INFO, "Simulation completed in %.3lf seconds", t);
 	}
 }
@@ -385,7 +385,7 @@ void stats_dump(void)
  *
  * This values are computed since the end of the last GVT.
  */
-uint64_t stats_retrieve(enum stats_thread_type this_stat)
+uint64_t stats_retrieve(const enum stats_thread_type this_stat)
 {
 	return stats_cur.s[this_stat];
 }

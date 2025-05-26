@@ -20,7 +20,7 @@
 
 static int bitmap_test(_unused void *_)
 {
-	size_t b_size = bitmap_required_size(BITMAP_ENTRIES);
+	const size_t b_size = bitmap_required_size(BITMAP_ENTRIES);
 	block_bitmap *b = malloc(b_size);
 	bitmap_initialize(b, BITMAP_ENTRIES);
 
@@ -29,8 +29,8 @@ static int bitmap_test(_unused void *_)
 
 	unsigned i = THREAD_REPS;
 	while(i--) {
-		unsigned e = test_random_range(BITMAP_ENTRIES);
-		bool v = (double)test_random_u() / RAND_MAX > 0.5;
+		const unsigned e = test_random_range(BITMAP_ENTRIES);
+		const bool v = (double)test_random_u() / RAND_MAX > 0.5;
 		if(v)
 			bitmap_set(b, e);
 		else
@@ -45,13 +45,19 @@ static int bitmap_test(_unused void *_)
 	while(i--)
 		c -= b_check[i];
 
-	if(c)
+	if(c) {
+		free(b);
+		free(b_check);
 		return -1;
+	}
 
 #define bitmap_check_test(i)                                                                                           \
 	__extension__({                                                                                                \
-		if(!b_check[i])                                                                                        \
+		if(!b_check[i]) {                                                                                      \
+			free(b);                                                                                       \
+			free(b_check);                                                                                 \
 			return -1;                                                                                     \
+		}                                                                                                      \
 		b_check[i] = false;                                                                                    \
 	})
 

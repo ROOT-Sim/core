@@ -94,7 +94,7 @@ static inline void msg_queue_insert_queued(void)
 {
 	struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
 	while(m != NULL) {
-		struct q_elem qe = {.t = m->dest_t, .m = m};
+		const struct q_elem qe = {.t = m->dest_t, .m = m};
 		heap_insert(mqp, q_elem_is_before, qe);
 		m = m->next;
 	}
@@ -133,6 +133,6 @@ void msg_queue_insert(struct lp_msg *msg)
 void msg_queue_insert_self(struct lp_msg *msg)
 {
 	assert(lid_to_rid(msg->dest) == rid);
-	struct q_elem qe = {.t = msg->dest_t, .m = msg};
+	const struct q_elem qe = {.t = msg->dest_t, .m = msg};
 	heap_insert(mqp, q_elem_is_before, qe);
 }
