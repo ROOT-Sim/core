@@ -1,9 +1,9 @@
-# SPDX-FileCopyrightText: 2008-2021 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 cmake_minimum_required(VERSION 3.12)
 project("ROOT-Sim core" LANGUAGES C DESCRIPTION "A General-Purpose Multi-threaded Parallel/Distributed Simulation Library")
 
-set(PROJECT_VERSION 3.0.0-rc.2)
+set(PROJECT_VERSION 3.0.0)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -20,17 +20,21 @@ else()
     message(WARNING "LTO is not supported")
 endif()
 
-if(MSVC)
+if(MSVC AND NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
     message(FATAL_ERROR "You are using the MSVC compiler, which does not properly implement C11. Please consider switching to clang.")
 endif()
 
 find_package(Threads REQUIRED)
-find_package(Python REQUIRED)
-if(NOT DISABLE_MPI)
-    find_package(MPI REQUIRED)
+find_package(Python3 3.6 REQUIRED)
+if(DEFINED WITH_MPI)
+    if(WITH_MPI)
+        find_package(MPI REQUIRED)
+    endif()
+else()
+    find_package(MPI)
 endif()
 
-add_compile_options(-Wall -Wextra -pedantic)
+add_compile_options(-Wall -Wextra -pedantic -fmacro-prefix-map=${CMAKE_SOURCE_DIR}=)
 
 include(CheckLibraryExists)
 CHECK_LIBRARY_EXISTS(m exp "" HAVE_LIB_M)

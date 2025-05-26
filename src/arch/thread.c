@@ -11,7 +11,7 @@
  * once all threads are synchronized on the barrier, the function returns
  * true to only one of them.
  *
- * SPDX-FileCopyrightText: 2008-2022 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <arch/thread.h>
@@ -28,11 +28,10 @@
  */
 
 /**
- * @fn thread_affinity_set(thr_id_t thr, unsigned core)
- * @brief Sets a core affinity for a thread
- * @param thr The identifier of the thread targeted for the affinity change
+ * @fn thread_affinity_self_set(unsigned core)
+ * @brief Sets a core affinity for the currently running thread
  * @param core The core id where the target thread will be pinned on
- * @return 0 if successful, -1 otherwise
+ * @return a #thread_affinity_error value
  */
 
 /**
@@ -52,23 +51,42 @@
 
 #ifdef __POSIX
 #include <sched.h>
-#include <unistd.h>
 
 #ifdef __MACOS
 #include <mach/thread_act.h>
+#include <unistd.h>
 
-int thread_affinity_set(thr_id_t thr, unsigned core)
+enum thread_affinity_error thread_affinity_self_set(unsigned core)
 {
-	thread_affinity_policy_data_t policy = {core};
-	thread_port_t mach_thread = pthread_mach_thread_np(thr);
-	kern_return_t ret = thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
-	return -(ret != KERN_SUCCESS);
+	thread_affinity_policy_data_t policy = {core + 1};
+	pthread_t self = pthread_self();
+	thread_port_t mach_thread = pthread_mach_thread_np(self);
+
+	kern_return_t ret = thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy,
+	    THREAD_AFFINITY_POLICY_COUNT);
+
+	switch(ret) {
+		case KERN_SUCCESS:
+			return THREAD_AFFINITY_SUCCESS;
+		case KERN_NOT_SUPPORTED:
+			return THREAD_AFFINITY_ERROR_NOT_SUPPORTED;
+		default:
+			return THREAD_AFFINITY_ERROR_RUNTIME;
+	}
+}
+
+unsigned thread_cores_count(void)
+{
+	long ret = sysconf(_SC_NPROCESSORS_ONLN);
+	return ret < 1 ? 1 : (unsigned)ret;
 }
 
 #else
 
+#include <errno.h>
+
 // FIXME: it's quadratic in the number of cores when used core times
-int thread_affinity_set(thr_id_t thr, unsigned core)
+enum thread_affinity_error thread_affinity_self_set(unsigned core)
 {
 	cpu_set_t cpuset;
 	sched_getaffinity(0, sizeof(cpuset), &cpuset);
@@ -80,20 +98,35 @@ int thread_affinity_set(thr_id_t thr, unsigned core)
 		if(core == 0) {
 			CPU_ZERO(&cpuset);
 			CPU_SET(i, &cpuset);
-			return -(pthread_setaffinity_np(thr, sizeof(cpuset), &cpuset) != 0);
+
+			pthread_t self = pthread_self();
+			switch(pthread_setaffinity_np(self, sizeof(cpuset), &cpuset)) {
+				case 0:
+					return THREAD_AFFINITY_SUCCESS;
+				case EINVAL:
+					return THREAD_AFFINITY_ERROR_NOT_SUPPORTED;
+				default:
+					return THREAD_AFFINITY_ERROR_RUNTIME;
+			}
 		}
 		--core;
 	}
-	return -1;
+	return THREAD_AFFINITY_ERROR_RUNTIME;
 }
-
-#endif
 
 unsigned thread_cores_count(void)
 {
-	long ret = sysconf(_SC_NPROCESSORS_ONLN);
-	return ret < 1 ? 1 : (unsigned)ret;
+	cpu_set_t cpuset;
+	sched_getaffinity(0, sizeof(cpuset), &cpuset);
+
+	unsigned cores = 0;
+	for(long i = 0; i < CPU_SETSIZE; ++i)
+		cores += CPU_ISSET(i, &cpuset) != 0;
+
+	return cores < 1 ? 1 : cores;
 }
+
+#endif
 
 int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 {
@@ -108,6 +141,9 @@ int thread_wait(thr_id_t thr, thrd_ret_t *ret)
 #endif
 
 #ifdef __WINDOWS
+
+#include <limits.h>
+
 #define WIN32_LEAN_AND_MEAN
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT _WIN32_WINNT_NT4
@@ -127,9 +163,33 @@ int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 	return -(*thr_p == NULL);
 }
 
-int thread_affinity_set(thr_id_t thr, unsigned core)
+int thread_affinity_self_set(unsigned core)
 {
-	return -(SetThreadAffinityMask(thr, 1 << core) == 0);
+	DWORD_PTR proc_mask, sys_mask;
+	HANDLE self_process = GetCurrentProcess();
+	if(!GetProcessAffinityMask(self_process, &proc_mask, &sys_mask))
+		return THREAD_AFFINITY_ERROR_RUNTIME;
+
+	for(DWORD i = 0; i < sizeof(DWORD_PTR) * CHAR_BIT; ++i) {
+		DWORD_PTR target_mask = (DWORD_PTR)1U << i;
+		if(!(proc_mask & target_mask))
+			continue;
+
+		if(core == 0) {
+			HANDLE self_thread = GetCurrentThread();
+			DWORD_PTR res = SetThreadAffinityMask(self_thread, target_mask);
+			if(res)
+				return THREAD_AFFINITY_SUCCESS;
+
+			if(GetLastError() == ERROR_ACCESS_DENIED)
+				return THREAD_AFFINITY_ERROR_NOT_SUPPORTED;
+
+			return THREAD_AFFINITY_ERROR_RUNTIME;
+		}
+		--core;
+	}
+
+	return THREAD_AFFINITY_ERROR_RUNTIME;
 }
 
 int thread_wait(thr_id_t thr, thrd_ret_t *ret)
