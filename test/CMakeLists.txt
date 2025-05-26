@@ -12,6 +12,7 @@ FetchContent_MakeAvailable(rstest)
 # Visibility tests
 test_program(visibility_weak visibility/visibility_weak.c)
 test_program_link_libraries(visibility_weak rscore)
+target_compile_definitions(test_visibility_weak PRIVATE ROOTSIM_VERSION="${PROJECT_VERSION}")
 test_program(visibility_override visibility/visibility_override.c)
 test_program_link_libraries(visibility_override rscore)
 
