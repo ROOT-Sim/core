@@ -52,14 +52,14 @@ struct list {
  *
  * @param li a pointer to a list created using the new_list() macro.
  */
-#define list_head(li) ((__typeof__ (li))(((struct list *)(li))->head))
+#define list_head(li) ((__typeof__(li))(((struct list *)(li))->head))
 
 /**
  * This macro retrieves a pointer to the tail node of a list.
  *
  * @param li a pointer to a list created using the new_list() macro.
  */
-#define list_tail(li) ((__typeof__ (li))(((struct list *)(li))->tail))
+#define list_tail(li) ((__typeof__(li))(((struct list *)(li))->tail))
 
 /**
  * Given a pointer to a list node, this macro retrieves a pointer to the next node, if any.
@@ -126,7 +126,7 @@ struct list {
 		}else{\
         	__new_n->prev = NULL; /* Otherwise add at the beginning */\
         	__new_n->next = __l->head;\
-        	((__typeof(data))__l->head)->prev = __new_n;\
+        	((__typeof__(data))__l->head)->prev = __new_n;\
         	__l->head = __new_n;\
         }\
 		__l->size++;\
@@ -161,13 +161,13 @@ struct list {
 			/* Insert depending on the position */\
 		 	if(__n == __l->tail) { /* tail */\
 				__new_n->next = NULL;\
-				((__typeof(data))__l->tail)->next = __new_n;\
+				((__typeof__(data))__l->tail)->next = __new_n;\
 				__new_n->prev = __l->tail;\
 				__l->tail = __new_n;\
 			} else if(__n == NULL) { /* head */\
 				__new_n->prev = NULL;\
 				__new_n->next = __l->head;\
-				((__typeof(data))__l->head)->prev = __new_n;\
+				((__typeof__(data))__l->head)->prev = __new_n;\
 				__l->head = __new_n;\
 			} else { /* middle */\
 				__new_n->prev = __n;\
@@ -190,13 +190,13 @@ struct list {
 		if(__l->head == __n) {                                                                                 \
 			__l->head = __n->next;                                                                         \
 			if(__l->head != NULL) {                                                                        \
-				((__typeof(node))__l->head)->prev = NULL;                                              \
+				((__typeof__(node))__l->head)->prev = NULL;                                              \
 			}\
 		}\
 		if(__l->tail == __n) {\
 			__l->tail = __n->prev;\
 			if(__l->tail != NULL) {\
-				((__typeof(node))__l->tail)->next = NULL;\
+				((__typeof__(node))__l->tail)->next = NULL;\
 			}\
 		}\
 		if(__n->next != NULL) {\
