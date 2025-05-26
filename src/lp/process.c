@@ -23,11 +23,11 @@
 #include <serial/serial.h>
 
 /// The flag used in ScheduleNewEvent() to keep track of silent execution
-static __thread bool silent_processing = false;
+static _Thread_local bool silent_processing = false;
 #ifndef NDEBUG
 /// The currently processed message
 /** This is not necessary for normal operation, but it's useful in debug */
-static __thread struct lp_msg *current_msg;
+static _Thread_local struct lp_msg *current_msg;
 #endif
 
 #define mark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))

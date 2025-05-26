@@ -42,7 +42,7 @@ struct msg_buffer {
 /// The buffers vector
 static struct msg_buffer *queues;
 /// The private thread queue
-static __thread heap_declare(struct q_elem) mqp;
+static _Thread_local heap_declare(struct q_elem) mqp;
 
 /**
  * @brief Initializes the message queue at the node level

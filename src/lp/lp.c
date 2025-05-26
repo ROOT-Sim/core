@@ -17,11 +17,11 @@
 /// The lowest LP id between the ones hosted on this node
 uint64_t lid_node_first;
 /// The lowest LP id between the ones hosted on this thread
-__thread uint64_t lid_thread_first;
+_Thread_local uint64_t lid_thread_first;
 /// One plus the highest LP id between the ones hosted on this thread
-__thread uint64_t lid_thread_end;
+_Thread_local uint64_t lid_thread_end;
 /// A pointer to the currently processed LP context
-__thread struct lp_ctx *current_lp;
+_Thread_local struct lp_ctx *current_lp;
 /// A pointer to the LP contexts array
 /** Valid entries are contained between #lid_node_first and #lid_node_first + #n_lps_node - 1, limits included */
 struct lp_ctx *lps;

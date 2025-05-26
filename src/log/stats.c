@@ -81,7 +81,7 @@ static FILE *stats_node_tmp;
 /// An array of pointers to the temporary files used to save #stats_thread structs produced by threads during simulation
 static FILE **stats_tmps;
 /// The current values of thread statistics for this logical time period (from the previous GVT to the next one)
-static __thread struct stats_thread stats_cur;
+static _Thread_local struct stats_thread stats_cur;
 
 /**
  * @brief Take a lifetime event time value

@@ -29,7 +29,7 @@
 		o *(((f)-1.0) / (f)) + s *(1.0 / (f));                                                                 \
 	})
 
-static __thread struct {
+static _Thread_local struct {
 	double ckpt_avg_cost;
 	double inv_sil_avg_cost;
 } ackpt;

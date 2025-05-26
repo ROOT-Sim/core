@@ -11,9 +11,9 @@
 
 #include <mm/msg_allocator.h>
 
-__thread unsigned fossil_epoch_current;
+_Thread_local unsigned fossil_epoch_current;
 /// The value of the last GVT, kept here for easier fossil collection operations
-static __thread simtime_t fossil_gvt_current;
+static _Thread_local simtime_t fossil_gvt_current;
 
 /**
  * @brief Perform fossil collection operations at a given GVT

@@ -50,10 +50,10 @@ struct lp_ctx {
 #define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
 
 extern uint64_t lid_node_first;
-extern __thread uint64_t lid_thread_first;
-extern __thread uint64_t lid_thread_end;
+extern _Thread_local uint64_t lid_thread_first;
+extern _Thread_local uint64_t lid_thread_end;
 
-extern __thread struct lp_ctx *current_lp;
+extern _Thread_local struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
 
 #ifndef NDEBUG
