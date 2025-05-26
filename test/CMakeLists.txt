@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 
 # Retrieve and make available the testing framework
