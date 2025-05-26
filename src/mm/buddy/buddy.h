@@ -62,4 +62,4 @@ struct buddy_realloc_res {
 	};
 };
 extern struct buddy_realloc_res buddy_best_effort_realloc(const struct buddy_state *self, void *ptr, size_t req_size);
-extern void buddy_dirty_mark(const struct buddy_state *self, const void *ptr, size_t s);
+extern void buddy_dirty_mark(const struct buddy_state *self, const void *ptr, size_t size);

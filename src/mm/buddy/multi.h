@@ -26,9 +26,9 @@ struct mm_checkpoint {
 /// Binds a checkpoint together with a reference index
 struct mm_log {
 	/// The reference index, used to identify this checkpoint
-	array_count_t ref_i;
+	array_count_t ref_idx;
 	/// A pointer to the actual checkpoint
-	struct mm_checkpoint *c;
+	struct mm_checkpoint *ckpt;
 };
 
 /// The checkpointable memory context assigned to a single LP
@@ -40,4 +40,3 @@ struct mm_state {
 	/// The total count of allocated bytes
 	uint_fast32_t full_ckpt_size;
 };
-

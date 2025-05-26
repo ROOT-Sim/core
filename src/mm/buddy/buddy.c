@@ -10,14 +10,14 @@
 
 #include <core/core.h>
 
-#define is_power_of_2(i) (!((i) & ((i)-1)))
+#define is_power_of_2(index) (!((index) & ((index)-1)))
 
 void buddy_init(struct buddy_state *self)
 {
 	uint_fast8_t node_size = B_TOTAL_EXP;
-	for(uint_fast32_t i = 0; i < sizeof(self->longest) / sizeof(*self->longest); ++i) {
-		self->longest[i] = node_size;
-		node_size -= is_power_of_2(i + 2);
+	for(uint_fast32_t index = 0; index < sizeof(self->longest) / sizeof(*self->longest); ++index) {
+		self->longest[index] = node_size;
+		node_size -= is_power_of_2(index + 2);
 	}
 }
 
@@ -28,28 +28,28 @@ void *buddy_malloc(struct buddy_state *self, const uint_fast8_t req_blks_exp)
 
 	/* search recursively for the child */
 	uint_fast8_t node_size = B_TOTAL_EXP;
-	uint_fast32_t i = 0;
+	uint_fast32_t index = 0;
 	while(node_size > req_blks_exp) {
 		/* choose the child with smaller longest value which
 		 * is still large at least *size* */
-		i = buddy_left_child(i);
-		i += self->longest[i] < req_blks_exp;
+		index = buddy_left_child(index);
+		index += self->longest[index] < req_blks_exp;
 		--node_size;
 	}
 
 	/* update the *longest* value back */
-	self->longest[i] = 0;
+	self->longest[index] = 0;
 #ifdef ROOTSIM_INCREMENTAL
-	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
+	bitmap_set(self->dirty, index >> B_BLOCK_EXP);
 #endif
 
-	const uint_fast32_t offset = ((i + 1) << node_size) - (1 << B_TOTAL_EXP);
+	const uint_fast32_t offset = ((index + 1) << node_size) - (1 << B_TOTAL_EXP);
 
-	while(i) {
-		i = buddy_parent(i);
-		self->longest[i] = max(self->longest[buddy_left_child(i)], self->longest[buddy_right_child(i)]);
+	while(index) {
+		index = buddy_parent(index);
+		self->longest[index] = max(self->longest[buddy_left_child(index)], self->longest[buddy_right_child(index)]);
 #ifdef ROOTSIM_INCREMENTAL
-		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
+		bitmap_set(self->dirty, index >> B_BLOCK_EXP);
 #endif
 	}
 
@@ -59,35 +59,35 @@ void *buddy_malloc(struct buddy_state *self, const uint_fast8_t req_blks_exp)
 uint_fast32_t buddy_free(struct buddy_state *self, void *ptr)
 {
 	uint_fast8_t node_size = B_BLOCK_EXP;
-	uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
-	uint_fast32_t i = o + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
+	uint_fast32_t offset = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
+	uint_fast32_t index = offset + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
-	for(; self->longest[i]; i = buddy_parent(i))
+	for(; self->longest[index]; index = buddy_parent(index))
 		++node_size;
 
-	self->longest[i] = node_size;
+	self->longest[index] = node_size;
 	const uint_fast32_t ret = (uint_fast32_t)1U << node_size;
 #ifdef ROOTSIM_INCREMENTAL
-	bitmap_set(self->dirty, i >> B_BLOCK_EXP);
+	bitmap_set(self->dirty, index >> B_BLOCK_EXP);
 
-	uint_fast32_t b = (1 << (node_size - B_BLOCK_EXP)) - 1;
-	o += (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
+	uint_fast32_t bitmap_idx = (1 << (node_size - B_BLOCK_EXP)) - 1;
+	offset += (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 	// need to track freed blocks content because full checkpoints don't
 	do {
-		bitmap_set(self->dirty, o + b);
-	} while(b--);
+		bitmap_set(self->dirty, offset + bitmap_idx);
+	} while(bitmap_idx--);
 #endif
 
-	while(i) {
-		i = buddy_parent(i);
+	while(index) {
+		index = buddy_parent(index);
 
-		uint_fast8_t left_long = self->longest[buddy_left_child(i)];
-		uint_fast8_t right_long = self->longest[buddy_right_child(i)];
+		uint_fast8_t left_long = self->longest[buddy_left_child(index)];
+		uint_fast8_t right_long = self->longest[buddy_right_child(index)];
 
 		if(left_long == node_size && right_long == node_size) {
-			self->longest[i] = node_size + 1;
+			self->longest[index] = node_size + 1;
 		} else {
-			self->longest[i] = max(left_long, right_long);
+			self->longest[index] = max(left_long, right_long);
 		}
 #ifdef ROOTSIM_INCREMENTAL
 		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
@@ -100,10 +100,10 @@ uint_fast32_t buddy_free(struct buddy_state *self, void *ptr)
 struct buddy_realloc_res buddy_best_effort_realloc(const struct buddy_state *self, void *ptr, size_t req_size)
 {
 	uint_fast8_t node_size = B_BLOCK_EXP;
-	const uint_fast32_t o = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
-	uint_fast32_t i = o + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
+	const uint_fast32_t offset = ((uintptr_t)ptr - (uintptr_t)self->base_mem) >> B_BLOCK_EXP;
+	uint_fast32_t index = offset + (1 << (B_TOTAL_EXP - B_BLOCK_EXP)) - 1;
 
-	for(; self->longest[i]; i = buddy_parent(i))
+	for(; self->longest[index]; index = buddy_parent(index))
 		++node_size;
 
 	const uint_fast8_t req_blks_exp = buddy_allocation_block_compute(req_size);
@@ -125,16 +125,16 @@ struct buddy_realloc_res buddy_best_effort_realloc(const struct buddy_state *sel
 	return ret;
 }
 
-void buddy_dirty_mark(const struct buddy_state *self, const void *ptr, size_t s)
+void buddy_dirty_mark(const struct buddy_state *self, const void *ptr, size_t size)
 {
         const uintptr_t diff = ptr - (void *)self->base_mem;
-	const uint_fast32_t i = (diff >> B_BLOCK_EXP) + (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
+	const uint_fast32_t index = (diff >> B_BLOCK_EXP) + (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 
-	s += diff & ((1 << B_BLOCK_EXP) - 1);
-	--s;
-	s >>= B_BLOCK_EXP;
+	size += diff & ((1 << B_BLOCK_EXP) - 1);
+	--size;
+	size >>= B_BLOCK_EXP;
 
 	do {
-		bitmap_set(self->dirty, i + s);
-	} while(s--);
+		bitmap_set(self->dirty, index + size);
+	} while(size--);
 }
