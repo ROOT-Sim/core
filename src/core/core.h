@@ -11,9 +11,6 @@
 #pragma once
 
 #include <float.h>
-#include <limits.h>
-#include <stdbool.h>
-#include <stdint.h>
 
 #include <ROOT-Sim.h>
 

@@ -1,12 +1,12 @@
 /**
- * @file mm/buddy/ckpt.c
+ * @file mm/buddy/checkpoint.c
  *
- * @brief Checkpointing capabilities
+ * @brief Buddy system checkpointing capabilities
  *
  * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <mm/buddy/ckpt.h>
+#include <mm/buddy/checkpoint.h>
 
 #include <core/core.h>
 
@@ -150,7 +150,7 @@ void checkpoint_incremental_restore(struct buddy_state *self, const struct buddy
  * @param ret A pointer to the `buddy_checkpoint` structure where the checkpoint will be stored.
  * @return A pointer to the next available memory location after the checkpoint data.
  */
-struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *ret)
+struct buddy_checkpoint *buddy_checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *ret)
 {
 	ret->orig = self;
 #ifdef ROOTSIM_INCREMENTAL
@@ -183,7 +183,7 @@ struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, st
  * @return A pointer to the next available memory location after the checkpoint data,
  *         or `NULL` if the checkpoint does not match the buddy system.
  */
-const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
+const struct buddy_checkpoint *buddy_checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
 {
 	if(unlikely(ckp->orig != self))
 		return NULL;

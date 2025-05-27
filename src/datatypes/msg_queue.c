@@ -19,6 +19,7 @@
 #include <lp/lp.h>
 #include <mm/msg_allocator.h>
 
+#include <assert.h>
 #include <stdalign.h>
 #include <stdatomic.h>
 

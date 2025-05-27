@@ -1,7 +1,7 @@
 /**
- * @file mm/buddy/ckpt.h
+ * @file mm/buddy/checkpoint.h
  *
- * @brief Checkpointing capabilities
+ * @brief Buddy system checkpointing capabilities
  *
  * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -35,8 +35,8 @@ static_assert(
 	sizeof(((struct buddy_checkpoint *)0)->longest),
 	"longest and base_mem are not contiguous, this will break incremental checkpointing");
 
-extern struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *data);
-extern const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *data);
+extern struct buddy_checkpoint *buddy_checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *data);
+extern const struct buddy_checkpoint *buddy_checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *data);
 
 #ifdef ROOTSIM_INCREMENTAL
 extern struct buddy_checkpoint *checkpoint_incremental_take(const struct buddy_state *self, struct buddy_checkpoint *data);

@@ -18,7 +18,7 @@
 #include <log/stats.h>
 #include <lp/common.h>
 #include <lp/lp.h>
-#include <mm/auto_ckpt.h>
+#include <mm/checkpoint/checkpoint.h>
 #include <mm/msg_allocator.h>
 #include <serial/serial.h>
 

@@ -14,7 +14,7 @@
 #include <core/core.h>
 #include <lp/msg.h>
 #include <lp/process.h>
-#include <mm/auto_ckpt.h>
+#include <mm/checkpoint/checkpoint.h>
 #include <mm/model_allocator.h>
 
 /// A complete LP context

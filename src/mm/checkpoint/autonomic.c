@@ -1,5 +1,5 @@
 /**
- * @file mm/auto_ckpt.c
+ * @file mm/checkpoint/autonomic.c
  *
  * @brief Autonomic checkpoint interval selection module
  *
@@ -8,7 +8,7 @@
  * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <mm/auto_ckpt.h>
+#include <mm/checkpoint/checkpoint.h>
 
 #include <log/stats.h>
 #include <lp/process.h>
