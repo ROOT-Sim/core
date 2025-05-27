@@ -1,11 +1,11 @@
 /**
- * @file test/tests/mm/main.c
+ * @file test/mm/main.c
  *
  * @brief Test: Main program of the mm test
  *
  * Entry point for the test cases related to the memory allocator
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>

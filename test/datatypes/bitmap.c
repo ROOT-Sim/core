@@ -1,9 +1,9 @@
 /**
- * @file test/tests/datatypes/bitmap_test.c
+ * @file test/datatypes/bitmap.c
  *
  * @brief Test: bitmap datatype
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <datatypes/bitmap.h>

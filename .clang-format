@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: CC0-1.0
 BasedOnStyle: LLVM
 Language: Cpp

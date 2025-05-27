@@ -1,9 +1,9 @@
 /**
- * @file test/tests/integration/correctness/functions.c
+ * @file test/integration/correctness/functions.c
  *
  * @brief Helper functions of the model used to verify the runtime correctness
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include "application.h"

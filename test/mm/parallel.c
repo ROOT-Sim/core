@@ -1,11 +1,11 @@
 /**
- * @file test/tests/mm/stress.c
+ * @file test/mm/parallel.c
  *
  * @brief Test: stress test the model memory allocator
  *
  * Multiple stress tests of the model memory allocator. Based on t-test1 by Wolfram Glager
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>
