@@ -1,5 +1,5 @@
 /**
- * @file test/tests/core/load.c
+ * @file test/core/load.c
  *
  * @brief Test: initialization of the core library
  *

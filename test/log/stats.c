@@ -1,5 +1,5 @@
 /**
- * @file test/tests/log/stats.c
+ * @file test/log/stats.c
  *
  * @brief Test: statistics module test
  *

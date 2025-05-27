@@ -1,5 +1,5 @@
 /**
- * @file test/tests/visibility/visibility_override.c
+ * @file test/visibility/visibility_override.c
  *
  * @brief Test: accessing a weak symbol that is overridden
  *

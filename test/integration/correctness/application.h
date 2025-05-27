@@ -1,5 +1,5 @@
 /**
- * @file test/tests/integration/correctness/application.h
+ * @file test/integration/correctness/application.h
  *
  * @brief Header of the model used to verify the runtime correctness
  *
