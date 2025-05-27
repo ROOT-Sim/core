@@ -34,21 +34,16 @@ struct buddy_state {
 	/// The memory buffer served to the model
 	alignas(16) unsigned char base_mem[1U << B_TOTAL_EXP];
 	/// Keeps track of memory blocks which have been dirtied by a write
-	block_bitmap dirty[
-		bitmap_required_size(
-		// this tracks writes to the allocation tree
-			(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
-		// while this tracks writes to the actual memory buffer
-			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
-		)
-	];
+	block_bitmap dirty[bitmap_required_size(
+	    // this tracks writes to the allocation tree
+	    (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
+	    // while this tracks writes to the actual memory buffer
+	    (1 << (B_TOTAL_EXP - B_BLOCK_EXP)))];
 };
 
-static_assert(
-	offsetof(struct buddy_state, longest) ==
-	offsetof(struct buddy_state, base_mem) -
-	sizeof(((struct buddy_state *)0)->longest),
-	"longest and base_mem are not contiguous, this will break incremental checkpointing");
+static_assert(offsetof(struct buddy_state, longest) ==
+		  offsetof(struct buddy_state, base_mem) - sizeof(((struct buddy_state *)0)->longest),
+    "longest and base_mem are not contiguous, this will break incremental checkpointing");
 
 extern void buddy_init(struct buddy_state *self);
 extern void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp);

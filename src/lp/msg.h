@@ -110,10 +110,10 @@ enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
  */
 static inline bool msg_is_before_extended(const struct lp_msg *restrict a, const struct lp_msg *restrict b)
 {
-	if (a->m_type != b->m_type)
+	if(a->m_type != b->m_type)
 		return a->m_type > b->m_type;
 
-	if (a->pl_size != b->pl_size)
+	if(a->pl_size != b->pl_size)
 		return a->pl_size < b->pl_size;
 
 	return memcmp(a->pl, b->pl, a->pl_size) > 0;

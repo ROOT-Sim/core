@@ -87,7 +87,7 @@ enum rootsim_event { LP_INIT = 65534, LP_FINI };
  * @param event_size The size (in bytes) of the event content
  */
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
-                             unsigned event_size);
+    unsigned event_size);
 
 extern void SetState(void *new_state);
 
@@ -145,7 +145,8 @@ extern void rs_free(void *ptr);
  * of the memory block is preserved up to the minimum of the old and new sizes.
  * Upon a rollback, the memory is restored to its previous (consistent) state.
  *
- * @param ptr A pointer to the memory block to be reallocated. If `ptr` is `NULL`, the function behaves like `rs_malloc()`.
+ * @param ptr A pointer to the memory block to be reallocated. If `ptr` is `NULL`, the function behaves like
+ *            `rs_malloc()`.
  * @param req_size The new size of the memory block, in bytes.
  * @return A pointer to the reallocated memory block, or `NULL` if the reallocation fails.
  *
@@ -160,45 +161,43 @@ extern void *rs_realloc(void *ptr, size_t req_size);
  * These levels define the verbosity of log messages emitted during the simulation.
  */
 enum log_level {
-    LOG_TRACE, //!< The logging level reserved for very low priority messages.
-    LOG_DEBUG, //!< The logging level reserved for useful debug messages.
-    LOG_INFO, //!< The logging level reserved for useful runtime messages.
-    LOG_WARN, //!< The logging level reserved for unexpected, non-deal-breaking conditions.
-    LOG_ERROR, //!< The logging level reserved for unexpected, problematic conditions.
-    LOG_FATAL, //!< The logging level reserved for unexpected, fatal conditions.
-    LOG_SILENT //!< Emit no messages during the simulation.
+	LOG_TRACE, //!< The logging level reserved for very low priority messages.
+	LOG_DEBUG, //!< The logging level reserved for useful debug messages.
+	LOG_INFO,  //!< The logging level reserved for useful runtime messages.
+	LOG_WARN,  //!< The logging level reserved for unexpected, non-deal-breaking conditions.
+	LOG_ERROR, //!< The logging level reserved for unexpected, problematic conditions.
+	LOG_FATAL, //!< The logging level reserved for unexpected, fatal conditions.
+	LOG_SILENT //!< Emit no messages during the simulation.
 };
 
 /// A set of configurable values used by other modules
 struct simulation_configuration {
-    /// The number of LPs to be used in the simulation
-    lp_id_t lps;
-    /// The number of threads to be used in the simulation. If zero, it defaults to the amount of available cores
-    unsigned n_threads;
-    /// The target termination logical time. Setting this value to zero means that LVT-based termination is disabled
-    simtime_t termination_time;
-    /// The gvt period expressed in microseconds
-    unsigned gvt_period;
-    /// The logger verbosity level
-    enum log_level log_level;
-    /// File where to write logged information: if not NULL, output is redirected to this file
-    FILE *logfile;
-    /// Path to the statistics file. If NULL, no statistics are produced.
-    const char *stats_file;
-    /// The checkpointing interval
-    unsigned ckpt_interval;
-    /// If set, worker threads are bound to physical cores
-    bool core_binding;
-    /// If set, the simulation will run on the serial runtime
-    bool serial;
-    /// Function pointer to the dispatching function
-    ProcessEvent_t dispatcher;
-    /// Function pointer to the termination detection function
-    CanEnd_t committed;
+	/// The number of LPs to be used in the simulation
+	lp_id_t lps;
+	/// The number of threads to be used in the simulation. If zero, it defaults to the amount of available cores
+	unsigned n_threads;
+	/// The target termination logical time. Setting this value to zero means that LVT-based termination is disabled
+	simtime_t termination_time;
+	/// The gvt period expressed in microseconds
+	unsigned gvt_period;
+	/// The logger verbosity level
+	enum log_level log_level;
+	/// File where to write logged information: if not NULL, output is redirected to this file
+	FILE *logfile;
+	/// Path to the statistics file. If NULL, no statistics are produced.
+	const char *stats_file;
+	/// The checkpointing interval
+	unsigned ckpt_interval;
+	/// If set, worker threads are bound to physical cores
+	bool core_binding;
+	/// If set, the simulation will run on the serial runtime
+	bool serial;
+	/// Function pointer to the dispatching function
+	ProcessEvent_t dispatcher;
+	/// Function pointer to the termination detection function
+	CanEnd_t committed;
 };
 
 extern int RootsimInit(const struct simulation_configuration *conf);
-
 extern int RootsimRun(void);
-
 extern void RootsimStop(void);

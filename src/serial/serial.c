@@ -125,7 +125,7 @@ static int serial_simulation_run(void)
  * @param payload_size size of the payload
  */
 void ScheduleNewEvent_serial(const lp_id_t receiver, const simtime_t timestamp, const unsigned event_type,
-	const void *payload, const unsigned payload_size)
+    const void *payload, const unsigned payload_size)
 {
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 

@@ -1,5 +1,5 @@
 /**
-* @file mm/checkpoint/incremental.c
+ * @file mm/checkpoint/incremental.c
  *
  * @brief Incremental checkpointing routines
  *

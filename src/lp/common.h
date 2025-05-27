@@ -1,11 +1,11 @@
 /**
-* @file lp/common.h
-*
-* @brief Common LP functionalities
-*
-* SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
-* SPDX-License-Identifier: GPL-3.0-only
-*/
+ * @file lp/common.h
+ *
+ * @brief Common LP functionalities
+ *
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <arch/timer.h>

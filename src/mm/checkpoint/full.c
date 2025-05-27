@@ -1,5 +1,5 @@
 /**
-* @file mm/checkpoint/full.c
+ * @file mm/checkpoint/full.c
  *
  * @brief Full checkpointing routines
  *
@@ -11,6 +11,7 @@
 #include <datatypes/array.h>
 #include <mm/buddy/checkpoint.h>
 #include <mm/checkpoint/checkpoint.h>
+
 /**
  * @brief Takes a full checkpoint of the memory management state.
  *

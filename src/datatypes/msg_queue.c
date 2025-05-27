@@ -24,7 +24,7 @@
 #include <stdatomic.h>
 
 /// Determine an ordering between two elements in a queue
-#define q_elem_is_before(ma, mb)  ((ma).t < (mb).t)
+#define q_elem_is_before(ma, mb) ((ma).t < (mb).t)
 
 /// An element in the message queue
 struct q_elem {

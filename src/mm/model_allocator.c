@@ -176,7 +176,6 @@ void *rs_realloc(void *ptr, size_t req_size)
 }
 
 
-
 /**
  * @brief Collects fossil logs up to a target reference index.
  *

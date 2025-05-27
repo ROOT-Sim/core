@@ -11,7 +11,7 @@
 #include <core/core.h>
 
 /// Tells if the given index is a power of 2
-#define is_power_of_2(index) (!((index) & ((index)-1)))
+#define is_power_of_2(index) (!((index) & ((index) - 1)))
 
 /**
  * @brief Initializes the buddy system allocator.
@@ -69,7 +69,8 @@ void *buddy_malloc(struct buddy_state *self, const uint_fast8_t req_blks_exp)
 
 	while(index) {
 		index = buddy_parent(index);
-		self->longest[index] = max(self->longest[buddy_left_child(index)], self->longest[buddy_right_child(index)]);
+		self->longest[index] =
+		    max(self->longest[buddy_left_child(index)], self->longest[buddy_right_child(index)]);
 #ifdef ROOTSIM_INCREMENTAL
 		bitmap_set(self->dirty, index >> B_BLOCK_EXP);
 #endif
@@ -190,7 +191,7 @@ struct buddy_realloc_res buddy_best_effort_realloc(const struct buddy_state *sel
  */
 void buddy_dirty_mark(const struct buddy_state *self, const void *ptr, size_t size)
 {
-        const uintptr_t diff = (unsigned char *)ptr - (unsigned char *)self->base_mem;
+	const uintptr_t diff = (unsigned char *)ptr - (unsigned char *)self->base_mem;
 	const uint_fast32_t index = (diff >> B_BLOCK_EXP) + (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 
 	size += diff & ((1 << B_BLOCK_EXP) - 1);

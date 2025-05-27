@@ -179,16 +179,17 @@ struct buddy_checkpoint *buddy_checkpoint_full_take(const struct buddy_state *se
  * corresponds to the given buddy system before performing the restoration.
  *
  * @param self A pointer to the `buddy_state` structure representing the current buddy system.
- * @param ckp A pointer to the `buddy_checkpoint` structure containing the checkpoint data.
+ * @param ckpt A pointer to the `buddy_checkpoint` structure containing the checkpoint data.
  * @return A pointer to the next available memory location after the checkpoint data,
  *         or `NULL` if the checkpoint does not match the buddy system.
  */
-const struct buddy_checkpoint *buddy_checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
+const struct buddy_checkpoint *buddy_checkpoint_full_restore(struct buddy_state *self,
+    const struct buddy_checkpoint *ckpt)
 {
-	if(unlikely(ckp->orig != self))
+	if(unlikely(ckpt->orig != self))
 		return NULL;
 
-	memcpy(self->longest, ckp->longest, sizeof(self->longest));
+	memcpy(self->longest, ckpt->longest, sizeof(self->longest));
 
 #define buddy_block_copy_from_ckp(offset, len)                                                                         \
 	__extension__({                                                                                                \
@@ -196,7 +197,7 @@ const struct buddy_checkpoint *buddy_checkpoint_full_restore(struct buddy_state 
 		ptr += (len);                                                                                          \
 	})
 
-	const unsigned char *ptr = ckp->base_mem;
+	const unsigned char *ptr = ckpt->base_mem;
 	buddy_tree_visit(self->longest, buddy_block_copy_from_ckp);
 
 #undef buddy_block_copy_from_ckp
