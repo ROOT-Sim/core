@@ -11,6 +11,18 @@
 #include <core/core.h>
 
 
+/**
+ * @brief Traverses the buddy tree and performs an action on each unallocated block.
+ *
+ * This macro iterates over the buddy tree represented by the `longest` array and
+ * invokes the provided `on_visit` action for each unallocated memory block.
+ *
+ * @param longest The array representing the buddy tree.
+ * @param on_visit A callback action to perform on each unallocated block. The callback
+ *                 receives two parameters:
+ *                 - `offset`: The offset of the block in the memory buffer.
+ *                 - `length`: The size of the block.
+ */
 #define buddy_tree_visit(longest, on_visit)                                                                            \
 	__extension__({                                                                                                \
 		bool __vis = false;                                                                                    \
@@ -128,6 +140,16 @@ void checkpoint_incremental_restore(struct buddy_state *self, const struct buddy
 
 #endif
 
+/**
+ * @brief Takes a full checkpoint.
+ *
+ * This function creates a full checkpoint of the given buddy system state by copying
+ * the current state of the allocation tree and memory buffer into the provided checkpoint structure.
+ *
+ * @param self A pointer to the `buddy_state` structure representing the current buddy system state.
+ * @param ret A pointer to the `buddy_checkpoint` structure where the checkpoint will be stored.
+ * @return A pointer to the next available memory location after the checkpoint data.
+ */
 struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *ret)
 {
 	ret->orig = self;
@@ -149,6 +171,18 @@ struct buddy_checkpoint *checkpoint_full_take(const struct buddy_state *self, st
 	return (struct buddy_checkpoint *)ptr;
 }
 
+/**
+ * @brief Restores the full state.
+ *
+ * This function restores the state of the buddy system, including the allocation tree
+ * and memory buffer, from the provided checkpoint. It ensures that the checkpoint
+ * corresponds to the given buddy system before performing the restoration.
+ *
+ * @param self A pointer to the `buddy_state` structure representing the current buddy system.
+ * @param ckp A pointer to the `buddy_checkpoint` structure containing the checkpoint data.
+ * @return A pointer to the next available memory location after the checkpoint data,
+ *         or `NULL` if the checkpoint does not match the buddy system.
+ */
 const struct buddy_checkpoint *checkpoint_full_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
 {
 	if(unlikely(ckp->orig != self))

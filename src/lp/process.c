@@ -30,10 +30,34 @@ static _Thread_local bool silent_processing = false;
 static _Thread_local struct lp_msg *current_msg;
 #endif
 
+/**
+ * @brief Marks a message as remote.
+ * @param msg_p A pointer to the message to mark.
+ * @return A pointer to the marked message.
+ */
 #define mark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 2U))
+
+/**
+ * @brief Marks a message as sent.
+ * @param msg_p A pointer to the message to mark.
+ * @return A pointer to the marked message.
+ */
 #define mark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) | 1U))
+
+/**
+ * @brief Unmarks a message as remote.
+ * @param msg_p A pointer to the message to unmark.
+ * @return A pointer to the unmarked message.
+ */
 #define unmark_msg_remote(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) - 2U))
+
+/**
+ * @brief Unmarks a message as sent.
+ * @param msg_p A pointer to the message to unmark.
+ * @return A pointer to the unmarked message.
+ */
 #define unmark_msg_sent(msg_p) ((struct lp_msg *)(((uintptr_t)(msg_p)) - 1U))
+
 
 void ScheduleNewEvent(const lp_id_t receiver, const simtime_t timestamp, const unsigned event_type, const void *payload,
     unsigned payload_size)
@@ -250,7 +274,7 @@ static inline array_count_t match_anti_msg(const struct process_ctx *proc_p, con
 
 /**
  * @brief Handle the reception of a remote anti-message
- * @param proc_p the message processing data for the LP that has to handle the anti-message
+ * @param lp the message processing data for the LP that has to handle the anti-message
  * @param a_msg the remote anti-message
  */
 static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_msg)
@@ -289,7 +313,7 @@ static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_ms
 /**
  * @brief Check if a remote message has already been invalidated by an early remote anti-message
  * @param proc_p the message processing data of the current LP
- * @param a_msg the remote message to check
+ * @param msg the remote message to check
  * @return true if the message has been matched with an early remote anti-message, false otherwise
  */
 static inline bool check_early_anti_messages(struct process_ctx *proc_p, struct lp_msg *msg)

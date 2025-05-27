@@ -44,9 +44,6 @@ static struct msg_buffer *queues;
 /// The private thread queue
 static _Thread_local heap_declare(struct q_elem) mqp;
 
-/**
- * @brief Initializes the message queue at the node level
- */
 void msg_queue_global_init(void)
 {
 	queues = mm_aligned_alloc(CACHE_LINE_SIZE, global_config.n_threads * sizeof(*queues));

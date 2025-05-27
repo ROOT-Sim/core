@@ -132,6 +132,14 @@ void gvt_on_msg_extraction(const simtime_t msg_t)
 		gvt_accumulator = msg_t;
 }
 
+/**
+ * @brief Reduces the node-local GVT values across all threads.
+ *
+ * This function iterates through the `reducing_p` array, which contains the
+ * GVT values accumulated by each thread, and determines the minimum value.
+ *
+ * @return The minimum GVT value among all threads as a `simtime_t`.
+ */
 static inline simtime_t gvt_node_reduce(void)
 {
 	unsigned i = global_config.n_threads - 1;
@@ -142,6 +150,21 @@ static inline simtime_t gvt_node_reduce(void)
 	return candidate;
 }
 
+/**
+ * @brief Executes a single step of the thread-local GVT phase.
+ *
+ * This function manages the progression of the thread-local GVT algorithm through its phases.
+ * Each phase performs specific synchronization and reduction tasks, ensuring that the GVT
+ * computation progresses correctly across all threads.
+ *
+ * @return `true` if the thread-local GVT computation has completed, `false` otherwise.
+ *
+ * @details
+ * - Phase A: Waits for all threads to complete their local reduction and transitions to Phase B.
+ * - Phase B: Ensures all threads have completed Phase A and transitions to Phase C.
+ * - Phase C: Updates the thread-local GVT accumulator and transitions to Phase D.
+ * - Phase D: Waits for all threads to complete Phase C and finalizes the thread-local computation.
+ */
 static bool gvt_thread_phase_run(void)
 {
 	switch(thread_phase) {
@@ -176,6 +199,29 @@ static bool gvt_thread_phase_run(void)
 	return false;
 }
 
+/**
+ * @brief Executes a single step of the node-local GVT phase.
+ *
+ * This function manages the progression of the node-local GVT algorithm through its phases.
+ * Each phase performs specific synchronization and reduction tasks, ensuring that the GVT
+ * computation progresses correctly across all threads and nodes.
+ *
+ * @return `true` if the node-local GVT computation has completed, `false` otherwise.
+ *
+ * @details
+ * - `node_phase_redux_first` and `node_phase_redux_second`: Perform thread-local GVT reductions
+ *   and transition to the next phase.
+ * - `node_sent_reduce`: Aggregates the count of remote messages sent and transitions to the
+ *   reduction phase.
+ * - `node_sent_reduce_wait`: Waits for the completion of the remote message count reduction.
+ * - `node_sent_wait`: Waits for all remote messages to be processed and transitions to the
+ *   second reduction phase.
+ * - `node_min_reduce`: Initiates the reduction of the minimum GVT value across threads.
+ * - `node_min_reduce_wait`: Waits for the completion of the minimum GVT reduction.
+ * - `node_min_wait`: Ensures all threads have completed the reduction and transitions to the
+ *   final phase.
+ * - `node_done`: Finalizes the node-local GVT computation and signals completion.
+ */
 static bool gvt_node_phase_run(void)
 {
 	static _Thread_local enum node_phase node_phase = node_phase_redux_first;

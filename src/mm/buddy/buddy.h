@@ -54,10 +54,20 @@ extern void buddy_init(struct buddy_state *self);
 extern void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp);
 extern uint_fast32_t buddy_free(struct buddy_state *self, void *ptr);
 
+/**
+ * @brief Represents the result of a best-effort reallocation in the buddy system.
+ *
+ * This structure is used to indicate whether a reallocation request was handled
+ * and to provide additional information about the result of the operation.
+ */
 struct buddy_realloc_res {
+	/// Indicates whether the reallocation request was successfully handled.
 	bool handled;
+	/// Union containing details about the reallocation result.
 	union {
+		/// The variation in memory size if the reallocation was handled.
 		int_fast32_t variation;
+		/// The original memory size if the reallocation was not handled.
 		uint_fast32_t original;
 	};
 };

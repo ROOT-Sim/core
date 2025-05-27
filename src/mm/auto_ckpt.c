@@ -29,9 +29,15 @@
 		o *(((f)-1.0) / (f)) + s *(1.0 / (f));                                                                 \
 	})
 
+/**
+ * @brief Thread-local context for the auto checkpoint module
+ *
+ * This structure holds thread-local metrics used for computing
+ * the optimal checkpoint interval.
+ */
 static _Thread_local struct {
-	double ckpt_avg_cost;
-	double inv_sil_avg_cost;
+	double ckpt_avg_cost; /**< Exponential moving average of checkpoint cost per byte */
+	double inv_sil_avg_cost; /**< Inverse of the exponential moving average of silent message cost */
 } ackpt;
 
 /**

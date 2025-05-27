@@ -17,6 +17,7 @@
 #include <errno.h>
 
 #ifdef ROOTSIM_INCREMENTAL
+/// Tells whether a checkpoint is incremental or not.
 #define is_log_incremental(l) ((uintptr_t)(l).c & 0x1)
 #else
 #define is_log_incremental(l) false

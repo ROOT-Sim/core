@@ -42,6 +42,7 @@ void termination_lp_init(struct lp_ctx *lp)
 
 /**
  * @brief Compute termination operations after a new message has been processed
+ * @param lp the LP that has just processed a message
  * @param msg_time the timestamp of the freshly processed message
  */
 void termination_on_msg_process(struct lp_ctx *lp, simtime_t msg_time)
@@ -97,7 +98,8 @@ void RootsimStop(void)
 
 /**
  * @brief Compute termination operations after a LP has been rollbacked
- * @param msg_time the timestamp of the straggler or anti message which caused the rollback
+ * @param lp the LP that has been rollbacked
+ * @param msg_time the timestamp of the straggler or anti message that caused the rollback
  */
 void termination_on_lp_rollback(struct lp_ctx *lp, const simtime_t msg_time)
 {

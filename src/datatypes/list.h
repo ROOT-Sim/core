@@ -44,7 +44,15 @@ struct list {
 		__lmptr;\
 	})
 
-// Get the size of the current list.
+/**
+ * @brief Retrieves the size of the list.
+ *
+ * This macro evaluates to the size of the list, which is stored in the `size` member
+ * of the `struct list`.
+ *
+ * @param list A pointer to a list created using the `new_list()` macro.
+ * @return The size of the list as a `size_t`.
+ */
 #define list_sizeof(list) ((struct list *)list)->size
 
 /**
@@ -90,6 +98,16 @@ struct list {
  */
 #define list_empty(list) (((struct list *)list)->size == 0)
 
+
+/**
+ * @brief Inserts a new node at the tail of the list.
+ *
+ * This macro appends a new node to the end of the list. If the list is empty,
+ * the new node becomes both the head and the tail. The list size is incremented accordingly.
+ *
+ * @param li A pointer to the list created using the `new_list()` macro.
+ * @param data A pointer to the node to be inserted. The node must have `next` and `prev` members.
+ */
 #define list_insert_tail(li, data) \
 	do {	\
 		__typeof__(data) __new_n = (data); /* in-block scope variable */\
@@ -112,6 +130,16 @@ struct list {
 		__l->size++;\
 	} while(0)
 
+
+/**
+ * @brief Inserts a new node at the head of the list.
+ *
+ * This macro adds a new node to the beginning of the list. If the list is empty,
+ * the new node becomes both the head and the tail. The list size is incremented accordingly.
+ *
+ * @param li A pointer to the list created using the `new_list()` macro.
+ * @param data A pointer to the node to be inserted. The node must have `next` and `prev` members.
+ */
 #define list_insert_head(li, data) \
 	do {	\
 		__typeof__(data) __new_n = (data); /* in-block scope variable */\
@@ -132,7 +160,27 @@ struct list {
 		__l->size++;\
 	} while(0)
 
-/// Insert a new node in the list
+
+/**
+ * @brief Inserts a new node into the list in a sorted order based on a key.
+ *
+ * This macro inserts a new node into the list while maintaining the order of the list
+ * based on the key value. The key is extracted from the node using the specified key name.
+ * The list is traversed from the tail to find the appropriate position for the new node.
+ *
+ * @param li A pointer to the list created using the `new_list()` macro.
+ * @param key_name The name of the key field in the node structure.
+ * @param data A pointer to the node to be inserted. The node must have `next` and `prev` members.
+ *
+ * @note The list must be sorted in increasing order of the key values.
+ * @note The key field in the node must be of type `double`.
+ *
+ * @pre The list must be initialized using the `new_list()` macro.
+ * @pre The node to be inserted must not already be part of another list.
+ *
+ * @post The list size is incremented by 1.
+ * @post The new node is inserted at the correct position based on the key value.
+ */
 #define list_insert(li, key_name, data)\
 	do {\
 		__typeof__(data) __n; /* in-block scope variable */\
@@ -180,6 +228,23 @@ struct list {
 		assert(__l->size == (__size_before + 1));\
 	} while(0)
 
+
+/**
+ * @brief Detaches a node from the list by its content.
+ *
+ * This macro removes a specified node from the list, updating the list's head, tail, and size
+ * as necessary. The node's `next` and `prev` pointers are set to invalid values to indicate
+ * that it is no longer part of the list.
+ *
+ * @param li A pointer to the list created using the `new_list()` macro.
+ * @param node A pointer to the node to be detached. The node must have `next` and `prev` members.
+ *
+ * @pre The list must be initialized using the `new_list()` macro.
+ * @pre The node to be detached must be part of the list.
+ *
+ * @post The node is removed from the list, and the list size is decremented by 1.
+ * @post The `next` and `prev` pointers of the detached node are set to invalid values.
+ */
 #define list_detach_by_content(li, node)                                                                               \
 	do {                                                                                                           \
 		__typeof__(node) __n = (node); /* in-block scope variable */                                           \
@@ -190,7 +255,7 @@ struct list {
 		if(__l->head == __n) {                                                                                 \
 			__l->head = __n->next;                                                                         \
 			if(__l->head != NULL) {                                                                        \
-				((__typeof__(node))__l->head)->prev = NULL;                                              \
+				((__typeof__(node))__l->head)->prev = NULL;                                            \
 			}\
 		}\
 		if(__l->tail == __n) {\
@@ -210,6 +275,22 @@ struct list {
 		__l->size--;\
 	} while(0)
 
+
+/**
+ * @brief Removes the head node from the list.
+ *
+ * This macro removes the first node (head) from the list, updating the list's head pointer,
+ * size, and the `next` and `prev` pointers of the removed node. The removed node's pointers
+ * are set to invalid values to indicate that it is no longer part of the list.
+ *
+ * @param list A pointer to the list created using the `new_list()` macro.
+ *
+ * @pre The list must be initialized using the `new_list()` macro.
+ * @pre The list must not be NULL.
+ *
+ * @post The head node is removed from the list, and the list size is decremented by 1.
+ * @post The `next` and `prev` pointers of the removed node are set to invalid values.
+ */
 #define list_pop(list)\
 	do {\
 		struct list *__l;\
@@ -234,34 +315,65 @@ struct list {
 		}\
 	} while(0)
 
-/// Truncate a list up to a certain point, starting from the head.
-#define list_trunc(list, key_name, key_value, release_fn) \
-	({\
-	struct list *__l = (struct list *)(list);\
-	__typeof__(list) __n;\
-	__typeof__(list) __n_adjacent;\
-	unsigned int __deleted = 0;\
-	size_t __key_position = my_offsetof((list), key_name);\
-	assert(__l);\
-	size_t __size_before = __l->size;\
-	/* Attempting to truncate an empty list? */\
-	if(__l->size > 0) {\
-		__n = __l->head;\
-		while(__n != NULL && get_key(__n) < (key_value)) {\
-			__deleted++;\
-                	__n_adjacent = __n->next;\
-	                __n->next = (void *)0xBAADF00D;\
-        	        __n->prev = (void *)0xBAADF00D;\
-			release_fn(__n);\
-			__n = __n_adjacent;\
-		}\
-		__l->head = __n;\
-		if(__l->head != NULL)\
-		((__typeof__(list))__l->head)->prev = NULL;\
-	}\
-	__l->size -= __deleted;\
-	assert(__l->size == (__size_before - __deleted));\
-	__deleted;\
-	})
 
+/**
+ * @brief Truncates a list up to a certain point, starting from the head.
+ *
+ * This macro removes nodes from the head of the list up to the first node
+ * whose key is greater than or equal to the specified key value. The removed
+ * nodes are released using the provided release function.
+ *
+ * @param list A pointer to the list created using the `new_list()` macro.
+ * @param key_name The name of the key field in the node structure.
+ * @param key_value The key value up to which nodes should be removed.
+ * @param release_fn A function to release the memory or resources of the removed nodes.
+ *
+ * @return The number of nodes removed from the list.
+ *
+ * @pre The list must be initialized using the `new_list()` macro.
+ * @pre The nodes in the list must have a key field of type `double`.
+ * @pre The release function must be callable for each removed node.
+ *
+ * @post The list size is decremented by the number of removed nodes.
+ * @post The `next` and `prev` pointers of the removed nodes are set to invalid values.
+ */
+#define list_trunc(list, key_name, key_value, release_fn) \
+		({\
+		struct list *__l = (struct list *)(list);\
+		__typeof__(list) __n;\
+		__typeof__(list) __n_adjacent;\
+		unsigned int __deleted = 0;\
+		size_t __key_position = my_offsetof((list), key_name);\
+		assert(__l);\
+		size_t __size_before = __l->size;\
+		/* Attempting to truncate an empty list? */\
+		if(__l->size > 0) {\
+			__n = __l->head;\
+			while(__n != NULL && get_key(__n) < (key_value)) {\
+				__deleted++;\
+	                	__n_adjacent = __n->next;\
+		                __n->next = (void *)0xBAADF00D;\
+	        	        __n->prev = (void *)0xBAADF00D;\
+				release_fn(__n);\
+				__n = __n_adjacent;\
+			}\
+			__l->head = __n;\
+			if(__l->head != NULL)\
+			((__typeof__(list))__l->head)->prev = NULL;\
+		}\
+		__l->size -= __deleted;\
+		assert(__l->size == (__size_before - __deleted));\
+		__deleted;\
+		})
+
+
+/**
+ * @brief Retrieves the size of the list.
+ *
+ * This macro evaluates to the size of the list, which is stored in the `size` member
+ * of the `struct list`.
+ *
+ * @param li A pointer to a list created using the `new_list()` macro.
+ * @return The size of the list as a `size_t`.
+ */
 #define list_size(li) ((struct list *)(li))->size

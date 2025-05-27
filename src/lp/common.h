@@ -14,6 +14,15 @@
 #include <log/log.h>
 #include <log/stats.h>
 
+/**
+ * @brief Processes a message for a given LP (Logical Process).
+ *
+ * This function handles the processing of a message by invoking the dispatcher
+ * and recording relevant statistics about the processing time and count.
+ *
+ * @param lp A pointer to the LP associated with the message.
+ * @param msg A pointer to the message to be processed.
+ */
 static inline void common_msg_process(const struct lp_ctx *lp, const struct lp_msg *msg)
 {
 	timer_uint t = timer_hr_new();

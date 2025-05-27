@@ -87,6 +87,14 @@ struct lp_msg {
 	unsigned char extra_pl[];
 };
 
+/**
+ * @brief Bits to implement a finite-state machine to handle incoming events/antievents.
+ *
+ * For a comprehensive description of the usage of the finite state machine, refer to:
+ * A. Piccione and A. Pellegrini
+ * “Efficient Non-Blocking Event Management for Speculative Parallel Discrete Event Simulation”
+ * in Proceedings of the 2024 ACM SIGSIM Conference on Principles of Advanced Discrete Simulation, 2024.
+ */
 enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
 
 /**
