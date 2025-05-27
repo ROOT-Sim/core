@@ -3,7 +3,7 @@
  *
  * @brief Test: accessing a weak symbol that is not overridden
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <core/core.h>
@@ -12,5 +12,5 @@
 
 int main(void)
 {
-	return strcmp(core_version, "3.0.0");
+	return strcmp(core_version, ROOTSIM_VERSION);
 }
