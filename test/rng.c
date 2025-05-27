@@ -16,6 +16,16 @@
 
 #include <test.h>
 
+/**
+ * @brief Counts the leading zeros in an unsigned integer.
+ *
+ * This macro determines the number of leading zeros in the binary representation
+ * of an unsigned integer. It supports `unsigned`, `unsigned long`, and
+ * `unsigned long long` types.
+ *
+ * @param x The unsigned integer whose leading zeros are to be counted. Must not be 0.
+ * @return The number of leading zeros in the binary representation of @p x.
+ */
 #define rng_clz(x)                                                                                                     \
 	__extension__({                                                                                                \
 		assert((x) != 0);                                                                                      \

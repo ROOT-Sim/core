@@ -15,22 +15,58 @@
 
 #include <unistd.h>
 
+/**
+ * @brief Retrieves the number of available CPU cores.
+ *
+ * This function uses the `sysconf` system call to determine the number of online processors.
+ * If the result is less than 1, it defaults to 1.
+ *
+ * @return The number of available CPU cores.
+ */
 unsigned test_thread_cores_count(void)
 {
 	long ret = sysconf(_SC_NPROCESSORS_ONLN);
 	return ret < 1 ? 1 : (unsigned)ret;
 }
 
+
+/**
+ * @brief Starts a new thread.
+ *
+ * This function creates a new thread using the `pthread_create` function.
+ *
+ * @param thr_p A pointer to the thread identifier to be initialized.
+ * @param t_fnc The function to be executed by the new thread.
+ * @param t_fnc_arg The argument to be passed to the thread function.
+ * @return 0 on success, or -1 on failure.
+ */
 int test_thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
 {
 	return -(pthread_create(thr_p, NULL, t_fnc, t_fnc_arg) != 0);
 }
 
+/**
+ * @brief Waits for a thread to finish execution.
+ *
+ * This function blocks until the specified thread terminates.
+ *
+ * @param thr The thread identifier of the thread to wait for.
+ * @param ret A pointer to store the return value of the thread function.
+ * @return 0 on success, or -1 on failure.
+ */
 int test_thread_wait(thr_id_t thr, thrd_ret_t *ret)
 {
 	return -(pthread_join(thr, ret) != 0);
 }
 
+
+/**
+ * @brief Suspends the execution of the current thread for a specified duration.
+ *
+ * This function uses `nanosleep` to pause the current thread for the given number of milliseconds.
+ *
+ * @param milliseconds The duration to sleep, in milliseconds.
+ */
 void test_thread_sleep(unsigned milliseconds)
 {
 	struct timespec ts;
