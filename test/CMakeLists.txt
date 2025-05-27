@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 
 include(test-lib.cmake)
@@ -6,6 +6,7 @@ include(test-lib.cmake)
 # Visibility tests
 test_program(visibility_weak visibility/visibility_weak.c)
 test_program_link_libraries(visibility_weak rscore)
+target_compile_definitions(test_visibility_weak PRIVATE ROOTSIM_VERSION="${PROJECT_VERSION}")
 test_program(visibility_override visibility/visibility_override.c)
 test_program_link_libraries(visibility_override rscore)
 

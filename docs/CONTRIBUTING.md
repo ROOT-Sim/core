@@ -221,24 +221,16 @@ release branch a name reflecting the new version number:
 $ git checkout -b release-1.2.0 develop
 Switched to a new branch "release-1.2.0"
 
-$ ./scripts/bump-version.py
-Files modified successfully, version bumped to 1.2.0
+ [ Edit CMakeLists.txt to bump the version number ]
 
 $ git commit -s -a -m "Bumped version number to 1.2.0"
 [release-1.2.0 74d9424] Bumped version number to 1.2.0
 1 files changed, 1 insertions(+), 1 deletions(-)
 ```
 
-After creating a new branch and switching to it, we bump the version number. Here, `scripts/bump-version.py` is a
-commodity shell script, included in the repository, that changes the relevant information in the source tree to reflect
-the new version. This shell script reads the name of the current branch and automatically increases the version number
-depending on the kind of branch (hence, the importance of branch names). The only exception is when we want to update
-the major number, which is a decision which cannot be taken automatically (see versioning below). To bump the major
-version number, you can run the following command:
-
-```sh
-$ ./scripts/bump-version.py major
-```
+After creating a new branch and switching to it, we bump the version number. This can be done by changing the
+`set(PROJECT_VERSION x.x.x)` line in the `CMakeLists.txt` file, using semantic versioning. See the section
+[Versioning](#versioning) below for more information on how to choose the version number.
 
 This newly-created branch may exist there for a while, until the release may be rolled out definitely. During that time,
 bug fixes may be applied in this branch (rather than on the `develop` branch). Adding large new features here is
@@ -352,16 +344,14 @@ a hotfix branch and start fixing the problem:
 $ git checkout -b hotfix-1.2.1 master
 Switched to a new branch "hotfix-1.2.1"
 
-$ ./scripts/bump-version.py
-Files modified successfully, version bumped to 1.2.1.
+ [ Edit CMakeLists.txt to bump the version number ]
 
 $ git commit -s -a -m "Bumped version number to 1.2.1"
 [hotfix-1.2.1 41e61bb] Bumped version number to 1.2.1
 1 files changed, 1 insertions(+), 1 deletions(-)
 ```
 
-Don't forget to bump the version number after branching off! Again, the `scripts/bump-version.py` script will
-automatically determine the new version number starting from the branch name.
+Don't forget to bump the version number after branching off!
 
 Then, fix the bug and commit the fix in one or more separate commits.
 
@@ -512,7 +502,7 @@ ROOT-Sim follows a small variation of [semantic versioning](http://semver.org/).
 structured in this way:
 
 ```text
-AJOR.MINOR.HOTFIX
+MAJOR.MINOR.HOTFIX
 ```
 
 The `HOTFIX` part is incremented whenever a hotfix branch is merged into `master`. In this way, users know that the
