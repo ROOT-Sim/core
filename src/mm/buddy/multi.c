@@ -20,9 +20,21 @@
 /// Tells whether a checkpoint is incremental or not.
 #define is_log_incremental(l) ((uintptr_t)(l).c & 0x1)
 #else
+/// Tells whether a checkpoint is incremental or not.
 #define is_log_incremental(l) false
 #endif
 
+/**
+ * @brief Initializes the memory management state for a logical process.
+ *
+ * This function sets up the memory management state for a logical process by
+ * initializing the arrays used to manage buddy systems and logs. It also
+ * calculates the initial size of a full checkpoint based on the structure
+ * layout.
+ *
+ * @param self A pointer to the `mm_state` structure representing the memory
+ *             management state of the logical process.
+ */
 void model_allocator_lp_init(struct mm_state *self)
 {
 	array_init(self->buddies);
@@ -30,6 +42,17 @@ void model_allocator_lp_init(struct mm_state *self)
 	self->full_ckpt_size = offsetof(struct mm_checkpoint, chkps) + sizeof(struct buddy_state *);
 }
 
+
+/**
+ * @brief Finalizes the memory management state for a logical process.
+ *
+ * This function releases all resources associated with the memory management
+ * state of a logical process. It frees all memory allocated for logs and buddy
+ * systems and ensures proper cleanup of the associated arrays.
+ *
+ * @param self A pointer to the `mm_state` structure representing the memory
+ *             management state of the logical process.
+ */
 void model_allocator_lp_fini(const struct mm_state *self)
 {
 	array_count_t index = array_count(self->logs);
@@ -44,6 +67,7 @@ void model_allocator_lp_fini(const struct mm_state *self)
 
 	array_fini(self->buddies);
 }
+
 
 void *rs_malloc(size_t req_size)
 {
@@ -90,6 +114,18 @@ void *rs_calloc(const size_t nmemb, const size_t size)
 	return ret;
 }
 
+/**
+ * @brief Finds the buddy system managing a given memory address.
+ *
+ * This function performs a binary search to locate the `buddy_state` structure
+ * that manages the memory block containing the specified address.
+ *
+ * @param self A pointer to the `mm_state` structure representing the memory
+ *             management state of the logical process.
+ * @param ptr A pointer to the memory address to locate within the buddy system.
+ * @return A pointer to the `buddy_state` structure managing the memory block
+ *         containing the specified address.
+ */
 static inline struct buddy_state *buddy_find_by_address(const struct mm_state *self, const void *ptr)
 {
 	array_count_t low = 0, high = array_count(self->buddies) - 1;
@@ -105,6 +141,7 @@ static inline struct buddy_state *buddy_find_by_address(const struct mm_state *s
 	}
 }
 
+
 void rs_free(void *ptr)
 {
 	if(unlikely(!ptr))
@@ -114,6 +151,7 @@ void rs_free(void *ptr)
 	struct buddy_state *buddy = buddy_find_by_address(self, ptr);
 	self->full_ckpt_size -= buddy_free(buddy, ptr);
 }
+
 
 void *rs_realloc(void *ptr, size_t req_size)
 {
@@ -143,6 +181,20 @@ void *rs_realloc(void *ptr, size_t req_size)
 	return new_buffer;
 }
 
+
+/**
+ * @brief Marks a memory region as dirty for incremental checkpointing.
+ *
+ * This function is intended to be an entry point for the model's code, injected at compile time,
+ * to mark a memory region as dirty whenever a write operation is performed. It updates the
+ * corresponding buddy system to track the modified memory region.
+ *
+ * @note This function is currently unused because the incremental checkpointing subsystem
+ *       is disabled.
+ *
+ * @param ptr A pointer to the start of the memory region being written to.
+ * @param size The size of the memory region being written to, in bytes.
+ */
 void __write_mem(const void *ptr, const size_t size)
 {
 	struct mm_state *self = &current_lp->mm_state;
@@ -157,7 +209,16 @@ void __write_mem(const void *ptr, const size_t size)
 	buddy_dirty_mark(buddy, ptr, size);
 }
 
-// todo: incremental
+/**
+ * @brief Takes a full checkpoint of the memory management state.
+ *
+ * This function creates a full checkpoint of the memory management state for a logical process.
+ * It allocates memory for the checkpoint, records its size, and stores it in the logs. Each buddy
+ * system's state is saved into the checkpoint structure.
+ *
+ * @param self A pointer to the `mm_state` structure representing the memory management state.
+ * @param ref_idx The reference index associated with the checkpoint.
+ */
 void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_idx)
 {
 	struct mm_checkpoint *ckpt = mm_alloc(self->full_ckpt_size);
@@ -173,12 +234,37 @@ void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_id
 	buddy_ckp->orig = NULL;
 }
 
+/**
+ * @brief Forces the next checkpoint to be a full checkpoint.
+ *
+ * This function is a placeholder for enabling full checkpointing when
+ * incremental state saving is active. Currently, it does nothing as
+ * incremental checkpointing is disabled.
+ *
+ * @param self A pointer to the `mm_state` structure representing the memory
+ *             management state of the logical process.
+ */
 void model_allocator_checkpoint_next_force_full(const struct mm_state *self)
 {
 	(void)self;
 	// TODO: force full checkpointing when incremental state saving is enabled
 }
 
+
+/**
+ * @brief Restores the memory management state to a specific checkpoint.
+ *
+ * This function restores the memory management state of a logical process to the state
+ * recorded in the checkpoint corresponding to the given reference index. It ensures
+ * that all buddy systems are restored to their respective states as recorded in the
+ * checkpoint. If a checkpoint is missing for a buddy system, it reinitializes the buddy
+ * system to a default state.
+ *
+ * @param self A pointer to the `mm_state` structure representing the memory
+ *             management state of the logical process.
+ * @param ref_idx The reference index of the checkpoint to restore.
+ * @return The reference index of the restored checkpoint.
+ */
 array_count_t model_allocator_checkpoint_restore(struct mm_state *self, const array_count_t ref_idx)
 {
 	array_count_t index = array_count(self->logs) - 1;
@@ -208,6 +294,19 @@ array_count_t model_allocator_checkpoint_restore(struct mm_state *self, const ar
 	return array_get_at(self->logs, index).ref_idx;
 }
 
+
+/**
+ * @brief Collects fossil logs up to a target reference index.
+ *
+ * This function removes logs from the memory management state that are no longer
+ * needed, based on the specified target reference index. It ensures that only
+ * the logs required for restoring the state up to the target index are retained.
+ *
+ * @param self A pointer to the `mm_state` structure representing the memory
+ *             management state of the logical process.
+ * @param tgt_ref_i The target reference index up to which logs should be collected.
+ * @return The reference index of the last retained log.
+ */
 array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, const array_count_t tgt_ref_i)
 {
 	array_count_t log_i = array_count(self->logs) - 1;

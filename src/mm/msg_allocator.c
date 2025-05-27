@@ -14,7 +14,9 @@
 #include <datatypes/array.h>
 #include <gvt/gvt.h>
 
+/// Cache of message structs used to avoid frequent allocations/deallocations
 static _Thread_local dyn_array(struct lp_msg *) free_list = {0};
+/// Cache of message structs free'd upon GVT reduction
 static _Thread_local dyn_array(struct lp_msg *) at_gvt_list = {0};
 
 /**
@@ -105,7 +107,7 @@ void msg_allocator_on_gvt(const simtime_t current_gvt)
  * @param event_type a field which can be used by the model to distinguish them
  * @param payload the payload to copy into the message
  * @param payload_size the size in bytes of the payload to copy into the message
- * @return a new populated message
+ * @return A new populated message
  */
 extern struct lp_msg *msg_allocator_pack(lp_id_t receiver, simtime_t timestamp, unsigned event_type,
     const void *payload, unsigned payload_size);
