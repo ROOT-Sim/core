@@ -12,4 +12,4 @@
 
 extern int serial_simulation(void);
 extern void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
-									unsigned payload_size);
+    unsigned payload_size);

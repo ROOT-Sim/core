@@ -108,7 +108,7 @@ void mpi_global_fini(void)
  * for sending completion: the platform, during the fossil collection, leverages the gvt to make sure the message has
  * been indeed sent and processed before freeing it.
  */
-void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
+void mpi_remote_msg_send(struct lp_msg *msg, const nid_t dest_nid)
 {
 	gvt_remote_msg_send(msg, dest_nid);
 
@@ -127,7 +127,7 @@ void mpi_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
  * for sending completion: the platform, during the fossil collection, leverages the gvt to make sure the message has
  * been indeed sent and processed before freeing it.
  */
-void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
+void mpi_remote_anti_msg_send(struct lp_msg *msg, const nid_t dest_nid)
 {
 	gvt_remote_anti_msg_send(msg, dest_nid);
 
@@ -140,7 +140,7 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
  * @brief Sends a platform control message to all the nodes, including self
  * @param ctrl the control message to send
  */
-void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
+void mpi_control_msg_broadcast(const enum msg_ctrl_code ctrl)
 {
 	nid_t i = n_nodes;
 	while(i--) {
@@ -153,7 +153,7 @@ void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
  * @param ctrl the control message to send
  * @param dest the id of the destination node
  */
-void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
+void mpi_control_msg_send_to(const enum msg_ctrl_code ctrl, const nid_t dest)
 {
 	MPI_Request req;
 	MPI_Isend(&ctrl_msgs[ctrl], sizeof(*ctrl_msgs), MPI_BYTE, dest, RS_MSG_TAG, MPI_COMM_WORLD, &req);
@@ -320,7 +320,7 @@ void mpi_node_barrier(void)
  * This operation blocks the execution flow until the destination node receives
  * the data with mpi_raw_data_blocking_rcv().
  */
-void mpi_blocking_data_send(const void *data, int data_size, nid_t dest)
+void mpi_blocking_data_send(const void *data, const int data_size, const nid_t dest)
 {
 	MPI_Send(data, data_size, MPI_BYTE, dest, RS_DATA_TAG, MPI_COMM_WORLD);
 }
@@ -333,7 +333,7 @@ void mpi_blocking_data_send(const void *data, int data_size, nid_t dest)
  *
  * This operation blocks the execution until the sender node actually sends the data with mpi_raw_data_blocking_send().
  */
-void *mpi_blocking_data_rcv(int *data_size_p, nid_t src)
+void *mpi_blocking_data_rcv(int *data_size_p, const nid_t src)
 {
 	MPI_Status status;
 	MPI_Message mpi_msg;

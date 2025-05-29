@@ -10,7 +10,7 @@
  */
 #include <core/core.h>
 
-__thread rid_t rid;
+_Thread_local rid_t rid;
 nid_t n_nodes = 1;
 nid_t nid;
 

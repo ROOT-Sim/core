@@ -17,10 +17,12 @@ set(rscore_srcs
         log/stats.c
         lp/lp.c
         lp/process.c
-        mm/auto_ckpt.c
+        mm/checkpoint/autonomic.c
+        mm/checkpoint/full.c
+        mm/checkpoint/incremental.c
         mm/buddy/buddy.c
-        mm/buddy/ckpt.c
-        mm/buddy/multi.c
+        mm/buddy/checkpoint.c
+        mm/model_allocator.c
         mm/msg_allocator.c
         parallel/parallel.c
         serial/serial.c)

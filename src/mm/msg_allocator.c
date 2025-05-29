@@ -14,8 +14,10 @@
 #include <datatypes/array.h>
 #include <gvt/gvt.h>
 
-static __thread dyn_array(struct lp_msg *) free_list = {0};
-static __thread dyn_array(struct lp_msg *) at_gvt_list = {0};
+/// Cache of message structs used to avoid frequent allocations/deallocations
+static _Thread_local dyn_array(struct lp_msg *) free_list = {0};
+/// Cache of message structs free'd upon GVT reduction
+static _Thread_local dyn_array(struct lp_msg *) at_gvt_list = {0};
 
 /**
  * @brief Initialize the message allocator thread-local data structures
@@ -48,7 +50,7 @@ void msg_allocator_fini(void)
  * Since this module relies on the member lp_msg.pl_size (see @a msg_allocator_free()), it has writing responsibility
  * on it.
  */
-struct lp_msg *msg_allocator_alloc(unsigned payload_size)
+struct lp_msg *msg_allocator_alloc(const unsigned payload_size)
 {
 	struct lp_msg *ret;
 	if(unlikely(payload_size > MSG_PAYLOAD_BASE_SIZE)) {
@@ -87,7 +89,7 @@ void msg_allocator_free_at_gvt(struct lp_msg *msg)
  * @brief Free the committed messages after a new GVT has been computed
  * @param current_gvt the latest value of the GVT
  */
-void msg_allocator_on_gvt(simtime_t current_gvt)
+void msg_allocator_on_gvt(const simtime_t current_gvt)
 {
 	for(array_count_t i = array_count(at_gvt_list); i-- > 0;) {
 		struct lp_msg *msg = array_get_at(at_gvt_list, i);
@@ -105,7 +107,7 @@ void msg_allocator_on_gvt(simtime_t current_gvt)
  * @param event_type a field which can be used by the model to distinguish them
  * @param payload the payload to copy into the message
  * @param payload_size the size in bytes of the payload to copy into the message
- * @return a new populated message
+ * @return A new populated message
  */
 extern struct lp_msg *msg_allocator_pack(lp_id_t receiver, simtime_t timestamp, unsigned event_type,
     const void *payload, unsigned payload_size);

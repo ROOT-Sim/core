@@ -15,9 +15,7 @@
  */
 #pragma once
 
-#include <limits.h>
 #include <float.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -68,7 +66,12 @@ typedef void (*ProcessEvent_t)(lp_id_t me, simtime_t now, unsigned event_type, c
  */
 typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 
-enum rootsim_event {LP_INIT = 65534, LP_FINI};
+/// @brief Internal event types used by the simulation kernel.
+///
+/// These event types are automatically scheduled to the model according to the following logic:
+/// - `LP_INIT`: Represents the initialization event for a logical process.
+/// - `LP_FINI`: Represents the finalization event for a logical process.
+enum rootsim_event { LP_INIT = 65534, LP_FINI };
 
 /**
  * @brief API to inject a new event in the simulation
@@ -88,19 +91,83 @@ extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned eve
 
 extern void SetState(void *new_state);
 
+/**
+ * @brief Allocates rollbackable memory
+ *
+ * This function is part of the custom memory management system and is used to allocate
+ * memory dynamically. The allocated memory is not initialized. Upon a rollback, the previous
+ * content of the allocated memory buffer is restored to the previous (consistent) content.
+ *
+ * @param req_size The size of the memory block to allocate, in bytes.
+ * @return A pointer to the allocated memory block, or `NULL` if the allocation fails.
+ *
+ * @note If `req_size` is 0, the function returns `NULL`.
+ * @warning The returned memory _must_ be freed using `rs_free()`.
+ */
 extern void *rs_malloc(size_t req_size);
+
+/**
+ * @brief Allocates and zero-initializes rollbackable memory
+ *
+ * This function is part of the custom memory management system and is used to allocate
+ * memory dynamically. The allocated memory is initialized to zero. Upon a rollback, the
+ * previous content of the allocated memory buffer is restored to the previous (consistent) content.
+ *
+ * @param nmemb The number of elements to allocate.
+ * @param size The size of each element, in bytes.
+ * @return A pointer to the allocated memory block, or `NULL` if the allocation fails.
+ *
+ * @note If `nmemb` or `size` is 0, the function returns `NULL`.
+ * @warning The returned memory _must_ be freed using `rs_free()`.
+ */
 extern void *rs_calloc(size_t nmemb, size_t size);
+
+/**
+ * @brief Frees rollbackable memory
+ *
+ * This function is part of the custom memory management system and is used to free
+ * memory that was previously allocated using `rs_malloc()`, `rs_calloc()`, or `rs_realloc()`.
+ * Upon a rollback, the memory is restored to its previous (consistent) state. This means that
+ * also the address of the free'd buffer will be the same. Linked data structures can be therefore
+ * safely implemented in the model, as internal pointers will be valid after a rollback.
+ *
+ * @param ptr A pointer to the memory block to be freed. If `ptr` is `NULL`, no operation is performed.
+ *
+ * @warning The memory block must have been allocated using the custom memory management functions.
+ */
 extern void rs_free(void *ptr);
+
+/**
+ * @brief Reallocates rollbackable memory
+ *
+ * This function is part of the custom memory management system and is used to resize
+ * a previously allocated memory block. If the reallocation is successful, the content
+ * of the memory block is preserved up to the minimum of the old and new sizes.
+ * Upon a rollback, the memory is restored to its previous (consistent) state.
+ *
+ * @param ptr A pointer to the memory block to be reallocated. If `ptr` is `NULL`, the function behaves like
+ *            `rs_malloc()`.
+ * @param req_size The new size of the memory block, in bytes.
+ * @return A pointer to the reallocated memory block, or `NULL` if the reallocation fails.
+ *
+ * @note If `req_size` is 0, the function frees the memory block and returns `NULL`.
+ * @warning The memory block must have been allocated using the custom memory management functions.
+ */
 extern void *rs_realloc(void *ptr, size_t req_size);
 
+/**
+ * @brief Logging levels used by the simulation kernel.
+ *
+ * These levels define the verbosity of log messages emitted during the simulation.
+ */
 enum log_level {
-	LOG_TRACE,  //!< The logging level reserved to very low priority messages
-	LOG_DEBUG,  //!< The logging level reserved to useful debug messages
-	LOG_INFO,   //!< The logging level reserved to useful runtime messages
-	LOG_WARN,   //!< The logging level reserved to unexpected, non deal breaking conditions
-	LOG_ERROR,  //!< The logging level reserved to unexpected, problematic conditions
-	LOG_FATAL,   //!< The logging level reserved to unexpected, fatal conditions
-	LOG_SILENT //!< Emit no message during the simulation
+	LOG_TRACE, //!< The logging level reserved for very low priority messages.
+	LOG_DEBUG, //!< The logging level reserved for useful debug messages.
+	LOG_INFO,  //!< The logging level reserved for useful runtime messages.
+	LOG_WARN,  //!< The logging level reserved for unexpected, non-deal-breaking conditions.
+	LOG_ERROR, //!< The logging level reserved for unexpected, problematic conditions.
+	LOG_FATAL, //!< The logging level reserved for unexpected, fatal conditions.
+	LOG_SILENT //!< Emit no messages during the simulation.
 };
 
 /// A set of configurable values used by other modules

@@ -18,7 +18,7 @@ static simtime_t bound_values[N_THREADS][6] = {
 	{2.0, 3.4, 6.5, 6.5, 9.6, 11.0},
 	{1.2, 3.5, 6.4, 6.3, 9.7, 10.5},
 };
-static __thread unsigned b_i = 0;
+static _Thread_local unsigned b_i = 0;
 
 simtime_t msg_queue_time_peek(void)
 {

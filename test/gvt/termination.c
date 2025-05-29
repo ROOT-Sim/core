@@ -14,8 +14,8 @@
 
 static _Atomic bool initialized = false;
 
-static void DummyProcessEvent(_unused lp_id_t me, _unused simtime_t now, _unused unsigned event_type,
-    _unused const void *event_content, _unused unsigned event_size, _unused void *st)
+static void DummyProcessEvent(_unused const lp_id_t me, _unused const simtime_t now, _unused const unsigned event_type,
+    _unused const void *event_content, _unused const unsigned event_size, _unused void *st)
 {
 	if(event_type == LP_FINI)
 		return;

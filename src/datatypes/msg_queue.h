@@ -13,6 +13,9 @@
 #include <core/core.h>
 #include <lp/msg.h>
 
+/**
+ * @brief Initializes the message queue at the node level
+ */
 extern void msg_queue_global_init(void);
 extern void msg_queue_global_fini(void);
 extern void msg_queue_init(void);

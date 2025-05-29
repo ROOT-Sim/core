@@ -27,4 +27,3 @@ extern void termination_on_msg_process(struct lp_ctx *lp, simtime_t msg_time);
 extern void termination_on_gvt(simtime_t current_gvt);
 extern void termination_on_lp_rollback(struct lp_ctx *lp, simtime_t msg_time);
 extern void termination_on_ctrl_msg(void);
-extern void termination_force(void);

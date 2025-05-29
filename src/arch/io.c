@@ -31,8 +31,8 @@
 
 void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 {
-	time_t t = time(NULL);
-	struct tm *loc_t = localtime(&t);
+	const time_t t = time(NULL);
+	const struct tm *loc_t = localtime(&t);
 	strftime(res, IO_TIME_BUFFER_LEN, "%H:%M:%S", loc_t);
 }
 

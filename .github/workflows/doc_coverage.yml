@@ -14,13 +14,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
       - name: Initialize Environment
-        uses: ROOT-Sim/ci-actions/init@v1.5.3
+        uses: ROOT-Sim/ci-actions/init@030cae234d9698712812e888d0d9d13ca8e1814f
       - name: Generate Documentation
-        uses: ROOT-Sim/ci-actions/docs@v1.5.3
+        uses: ROOT-Sim/ci-actions/docs@030cae234d9698712812e888d0d9d13ca8e1814f
         with:
           docs-target: rscore-doc
       - name: Documentation Coverage
-        uses: ROOT-Sim/ci-actions/docs-coverage@v1.5.3
+        uses: ROOT-Sim/ci-actions/docs-coverage@030cae234d9698712812e888d0d9d13ca8e1814f
         with:
           build-path: docs
       - name: Comment PR

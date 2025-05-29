@@ -99,7 +99,7 @@ enum thread_affinity_error thread_affinity_self_set(unsigned core)
 			CPU_ZERO(&cpuset);
 			CPU_SET(i, &cpuset);
 
-			pthread_t self = pthread_self();
+			const pthread_t self = pthread_self();
 			switch(pthread_setaffinity_np(self, sizeof(cpuset), &cpuset)) {
 				case 0:
 					return THREAD_AFFINITY_SUCCESS;
@@ -128,12 +128,12 @@ unsigned thread_cores_count(void)
 
 #endif
 
-int thread_start(thr_id_t *thr_p, thr_run_fnc t_fnc, void *t_fnc_arg)
+int thread_start(thr_id_t *thr_p, const thr_run_fnc t_fnc, void *t_fnc_arg)
 {
 	return -(pthread_create(thr_p, NULL, t_fnc, t_fnc_arg) != 0);
 }
 
-int thread_wait(thr_id_t thr, thrd_ret_t *ret)
+int thread_wait(const thr_id_t thr, thrd_ret_t *ret)
 {
 	return -(pthread_join(thr, ret) != 0);
 }
