@@ -64,6 +64,24 @@ static void lps_rid_update(void)
 	}
 }
 
+static void migrating_msg_handle(struct lp_msg *msg)
+{
+	uint64_t flags = atomic_load_explicit(&msg->flags, memory_order_relaxed), new_flags;
+	do {
+		if(flags >> 2) {
+			msg_allocator_free_at_gvt(msg);
+			return;
+		}
+
+		if((flags & MSG_FLAG_ANTI) != 0 && (flags & MSG_FLAG_PROCESSED) == 0) {
+			msg_allocator_free(msg);
+			return;
+		}
+
+		new_flags = flags | gvt_msg_id_generate();
+	} while(atomic_compare_exchange_weak_explicit(&msg->flags, &flags, new_flags, memory_order_relaxed, memory_order_relaxed));
+}
+
 static void queue_msgs_detach(void)
 {
 	array_count_t i = ARRAY_COUNT_MAX;
@@ -149,6 +167,7 @@ static void migration_lp_serialize(const struct lp_ctx *lp, void *lp_data)
 	memcpy(ptr, &array_count(lp->p.pes), sizeof(array_count(lp->p.pes)));
 	ptr += sizeof(array_count(lp->p.pes));
 
+	// Serialize messages in the past event set
 	for(array_count_t i = 0; i < array_count(lp->p.pes); ++i) {
 		struct pes_entry e = array_get_at(lp->p.pes, i);
 
@@ -157,6 +176,9 @@ static void migration_lp_serialize(const struct lp_ctx *lp, void *lp_data)
 		ptr += sizeof(r);
 
 		struct lp_msg *msg = pes_entry_msg(e);
+		// assert all PES messages are remote. Messages that, at the beginning of the migration process, were
+		// local, should already have received a remote ID from one of the detach functions in this module
+		assert(msg->raw_flags >> 2U);
 		size_t msg_size = msg_remote_size(msg);
 		memcpy(ptr, msg, msg_size);
 		ptr += msg_size;
