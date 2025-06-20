@@ -1,0 +1,45 @@
+/**
+ * @file coure/output.h
+ *
+ * @brief Committed output management functions
+ *
+ * Committed output management functions
+ *
+ * SPDX-FileCopyrightText: 2008-2023 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+#pragma once
+
+#include <datatypes/array.h>
+
+struct output_data {
+	unsigned type;
+	void *content;
+	unsigned size;
+};
+
+typedef dyn_array(struct output_data) output_array_t;
+
+/**
+ * @brief Free the outputs stored for later from a message
+ * @param output_array the output_data from the message
+ */
+void free_msg_outputs(output_array_t *output_array);
+
+struct lp_msg;
+
+/**
+ * @brief Invoke the output callback on all outputs stored in the message.
+ * @param msg the message to execute outputs from
+ */
+void execute_outputs(struct lp_msg *msg);
+
+/**
+ * @brief Handle rolling-back of a message
+ * @param msg the rolled-back
+ *
+ * This function is called when a message is rolled back. It frees the output data
+ * stored in the message, as they are no longer valid.
+ * The output array is not freed, as it can still be used in the future.
+ */
+void committed_output_on_rollback(struct lp_msg *msg);

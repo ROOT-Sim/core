@@ -50,6 +50,8 @@ test_program(correctness_parallel integration/correctness/parallel.c integration
 test_program_link_libraries(correctness_parallel rscore)
 test_program(phold integration/phold.c)
 test_program_link_libraries(phold rscore)
+test_program(committed_output core/output.c)
+test_program_link_libraries(committed_output rscore)
 
 # TODO: The following is garbage and will be removed soon
 target_include_directories(test_visibility_weak PRIVATE ${CMAKE_SOURCE_DIR}/src/include)

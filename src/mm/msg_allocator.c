@@ -68,6 +68,8 @@ struct lp_msg *msg_allocator_alloc(unsigned payload_size)
  */
 void msg_allocator_free(struct lp_msg *msg)
 {
+	free_msg_outputs(msg->outputs);
+	msg->outputs = NULL;
 	if(likely(msg->pl_size <= MSG_PAYLOAD_BASE_SIZE))
 		array_push(free_list, msg);
 	else
