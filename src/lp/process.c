@@ -47,7 +47,7 @@ __attribute__((hot)) void ScheduleNewEvent_parallel(lp_id_t receiver, simtime_t 
 }
 
 /**
- * @brief Initializes the processing module in the current LP
+ * @brief Initialize the processing module in the current LP
  */
 void process_lp_init(struct lp_ctx *lp)
 {
@@ -130,7 +130,7 @@ static inline void send_anti_messages(struct process_ctx *proc_p, array_count_t 
 			unsigned rid = lps[msg->dest].rid;
 			if(msg->raw_flags >> 2U) {
 				mpi_remote_anti_msg_send(msg, LP_RID_TO_NID(rid));
-				msg_allocator_free_at_gvt(msg);
+				msg_allocator_deferred_free(msg);
 			} else {
 				uint64_t f =
 				    atomic_fetch_add_explicit(&msg->flags, MSG_FLAG_ANTI, memory_order_relaxed);

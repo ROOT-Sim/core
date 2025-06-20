@@ -122,6 +122,20 @@ typedef uint_least32_t array_count_t;
 	})
 
 /**
+ * @brief Push several elements from an array of elements to the end of a dynamic array
+ * @param self The target dynamic array
+ * @param arr A pointer to the array of the elements to push
+ * @param count The number of elements in the source array
+ */
+#define array_push_many(self, arr, arr_count)                                                                          \
+    __extension__({                                                                                                    \
+        array_count_t s = (arr_count);                                                                                 \
+        array_reserve(self, s);                                                                                        \
+        memcpy(array_items(self) + array_count(self), (arr), s * sizeof(*array_items(self)));                          \
+        array_count(self) += s;                                                                                        \
+    })
+
+/**
  * @brief Pop an element from the end of a dynamic array
  * @param self The target dynamic array
  */
@@ -195,11 +209,11 @@ typedef uint_least32_t array_count_t;
  */
 #define array_reserve(self, n)                                                                                         \
 	__extension__({                                                                                                \
-		__typeof(array_count(self)) tcnt = array_count(self) + (n);                                            \
-		if(unlikely(tcnt >= array_capacity(self))) {                                                           \
+		__typeof(array_count(self)) required_cnt = array_count(self) + (n);                                    \
+		if(unlikely(required_cnt > array_capacity(self))) {                                                    \
 			do {                                                                                           \
 				array_capacity(self) *= 2;                                                             \
-			} while(unlikely(tcnt >= array_capacity(self)));                                               \
+			} while(unlikely(required_cnt > array_capacity(self)));                                        \
 			array_items(self) =                                                                            \
 			    mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));          \
 		}                                                                                                      \

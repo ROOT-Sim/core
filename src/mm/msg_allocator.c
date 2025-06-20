@@ -83,10 +83,10 @@ void msg_allocator_free(struct lp_msg *msg)
 }
 
 /**
- * @brief Free a message after its destination time is committed
+ * @brief Free a message after it has been remotely received
  * @param msg a pointer to the message to release
  */
-void msg_allocator_free_at_gvt(struct lp_msg *msg)
+void msg_allocator_deferred_free(struct lp_msg *msg)
 {
 	if(likely(msg->pl_size <= MSG_PAYLOAD_BASE_SIZE))
 		array_push(free_at_gvt[gvt_phase], msg);
