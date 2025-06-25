@@ -5,7 +5,7 @@
  *
  * The module in which remote control messages are wired to the other modules
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <distributed/control_msg.h>
@@ -14,7 +14,7 @@
  * @brief Handle a received control message
  * @param ctrl the tag of the received control message
  */
-void control_msg_process(enum msg_ctrl_code ctrl)
+void control_msg_process(const enum msg_ctrl_code ctrl)
 {
 	switch(ctrl) {
 		case MSG_CTRL_GVT_START:

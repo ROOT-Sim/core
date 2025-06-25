@@ -5,7 +5,7 @@
  *
  * A very simple binary heap implemented on top of our dynamic array
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -60,7 +60,7 @@
  * @param self the heap
  * @return the highest priority element, cast to const
  */
-#define heap_min(self) (*(__typeof(*array_items(self)) *const)array_items(self))
+#define heap_min(self) (*(__typeof__(*array_items(self)) *const)array_items(self))
 
 /**
  * @brief Insert an element into the heap
@@ -74,7 +74,7 @@
 #define heap_insert(self, cmp_f, elem)                                                                                 \
 	__extension__({                                                                                                \
 		array_reserve(self, 1);                                                                                \
-		__typeof(array_count(self)) i = array_count(self)++;                                                   \
+		__typeof__(array_count(self)) i = array_count(self)++;                                                 \
 		__typeof__(array_items(self)) items = array_items(self);                                               \
 		while(i && cmp_f(elem, items[(i - 1U) / 2U])) {                                                        \
 			items[i] = items[(i - 1U) / 2U];                                                               \
@@ -97,10 +97,10 @@
 #define heap_insert_n(self, cmp_f, ins, n)                                                                             \
 	__extension__({                                                                                                \
 		array_reserve(self, n);                                                                                \
-		__typeof(array_count(self)) j = n;                                                                     \
+		__typeof__(array_count(self)) j = n;                                                                   \
 		__typeof__(array_items(self)) items = array_items(self);                                               \
 		while(j--) {                                                                                           \
-			__typeof(array_count(self)) i = array_count(self)++;                                           \
+			__typeof__(array_count(self)) i = array_count(self)++;                                         \
 			while(i && cmp_f((ins)[j], items[(i - 1U) / 2U])) {                                            \
 				items[i] = items[(i - 1U) / 2U];                                                       \
 				i = (i - 1U) / 2U;                                                                     \
@@ -120,11 +120,11 @@
 #define heap_extract(self, cmp_f)                                                                                      \
 	__extension__({                                                                                                \
 		__typeof__(array_items(self)) items = array_items(self);                                               \
-		__typeof(*array_items(self)) ret = array_items(self)[0];                                               \
-		__typeof(*array_items(self)) last = array_pop(self);                                                   \
-		__typeof(array_count(self)) cnt = array_count(self);                                                   \
-		__typeof(array_count(self)) i = 1U;                                                                    \
-		__typeof(array_count(self)) j = 0U;                                                                    \
+		__typeof__(*array_items(self)) ret = array_items(self)[0];                                             \
+		__typeof__(*array_items(self)) last = array_pop(self);                                                 \
+		__typeof__(array_count(self)) cnt = array_count(self);                                                 \
+		__typeof__(array_count(self)) i = 1U;                                                                  \
+		__typeof__(array_count(self)) j = 0U;                                                                  \
 		while(i < cnt) {                                                                                       \
 			i += i + 1 < cnt && cmp_f(items[i + 1U], items[i]);                                            \
 			if(!cmp_f(items[i], last))                                                                     \

@@ -1,11 +1,11 @@
 /**
- * @file test/tests/mm/buddy.c
+ * @file test/mm/buddy.c
  *
  * @brief Test: rollbackable buddy system allocator
  *
  * A test of the buddy system allocator used to handle model's memory
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>
@@ -18,7 +18,7 @@
 
 #define BUDDY_TEST_SEED 0x5E550UL
 
-static void write_allocations(uint64_t **allocations, unsigned allocations_cnt, unsigned block_size,
+static void write_allocations(uint64_t **allocations, const unsigned allocations_cnt, const unsigned block_size,
     test_rng_state *b_rng_p)
 {
 	for(unsigned i = 0; i < allocations_cnt; ++i)
@@ -39,11 +39,11 @@ static int check_and_free_allocations(uint64_t **allocations, unsigned allocatio
 	return errs;
 }
 
-static int block_size_test(struct mm_state *mm, unsigned b_exp)
+static int block_size_test(struct mm_state *mm, const unsigned b_exp)
 {
 	int errs = 0;
-	unsigned block_size = 1 << b_exp;
-	unsigned allocations_cnt = 1 << (B_TOTAL_EXP - b_exp);
+	const unsigned block_size = 1 << b_exp;
+	const unsigned allocations_cnt = 1 << (B_TOTAL_EXP - b_exp);
 	test_rng_state b_rng, b_chk;
 	rng_init(&b_rng, BUDDY_TEST_SEED);
 	uint64_t **allocations = malloc(allocations_cnt * sizeof(uint64_t *));

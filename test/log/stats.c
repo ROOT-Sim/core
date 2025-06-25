@@ -1,9 +1,9 @@
 /**
- * @file test/tests/log/stats.c
+ * @file test/log/stats.c
  *
  * @brief Test: statistics module test
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <log/stats.h>
@@ -12,8 +12,8 @@
 
 #define N_THREADS 2
 
-void DummyProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size,
-    void *st)
+void DummyProcessEvent(const lp_id_t me, const simtime_t now, const unsigned event_type, const void *event_content,
+	const unsigned event_size, void *st)
 {
 	(void)me;
 	(void)now;
@@ -23,7 +23,7 @@ void DummyProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const voi
 	(void)st;
 }
 
-bool DummyCanEnd(lp_id_t lid, const void *state)
+bool DummyCanEnd(const lp_id_t lid, const void *state)
 {
 	(void)lid;
 	(void)state;
@@ -85,7 +85,7 @@ int stats_measures_test(_unused void *arg)
 	return 0;
 }
 
-static void stats_subsystem_test(const char *name, test_fn thread_fn)
+static void stats_subsystem_test(const char *name, const test_fn thread_fn)
 {
 	conf.stats_file = name;
 	RootsimInit(&conf);

@@ -5,7 +5,7 @@
  *
  * LP construction functions
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -14,7 +14,7 @@
 #include <core/core.h>
 #include <lp/msg.h>
 #include <lp/process.h>
-#include <mm/auto_ckpt.h>
+#include <mm/checkpoint/checkpoint.h>
 #include <mm/model_allocator.h>
 
 /// A complete LP context
@@ -50,14 +50,17 @@ struct lp_ctx {
 #define lid_to_rid(lp_id) ((rid_t)(((lp_id) - lid_node_first) * global_config.n_threads / n_lps_node))
 
 extern uint64_t lid_node_first;
-extern __thread uint64_t lid_thread_first;
-extern __thread uint64_t lid_thread_end;
+extern _Thread_local uint64_t lid_thread_first;
+extern _Thread_local uint64_t lid_thread_end;
 
-extern __thread struct lp_ctx *current_lp;
+extern _Thread_local struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
 
 #ifndef NDEBUG
+/// Indicates whether LPs have been initialized. Prevents calling SetState() outside of LP_INIT
 extern bool lp_initialized;
+
+/// Macro to set the LP initialization flag to true
 #define lp_initialized_set() (lp_initialized = true)
 #else
 #define lp_initialized_set()

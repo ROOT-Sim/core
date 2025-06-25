@@ -5,7 +5,7 @@
  *
  * Message queue datatype
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -13,6 +13,9 @@
 #include <core/core.h>
 #include <lp/msg.h>
 
+/**
+ * @brief Initializes the message queue at the node level
+ */
 extern void msg_queue_global_init(void);
 extern void msg_queue_global_fini(void);
 extern void msg_queue_init(void);

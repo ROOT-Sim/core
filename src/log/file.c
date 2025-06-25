@@ -1,12 +1,12 @@
 /**
-* @file log/file.c
-*
-* @brief File utilities
-*
-* Some file utility functions
-*
-* SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
-* SPDX-License-Identifier: GPL-3.0-only
+ * @file log/file.c
+ *
+ * @brief File utilities
+ *
+ * Some file utility functions
+ *
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 
 #include <log/file.h>
@@ -24,7 +24,7 @@
 void *file_memory_load(FILE *f, int64_t *f_size_p)
 {
 	fseek(f, 0, SEEK_END);
-	long f_size = ftell(f); // FIXME: may fail horribly for files bigger than 2 GB
+	const long f_size = ftell(f); // FIXME: may fail horribly for files bigger than 2 GB
 	fseek(f, 0, SEEK_SET);
 	void *ret = mm_alloc(f_size);
 	if(fread(ret, f_size, 1, f) != 1) {
@@ -48,7 +48,7 @@ FILE *file_open(const char *open_type, const char *fmt, ...)
 	va_start(args, fmt);
 	va_copy(args_cp, args);
 
-	size_t l = vsnprintf(NULL, 0, fmt, args_cp) + 1;
+	const size_t l = vsnprintf(NULL, 0, fmt, args_cp) + 1;
 	va_end(args_cp);
 
 	char *f_name = mm_alloc(l);

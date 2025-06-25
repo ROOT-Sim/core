@@ -1,9 +1,9 @@
 /**
- * @file test/tests/integration/correctness/output_256.c
+ * @file test/integration/correctness/output_256.c
  *
  * @brief Correct output of the model used to verify correctness (with 256 LPs)
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <stdint.h>

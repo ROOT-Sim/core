@@ -1,11 +1,11 @@
 /**
-* @file test/framework/mock.h
+* @file test/mock.h
 *
 * @brief Mocking module
 *
 * This module allows to mock various parts of the core for testing purposes
 *
-* SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+* SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
 * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once

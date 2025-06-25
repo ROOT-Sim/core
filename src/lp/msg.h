@@ -5,7 +5,7 @@
  *
  * Message management functions
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -87,6 +87,14 @@ struct lp_msg {
 	unsigned char extra_pl[];
 };
 
+/**
+ * @brief Bits to implement a finite-state machine to handle incoming events/antievents.
+ *
+ * For a comprehensive description of the usage of the finite state machine, refer to:
+ * A. Piccione and A. Pellegrini
+ * “Efficient Non-Blocking Event Management for Speculative Parallel Discrete Event Simulation”
+ * in Proceedings of the 2024 ACM SIGSIM Conference on Principles of Advanced Discrete Simulation, 2024.
+ */
 enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
 
 /**
@@ -102,10 +110,10 @@ enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
  */
 static inline bool msg_is_before_extended(const struct lp_msg *restrict a, const struct lp_msg *restrict b)
 {
-	if (a->m_type != b->m_type)
+	if(a->m_type != b->m_type)
 		return a->m_type > b->m_type;
 
-	if (a->pl_size != b->pl_size)
+	if(a->pl_size != b->pl_size)
 		return a->pl_size < b->pl_size;
 
 	return memcmp(a->pl, b->pl, a->pl_size) > 0;

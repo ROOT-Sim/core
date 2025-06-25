@@ -1,6 +1,6 @@
 # ROOT-Sim core 3.0.0
 
-_Brought to you by the [High Performance and Dependable Computing Systems (HPDCS)](https://hpdcs.github.io/)
+_Brought to you by the [High Performance Computing & Simulation (HPCS)](https://hpdcs.github.io/)
 Research Group_
 
 [![Build Status](https://github.com/ROOT-Sim/core/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/ROOT-Sim/core/actions)

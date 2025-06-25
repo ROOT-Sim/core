@@ -1,9 +1,9 @@
 /**
- * @file test/tests/integration/correctness/functions.c
+ * @file test/integration/correctness/functions.c
  *
  * @brief Helper functions of the model used to verify the runtime correctness
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include "application.h"
@@ -20,13 +20,13 @@ buffer *get_buffer(buffer *head, unsigned i)
 	return head;
 }
 
-uint32_t read_buffer(buffer *head, unsigned i, uint32_t old_crc)
+uint32_t read_buffer(buffer *head, const unsigned i, const uint32_t old_crc)
 {
 	head = get_buffer(head, i);
 	return crc_update(head->data, head->count, old_crc);
 }
 
-buffer *allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
+buffer *allocate_buffer(lp_state *state, const unsigned *data, const unsigned count)
 {
 	buffer *new = rs_malloc(sizeof(buffer) + count * sizeof(uint64_t));
 	new->next = state->head;
@@ -41,7 +41,7 @@ buffer *allocate_buffer(lp_state *state, const unsigned *data, unsigned count)
 	return new;
 }
 
-buffer *deallocate_buffer(buffer *head, unsigned i)
+buffer *deallocate_buffer(buffer *head, const unsigned i)
 {
 	buffer *prev = NULL;
 	buffer *to_free = head;
@@ -81,7 +81,7 @@ void crc_table_init(void)
 	}
 }
 
-uint32_t crc_update(const uint64_t *buf, size_t n, uint32_t crc)
+uint32_t crc_update(const uint64_t *buf, size_t n, const uint32_t crc)
 {
 	uint32_t c = crc ^ 0xffffffffUL;
 	while(n--) {

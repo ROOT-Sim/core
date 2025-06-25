@@ -6,7 +6,7 @@
  * In this module all the housekeeping operations related to GVT computation phase
  * are present.
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -22,7 +22,7 @@
 #define fossil_is_needed(lp) ((lp)->fossil_epoch != fossil_epoch_current)
 
 /// The current fossil collection epoch
-extern __thread unsigned fossil_epoch_current;
+extern _Thread_local unsigned fossil_epoch_current;
 
 extern void fossil_on_gvt(simtime_t current_gvt);
 extern void fossil_lp_collect(struct lp_ctx *lp);

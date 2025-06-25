@@ -5,7 +5,7 @@
  *
  * This library can be used to produce logs during simulation runs.
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <stdarg.h>
@@ -40,7 +40,7 @@ static const struct {
  * @param fmt a printf-style format string for the message to logger
  * @param ... the list of arguments to fill in the format string @a fmt
  */
-void vlogger(enum log_level level, char *file, unsigned line, const char *fmt, ...)
+void vlogger(const enum log_level level, char *file, const unsigned line, const char *fmt, ...)
 {
 	va_list args;
 	char time_string[IO_TIME_BUFFER_LEN];

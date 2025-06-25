@@ -3,7 +3,7 @@
  *
  * @brief A Buddy System implementation
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -34,32 +34,37 @@ struct buddy_state {
 	/// The memory buffer served to the model
 	alignas(16) unsigned char base_mem[1U << B_TOTAL_EXP];
 	/// Keeps track of memory blocks which have been dirtied by a write
-	block_bitmap dirty[
-		bitmap_required_size(
-		// this tracks writes to the allocation tree
-			(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
-		// while this tracks writes to the actual memory buffer
-			(1 << (B_TOTAL_EXP - B_BLOCK_EXP))
-		)
-	];
+	block_bitmap dirty[bitmap_required_size(
+	    // this tracks writes to the allocation tree
+	    (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
+	    // while this tracks writes to the actual memory buffer
+	    (1 << (B_TOTAL_EXP - B_BLOCK_EXP)))];
 };
 
-static_assert(
-	offsetof(struct buddy_state, longest) ==
-	offsetof(struct buddy_state, base_mem) -
-	sizeof(((struct buddy_state *)0)->longest),
-	"longest and base_mem are not contiguous, this will break incremental checkpointing");
+static_assert(offsetof(struct buddy_state, longest) ==
+		  offsetof(struct buddy_state, base_mem) - sizeof(((struct buddy_state *)0)->longest),
+    "longest and base_mem are not contiguous, this will break incremental checkpointing");
 
 extern void buddy_init(struct buddy_state *self);
 extern void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp);
 extern uint_fast32_t buddy_free(struct buddy_state *self, void *ptr);
 
+/**
+ * @brief Represents the result of a best-effort reallocation in the buddy system.
+ *
+ * This structure is used to indicate whether a reallocation request was handled
+ * and to provide additional information about the result of the operation.
+ */
 struct buddy_realloc_res {
+	/// Indicates whether the reallocation request was successfully handled.
 	bool handled;
+	/// Union containing details about the reallocation result.
 	union {
+		/// The variation in memory size if the reallocation was handled.
 		int_fast32_t variation;
+		/// The original memory size if the reallocation was not handled.
 		uint_fast32_t original;
 	};
 };
-extern struct buddy_realloc_res buddy_best_effort_realloc(struct buddy_state *self, void *ptr, size_t req_size);
-extern void buddy_dirty_mark(struct buddy_state *self, const void *ptr, size_t s);
+extern struct buddy_realloc_res buddy_best_effort_realloc(const struct buddy_state *self, void *ptr, size_t req_size);
+extern void buddy_dirty_mark(const struct buddy_state *self, const void *ptr, size_t size);

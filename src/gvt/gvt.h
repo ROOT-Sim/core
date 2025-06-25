@@ -3,7 +3,7 @@
  *
  * @brief Global Virtual Time
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -15,9 +15,9 @@ extern void gvt_global_init(void);
 extern simtime_t gvt_phase_run(void);
 extern void gvt_on_msg_extraction(simtime_t msg_t);
 
-extern __thread _Bool gvt_phase;
-extern __thread uint32_t remote_msg_seq[2][MAX_NODES];
-extern __thread uint32_t remote_msg_received[2];
+extern _Thread_local _Bool gvt_phase;
+extern _Thread_local uint32_t remote_msg_seq[2][MAX_NODES];
+extern _Thread_local uint32_t remote_msg_received[2];
 
 extern void gvt_start_processing(void);
 extern void gvt_on_done_ctrl_msg(void);

@@ -1,13 +1,13 @@
 /**
-* @file log/file.h
-*
-* @brief File utilities
-*
-* Some file utility functions
-*
-* SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
-* SPDX-License-Identifier: GPL-3.0-only
-*/
+ * @file log/file.h
+ *
+ * @brief File utilities
+ *
+ * Some file utility functions
+ *
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #pragma once
 
 #include <core/core.h>

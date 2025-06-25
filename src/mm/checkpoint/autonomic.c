@@ -1,14 +1,14 @@
 /**
- * @file mm/auto_ckpt.c
+ * @file mm/checkpoint/autonomic.c
  *
  * @brief Autonomic checkpoint interval selection module
  *
  * The module which attempts to select the best checkpoint interval
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <mm/auto_ckpt.h>
+#include <mm/checkpoint/checkpoint.h>
 
 #include <log/stats.h>
 #include <lp/process.h>
@@ -26,12 +26,18 @@
 	__extension__({                                                                                                \
 		double s = (sample);                                                                                   \
 		double o = (old_v);                                                                                    \
-		o *(((f)-1.0) / (f)) + s *(1.0 / (f));                                                                 \
+		o *(((f) - 1.0) / (f)) + s * (1.0 / (f));                                                              \
 	})
 
-static __thread struct {
-	double ckpt_avg_cost;
-	double inv_sil_avg_cost;
+/**
+ * @brief Thread-local context for the auto checkpoint module
+ *
+ * This structure holds thread-local metrics used for computing
+ * the optimal checkpoint interval.
+ */
+static _Thread_local struct {
+	double ckpt_avg_cost;    /**< Exponential moving average of checkpoint cost per byte */
+	double inv_sil_avg_cost; /**< Inverse of the exponential moving average of silent message cost */
 } ackpt;
 
 /**
@@ -54,10 +60,10 @@ void auto_ckpt_on_gvt(void)
 	if(unlikely(global_config.ckpt_interval))
 		return;
 
-	uint64_t ckpt_cost = stats_retrieve(STATS_CKPT_TIME);
-	uint64_t ckpt_size = stats_retrieve(STATS_CKPT_SIZE);
-	uint64_t sil_count = stats_retrieve(STATS_MSG_SILENT);
-	uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
+	const uint64_t ckpt_cost = stats_retrieve(STATS_CKPT_TIME);
+	const uint64_t ckpt_size = stats_retrieve(STATS_CKPT_SIZE);
+	const uint64_t sil_count = stats_retrieve(STATS_MSG_SILENT);
+	const uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
 
 	if(likely(sil_count))
 		ackpt.inv_sil_avg_cost = EXP_AVG(16.0, ackpt.inv_sil_avg_cost, (double)sil_count / (double)sil_cost);
@@ -82,7 +88,7 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
  * @param auto_ckpt a pointer to the auto checkpoint context of the current LP
  * @param state_size the size in bytes of the checkpoint-able state of the current LP
  */
-void auto_ckpt_recompute(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size)
+void auto_ckpt_recompute(struct auto_ckpt *auto_ckpt, const uint_fast32_t state_size)
 {
 	if(unlikely(!auto_ckpt->m_bad || global_config.ckpt_interval))
 		return;

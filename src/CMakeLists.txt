@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+# SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
 # SPDX-License-Identifier: GPL-3.0-only
 set(rscore_srcs
         arch/io.c
@@ -17,10 +17,12 @@ set(rscore_srcs
         log/stats.c
         lp/lp.c
         lp/process.c
-        mm/auto_ckpt.c
+        mm/checkpoint/autonomic.c
+        mm/checkpoint/full.c
+        mm/checkpoint/incremental.c
         mm/buddy/buddy.c
-        mm/buddy/ckpt.c
-        mm/buddy/multi.c
+        mm/buddy/checkpoint.c
+        mm/model_allocator.c
         mm/msg_allocator.c
         parallel/timewarp.c
         serial/serial.c)

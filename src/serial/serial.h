@@ -3,7 +3,7 @@
  *
  * @brief Sequential simulation engine
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #pragma once
@@ -12,4 +12,4 @@
 
 extern int serial_simulation(void);
 extern void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
-									unsigned payload_size);
+    unsigned payload_size);

@@ -5,7 +5,7 @@
  *
  * This module implements the simulator initialization routines
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <arch/thread.h>
@@ -17,7 +17,6 @@
 
 #include <ROOT-Sim.h>
 
-#include <inttypes.h>
 #include <string.h>
 
 /// A flag to check if the core library has been initialized correctly
@@ -127,9 +126,9 @@ int RootsimInit(const struct simulation_configuration *conf)
 
 	log_init(global_config.logfile);
 
-	if (global_config.synchronization == SERIAL)
+	if(global_config.synchronization == SERIAL)
 		global_config.n_threads = 1;
-	else if (global_config.n_threads == 0)
+	else if(global_config.n_threads == 0)
 		global_config.n_threads = thread_cores_count();
 
 	if(global_config.termination_time == 0)

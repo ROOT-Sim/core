@@ -1,11 +1,11 @@
 /**
- * @file test/tests/mm/buddy/buddy_test.c
+ * @file test/mm/buddy/buddy_hard.c
  *
  * @brief Test: rollbackable buddy system allocator
  *
  * A test of the buddy system allocator used to handle model's memory
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>
@@ -49,7 +49,7 @@ static void allocation_init(struct alc *alc)
 	//	__write_mem(alc->ptr, alc->c * sizeof(unsigned));
 
 	while(c--) {
-		unsigned v = test_random_u();
+		const unsigned v = test_random_u();
 		alc->ptr[c] = v;
 		alc->data[c] = v;
 	}
@@ -77,7 +77,7 @@ static void allocation_all_fini(struct alc *alc)
 	free(alc);
 }
 
-static void allocation_partial_write(struct alc *alc, unsigned p)
+static void allocation_partial_write(struct alc *alc, const unsigned p)
 {
 	alc += p * MAX_ALLOC_CNT;
 
@@ -85,20 +85,20 @@ static void allocation_partial_write(struct alc *alc, unsigned p)
 
 	unsigned w = test_random_range(MAX_ALLOC_CNT / 2);
 	while(w--) {
-		unsigned i = test_random_range(MAX_ALLOC_CNT);
+		const unsigned i = test_random_range(MAX_ALLOC_CNT);
 
 		if(alc[i].ptr == NULL) {
 			continue;
 		}
 
-		unsigned c = alc[i].c;
-		unsigned e = test_random_range(c + 1);
-		unsigned l = test_random_range(e + 1);
+		const unsigned c = alc[i].c;
+		const unsigned e = test_random_range(c + 1);
+		const unsigned l = test_random_range(e + 1);
 
 		//		__write_mem(alc[i].ptr + l, (e - l) * sizeof(unsigned));
 
 		for(unsigned j = l; j < e; ++j) {
-			unsigned v = test_random_u();
+			const unsigned v = test_random_u();
 			alc[i].ptr[j] = v;
 			alc[i].data[j] = v;
 		}
@@ -106,7 +106,7 @@ static void allocation_partial_write(struct alc *alc, unsigned p)
 
 	w = test_random_range(MAX_ALLOC_CNT / 6);
 	while(w--) {
-		unsigned i = test_random_range(MAX_ALLOC_CNT);
+		const unsigned i = test_random_range(MAX_ALLOC_CNT);
 		if(alc[i].ptr == NULL) {
 			allocation_init(&alc[i]);
 		} else {
@@ -117,7 +117,7 @@ static void allocation_partial_write(struct alc *alc, unsigned p)
 	}
 }
 
-static bool allocation_check(struct alc *alc, unsigned p)
+static bool allocation_check(const struct alc *alc, const unsigned p)
 {
 	alc += p * MAX_ALLOC_CNT;
 
@@ -136,7 +136,7 @@ static bool allocation_check(struct alc *alc, unsigned p)
 	return false;
 }
 
-static bool allocation_cycle(struct mm_state *mm, struct alc *alc, unsigned c, unsigned up, unsigned down)
+static bool allocation_cycle(struct mm_state *mm, struct alc *alc, unsigned c, unsigned up, const unsigned down)
 {
 	for(unsigned i = c + 1; i <= up; ++i) {
 		allocation_partial_write(alc, i);
@@ -158,7 +158,7 @@ static bool allocation_cycle(struct mm_state *mm, struct alc *alc, unsigned c, u
 			return true;
 		}
 
-		unsigned s = test_random_range(MAX_ALLOC_STEP) + 1;
+		const unsigned s = test_random_range(MAX_ALLOC_STEP) + 1;
 
 		if(up <= down + s) {
 			break;
@@ -187,8 +187,8 @@ int model_allocator_test_hard(_unused void *_)
 
 	unsigned c = 0;
 	for(unsigned j = 0; j < ALLOC_OSCILLATIONS; ++j) {
-		unsigned u = test_random_range(MAX_ALLOC_PHASES - 1) + 1;
-		unsigned d = test_random_range(u);
+		const unsigned u = test_random_range(MAX_ALLOC_PHASES - 1) + 1;
+		const unsigned d = test_random_range(u);
 
 		if(allocation_cycle(&lp->mm_state, alc, c, u, d)) {
 			return -1;

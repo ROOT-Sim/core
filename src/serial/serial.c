@@ -3,7 +3,7 @@
  *
  * @brief Sequential simulation engine
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <serial/serial.h>
@@ -105,7 +105,7 @@ static int serial_simulation_run(void)
 			last_vt = timer_new();
 		}
 
-		timer_uint t = timer_hr_new();
+		const timer_uint t = timer_hr_new();
 		struct lp_msg *to_free = heap_extract(queue, msg_is_before);
 		stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
 		msg_allocator_free(to_free);
@@ -124,8 +124,8 @@ static int serial_simulation_run(void)
  * @param payload payload of the event
  * @param payload_size size of the payload
  */
-void ScheduleNewEvent_serial(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *payload,
-    unsigned payload_size)
+void ScheduleNewEvent_serial(const lp_id_t receiver, const simtime_t timestamp, const unsigned event_type,
+    const void *payload, const unsigned payload_size)
 {
 	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
 

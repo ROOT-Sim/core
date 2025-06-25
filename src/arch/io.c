@@ -6,7 +6,7 @@
  * This module defines architecture independent input-oputput facilities for the
  * use in the simulator
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <arch/io.h>
@@ -31,8 +31,8 @@
 
 void io_local_time_get(char res[IO_TIME_BUFFER_LEN])
 {
-	time_t t = time(NULL);
-	struct tm *loc_t = localtime(&t);
+	const time_t t = time(NULL);
+	const struct tm *loc_t = localtime(&t);
 	strftime(res, IO_TIME_BUFFER_LEN, "%H:%M:%S", loc_t);
 }
 

@@ -3,7 +3,7 @@
  *
  * @brief Concurrent simulation engine
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <parallel/parallel.h>
@@ -47,7 +47,7 @@ static void worker_affinity_set(void)
  * @brief Initialize the worker thread data structures
  * @param this_rid The numerical identifier of the worker thread
  */
-static void worker_thread_init(rid_t this_rid)
+static void worker_thread_init(const rid_t this_rid)
 {
 	rid = this_rid;
 
@@ -110,7 +110,7 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 		while(i--)
 			process_msg();
 
-		simtime_t current_gvt = gvt_phase_run();
+		const simtime_t current_gvt = gvt_phase_run();
 		if(unlikely(current_gvt != 0.0)) {
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();

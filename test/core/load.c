@@ -1,9 +1,9 @@
 /**
- * @file test/tests/core/load.c
+ * @file test/core/load.c
  *
  * @brief Test: initialization of the core library
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <test.h>

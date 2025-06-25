@@ -1,9 +1,9 @@
 /**
- * @file test/tests/integration/correctness/application.c
+ * @file test/integration/correctness/application.c
  *
  * @brief Main module of the model used to verify the runtime correctness
  *
- * SPDX-FileCopyrightText: 2008-2025 HPDCS Group <rootsim@googlegroups.com>
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include "application.h"
@@ -15,7 +15,7 @@
 
 #define do_random() (rng_random(&state->rng_state))
 
-void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *event_content, unsigned event_size, void *st)
+void ProcessEvent(const lp_id_t me, const simtime_t now, const unsigned event_type, const void *event_content, const unsigned event_size, void * const st)
 {
 	lp_state *state = st;
 	if(state && state->events >= COMPLETE_EVENTS) {
@@ -46,9 +46,9 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 			rng_init(&state->rng_state, ((test_rng_state)me + 1) * 4390023366657240769ULL);
 			SetState(state);
 
-			unsigned buffers_to_allocate = do_random() * MAX_BUFFERS;
+			const unsigned buffers_to_allocate = do_random() * MAX_BUFFERS;
 			for(unsigned i = 0; i < buffers_to_allocate; ++i) {
-				unsigned c = do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t);
+				const unsigned c = do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t);
 				state->head = allocate_buffer(state, NULL, c);
 				state->buffer_count++;
 			}
@@ -70,7 +70,7 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 				    read_buffer(state->head, do_random() * state->buffer_count, state->total_checksum);
 
 			if(state->buffer_count < MAX_BUFFERS && do_random() < ALLOC_PROBABILITY) {
-				unsigned c = do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t);
+				const unsigned c = do_random() * MAX_BUFFER_SIZE / sizeof(uint64_t);
 				state->head = allocate_buffer(state, NULL, c);
 				state->buffer_count++;
 			}
@@ -81,8 +81,8 @@ void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *ev
 			}
 
 			if(state->buffer_count && do_random() < SEND_PROBABILITY) {
-				unsigned i = do_random() * state->buffer_count;
-				buffer *to_send = get_buffer(state->head, i);
+				const unsigned i = do_random() * state->buffer_count;
+				const buffer *to_send = get_buffer(state->head, i);
 
 				dest = do_random() * N_LPS;
 				ScheduleNewEvent(dest, now + do_random() * 10, RECEIVE, to_send->data,
