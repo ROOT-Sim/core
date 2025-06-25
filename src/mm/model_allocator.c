@@ -6,8 +6,7 @@
  * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
-#include <errno.h>
-#include <stddef.h>
+#include <mm/model_allocator.h>
 
 #include <mm/buddy/buddy.h>
 #include <mm/buddy/checkpoint.h>
@@ -15,6 +14,7 @@
 #include <log/log.h>
 #include <lp/lp.h>
 
+#include <errno.h>
 
 /**
  * @brief Initializes the memory management state for a logical process.
