@@ -11,9 +11,9 @@
 
 #include <mm/msg_allocator.h>
 
-__thread unsigned fossil_epoch_current;
+_Thread_local unsigned fossil_epoch_current;
 /// The value of the last GVT, kept here for easier fossil collection operations
-static __thread simtime_t fossil_gvt_current;
+static _Thread_local simtime_t fossil_gvt_current;
 
 /**
  * @brief Perform fossil collection operations at a given GVT
@@ -37,7 +37,7 @@ void fossil_lp_collect(struct lp_ctx *lp)
 	if(past_i == 0)
 		return;
 
-	simtime_t gvt = fossil_gvt_current;
+	const simtime_t gvt = fossil_gvt_current;
 	for(const struct lp_msg *msg = array_get_at(proc_p->p_msgs, --past_i); msg->dest_t >= gvt;) {
 		do {
 			if(!past_i)

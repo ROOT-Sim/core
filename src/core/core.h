@@ -11,9 +11,6 @@
 #pragma once
 
 #include <float.h>
-#include <limits.h>
-#include <stdbool.h>
-#include <stdint.h>
 
 #include <ROOT-Sim.h>
 
@@ -69,7 +66,7 @@ typedef int nid_t;
 /// The total number of LPs hosted in the node
 extern lp_id_t n_lps_node;
 /// The identifier of the thread
-extern __thread rid_t rid;
+extern _Thread_local rid_t rid;
 
 /// The total number of MPI nodes in the simulation
 extern nid_t n_nodes;

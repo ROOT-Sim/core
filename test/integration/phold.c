@@ -42,7 +42,7 @@ static double Random(struct phold_state *state)
 {
 	const __uint128_t multiplier = (((__uint128_t)0x0fc94e3bf4e9ab32ULL) << 64) + 0x866458cd56f5e605ULL;
 	state->seed *= multiplier;
-	uint64_t ret = state->seed >> 64u;
+	const uint64_t ret = state->seed >> 64u;
 	return (double)ret / (double)UINT64_MAX;
 }
 
@@ -51,17 +51,17 @@ static double Expent(struct phold_state *state)
 	return mean * (-log(1. - Random(state)));
 }
 
-static void set_seed(__uint128_t seed, struct phold_state *state)
+static void set_seed(const __uint128_t seed, struct phold_state *state)
 {
 	state->seed = ((seed) << 1u) | 1u;
 }
 
-void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, _unused const void *content, _unused unsigned size,
-    void *s)
+void ProcessEvent(const lp_id_t me, const simtime_t now, const unsigned event_type, _unused const void *content,
+	_unused const unsigned size, void *s)
 {
-	struct phold_message new_event = {0};
+	const struct phold_message new_event = {0};
 	lp_id_t dest;
-	struct phold_state *state = (struct phold_state *)s;
+	struct phold_state *state = s;
 
 	switch(event_type) {
 		case LP_INIT:

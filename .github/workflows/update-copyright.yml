@@ -10,6 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Update copyright
-        uses: ROOT-Sim/ci-actions/update-copyright@v1.6
+        uses: ROOT-Sim/ci-actions/update-copyright@030cae234d9698712812e888d0d9d13ca8e1814f
         with:
           branch-to-update: develop
