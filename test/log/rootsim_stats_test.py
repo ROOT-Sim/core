@@ -99,6 +99,7 @@ def test_stats_file(base_name, expected):
             if float(match[i + 1]) == 0:
                 sys.exit(1)
         elif expected_field != match[i + 1]:
+            print(f"Error in {base_name} at field {i + 1}: expected '{expected_field}', got '{match[i + 1]}'")
             sys.exit(1)
 
 
