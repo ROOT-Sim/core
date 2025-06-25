@@ -183,14 +183,14 @@ static inline void silent_execution(const struct lp_ctx *lp, array_count_t last_
 
 /**
  * @brief Send anti-messages
- * @param lp the message processing data for the LP that has to send anti-messages
+ * @param msg_processing the message processing data for the LP that has to send anti-messages
  * @param past_i the index in @a proc_p of the last validly processed message
  */
-static inline void send_anti_messages(struct process_ctx *lp, const array_count_t past_i)
+static inline void send_anti_messages(struct process_ctx *msg_processing, const array_count_t past_i)
 {
-	const array_count_t p_cnt = array_count(lp->p_msgs);
+	const array_count_t p_cnt = array_count(msg_processing->p_msgs);
 	for(array_count_t i = past_i; i < p_cnt; ++i) {
-		struct lp_msg *msg = array_get_at(lp->p_msgs, i);
+		struct lp_msg *msg = array_get_at(msg_processing->p_msgs, i);
 
 		while(is_msg_sent(msg)) {
 			if(is_msg_remote(msg)) {
@@ -207,7 +207,7 @@ static inline void send_anti_messages(struct process_ctx *lp, const array_count_
 			}
 
 			stats_take(STATS_MSG_ANTI, 1);
-			msg = array_get_at(lp->p_msgs, ++i);
+			msg = array_get_at(msg_processing->p_msgs, ++i);
 		}
 
 		const uint32_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
@@ -215,7 +215,7 @@ static inline void send_anti_messages(struct process_ctx *lp, const array_count_
 			msg_queue_insert_self(msg);
 		stats_take(STATS_MSG_ROLLBACK, 1);
 	}
-	array_count(lp->p_msgs) = past_i;
+	array_count(msg_processing->p_msgs) = past_i;
 }
 
 /**
@@ -235,37 +235,37 @@ static void do_rollback(struct lp_ctx *lp, const array_count_t past_i)
 
 /**
  * @brief Find the last valid processed message with respect to a straggler message
- * @param proc_p the message processing data for the LP
+ * @param msg_processing the message processing data for the LP
  * @param s_msg the straggler message
  * @return the index in @a proc_p of the last validly processed message
  */
-static inline array_count_t match_straggler_msg(const struct process_ctx *proc_p, const struct lp_msg *s_msg)
+static inline array_count_t match_straggler_msg(const struct process_ctx *msg_processing, const struct lp_msg *s_msg)
 {
-	array_count_t i = array_count(proc_p->p_msgs) - 1;
+	array_count_t i = array_count(msg_processing->p_msgs) - 1;
 	const struct lp_msg *msg;
 	do {
 		if(!i)
 			return 0;
-		msg = array_get_at(proc_p->p_msgs, --i);
+		msg = array_get_at(msg_processing->p_msgs, --i);
 	} while(is_msg_sent(msg) || msg_is_before(s_msg, msg));
 	return i + 1;
 }
 
 /**
  * @brief Find the last valid processed message with respect to a received anti-message
- * @param proc_p the message processing data for the LP
+ * @param msg_processing the message processing data for the LP
  * @param a_msg the anti-message
  * @return the index in @a proc_p of the last validly processed message
  */
-static inline array_count_t match_anti_msg(const struct process_ctx *proc_p, const struct lp_msg *a_msg)
+static inline array_count_t match_anti_msg(const struct process_ctx *msg_processing, const struct lp_msg *a_msg)
 {
-	array_count_t i = array_count(proc_p->p_msgs) - 1;
-	const struct lp_msg *msg = array_get_at(proc_p->p_msgs, i);
+	array_count_t i = array_count(msg_processing->p_msgs) - 1;
+	const struct lp_msg *msg = array_get_at(msg_processing->p_msgs, i);
 	while(a_msg != msg)
-		msg = array_get_at(proc_p->p_msgs, --i);
+		msg = array_get_at(msg_processing->p_msgs, --i);
 
 	while(i) {
-		msg = array_get_at(proc_p->p_msgs, --i);
+		msg = array_get_at(msg_processing->p_msgs, --i);
 		if(is_msg_past(msg))
 			return i + 1;
 	}
@@ -312,14 +312,14 @@ static inline void handle_remote_anti_msg(struct lp_ctx *lp, struct lp_msg *a_ms
 
 /**
  * @brief Check if a remote message has already been invalidated by an early remote anti-message
- * @param proc_p the message processing data of the current LP
+ * @param msg_processing the message processing data of the current LP
  * @param msg the remote message to check
  * @return true if the message has been matched with an early remote anti-message, false otherwise
  */
-static inline bool check_early_anti_messages(struct process_ctx *proc_p, struct lp_msg *msg)
+static inline bool check_early_anti_messages(struct process_ctx *msg_processing, struct lp_msg *msg)
 {
 	const uint32_t m_id = msg->raw_flags, m_seq = msg->m_seq;
-	struct lp_msg **prev_p = &proc_p->early_antis;
+	struct lp_msg **prev_p = &msg_processing->early_antis;
 	struct lp_msg *a_msg = *prev_p;
 	do {
 		if(a_msg->raw_flags == m_id && a_msg->m_seq == m_seq) {
