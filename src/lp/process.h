@@ -17,11 +17,11 @@
 struct process_ctx {
 	/// The messages processed in the past by the owner LP
 	dyn_array(struct lp_msg *) p_msgs;
-	/// The list of remote anti-messages delivered before their original counterpart
-	/** Hopefully this is 99.9% of the time empty */
+	/** The list of remote anti-messages delivered before their original counterpart.
+	 *  Hopefully this is 99.9% of the time empty */
 	struct lp_msg *early_antis;
-	/// The current logical time at which this LP is
-	/** This is lazily updated and not always accurate; it's sufficient for faster straggler detection */
+	/** The current logical time at which this LP is. This is lazily updated and not always accurate;
+	 * it's sufficient for faster straggler detection */
 	simtime_t bound;
 };
 

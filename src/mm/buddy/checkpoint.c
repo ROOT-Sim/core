@@ -12,13 +12,13 @@
 
 
 /**
- * @brief Traverses the buddy tree and performs an action on each unallocated block.
+ * @brief Traverses the buddy tree and performs an action on each allocated block.
  *
  * This macro iterates over the buddy tree represented by the `longest` array and
- * invokes the provided `on_visit` action for each unallocated memory block.
+ * invokes the provided `on_visit` action for each allocated memory block.
  *
  * @param longest The array representing the buddy tree.
- * @param on_visit A callback action to perform on each unallocated block. The callback
+ * @param on_visit A callback action to perform on each allocated block. The callback
  *                 receives two parameters:
  *                 - `offset`: The offset of the block in the memory buffer.
  *                 - `length`: The size of the block.
