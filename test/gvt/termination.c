@@ -30,10 +30,10 @@ static bool DummyCanEnd(_unused lp_id_t lid, _unused const void *state)
 }
 
 static struct simulation_configuration serial_conf = {
-    .lps = 1, .dispatcher = DummyProcessEvent, .committed = DummyCanEnd, .serial = true};
+    .lps = 1, .dispatcher = DummyProcessEvent, .committed = DummyCanEnd, .synchronization = SERIAL};
 
 static struct simulation_configuration parallel_conf = {
-    .lps = 1, .dispatcher = DummyProcessEvent, .committed = DummyCanEnd, .serial = false};
+    .lps = 1, .dispatcher = DummyProcessEvent, .committed = DummyCanEnd, .synchronization = TIME_WARP};
 
 static int force_termination_test(void *conf)
 {

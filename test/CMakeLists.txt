@@ -41,7 +41,7 @@ test_program_link_libraries(sync rscore)
 # Integration tests
 test_program(correctness_serial integration/correctness/serial.c integration/correctness/application.c integration/correctness/functions.c integration/correctness/output_256.c)
 test_program_link_libraries(correctness_serial rscore)
-test_program(correctness_parallel integration/correctness/parallel.c integration/correctness/application.c integration/correctness/functions.c integration/correctness/output_256.c)
+test_program(correctness_parallel integration/correctness/timewarp.c integration/correctness/application.c integration/correctness/functions.c integration/correctness/output_256.c)
 test_program_link_libraries(correctness_parallel rscore)
 test_program(phold integration/phold.c)
 test_program_link_libraries(phold rscore)

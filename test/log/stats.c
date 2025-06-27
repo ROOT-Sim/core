@@ -39,7 +39,7 @@ static struct simulation_configuration conf = {
     .stats_file = NULL,
     .ckpt_interval = 0,
     .core_binding = true,
-    .serial = false,
+    .synchronization = TIME_WARP,
     .dispatcher = DummyProcessEvent,
     .committed = DummyCanEnd,
 };

@@ -106,7 +106,7 @@ struct simulation_configuration conf = {
     .stats_file = "phold",
     .ckpt_interval = 0,
     .core_binding = true,
-    .serial = false,
+    .synchronization = TIME_WARP,
     .dispatcher = ProcessEvent,
     .committed = CanEnd,
 };

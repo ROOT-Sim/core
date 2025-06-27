@@ -62,7 +62,7 @@ static _Thread_local struct lp_msg *current_msg;
 void ScheduleNewEvent(const lp_id_t receiver, const simtime_t timestamp, const unsigned event_type, const void *payload,
     unsigned payload_size)
 {
-	if(unlikely(global_config.serial)) {
+	if(unlikely(global_config.synchronization == SERIAL)) {
 		ScheduleNewEvent_serial(receiver, timestamp, event_type, payload, payload_size);
 		return;
 	}

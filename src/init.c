@@ -17,7 +17,6 @@
 
 #include <ROOT-Sim.h>
 
-#include <inttypes.h>
 #include <string.h>
 
 /// A flag to check if the core library has been initialized correctly
@@ -54,14 +53,21 @@ static void print_config(void)
 	else
 		fprintf(stderr, "%lf\n", global_config.termination_time);
 
-	if(global_config.serial) {
-		fprintf(stderr, "Parallelism: sequential simulation\n");
-	} else {
+	switch (global_config.synchronization) {
+		case SERIAL:
+			fprintf(stderr, "Parallelism: sequential simulation\n");
+			break;
+		case TIME_WARP:
+			fprintf(stderr, "Parallelism: optimistic synchronization\n");
+			break;
+	}
+	if (global_config.synchronization != SERIAL) {
 		if(n_nodes > 1)
 			fprintf(stderr, "Parallelism: %d MPI processes\n", n_nodes);
 		else
 			fprintf(stderr, "Parallelism: %u threads\n", global_config.n_threads);
 	}
+
 	fprintf(stderr, "Thread-to-core binding: %s\n", global_config.core_binding ? "enabled" : "disabled");
 
 	fprintf(stderr, "GVT period: %u ms\n", global_config.gvt_period / 1000);
@@ -69,7 +75,7 @@ static void print_config(void)
 	if(global_config.ckpt_interval) {
 		fprintf(stderr, "Checkpoint interval: %u events\n", global_config.ckpt_interval);
 	} else {
-		if(!global_config.serial)
+		if(global_config.synchronization != SERIAL)
 			fprintf(stderr, "Checkpoint interval: auto\n");
 	}
 
@@ -108,9 +114,19 @@ int RootsimInit(const struct simulation_configuration *conf)
 		return -1;
 	}
 
+	if (global_config.serial) {
+		fprintf(stderr, "Using the deprecated `serial` configuration flag. Please swith to `.synchronization = SERIAL` instead\n");
+		global_config.synchronization = SERIAL;
+	}
+
+	if (unlikely(global_config.synchronization == 0)) {
+		fprintf(stderr, "No synchronization algorithm specified.\n");
+		return -1;
+	}
+
 	log_init(global_config.logfile);
 
-	if(global_config.serial)
+	if(global_config.synchronization == SERIAL)
 		global_config.n_threads = 1;
 	else if(global_config.n_threads == 0)
 		global_config.n_threads = thread_cores_count();
@@ -138,7 +154,7 @@ int RootsimRun(void)
 	if(!configuration_done)
 		return -1;
 
-	if(!global_config.serial)
+	if(global_config.synchronization == TIME_WARP)
 		mpi_global_init(NULL, NULL);
 
 	if(global_config.log_level < LOG_SILENT && !rid) {
@@ -146,7 +162,7 @@ int RootsimRun(void)
 		print_config();
 	}
 
-	if(global_config.serial) {
+	if(global_config.synchronization == SERIAL) {
 		ret = serial_simulation();
 	} else {
 		ret = parallel_simulation();

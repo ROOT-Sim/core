@@ -24,7 +24,7 @@ set(rscore_srcs
         mm/buddy/checkpoint.c
         mm/model_allocator.c
         mm/msg_allocator.c
-        parallel/parallel.c
+        parallel/timewarp.c
         serial/serial.c)
 
 if(MPI_FOUND)
