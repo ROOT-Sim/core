@@ -21,7 +21,7 @@ extern _Thread_local uint32_t remote_msg_received[2];
 
 extern void gvt_start_processing(void);
 extern void gvt_on_done_ctrl_msg(void);
-extern void gvt_msg_drain(void);
+extern void gvt_msg_barrier(void);
 
 /**
  * Registers an outgoing remote message in the GVT subsystem

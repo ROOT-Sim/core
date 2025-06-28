@@ -58,8 +58,6 @@ void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
 
 void mpi_remote_msg_handle(void) {}
 
-void mpi_remote_msg_drain(void) {}
-
 void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
 {
 	*result = values[0];

@@ -75,7 +75,7 @@ static void worker_thread_init(const rid_t this_rid)
  */
 static void worker_thread_fini(void)
 {
-	gvt_msg_drain();
+	gvt_msg_barrier();
 
 	if(sync_thread_barrier()) {
 		stats_dump();

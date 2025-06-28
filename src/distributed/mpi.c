@@ -205,52 +205,6 @@ void mpi_remote_msg_handle(void)
 }
 
 /**
- * @brief Empties the queue of incoming MPI messages, ignoring them
- *
- * This routine checks, using the MPI probing mechanism, for new remote messages and it discards them. It is used at
- * simulation completion to clear MPI state.
- */
-void mpi_remote_msg_drain(void)
-{
-	struct lp_msg *msg = NULL;
-	int msg_size = 0;
-
-	while(1) {
-		int pending;
-		MPI_Message mpi_msg;
-		MPI_Status status;
-
-		MPI_Improbe(MPI_ANY_SOURCE, RS_MSG_TAG, MPI_COMM_WORLD, &pending, &mpi_msg, &status);
-
-		if(!pending)
-			break;
-
-		int size;
-		MPI_Get_count(&status, MPI_BYTE, &size);
-
-		if(unlikely(size == sizeof(enum msg_ctrl_code))) {
-			enum msg_ctrl_code c;
-			MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-			control_msg_process(c);
-			continue;
-		}
-
-		if(size > msg_size) {
-			msg = mm_realloc(msg, size + msg_preamble_size());
-			msg_size = size;
-		}
-		MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-
-		if(size == msg_remote_anti_size())
-			gvt_remote_anti_msg_receive(msg);
-		else
-			gvt_remote_msg_receive(msg);
-	}
-
-	mm_free(msg);
-}
-
-/**
  * @brief Computes the sum-reduction-scatter operation across all nodes.
  * @param values a flexible array implementing the addendum vector from the calling node.
  * @param result a pointer where the nid-th component of the sum will be stored.
