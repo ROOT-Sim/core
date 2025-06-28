@@ -12,7 +12,7 @@
 #include <core/core.h>
 #include <distributed/mpi.h>
 #include <log/log.h>
-#include <parallel/parallel.h>
+#include <parallel/timewarp.h>
 #include <serial/serial.h>
 
 #include <ROOT-Sim.h>
@@ -165,7 +165,7 @@ int RootsimRun(void)
 	if(global_config.synchronization == SERIAL) {
 		ret = serial_simulation();
 	} else {
-		ret = parallel_simulation();
+		ret = timewarp_simulation();
 		mpi_global_fini();
 	}
 

@@ -11,8 +11,12 @@
 #include <distributed/mpi.h>
 #include <lp/lp.h>
 
+// TODO: this module, especially in distributed executions, is prone to deadlocks if CanEnd is used to decide
+//       termination. This code needs to be reworked to have a two phase termination acknowledgement to be committed
+//       only right after a successful GVT computation.
+
 /// The number of nodes that still need to continue running the simulation
-_Atomic nid_t nodes_to_end;
+static _Atomic nid_t nodes_to_end;
 /// The number of local threads that still need to continue running the simulation
 static _Atomic rid_t thr_to_end;
 /// The number of thread-locally bounded LPs that still need to continue running the simulation
@@ -71,14 +75,20 @@ void termination_on_ctrl_msg(void)
  * other processing threads on the node are willing to end the simulation, a termination control message is broadcast to
  * the other nodes.
  */
-void termination_on_gvt(const simtime_t current_gvt)
+bool termination_on_gvt(const simtime_t current_gvt)
 {
-	if(likely((lps_to_end || max_t >= current_gvt) && current_gvt < global_config.termination_time))
-		return;
-	max_t = SIMTIME_MAX;
-	const unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U, memory_order_relaxed);
-	if(t == 1)
-		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
+	if(current_gvt >= global_config.termination_time ||
+	    atomic_load_explicit(&nodes_to_end, memory_order_relaxed) == 0)
+		return true;
+
+	if(unlikely(!lps_to_end && max_t < current_gvt)) {
+		max_t = SIMTIME_MAX;
+		const unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U, memory_order_relaxed);
+		if(t == 1)
+			mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
+	}
+
+	return false;
 }
 
 /**
@@ -91,7 +101,7 @@ void RootsimStop(void)
 		return;
 	}
 
-	nid_t i = n_nodes + 1;
+	nid_t i = n_nodes;
 	while(i--)
 		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
 }

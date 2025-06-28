@@ -373,16 +373,8 @@ static void handle_straggler_msg(struct lp_ctx *lp, const struct lp_msg *msg)
  *
  * This function encloses most of the actual parallel/distributed simulation logic.
  */
-void process_msg(void)
+void process_msg(struct lp_msg *msg)
 {
-	const timer_uint t = timer_hr_new();
-	struct lp_msg *msg = msg_queue_extract();
-	stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
-	if(unlikely(!msg)) {
-		current_lp = NULL;
-		return;
-	}
-
 	gvt_on_msg_extraction(msg->dest_t);
 
 	struct lp_ctx *lp = &lps[msg->dest];
