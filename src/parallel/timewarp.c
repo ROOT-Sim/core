@@ -1,5 +1,5 @@
 /**
- * @file parallel/parallel.c
+ * @file parallel/timewarp.c
  *
  * @brief Concurrent simulation engine
  *
@@ -14,6 +14,8 @@
 #include <datatypes/msg_queue.h>
 #include <distributed/mpi.h>
 #include <gvt/fossil.h>
+#include <gvt/gvt.h>
+#include <gvt/termination.h>
 #include <log/stats.h>
 #include <mm/msg_allocator.h>
 
@@ -59,10 +61,8 @@ static void worker_thread_init(const rid_t this_rid)
 	sync_thread_barrier();
 	lp_init();
 
-	if(sync_thread_barrier()) {
+	if(sync_thread_barrier())
 		mpi_node_barrier();
-		lp_initialized_set();
-	}
 
 	if(sync_thread_barrier()) {
 		logger(LOG_INFO, "Starting simulation");
@@ -159,7 +159,7 @@ static void timewarp_global_fini(void)
  */
 int timewarp_simulation(void)
 {
-	logger(LOG_INFO, "Initializing Timewarp simulation");
+	logger(LOG_INFO, "Initializing Time Warp simulation");
 	timewarp_global_init();
 	stats_global_time_take(STATS_GLOBAL_INIT_END);
 

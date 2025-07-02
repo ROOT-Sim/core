@@ -13,20 +13,20 @@
 #include <mm/mm.h>
 
 #include <datatypes/msg_queue.h>
+#include <gvt/gvt.h>
 #include <mm/msg_allocator.h>
 
 #include <mpi.h>
 
-enum {
-	RS_MSG_TAG = 0,
-	RS_DATA_TAG
-};
+enum { RS_MSG_TAG = 0, RS_DATA_TAG };
 
 /// Array of control codes values to be able to get their address for MPI_Send()
-static const enum msg_ctrl_code ctrl_msgs[] = {
-	[MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
-	[MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
-	[MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
+static const enum control_msg_type ctrl_msgs[] = {
+    [MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
+    [MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
+    [MSG_CTRL_LP_END_TERMINATION] = MSG_CTRL_LP_END_TERMINATION,
+    [MSG_CTRL_PHASE_ORANGE_TERMINATION] = MSG_CTRL_PHASE_ORANGE_TERMINATION,
+    [MSG_CTRL_PHASE_PURPLE_TERMINATION] = MSG_CTRL_PHASE_PURPLE_TERMINATION,
 };
 
 /// The MPI request associated with the non blocking scatter gather collective
@@ -38,8 +38,7 @@ static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
  * @brief Handles a MPI error
  * @param comm the MPI communicator involved in the error
  * @param err_code_p a pointer to the error code
- * @param ... an implementation specific list of additional arguments in which
- *            we are not interested
+ * @param ... an implementation specific list of additional arguments in which we are not interested
  *
  * This is registered in mpi_global_init() to print meaningful MPI errors
  */
@@ -140,12 +139,10 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, const nid_t dest_nid)
  * @brief Sends a platform control message to all the nodes, including self
  * @param ctrl the control message to send
  */
-void mpi_control_msg_broadcast(const enum msg_ctrl_code ctrl)
+void mpi_control_msg_broadcast(const enum control_msg_type ctrl)
 {
-	nid_t i = n_nodes;
-	while(i--) {
+	for(nid_t i = n_nodes; i--;)
 		mpi_control_msg_send_to(ctrl, i);
-	}
 }
 
 /**
@@ -153,7 +150,7 @@ void mpi_control_msg_broadcast(const enum msg_ctrl_code ctrl)
  * @param ctrl the control message to send
  * @param dest the id of the destination node
  */
-void mpi_control_msg_send_to(const enum msg_ctrl_code ctrl, const nid_t dest)
+void mpi_control_msg_send_to(const enum control_msg_type ctrl, const nid_t dest)
 {
 	MPI_Request req;
 	MPI_Isend(&ctrl_msgs[ctrl], sizeof(*ctrl_msgs), MPI_BYTE, dest, RS_MSG_TAG, MPI_COMM_WORLD, &req);
@@ -184,8 +181,8 @@ void mpi_remote_msg_handle(void)
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		struct lp_msg *msg;
 		if(unlikely(size <= (int)msg_remote_anti_size())) {
-			if(unlikely(size == sizeof(enum msg_ctrl_code))) {
-				enum msg_ctrl_code c;
+			if(unlikely(size == sizeof(enum control_msg_type))) {
+				enum control_msg_type c;
 				MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
 				control_msg_process(c);
 				continue;
@@ -233,11 +230,10 @@ bool mpi_reduce_sum_scatter_done(void)
 
 /**
  * @brief Computes the min-reduction operation across all nodes.
- * @param node_min_p a pointer to the value from the calling node which will
- *                   also be used to store the computed minimum.
+ * @param node_min_p a pointer to the value from the calling node which will also be used to store the computed minimum.
  *
  * Each node supplies a single simtime_t value. The minimum of all these values is computed and stored in @a node_min_p
- * itself. It is expected that only a single thread calls this function at a time. Each node has to call this function
+ * itself. It is expected that only a single thread calls this function at a time. Each rank has to call this function
  * else the result can't be computed. It is possible to have a single mpi_reduce_min() operation pending at a time.
  * Both arguments must point to valid memory regions until mpi_reduce_min_done() returns true.
  */

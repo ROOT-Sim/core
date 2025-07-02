@@ -42,12 +42,12 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
 	__builtin_unreachable();
 }
 
-void mpi_control_msg_broadcast(enum msg_ctrl_code ctrl)
+void mpi_control_msg_broadcast(enum control_msg_type ctrl)
 {
 	control_msg_process(ctrl);
 }
 
-void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
+void mpi_control_msg_send_to(enum control_msg_type ctrl, nid_t dest)
 {
 	assert(dest == 0);
 	if(dest)

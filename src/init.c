@@ -15,8 +15,7 @@
 #include <parallel/timewarp.h>
 #include <serial/serial.h>
 
-#include <ROOT-Sim.h>
-
+#include <inttypes.h>
 #include <string.h>
 
 /// A flag to check if the core library has been initialized correctly

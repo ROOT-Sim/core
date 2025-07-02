@@ -14,26 +14,26 @@
 
 static _Atomic bool initialized = false;
 
-static void DummyProcessEvent(_unused const lp_id_t me, _unused const simtime_t now, _unused const unsigned event_type,
+static void TestStopProcessEvent(_unused const lp_id_t me, _unused const simtime_t now, _unused const unsigned event_type,
     _unused const void *event_content, _unused const unsigned event_size, _unused void *st)
 {
 	if(event_type == LP_FINI)
 		return;
 	initialized = true;
 	test_thread_sleep(5);
-	ScheduleNewEvent(0, now + 1.0, 0, NULL, 0);
+	ScheduleNewEvent(me, now + 1.0, 0, NULL, 0);
 }
 
-static bool DummyCanEnd(_unused lp_id_t lid, _unused const void *state)
+static bool TestStopCanEnd(_unused lp_id_t lid, _unused const void *state)
 {
 	return false; // Makes the simulation run infinitely
 }
 
-static struct simulation_configuration serial_conf = {
-    .lps = 1, .dispatcher = DummyProcessEvent, .committed = DummyCanEnd, .synchronization = SERIAL};
+static struct simulation_configuration test_stop_serial_conf = {
+    .lps = 2, .dispatcher = TestStopProcessEvent, .committed = TestStopCanEnd, .synchronization = SERIAL};
 
-static struct simulation_configuration parallel_conf = {
-    .lps = 1, .dispatcher = DummyProcessEvent, .committed = DummyCanEnd, .synchronization = TIME_WARP};
+static struct simulation_configuration test_stop_parallel_conf = {
+    .lps = 2, .dispatcher = TestStopProcessEvent, .committed = TestStopCanEnd, .synchronization = TIME_WARP};
 
 static int force_termination_test(void *conf)
 {
@@ -51,7 +51,7 @@ static int force_termination_test(void *conf)
 int main(void)
 {
 	initialized = false;
-	test_parallel("Test forced termination serial", force_termination_test, &serial_conf, 2);
+	test_parallel("Test forced termination serial", force_termination_test, &test_stop_serial_conf, 2);
 	initialized = false;
-	test_parallel("Test forced termination parallel", force_termination_test, &parallel_conf, 2);
+	test_parallel("Test forced termination parallel", force_termination_test, &test_stop_parallel_conf, 2);
 }

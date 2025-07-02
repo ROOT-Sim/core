@@ -1,7 +1,7 @@
 /**
  * @file parallel/timewarp.h
  *
- * @brief Concurrent simulation engine based on the Timewarp synchronization algorithm
+ * @brief Concurrent simulation engine based on the Time Warp synchronization algorithm
  *
  * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only

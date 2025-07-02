@@ -9,29 +9,23 @@
 #include <gvt/termination.h>
 
 #include <distributed/mpi.h>
+#include <gvt/gvt.h>
 #include <lp/lp.h>
 
-// TODO: this module, especially in distributed executions, is prone to deadlocks if CanEnd is used to decide
-//       termination. This code needs to be reworked to have a two phase termination acknowledgement to be committed
-//       only right after a successful GVT computation.
+#define TERMINATION_COMMITTED (-1.0)
+#define TERMINATION_NOT_READY (-2.0)
 
 /// The number of nodes that still need to continue running the simulation
-static _Atomic nid_t nodes_to_end;
-/// The number of local threads that still need to continue running the simulation
-static _Atomic rid_t thr_to_end;
-/// The number of thread-locally bounded LPs that still need to continue running the simulation
-static _Thread_local uint64_t lps_to_end;
-/// The maximum speculative time at which a thread-local LP declared its intention to terminate
-/** FIXME: a wrong high termination time during a speculative trajectory forces the simulation to uselessly continue */
-static _Thread_local simtime_t max_t;
+static _Atomic lp_id_t lps_to_end;
+/// The gvt phase
+static _Atomic int termination_gvt_phase = -1;
 
 /**
  * @brief Initialize the termination detection module node-wide
  */
 void termination_global_init(void)
 {
-	atomic_store_explicit(&thr_to_end, global_config.n_threads, memory_order_relaxed);
-	atomic_store_explicit(&nodes_to_end, n_nodes, memory_order_relaxed);
+	atomic_store_explicit(&lps_to_end, global_config.lps, memory_order_relaxed);
 }
 
 /**
@@ -39,9 +33,7 @@ void termination_global_init(void)
  */
 void termination_lp_init(struct lp_ctx *lp)
 {
-	const bool term = global_config.committed(lp - lps, lp->state_pointer);
-	lps_to_end += !term;
-	lp->termination_t = term * SIMTIME_MAX;
+	lp->termination_t = TERMINATION_NOT_READY;
 }
 
 /**
@@ -51,21 +43,17 @@ void termination_lp_init(struct lp_ctx *lp)
  */
 void termination_on_msg_process(struct lp_ctx *lp, simtime_t msg_time)
 {
-	if(lp->termination_t)
+	if(unlikely(lp->termination_t >= TERMINATION_COMMITTED))
 		return;
 
-	const bool term = global_config.committed(lp - lps, lp->state_pointer);
-	max_t = term ? max(msg_time, max_t) : max_t;
-	lp->termination_t = term * msg_time;
-	lps_to_end -= term;
-}
+	if(unlikely(lp->termination_t == TERMINATION_REQUESTED)) {
+		lp->termination_t = msg_time;
+		return;
+	}
 
-/**
- * @brief Compute termination operations after the receipt of a termination control message
- */
-void termination_on_ctrl_msg(void)
-{
-	atomic_fetch_sub_explicit(&nodes_to_end, 1U, memory_order_relaxed);
+	const bool term = global_config.committed(lp - lps, lp->state_pointer);
+	if(term)
+		lp->termination_t = msg_time;
 }
 
 /**
@@ -77,18 +65,8 @@ void termination_on_ctrl_msg(void)
  */
 bool termination_on_gvt(const simtime_t current_gvt)
 {
-	if(current_gvt >= global_config.termination_time ||
-	    atomic_load_explicit(&nodes_to_end, memory_order_relaxed) == 0)
-		return true;
-
-	if(unlikely(!lps_to_end && max_t < current_gvt)) {
-		max_t = SIMTIME_MAX;
-		const unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U, memory_order_relaxed);
-		if(t == 1)
-			mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
-	}
-
-	return false;
+	return unlikely(current_gvt >= global_config.termination_time ||
+			atomic_load_explicit(&termination_gvt_phase, memory_order_relaxed) == (int)gvt_phase);
 }
 
 /**
@@ -101,20 +79,72 @@ void RootsimStop(void)
 		return;
 	}
 
-	nid_t i = n_nodes;
-	while(i--)
-		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
+	for(lp_id_t remaining = atomic_load_explicit(&lps_to_end, memory_order_relaxed); remaining--;)
+		mpi_control_msg_send_to(MSG_CTRL_LP_END_TERMINATION, n_nodes - 1);
 }
 
 /**
- * @brief Compute termination operations after a LP has been rollbacked
- * @param lp the LP that has been rollbacked
+ * @brief Potentially invalidate termination state after a LP rolled back
+ * @param lp the LP that has been rolled back
  * @param msg_time the timestamp of the straggler or anti message that caused the rollback
  */
 void termination_on_lp_rollback(struct lp_ctx *lp, const simtime_t msg_time)
 {
-	const simtime_t old_t = lp->termination_t;
-	const bool keep = old_t < msg_time || old_t == SIMTIME_MAX;
-	lp->termination_t = keep * old_t;
-	lps_to_end += !keep;
+	if(lp->termination_t >= msg_time)
+		lp->termination_t = TERMINATION_NOT_READY;
+}
+
+/**
+ * @brief Compute termination operations after a LP has been rolled back
+ * @param lp the LP that has been rolled back
+ * @param msg_time the timestamp of the straggler or anti message that caused the rollback
+ */
+void termination_on_lp_fossil(struct lp_ctx *lp, const simtime_t gvt_time)
+{
+	if(likely(lp->termination_t < 0.0 || lp->termination_t >= gvt_time))
+		return;
+
+	lp->termination_t = TERMINATION_COMMITTED;
+	mpi_control_msg_send_to(MSG_CTRL_LP_END_TERMINATION, n_nodes - 1);
+}
+
+/**
+ * @brief Process a LP termination control message
+ */
+void termination_on_lp_end_ctrl_msg(void)
+{
+	lp_id_t left = atomic_fetch_sub_explicit(&lps_to_end, 1U, memory_order_relaxed);
+	if(likely(left != 1 || nid != n_nodes - 1))
+		return;
+
+	// The simulation can finally end. We use GVT-tracked messages so that we can make sure MPI ranks will be
+	// exiting the processing loop at the same (logically committed) time
+	for(nid_t i = n_nodes; i;)
+		++remote_msg_seq[gvt_phase][--i];
+
+	mpi_control_msg_broadcast(gvt_phase ? MSG_CTRL_PHASE_ORANGE_TERMINATION : MSG_CTRL_PHASE_PURPLE_TERMINATION);
+}
+
+/**
+ * @brief Handle the termination process triggered by orange phase global termination control message
+ */
+void termination_on_orange_end_ctrl_msg(void)
+{
+	++remote_msg_received[1U];
+	atomic_store_explicit(&termination_gvt_phase, 0U, memory_order_relaxed);
+}
+
+/**
+ * @brief Handle the termination process triggered by purple phase global termination control message
+ */
+void termination_on_purple_end_ctrl_msg(void)
+{
+	++remote_msg_received[0U];
+	atomic_store_explicit(&termination_gvt_phase, 1U, memory_order_relaxed);
+}
+
+void rs_termination_request(void)
+{
+	if(current_lp->termination_t < 0)
+		current_lp->termination_t = TERMINATION_REQUESTED;
 }
