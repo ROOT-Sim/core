@@ -17,6 +17,7 @@ set(rscore_srcs
         log/stats.c
         lp/lp.c
         lp/process.c
+        lp/retractable.c
         mm/checkpoint/autonomic.c
         mm/checkpoint/full.c
         mm/checkpoint/incremental.c

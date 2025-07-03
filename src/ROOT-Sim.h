@@ -71,7 +71,7 @@ typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
 /// These event types are automatically scheduled to the model according to the following logic:
 /// - `LP_INIT`: Represents the initialization event for a logical process.
 /// - `LP_FINI`: Represents the finalization event for a logical process.
-enum rootsim_event { LP_INIT = 65534, LP_FINI };
+enum rootsim_event { LP_RETRACTABLE = 0, LP_INIT = 65534, LP_FINI };
 
 /**
  * @brief API to inject a new event in the simulation
@@ -154,6 +154,29 @@ extern void rs_free(void *ptr);
  * @warning The memory block must have been allocated using the custom memory management functions.
  */
 extern void *rs_realloc(void *ptr, size_t req_size);
+
+/**
+ * @brief Enable retractable notifications for the calling Logical Process (LP)
+ *
+ * This function allows an LP to enable retractable notifications — special events
+ * that the LP can self-schedule and efficiently modify or cancel by updating their timestamp.
+ *
+ * @param retractable_ts_pointer
+ *   Pointer to a simulation time variable stored in rollback-able memory. The LP updates this
+ *   variable to control when its retractable notification should trigger.
+ *
+ * Usage details:
+ * - The LP should update the value pointed to by retractable_ts_pointer whenever its
+ *   future notification time changes.
+ * - Setting this timestamp to SIMTIME_MAX temporarily disables the retractable notification.
+ * - Retractable notifications are logically ordered after normal events with the same timestamp,
+ *   giving normal messages priority.
+ * - Setting the timestamp to a value earlier than the current simulation time is a logical error.
+ *
+ * Retractable notifications help avoid excessive scheduling of ignored events by allowing
+ * the LP to efficiently adjust or cancel its own future notifications based on dynamic state changes.
+ */
+extern void rs_retractable_enable(simtime_t *retractable_ts_pointer);
 
 /**
  * @brief Logging levels used by the simulation kernel.

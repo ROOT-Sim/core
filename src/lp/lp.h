@@ -23,6 +23,10 @@ struct lp_ctx {
 	simtime_t termination_t;
 	/// The pointer set by the model with the SetState() API call
 	void *state_pointer;
+	/// Retractable timestamp pointer set with RetractableEnable(), needs to be in rollback-able memory
+	simtime_t *retractable_ts_pointer;
+	/// Position of the LP entry in the retractable heap
+	array_count_t retractable_entry_pos;
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
 	/// The automatic checkpointing interval selection data
