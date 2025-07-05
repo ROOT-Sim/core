@@ -15,6 +15,7 @@ set(rscore_srcs
         log/file.c
         log/log.c
         log/stats.c
+        lp/common.c
         lp/lp.c
         lp/process.c
         mm/checkpoint/autonomic.c

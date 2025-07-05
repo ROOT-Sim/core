@@ -10,17 +10,18 @@
  */
 #pragma once
 
-#include <gvt/gvt.h>
-#include <gvt/termination.h>
-
 /// A control message MPI tag value
-enum msg_ctrl_code {
+enum control_msg_type {
 	/// Used by the master to start a new gvt reduction operation
 	MSG_CTRL_GVT_START = 1,
 	/// Used by slaves to signal their completion of the gvt protocol
 	MSG_CTRL_GVT_DONE,
 	/// Used in broadcast to signal that local LPs can terminate
-	MSG_CTRL_TERMINATION
+	MSG_CTRL_LP_END_TERMINATION,
+	/// Used in broadcast to signal that local LPs can terminate
+	MSG_CTRL_PHASE_ORANGE_TERMINATION,
+	/// Used in broadcast to signal that local LPs can terminate
+	MSG_CTRL_PHASE_PURPLE_TERMINATION
 };
 
-extern void control_msg_process(enum msg_ctrl_code ctrl);
+extern void control_msg_process(enum control_msg_type ctrl);

@@ -91,15 +91,15 @@ _Thread_local uint32_t remote_msg_seq[2][MAX_NODES];
 _Thread_local uint32_t remote_msg_received[2];
 
 /**
- * @brief Initializes the gvt module in the node
+ * @brief Initialize the gvt module in the node
  */
 void gvt_global_init(void)
 {
-	gvt_timer = timer_new();
+	gvt_timer = timer_new() + global_config.gvt_period;
 }
 
 /**
- * @brief Handles a MSG_CTRL_GVT_START control message
+ * @brief Handle a MSG_CTRL_GVT_START control message
  *
  * Called by the MPI layer in response to a MSG_CTRL_GVT_START control message,
  * but also internally to start a new reduction
@@ -111,7 +111,7 @@ void gvt_start_processing(void)
 }
 
 /**
- * @brief Handles a MSG_CTRL_GVT_DONE control message
+ * @brief Handle a MSG_CTRL_GVT_DONE control message
  *
  * Called by the MPI layer in response to a MSG_CTRL_GVT_DONE control message
  */
@@ -121,12 +121,12 @@ void gvt_on_done_ctrl_msg(void)
 }
 
 /**
- * @brief Informs the GVT subsystem that a new message is being processed
+ * @brief Inform the GVT subsystem that a new message is being processed
  * @param msg_t the timestamp of the message being processed
  *
  * Called by the process layer when processing a new message; used in the actual GVT calculation
  */
-void gvt_on_msg_extraction(const simtime_t msg_t)
+void gvt_on_msg_extraction(simtime_t msg_t)
 {
 	if(unlikely(gvt_accumulator > msg_t))
 		gvt_accumulator = msg_t;
@@ -171,27 +171,27 @@ static bool gvt_thread_phase_run(void)
 		case thread_phase_A:
 			if(atomic_load_explicit(&c_a, memory_order_relaxed))
 				break;
-			thread_phase = thread_phase_B;
 			atomic_fetch_add_explicit(&c_b, 1U, memory_order_relaxed);
+			thread_phase = thread_phase_B;
 			break;
 		case thread_phase_B:
 			if(atomic_load_explicit(&c_b, memory_order_relaxed) != global_config.n_threads)
 				break;
-			thread_phase = thread_phase_C;
 			atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
+			thread_phase = thread_phase_C;
 			break;
 		case thread_phase_C:
 			if(atomic_load_explicit(&c_a, memory_order_relaxed) != global_config.n_threads)
 				break;
 			reducing_p[rid] = gvt_accumulator;
-			thread_phase = thread_phase_D;
 			atomic_fetch_sub_explicit(&c_b, 1U, memory_order_release);
+			thread_phase = thread_phase_D;
 			break;
 		case thread_phase_D:
 			if(atomic_load_explicit(&c_b, memory_order_acquire))
 				break;
-			thread_phase = thread_phase_idle;
 			atomic_fetch_sub_explicit(&c_a, 1U, memory_order_relaxed);
+			thread_phase = thread_phase_idle;
 			return true;
 		default:
 			__builtin_unreachable();
@@ -226,11 +226,11 @@ static bool gvt_node_phase_run(void)
 {
 	static _Thread_local enum node_phase node_phase = node_phase_redux_first;
 	static _Thread_local uint32_t last_seq[2][MAX_NODES];
-	static _Atomic(uint32_t) total_sent[MAX_NODES];
-	static _Atomic(int32_t) total_msg_received;
+	static _Atomic uint32_t total_sent[MAX_NODES];
+	static _Atomic int32_t total_msg_received;
 	static uint32_t remote_msg_to_receive;
-	static _Atomic(rid_t) c_c;
-	static _Atomic(rid_t) c_d;
+	static _Atomic rid_t c_c;
+	static _Atomic rid_t c_d;
 
 	switch(node_phase) {
 		case node_phase_redux_first:
@@ -238,7 +238,7 @@ static bool gvt_node_phase_run(void)
 			if(!gvt_thread_phase_run())
 				break;
 
-			gvt_phase = gvt_phase ^ (!node_phase);
+			gvt_phase = gvt_phase ^ (node_phase == node_phase_redux_first);
 			thread_phase = thread_phase_A;
 			++node_phase;
 			break;
@@ -249,14 +249,19 @@ static bool gvt_node_phase_run(void)
 			for(nid_t i = n_nodes - 1; i >= 0; --i)
 				atomic_fetch_add_explicit(&total_sent[i],
 				    remote_msg_seq[!gvt_phase][i] - last_seq[!gvt_phase][i], memory_order_relaxed);
-			memcpy(last_seq[!gvt_phase], remote_msg_seq[!gvt_phase], sizeof(uint32_t) * n_nodes);
+			memcpy(last_seq[!gvt_phase], remote_msg_seq[!gvt_phase], sizeof(**last_seq) * n_nodes);
 
+			// make it so the check in node_sent_wait will fail, even if no messages need to be
+			// received, until the node running the collective sum_scatter exits node_sent_reduce_wait
 			atomic_fetch_add_explicit(&total_msg_received, 1U, memory_order_relaxed);
 			// synchronizes total_sent and sent values zeroing
 			if(atomic_fetch_add_explicit(&c_c, 1U, memory_order_acq_rel) != global_config.n_threads - 1) {
 				node_phase = node_sent_wait;
 				break;
 			}
+			_Static_assert(sizeof(uint32_t) == sizeof(_Atomic uint32_t) &&
+					   _Alignof(uint32_t) <= _Alignof(_Atomic uint32_t),
+			    "Cast of total_sent is broken!");
 			mpi_reduce_sum_scatter((uint32_t *)total_sent, &remote_msg_to_receive);
 			node_phase = node_sent_reduce_wait;
 			break;
@@ -269,12 +274,12 @@ static bool gvt_node_phase_run(void)
 			break;
 		case node_sent_wait:
 			{
-				const int32_t r = atomic_fetch_add_explicit(&total_msg_received,
+				int32_t r = atomic_fetch_add_explicit(&total_msg_received,
 				    remote_msg_received[!gvt_phase], memory_order_relaxed);
 				remote_msg_received[!gvt_phase] = 0;
 				if(r)
 					break;
-				const uint32_t q = n_nodes / global_config.n_threads + 1;
+				uint32_t q = n_nodes / global_config.n_threads + 1;
 				memset(total_sent + rid * q, 0, q * sizeof(*total_sent));
 				node_phase = node_phase_redux_second;
 				break;
@@ -301,10 +306,10 @@ static bool gvt_node_phase_run(void)
 			node_phase = node_done;
 			return true;
 		case node_done:
-			node_phase = node_phase_redux_first;
-			thread_phase = thread_phase_idle;
 			if(atomic_fetch_sub_explicit(&c_d, 1U, memory_order_relaxed) == 1)
 				mpi_control_msg_send_to(MSG_CTRL_GVT_DONE, 0);
+			node_phase = node_phase_redux_first;
+			thread_phase = thread_phase_idle;
 			break;
 		default:
 			__builtin_unreachable();
@@ -329,10 +334,9 @@ simtime_t gvt_phase_run(void)
 		gvt_start_processing();
 
 	if(unlikely(!rid && !nid)) {
-		const timer_uint t = timer_new();
-		if(unlikely(global_config.gvt_period < t - gvt_timer &&
-			    !atomic_load_explicit(&gvt_nodes, memory_order_relaxed))) {
-			gvt_timer = t;
+		timer_uint t = timer_new();
+		if(unlikely(t >= gvt_timer && !atomic_load_explicit(&gvt_nodes, memory_order_relaxed))) {
+			gvt_timer = t + global_config.gvt_period;
 			atomic_fetch_add_explicit(&gvt_nodes, n_nodes, memory_order_relaxed);
 			mpi_control_msg_broadcast(MSG_CTRL_GVT_START);
 		}
@@ -342,24 +346,21 @@ simtime_t gvt_phase_run(void)
 }
 
 /**
- * @brief Cleanup the distributed state of the GVT algorithm
+ * @brief Wait for in-flight messages and clear the distributed state of the GVT algorithm
  *
  * This function flushes the remaining remote messages, moreover it makes sure
  * that all the nodes complete the potentially ongoing GVT algorithm so that
  * MPI collectives are inactive.
  */
-void gvt_msg_drain(void)
+void gvt_msg_barrier(void)
 {
-	while(thread_phase != thread_phase_idle) // flush partial gvt algorithm
-		gvt_phase_run();
-
 	if(sync_thread_barrier())
 		mpi_node_barrier();
 	sync_thread_barrier();
 
 	for(int i = 0; i < 2; ++i) { // flush both gvt phases
 		gvt_timer = 0;       // this satisfies the timer condition
-		while(!gvt_phase_run())
-			mpi_remote_msg_drain();
+		while(gvt_phase_run() != 0)
+			mpi_remote_msg_handle();
 	}
 }

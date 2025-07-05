@@ -76,9 +76,8 @@ enum rootsim_event { LP_INIT = 65534, LP_FINI };
 /**
  * @brief API to inject a new event in the simulation
  *
- * This is a function pointer that is setup at simulation startup to point to either
- * ScheduleNewEvent_parallel() in case of a parallel/distributed simulation, or to
- * ScheduleNewEvent_serial() in case of a serial simulation.
+ * This is a function pointer that is setup at simulation startup to point to either ScheduleNewEvent_parallel() in case
+ * of a parallel/distributed simulation, or to ScheduleNewEvent_serial() in case of a serial simulation.
  *
  * @param receiver The ID of the LP that should receive the newly-injected message
  * @param timestamp The simulation time at which the event should be delivered at the recipient LP
@@ -89,14 +88,18 @@ enum rootsim_event { LP_INIT = 65534, LP_FINI };
 extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned event_type, const void *event_content,
     unsigned event_size);
 
+/**
+ * @brief Set the LP simulation state main pointer
+ * @param state The state pointer to be passed to ProcessEvent() for the invoker LP
+ */
 extern void SetState(void *new_state);
 
 /**
- * @brief Allocates rollbackable memory
+ * @brief Allocate rollbackable memory
  *
- * This function is part of the custom memory management system and is used to allocate
- * memory dynamically. The allocated memory is not initialized. Upon a rollback, the previous
- * content of the allocated memory buffer is restored to the previous (consistent) content.
+ * This function is part of the custom memory management system and is used to allocate memory dynamically.
+ * The allocated memory is not initialized. Upon a rollback, the previous content of the allocated memory buffer is
+ * restored to the previous (presumably consistent) content.
  *
  * @param req_size The size of the memory block to allocate, in bytes.
  * @return A pointer to the allocated memory block, or `NULL` if the allocation fails.
@@ -107,11 +110,11 @@ extern void SetState(void *new_state);
 extern void *rs_malloc(size_t req_size);
 
 /**
- * @brief Allocates and zero-initializes rollbackable memory
+ * @brief Allocate and zero-initialize rollbackable memory
  *
- * This function is part of the custom memory management system and is used to allocate
- * memory dynamically. The allocated memory is initialized to zero. Upon a rollback, the
- * previous content of the allocated memory buffer is restored to the previous (consistent) content.
+ * This function is part of the custom memory management system and is used to allocate memory dynamically.
+ * The allocated memory is initialized to zero. Upon a rollback, the previous content of the allocated memory buffer is
+ * restored to the previous (presumably consistent) content.
  *
  * @param nmemb The number of elements to allocate.
  * @param size The size of each element, in bytes.
@@ -123,13 +126,12 @@ extern void *rs_malloc(size_t req_size);
 extern void *rs_calloc(size_t nmemb, size_t size);
 
 /**
- * @brief Frees rollbackable memory
+ * @brief Free rollbackable memory
  *
- * This function is part of the custom memory management system and is used to free
- * memory that was previously allocated using `rs_malloc()`, `rs_calloc()`, or `rs_realloc()`.
- * Upon a rollback, the memory is restored to its previous (consistent) state. This means that
- * also the address of the free'd buffer will be the same. Linked data structures can be therefore
- * safely implemented in the model, as internal pointers will be valid after a rollback.
+ * This function is part of the custom memory management system and is used to free memory that was previously allocated
+ * using `rs_malloc()`, `rs_calloc()`, or `rs_realloc()`. Upon a rollback, the memory is restored to its previous
+ * (presumably consistent) state. This means that also the address of the free'd buffer will be the same. Linked data
+ * structures can be therefore safely implemented in the model, as internal pointers will be valid after a rollback.
  *
  * @param ptr A pointer to the memory block to be freed. If `ptr` is `NULL`, no operation is performed.
  *
@@ -138,12 +140,11 @@ extern void *rs_calloc(size_t nmemb, size_t size);
 extern void rs_free(void *ptr);
 
 /**
- * @brief Reallocates rollbackable memory
+ * @brief Reallocate rollbackable memory
  *
- * This function is part of the custom memory management system and is used to resize
- * a previously allocated memory block. If the reallocation is successful, the content
- * of the memory block is preserved up to the minimum of the old and new sizes.
- * Upon a rollback, the memory is restored to its previous (consistent) state.
+ * This function is part of the custom memory management system and is used to resize a previously allocated memory
+ * block. If the reallocation is successful, the content of the memory block is preserved up to the minimum of the old
+ * and new sizes. Upon a rollback, the memory is restored to its previous (consistent) state.
  *
  * @param ptr A pointer to the memory block to be reallocated. If `ptr` is `NULL`, the function behaves like
  *            `rs_malloc()`.
@@ -154,6 +155,28 @@ extern void rs_free(void *ptr);
  * @warning The memory block must have been allocated using the custom memory management functions.
  */
 extern void *rs_realloc(void *ptr, size_t req_size);
+
+/**
+ * @brief Request termination of the simulation.
+ *
+ * This API is used by logical processes (LPs) within a discrete-event simulation to signal their intention to terminate
+ * the simulation.
+ *
+ * Termination will occur only if all LPs either:
+ * - explicitly call this function, and/or
+ * - return `true` from their committed handler.
+ *
+ * This enables the expression of global termination as a logical AND of LP-local stable predicates.
+ * Note: The concept of the committed handler is under review and may be removed in future versions.
+ *
+ * This function must be called only from within the context of an LP, typically during the handling of an event.
+ * It has no visible side effects for the LP.
+ *
+ * @warning This interface is considered unstable and may change in future releases.
+ * Its behavior, conditions for termination, or associated mechanisms (such as the committed handler) are being
+ * internally evaluated and may change in the near future. This warning will be removed when the feature will be stable.
+ */
+extern void rs_termination_request(void);
 
 /**
  * @brief Logging levels used by the simulation kernel.
@@ -170,6 +193,7 @@ enum log_level {
 	LOG_SILENT //!< Emit no messages during the simulation.
 };
 
+/// The synchronization algorithms supported by ROOT-Sim
 enum synchronization_algorithm {
 	SERIAL = 1, //!< The simulation runs on the serial runtime
 	TIME_WARP, //!< The simulation runs using the optimistic Time Warp algorithm

@@ -10,9 +10,9 @@
 
 #include <arch/timer.h>
 #include <datatypes/heap.h>
+#include <gvt/termination.h>
 #include <log/stats.h>
 #include <lp/common.h>
-#include <mm/msg_allocator.h>
 
 /// The messages queue of the serial runtime
 static heap_declare(struct lp_msg *) queue;
@@ -35,22 +35,13 @@ static void serial_simulation_init(void)
 	for(lp_id_t i = 0; i < global_config.lps; ++i) {
 		struct lp_ctx *lp = &lps[i];
 
-		lp->termination_t = -1;
+		lp->termination_t = -1.0;
+		lp->state_pointer = NULL;
 
 		model_allocator_lp_init(&lp->mm_state);
 
-		current_lp = lp;
-
-		lp->state_pointer = NULL;
-
-		struct lp_msg *msg = msg_allocator_pack(i, 0.0, LP_INIT, NULL, 0);
-		heap_insert(queue, msg_is_before, msg);
-
-		common_msg_process(lp, msg);
-
-		msg_allocator_free(heap_extract(queue, msg_is_before));
+		ScheduleNewEvent_serial(i, 0.0, LP_INIT, NULL, 0);
 	}
-	lp_initialized_set();
 }
 
 /**
@@ -61,7 +52,7 @@ static void serial_simulation_fini(void)
 	for(lp_id_t i = 0; i < global_config.lps; ++i) {
 		struct lp_ctx *lp = &lps[i];
 		current_lp = lp;
-		global_config.dispatcher(i, 0, LP_FINI, NULL, 0, lp->state_pointer);
+		global_config.dispatcher(i, 0.0, LP_FINI, NULL, 0, lp->state_pointer);
 		model_allocator_lp_fini(&lp->mm_state);
 	}
 
@@ -90,7 +81,8 @@ static int serial_simulation_run(void)
 
 		common_msg_process(lp, msg);
 
-		if(unlikely(lp->termination_t < 0 && global_config.committed(msg->dest, lp->state_pointer))) {
+		if(unlikely(lp->termination_t < 0 && (lp->termination_t == TERMINATION_REQUESTED ||
+							 global_config.committed(msg->dest, lp->state_pointer)))) {
 			lp->termination_t = msg->dest_t;
 			if(unlikely(!--to_terminate)) {
 				stats_on_gvt(msg->dest_t);
@@ -127,15 +119,7 @@ static int serial_simulation_run(void)
 void ScheduleNewEvent_serial(const lp_id_t receiver, const simtime_t timestamp, const unsigned event_type,
     const void *payload, const unsigned payload_size)
 {
-	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
-
-#ifndef NDEBUG
-	if(unlikely(msg_is_before(msg, heap_min(queue)))) {
-		logger(LOG_FATAL, "Sending a message in the PAST!");
-		abort();
-	}
-#endif
-
+	struct lp_msg *msg = common_msg_pack(receiver, timestamp, event_type, payload, payload_size);
 	heap_insert(queue, msg_is_before, msg);
 }
 
