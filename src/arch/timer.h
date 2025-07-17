@@ -66,7 +66,7 @@ static inline timer_uint timer_new(void)
 
 static inline timer_uint timer_value(timer_uint start)
 {
-	if(unlikely(timer_perf_freq == 0)) {
+	if(__builtin_expect(timer_perf_freq == 0, 0)) {
 		LARGE_INTEGER perf;
 		QueryPerformanceFrequency(&perf);
 		timer_perf_freq = perf.QuadPart;

@@ -47,15 +47,15 @@ void model_allocator_lp_init(struct mm_state *self)
  */
 void model_allocator_lp_fini(const struct mm_state *self)
 {
-	array_count_t index = array_count(self->logs);
-	while(index--)
-		mm_free(array_get_at(self->logs, index).ckpt);
+	array_count_t idx = array_count(self->logs);
+	while(idx--)
+		mm_free(array_get_at(self->logs, idx).ckpt);
 
 	array_fini(self->logs);
 
-	index = array_count(self->buddies);
-	while(index--)
-		mm_free(array_get_at(self->buddies, index));
+	idx = array_count(self->buddies);
+	while(idx--)
+		mm_free(array_get_at(self->buddies, idx));
 
 	array_fini(self->buddies);
 }
@@ -104,9 +104,9 @@ void *rs_malloc(size_t req_size)
 	struct mm_state *self = &current_lp->mm_state;
 	self->full_ckpt_size += 1 << req_blks_exp;
 
-	array_count_t index = array_count(self->buddies);
-	while(index--) {
-		void *ret = buddy_malloc(array_get_at(self->buddies, index), req_blks_exp);
+	array_count_t idx = array_count(self->buddies);
+	while(idx--) {
+		void *ret = buddy_malloc(array_get_at(self->buddies, idx), req_blks_exp);
 		if(likely(ret != NULL))
 			return ret;
 	}
@@ -114,11 +114,11 @@ void *rs_malloc(size_t req_size)
 	struct buddy_state *new_buddy = mm_alloc(sizeof(*new_buddy));
 	buddy_init(new_buddy);
 
-	for(index = 0; index < array_count(self->buddies); ++index)
-		if(array_get_at(self->buddies, index) > new_buddy)
+	for(idx = 0; idx < array_count(self->buddies); ++idx)
+		if(array_get_at(self->buddies, idx) > new_buddy)
 			break;
 
-	array_add_at(self->buddies, index, new_buddy);
+	array_add_at(self->buddies, idx, new_buddy);
 	self->full_ckpt_size += offsetof(struct buddy_checkpoint, base_mem);
 	return buddy_malloc(new_buddy, req_blks_exp);
 }

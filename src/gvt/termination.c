@@ -8,103 +8,124 @@
  */
 #include <gvt/termination.h>
 
-#include <distributed/mpi.h>
-#include <lp/lp.h>
+#include <assert.h>
 
-/// The number of nodes that still need to continue running the simulation
-_Atomic nid_t nodes_to_end;
-/// The number of local threads that still need to continue running the simulation
-static _Atomic rid_t thr_to_end;
-/// The number of thread-locally bounded LPs that still need to continue running the simulation
-static _Thread_local uint64_t lps_to_end;
-/// The maximum speculative time at which a thread-local LP declared its intention to terminate
-/** FIXME: a wrong high termination time during a speculative trajectory forces the simulation to uselessly continue */
-static _Thread_local simtime_t max_t;
+#define term_queue_elem_is_before(a, b) \
+__extension__({                         \
+                                        \
+})
 
-/**
- * @brief Initialize the termination detection module node-wide
- */
-void termination_global_init(void)
+union term_switch {
+	simtime_t ts;
+	uint64_t ts_bits;
+};
+
+typedef array_declare(union term_switch) term_switch_array;
+
+struct term_queue_elem {
+	term_switch_array *array;
+	array_count_t idx;
+};
+
+// Make sure the type punning nightmare works
+_Static_assert(sizeof(simtime_t) == sizeof(uint64_t), "simtime_t and uint64_t must have the same size");
+// Actually not strictly necessary to check for this
+_Static_assert(_Alignof(simtime_t) == _Alignof(uint64_t), "simtime_t and uint64_t must have the same alignment");
+
+static term_switch_array node_terminations;
+static rid_t threads_to_terminate;
+static _Thread_local term_switch_array thread_terminations;
+static _Thread_local term_switch_array lp_terminations;
+static _Thread_local lp_id_t lps_to_terminate;
+
+static inline union term_switch term_switch_from(simtime_t ts, bool terminating)
 {
-	atomic_store_explicit(&thr_to_end, global_config.n_threads, memory_order_relaxed);
-	atomic_store_explicit(&nodes_to_end, n_nodes, memory_order_relaxed);
+	union term_switch sw = {.ts = ts};
+	assert(!(sw.ts_bits & (uint64_t)1U << 63));
+	sw.ts_bits |= (uint64_t)terminating << 63;
+	return sw;
 }
 
-/**
- * @brief Initialize the termination detection module LP-wide
- */
-void termination_lp_init(struct lp_ctx *lp)
+static inline simtime_t term_switch_ts(union term_switch sw)
 {
-	const bool term = global_config.committed(lp - lps, lp->state_pointer);
-	lps_to_end += !term;
-	lp->termination_t = term * SIMTIME_MAX;
+	sw.ts_bits &= ~(uint64_t)1U;
+	return sw.ts;
 }
 
-/**
- * @brief Compute termination operations after a new message has been processed
- * @param lp the LP that has just processed a message
- * @param msg_time the timestamp of the freshly processed message
- */
-void termination_on_msg_process(struct lp_ctx *lp, simtime_t msg_time)
+static inline bool term_switch_terminating(union term_switch sw)
 {
-	if(lp->termination_t)
-		return;
-
-	const bool term = global_config.committed(lp - lps, lp->state_pointer);
-	max_t = term ? max(msg_time, max_t) : max_t;
-	lp->termination_t = term * msg_time;
-	lps_to_end -= term;
+	return (sw.ts_bits & (uint64_t)1U << 63) != 0;
 }
 
-/**
- * @brief Compute termination operations after the receipt of a termination control message
- */
-void termination_on_ctrl_msg(void)
+void termination_on_change(simtime_t ts, bool is_terminating)
 {
-	atomic_fetch_sub_explicit(&nodes_to_end, 1U, memory_order_relaxed);
-}
-
-/**
- * @brief Update the termination module state after a GVT computation
- *
- * Here we check if the simulation, from the point of view of the current thread, can be terminated. If also all the
- * other processing threads on the node are willing to end the simulation, a termination control message is broadcast to
- * the other nodes.
- */
-void termination_on_gvt(const simtime_t current_gvt)
-{
-	if(likely((lps_to_end || max_t >= current_gvt) && current_gvt < global_config.termination_time))
-		return;
-	max_t = SIMTIME_MAX;
-	const unsigned t = atomic_fetch_sub_explicit(&thr_to_end, 1U, memory_order_relaxed);
-	if(t == 1)
-		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
-}
-
-/**
- * @brief Force termination of the simulation
- */
-void RootsimStop(void)
-{
-	if(global_config.synchronization == SERIAL) {
-		global_config.termination_time = -1.0;
-		return;
+	array_count_t i = array_count(lp_terminations);
+	while(i) {
+		simtime_t this_ts = term_switch_ts(array_get_at(lp_terminations, --i));
+		if(this_ts <= ts)
+			break;
 	}
-
-	nid_t i = n_nodes + 1;
-	while(i--)
-		mpi_control_msg_broadcast(MSG_CTRL_TERMINATION);
+	array_add_at(lp_terminations, i, term_switch_from(ts, is_terminating));
 }
 
-/**
- * @brief Compute termination operations after a LP has been rollbacked
- * @param lp the LP that has been rollbacked
- * @param msg_time the timestamp of the straggler or anti message that caused the rollback
- */
-void termination_on_lp_rollback(struct lp_ctx *lp, const simtime_t msg_time)
+void termination_on_change_rollback(simtime_t ts, bool is_terminating)
 {
-	const simtime_t old_t = lp->termination_t;
-	const bool keep = old_t < msg_time || old_t == SIMTIME_MAX;
-	lp->termination_t = keep * old_t;
-	lps_to_end += !keep;
+	union term_switch rm = term_switch_from(ts, is_terminating);
+	for(array_count_t i = array_count(lp_terminations); i;) {
+		union term_switch term = array_get_at(lp_terminations, --i);
+		if(rm.ts_bits == term.ts_bits) {
+			array_remove_at(lp_terminations, i);
+			break;
+		}
+	}
+}
+
+void termination_lp_to_thread_terminations(simtime_t gvt)
+{
+	array_count(thread_terminations) = 0;
+	array_count_t i = 0;
+	while(i < array_count(lp_terminations)) {
+		union term_switch term = array_get_at(lp_terminations, i);
+		simtime_t term_ts = term_switch_ts(term);
+		if(term_ts >= gvt)
+			break;
+
+		bool terminating = term_switch_terminating(term);
+
+		lps_to_terminate -= terminating;
+
+		++i;
+		// terminations with the same timestamp are considered concurrent; push only if the next ts is different
+		if(unlikely(!lps_to_terminate && (i == array_count(lp_terminations) ||
+						    term_switch_ts(array_get_at(lp_terminations, i)) != term_ts)))
+			array_push(thread_terminations, term);
+
+		lps_to_terminate += 1U - terminating;
+	}
+	array_truncate_first(lp_terminations, i);
+}
+
+void termination_thread_to_node_terminations(simtime_t gvt)
+{
+	array_count(node_terminations) = 0;
+	array_count_t i = 0;
+	while(i < array_count(lp_terminations)) {
+		union term_switch term = array_get_at(lp_terminations, i);
+		simtime_t term_ts = term_switch_ts(term);
+		if(term_ts >= gvt)
+			break;
+
+		bool terminating = term_switch_terminating(term);
+
+		lps_to_terminate -= terminating;
+
+		++i;
+		// terminations with the same timestamp are considered concurrent; push only if the next ts is different
+		if(unlikely(!lps_to_terminate && (i == array_count(lp_terminations) ||
+						     term_switch_ts(array_get_at(lp_terminations, i)) != term_ts)))
+			array_push(thread_terminations, term);
+
+		lps_to_terminate += 1U - terminating;
+	}
+	array_truncate_first(lp_terminations, i);
 }

@@ -63,14 +63,20 @@ struct lp_msg {
 	lp_id_t dest;
 	/// The intended destination logical time of this message
 	simtime_t dest_t;
+	/**
+	 * From the lowest significant bit:
+	 * 2 bits for the message state machine (MSG_FLAGS_ANTI and MSG_FLAGS_PROCESSED)
+	 * 1 bit for the color of GVT phase during which this message was generated
+	 * MAX_NODES_BITS for the id of the generating node
+	 * MAX_THREADS_BITS for the id of the generating thread
+	 * the others (64 - 3 - MAX_NODES_BITS - MAX_THREADS_BITS) for the progressive counter
+	 */
 	union {
 		/// The flags to handle local anti messages
-		_Atomic uint32_t flags;
+		_Atomic uint64_t flags;
 		/// The message unique id, used for inter-node anti messages
-		uint32_t raw_flags;
+		uint64_t raw_flags;
 	};
-	/// The message sequence number
-	uint32_t m_seq;
 #ifndef NDEBUG
 	/// The sender of the message
 	lp_id_t send;
@@ -78,7 +84,9 @@ struct lp_msg {
 	simtime_t send_t;
 #endif
 	/// The message type, a user controlled field
-	uint32_t m_type;
+	uint16_t m_type;
+	/// Termination flags TODO
+	uint16_t termination_flags;
 	/// The message payload size
 	uint32_t pl_size;
 	/// The initial part of the payload
@@ -103,10 +111,14 @@ enum msg_flag { MSG_FLAG_ANTI = 1, MSG_FLAG_PROCESSED = 2 };
  * @param b the second message to compare
  * @return true if the @p a come before @p b
  *
- * There can be two distinct messages a and b so that
- * msg_is_before_extended(a, b) == false and msg_is_before_extended(b, a) == false.
- * In that case, the two messages will necessarily induce the same state change
+ * There can be two distinct messages a and b so that msg_is_before_extended(a, b) == false and
+ * msg_is_before_extended(b, a) == false. In that case, the two messages will necessarily induce the same state change
  * in the receiving LP: it doesn't make any difference which one will be processed first.
+ *
+ * For a comprehensive description of the logic behind this tiebreak policy, refer to:
+ * A. Piccione and A. Pellegrini
+ * “Practical Tie-Breaking for Parallel/Distributed Simulations”
+ * in 2023 IEEE/ACM 27th International Symposium on Distributed Simulation and Real Time Applications (DS-RT).
  */
 static inline bool msg_is_before_extended(const struct lp_msg *restrict a, const struct lp_msg *restrict b)
 {

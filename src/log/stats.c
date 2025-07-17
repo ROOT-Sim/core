@@ -15,6 +15,7 @@
 #include <arch/timer.h>
 #include <distributed/mpi.h>
 #include <log/file.h>
+#include <mm/mm.h>
 
 #include <assert.h>
 #include <stdint.h>
