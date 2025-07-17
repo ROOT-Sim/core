@@ -84,7 +84,9 @@ struct lp_msg {
 	simtime_t send_t;
 #endif
 	/// The message type, a user controlled field
-	uint32_t m_type;
+	uint16_t m_type;
+	/// Termination flags TODO
+	uint16_t termination_flags;
 	/// The message payload size
 	uint32_t pl_size;
 	/// The initial part of the payload

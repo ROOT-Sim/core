@@ -173,20 +173,20 @@ static bool gvt_thread_phase_run(void)
 				break;
 			atomic_fetch_add_explicit(&c_b, 1U, memory_order_relaxed);
 			thread_phase = thread_phase_B;
-			break;
+			/* fallthrough */
 		case thread_phase_B:
 			if(atomic_load_explicit(&c_b, memory_order_relaxed) != global_config.n_threads)
 				break;
 			atomic_fetch_add_explicit(&c_a, 1U, memory_order_relaxed);
 			thread_phase = thread_phase_C;
-			break;
+			/* fallthrough */
 		case thread_phase_C:
 			if(atomic_load_explicit(&c_a, memory_order_relaxed) != global_config.n_threads)
 				break;
 			reducing_p[rid] = gvt_accumulator;
 			atomic_fetch_sub_explicit(&c_b, 1U, memory_order_release);
 			thread_phase = thread_phase_D;
-			break;
+			/* fallthrough */
 		case thread_phase_D:
 			if(atomic_load_explicit(&c_b, memory_order_acquire))
 				break;
@@ -227,21 +227,19 @@ static bool gvt_node_phase_run(void)
 	static _Thread_local enum node_phase node_phase = node_phase_redux_first;
 	static _Thread_local uint32_t last_seq[2][MAX_NODES];
 	static _Atomic uint32_t total_sent[MAX_NODES];
-	static _Atomic int32_t total_msg_received;
+	static _Atomic int32_t total_msg_received = 0;
 	static uint32_t remote_msg_to_receive;
 	static _Atomic rid_t c_c;
 	static _Atomic rid_t c_d;
 
 	switch(node_phase) {
 		case node_phase_redux_first:
-		case node_phase_redux_second:
 			if(!gvt_thread_phase_run())
 				break;
-
-			gvt_phase = gvt_phase ^ (node_phase == node_phase_redux_first);
+			gvt_phase = !gvt_phase;
 			thread_phase = thread_phase_A;
-			++node_phase;
-			break;
+			node_phase = node_sent_reduce;
+			/* fallthrough */
 		case node_sent_reduce:
 			if(atomic_load_explicit(&c_a, memory_order_relaxed))
 				break;
@@ -257,22 +255,23 @@ static bool gvt_node_phase_run(void)
 			// synchronizes total_sent and sent values zeroing
 			if(atomic_fetch_add_explicit(&c_c, 1U, memory_order_acq_rel) != global_config.n_threads - 1) {
 				node_phase = node_sent_wait;
-				break;
+				goto sent_wait;
 			}
 			_Static_assert(sizeof(uint32_t) == sizeof(_Atomic uint32_t) &&
 					   _Alignof(uint32_t) <= _Alignof(_Atomic uint32_t),
 			    "Cast of total_sent is broken!");
 			mpi_reduce_sum_scatter((uint32_t *)total_sent, &remote_msg_to_receive);
 			node_phase = node_sent_reduce_wait;
-			break;
+			/* fallthrough */
 		case node_sent_reduce_wait:
-			if(!mpi_reduce_sum_scatter_done())
+			if(!mpi_collective_done())
 				break;
 			atomic_fetch_sub_explicit(&total_msg_received, remote_msg_to_receive + global_config.n_threads,
 			    memory_order_relaxed);
 			node_phase = node_sent_wait;
-			break;
+			/* fallthrough */
 		case node_sent_wait:
+sent_wait:
 			{
 				int32_t r = atomic_fetch_add_explicit(&total_msg_received,
 				    remote_msg_received[!gvt_phase], memory_order_relaxed);
@@ -282,25 +281,32 @@ static bool gvt_node_phase_run(void)
 				uint32_t q = n_nodes / global_config.n_threads + 1;
 				memset(total_sent + rid * q, 0, q * sizeof(*total_sent));
 				node_phase = node_phase_redux_second;
-				break;
 			}
+			/* fallthrough */
+		case node_phase_redux_second:
+			if(!gvt_thread_phase_run())
+				break;
+			thread_phase = thread_phase_A;
+			node_phase = node_min_reduce;
+			/* fallthrough */
 		case node_min_reduce:
 			if(atomic_fetch_add_explicit(&c_d, 1U, memory_order_relaxed)) {
 				node_phase = node_min_wait;
-				break;
+				goto min_wait;
 			}
 			*reducing_p = gvt_node_reduce();
 			mpi_reduce_min(reducing_p);
 			node_phase = node_min_reduce_wait;
-			break;
+			/* fallthrough */
 		case node_min_reduce_wait:
 			if(atomic_load_explicit(&c_d, memory_order_relaxed) != global_config.n_threads ||
-			    !mpi_reduce_min_done())
+			    !mpi_collective_done())
 				break;
 			atomic_fetch_sub_explicit(&c_c, global_config.n_threads, memory_order_release);
 			node_phase = node_done;
 			return true;
 		case node_min_wait:
+min_wait:
 			if(atomic_load_explicit(&c_c, memory_order_acquire))
 				break;
 			node_phase = node_done;

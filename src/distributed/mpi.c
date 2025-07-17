@@ -29,10 +29,8 @@ static const enum control_msg_type ctrl_msgs[] = {
     [MSG_CTRL_PHASE_PURPLE_TERMINATION] = MSG_CTRL_PHASE_PURPLE_TERMINATION,
 };
 
-/// The MPI request associated with the non blocking scatter gather collective
-static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
-/// The MPI request associated with the non blocking all reduce collective
-static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
+/// The MPI request used to keep track of the currently running non-blocking MPI collective
+static MPI_Request mpi_nb_collective_request = MPI_REQUEST_NULL;
 
 /**
  * @brief Handles a MPI error
@@ -202,54 +200,56 @@ void mpi_remote_msg_handle(void)
 }
 
 /**
- * @brief Computes the sum-reduction-scatter operation across all nodes.
+ * @brief Compute the sum-reduction-scatter collective operation across all nodes
  * @param values a flexible array implementing the addendum vector from the calling node.
  * @param result a pointer where the nid-th component of the sum will be stored.
  *
  * Each node supplies a n_nodes components vector. The sum of all these vector is computed and the nid-th component of
  * this vector is stored in @a result. It is expected that only a single thread calls this function at a time. Each node
- * has to call this function else the result can't be computed. It is possible to have a single mpi_reduce_sum_scatter()
- * operation pending at a time. Both arguments must point to valid memory regions until mpi_reduce_sum_scatter_done()
+ * has to call this function else the result can't be computed. It is possible to have a single mpi collective
+ * operation pending at a time. Both arguments must point to valid memory regions until mpi_collective_done()
  * returns true.
  */
 void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
 {
-	MPI_Ireduce_scatter_block(values, result, 1, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD, &reduce_sum_scatter_req);
+	MPI_Ireduce_scatter_block(values, result, 1, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD, &mpi_nb_collective_request);
 }
 
 /**
- * @brief Checks if a previous mpi_reduce_sum_scatter() operation has completed.
- * @return true if the previous operation has been completed, false otherwise.
- */
-bool mpi_reduce_sum_scatter_done(void)
-{
-	int flag = 0;
-	MPI_Test(&reduce_sum_scatter_req, &flag, MPI_STATUS_IGNORE);
-	return flag;
-}
-
-/**
- * @brief Computes the min-reduction operation across all nodes.
+ * @brief Compute the min-reduction collective operation across all nodes.
  * @param node_min_p a pointer to the value from the calling node which will also be used to store the computed minimum.
  *
  * Each node supplies a single simtime_t value. The minimum of all these values is computed and stored in @a node_min_p
  * itself. It is expected that only a single thread calls this function at a time. Each rank has to call this function
- * else the result can't be computed. It is possible to have a single mpi_reduce_min() operation pending at a time.
- * Both arguments must point to valid memory regions until mpi_reduce_min_done() returns true.
+ * else the result can't be computed. It is possible to have a single MPI collective operation pending at a time.
+ * Both arguments must point to valid memory regions until mpi_collective_done() returns true.
  */
 void mpi_reduce_min(double *node_min_p)
 {
-	MPI_Iallreduce(MPI_IN_PLACE, node_min_p, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD, &reduce_min_req);
+	MPI_Iallreduce(MPI_IN_PLACE, node_min_p, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD, &mpi_nb_collective_request);
+}
+
+void mpi_gather_u32(const uint32_t send_value[1], uint32_t result[n_nodes], nid_t receiver)
+{
+	MPI_Igather(send_value, 1, MPI_UINT32_T, result, 1, MPI_UINT32_T, receiver, MPI_COMM_WORLD, &mpi_nb_collective_request);
+}
+
+void mpi_gather_v_u32(int send_count, const uint32_t send_values[send_count], const int recv_counts[n_nodes], const int displacements[n_nodes], uint32_t *result, nid_t receiver)
+{
+	MPI_Igatherv(send_values, send_count, MPI_UINT32_T, result, recv_counts, displacements, MPI_UINT32_T, receiver, MPI_COMM_WORLD, &mpi_nb_collective_request);
 }
 
 /**
- * @brief Checks if a previous mpi_reduce_min() operation has completed.
+ * @brief Checks if the previous collective operation has completed.
  * @return true if the previous operation has been completed, false otherwise.
+ *
+ * For the moment, there has been no need to concurrently run multiple MPI collective operations. As such, this single
+ * method can be used to track the the progress of the only collective operation that may be running.
  */
-bool mpi_reduce_min_done(void)
+bool mpi_collective_done(void)
 {
 	int flag = 0;
-	MPI_Test(&reduce_min_req, &flag, MPI_STATUS_IGNORE);
+	MPI_Test(&mpi_nb_collective_request, &flag, MPI_STATUS_IGNORE);
 	return flag;
 }
 

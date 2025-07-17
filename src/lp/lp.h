@@ -19,10 +19,10 @@
 
 /// A complete LP context
 struct lp_ctx {
-	/// The termination time of this LP, handled by the termination module
-	simtime_t termination_t;
 	/// The pointer set by the model with the SetState() API call
 	void *state_pointer;
+	/// The termination time of this LP, handled by the termination module
+	bool terminating;
 	/// The housekeeping epoch number
 	unsigned fossil_epoch;
 	/// The automatic checkpointing interval selection data
