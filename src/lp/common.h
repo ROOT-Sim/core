@@ -65,6 +65,7 @@ static inline struct lp_msg *common_msg_pack(const lp_id_t receiver, const simti
 	msg->dest = receiver;
 	msg->dest_t = timestamp;
 	msg->m_type = event_type;
+	msg->termination_flags = 0;
 
 	if(likely(payload_size))
 		memcpy(msg->pl, payload, payload_size);

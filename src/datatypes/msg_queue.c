@@ -53,7 +53,7 @@ void msg_queue_global_init(void)
 }
 
 /**
- * @brief Initializes the message queue for the current thread
+ * @brief Initialize the message queue for the current thread
  */
 void msg_queue_init(void)
 {
@@ -62,7 +62,7 @@ void msg_queue_init(void)
 }
 
 /**
- * @brief Finalizes the message queue for the current thread
+ * @brief Finalize the message queue for the current thread
  */
 void msg_queue_fini(void)
 {
@@ -80,7 +80,7 @@ void msg_queue_fini(void)
 }
 
 /**
- * @brief Finalizes the message queue at the node level
+ * @brief Finalize the message queue at the node level
  */
 void msg_queue_global_fini(void)
 {
@@ -101,7 +101,7 @@ static inline void msg_queue_insert_queued(void)
 }
 
 /**
- * @brief Extracts the next message from the queue
+ * @brief Extract the next message from the queue
  * @returns a pointer to the message to be processed or NULL if there isn't one
  *
  * The extracted message is a best effort lowest timestamp for the current thread. Guaranteeing the lowest timestamp may
@@ -121,7 +121,7 @@ struct lp_msg *msg_queue_extract(void)
 }
 
 /**
- * @brief Inserts a message in the queue
+ * @brief Insert a message in the queue
  * @param msg the message to insert in the queue
  */
 void msg_queue_insert(struct lp_msg *msg)
@@ -134,7 +134,7 @@ void msg_queue_insert(struct lp_msg *msg)
 }
 
 /**
- * @brief Inserts a message in the queue, knowing it is destined for the current thread
+ * @brief Insert a message in the queue, knowing it is destined for the current thread
  * @param msg the message to insert in the queue
  */
 void msg_queue_insert_self(struct lp_msg *msg)

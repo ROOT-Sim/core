@@ -16,7 +16,7 @@
  * @brief Declares a heap
  * @param type the type of the contained elements
  */
-#define heap_declare(type) dyn_array(type)
+#define heap_declare(type) array_declare(type)
 
 /**
  * @brief Gets the underlying actual array of elements of a binary heap
@@ -73,7 +73,7 @@
  */
 #define heap_insert(self, cmp_f, elem)                                                                                 \
 	__extension__({                                                                                                \
-		array_reserve(self, 1);                                                                                \
+		array_expand(self);                                                                                    \
 		__typeof__(array_count(self)) i = array_count(self)++;                                                 \
 		__typeof__(array_items(self)) items = array_items(self);                                               \
 		while(i && cmp_f(elem, items[(i - 1U) / 2U])) {                                                        \
@@ -82,31 +82,6 @@
 		}                                                                                                      \
 		items[i] = elem;                                                                                       \
 		i;                                                                                                     \
-	})
-
-/**
- * @brief Insert n elements into the heap
- * @param self the heap target of the insertion
- * @param cmp_f a comparing function f(a, b) which returns true iff a < b
- * @param ins the set of elements to insert
- * @param n the number of elements in the set
- * @returns the position of the inserted element in the underlying array
- *
- * For correct operation of the heap you need to always pass the same @a cmp_f, both for insertion and extraction
- */
-#define heap_insert_n(self, cmp_f, ins, n)                                                                             \
-	__extension__({                                                                                                \
-		array_reserve(self, n);                                                                                \
-		__typeof__(array_count(self)) j = n;                                                                   \
-		__typeof__(array_items(self)) items = array_items(self);                                               \
-		while(j--) {                                                                                           \
-			__typeof__(array_count(self)) i = array_count(self)++;                                         \
-			while(i && cmp_f((ins)[j], items[(i - 1U) / 2U])) {                                            \
-				items[i] = items[(i - 1U) / 2U];                                                       \
-				i = (i - 1U) / 2U;                                                                     \
-			}                                                                                              \
-			items[i] = (ins)[j];                                                                           \
-		}                                                                                                      \
 	})
 
 /**

@@ -15,9 +15,9 @@
 #include <gvt/gvt.h>
 
 /// Cache of message structs used to avoid frequent allocations/deallocations
-static _Thread_local dyn_array(struct lp_msg *) free_list = {0};
+static _Thread_local array_declare(struct lp_msg *) free_list = {0};
 /// Cache of message structs free'd upon GVT reduction
-static _Thread_local dyn_array(struct lp_msg *) at_gvt_list = {0};
+static _Thread_local array_declare(struct lp_msg *) at_gvt_list = {0};
 
 /**
  * @brief Initialize the message allocator thread-local data structures

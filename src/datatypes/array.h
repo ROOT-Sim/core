@@ -24,7 +24,7 @@ typedef uint_least32_t array_count_t;
  * @brief Declares a dynamic array
  * @param type The type of the contained elements
  */
-#define dyn_array(type)                                                                                                \
+#define array_declare(type)                                                                                            \
 	struct {                                                                                                       \
 		type *items;                                                                                           \
 		array_count_t count;                                                                                   \
@@ -125,8 +125,10 @@ typedef uint_least32_t array_count_t;
 #define array_add_at(self, i, elem)                                                                                    \
 	__extension__({                                                                                                \
 		array_expand(self);                                                                                    \
-		memmove(&(array_items(self)[(i) + 1]), &(array_items(self)[(i)]),                                      \
-		    sizeof(*array_items(self)) * (array_count(self) - (i)));                                           \
+		__typeof__(array_count(self)) tcnt = array_count(self) - (i);                                          \
+		if(tcnt)                                                                                               \
+			memmove(&(array_items(self)[(i) + 1]), &(array_items(self)[(i)]),                              \
+			    sizeof(*array_items(self)) * tcnt);                                                        \
 		array_items(self)[(i)] = (elem);                                                                       \
 		array_count(self)++;                                                                                   \
 	})
@@ -143,7 +145,6 @@ typedef uint_least32_t array_count_t;
 		__rmval = array_items(self)[(i)];                                                                      \
 		memmove(&(array_items(self)[(i)]), &(array_items(self)[(i) + 1]),                                      \
 		    sizeof(*array_items(self)) * (array_count(self) - (i)));                                           \
-		array_shrink(self);                                                                                    \
 		__rmval;                                                                                               \
 	})
 
@@ -162,32 +163,12 @@ typedef uint_least32_t array_count_t;
  * @brief Reduce the size of the dynamic array
  * @param self The target dynamic array
  *
- * The size of the dinamic array is halved if the number of elements is less than a third of the capacity.
+ * The size of the dynamic array is reduced to the possible minimum: the count of its elements.
  */
-#define array_shrink(self)                                                                                             \
+#define array_shrink_to_fit(self)                                                                                      \
 	__extension__({                                                                                                \
-		if(unlikely(array_count(self) > INIT_SIZE_ARRAY && array_count(self) * 3 <= array_capacity(self))) {   \
-			array_capacity(self) /= 2;                                                                     \
-			array_items(self) =                                                                            \
-			    mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));          \
-		}                                                                                                      \
-	})
-
-/**
- * @brief Expand the size of the dynamic array to have at least the requested capacity
- * @param self The target dynamic array
- * @param n The requested capacity
- */
-#define array_reserve(self, n)                                                                                         \
-	__extension__({                                                                                                \
-		__typeof__(array_count(self)) tcnt = array_count(self) + (n);                                          \
-		if(unlikely(tcnt >= array_capacity(self))) {                                                           \
-			do {                                                                                           \
-				array_capacity(self) *= 2;                                                             \
-			} while(unlikely(tcnt >= array_capacity(self)));                                               \
-			array_items(self) =                                                                            \
-			    mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));          \
-		}                                                                                                      \
+                array_capacity(self) = array_count(self);                                                              \
+		array_items(self) = mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));  \
 	})
 
 /**

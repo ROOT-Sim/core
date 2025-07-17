@@ -168,8 +168,10 @@ static inline void send_anti_messages(struct process_ctx *msg_processing, const 
 
 		struct lp_msg *msg = pes_entry_msg_received(e);
 		const uint64_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
-		if(!(f & MSG_FLAG_ANTI))
+		if(!(f & MSG_FLAG_ANTI)) {
+			msg->termination_flags = 0;
 			msg_queue_insert_self(msg);
+		}
 		stats_take(STATS_MSG_ROLLBACK, 1);
 	}
 }

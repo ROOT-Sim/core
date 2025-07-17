@@ -34,7 +34,7 @@ enum pes_entry_type {
 /// The message processing data produced by the LP
 struct process_ctx {
 	/// The Past Event Set of this LP; the messages processed in the past by the owner LP
-	dyn_array(struct pes_entry) pes;
+	array_declare(struct pes_entry) pes;
 	/** The list of remote anti-messages delivered before their original counterpart.
 	 *  Hopefully this is 99.9% of the time empty */
 	struct lp_msg *early_antis;
