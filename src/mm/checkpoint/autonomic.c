@@ -24,9 +24,9 @@
  */
 #define EXP_AVG(f, old_v, sample)                                                                                      \
 	__extension__({                                                                                                \
-		double s = (sample);                                                                                   \
-		double o = (old_v);                                                                                    \
-		o *(((f) - 1.0) / (f)) + s * (1.0 / (f));                                                              \
+		float s = (sample);                                                                                    \
+		float o = (old_v);                                                                                     \
+		(((f) - 1.0f) / (f)) * o + (1.0f / (f)) * s;                                                           \
 	})
 
 /**
@@ -36,17 +36,17 @@
  * the optimal checkpoint interval.
  */
 static _Thread_local struct {
-	double ckpt_avg_cost;    /**< Exponential moving average of checkpoint cost per byte */
-	double inv_sil_avg_cost; /**< Inverse of the exponential moving average of silent message cost */
-} ackpt;
+	float ckpt_avg_cost;    /**< Exponential moving average of checkpoint cost per byte */
+	float inv_sil_avg_cost; /**< Exponential moving average of the inverse of a single silent message cost */
+} auto_ckpt_thread_ctx;
 
 /**
  * @brief Initialize the thread-local context for the auto checkpoint module
  */
 void auto_ckpt_init(void)
 {
-	ackpt.ckpt_avg_cost = 1.0;
-	ackpt.inv_sil_avg_cost = 1.0 / 4096.0;
+	auto_ckpt_thread_ctx.ckpt_avg_cost = 1.0f;
+	auto_ckpt_thread_ctx.inv_sil_avg_cost = 1.0f / 4096.0f;
 }
 
 /**
@@ -65,11 +65,13 @@ void auto_ckpt_on_gvt(void)
 	const uint64_t sil_count = stats_retrieve(STATS_MSG_SILENT);
 	const uint64_t sil_cost = stats_retrieve(STATS_MSG_SILENT_TIME);
 
-	if(likely(sil_count))
-		ackpt.inv_sil_avg_cost = EXP_AVG(16.0, ackpt.inv_sil_avg_cost, (double)sil_count / (double)sil_cost);
+	if(likely(sil_cost))
+		auto_ckpt_thread_ctx.inv_sil_avg_cost =
+		    EXP_AVG(16.0f, auto_ckpt_thread_ctx.inv_sil_avg_cost, (float)(sil_count / (double)sil_cost));
 
 	if(likely(ckpt_size))
-		ackpt.ckpt_avg_cost = EXP_AVG(16.0, ackpt.ckpt_avg_cost, (double)ckpt_cost / (double)ckpt_size);
+		auto_ckpt_thread_ctx.ckpt_avg_cost =
+		    EXP_AVG(16.0f, auto_ckpt_thread_ctx.ckpt_avg_cost, (float)(ckpt_cost / (double)ckpt_size));
 }
 
 /**
@@ -78,9 +80,11 @@ void auto_ckpt_on_gvt(void)
  */
 void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 {
-	memset(auto_ckpt, 0, sizeof(*auto_ckpt));
+	auto_ckpt->inv_bad_p = 64.0f;
 	auto_ckpt->ckpt_interval = global_config.ckpt_interval ? global_config.ckpt_interval : 256;
-	auto_ckpt->inv_bad_p = 64.0;
+	auto_ckpt->ckpt_rem = auto_ckpt->ckpt_interval; // forces a checkpoint after the first event
+	auto_ckpt->m_bad = 0;
+	auto_ckpt->m_good = 0;
 }
 
 /**
@@ -93,9 +97,10 @@ void auto_ckpt_recompute(struct auto_ckpt *auto_ckpt, const uint_fast32_t state_
 	if(unlikely(!auto_ckpt->m_bad || global_config.ckpt_interval))
 		return;
 
-	auto_ckpt->inv_bad_p = EXP_AVG(8.0, auto_ckpt->inv_bad_p, 2.0 * auto_ckpt->m_good / auto_ckpt->m_bad);
+	auto_ckpt->inv_bad_p = EXP_AVG(8.0f, auto_ckpt->inv_bad_p, 2.0f * auto_ckpt->m_good / auto_ckpt->m_bad);
 	auto_ckpt->m_bad = 0;
 	auto_ckpt->m_good = 0;
 	auto_ckpt->ckpt_interval =
-	    ceil(sqrt(auto_ckpt->inv_bad_p * ackpt.ckpt_avg_cost * ackpt.inv_sil_avg_cost * (double)state_size));
+	    (unsigned short)ceilf(sqrtf(auto_ckpt->inv_bad_p * auto_ckpt_thread_ctx.ckpt_avg_cost *
+					auto_ckpt_thread_ctx.inv_sil_avg_cost * (float)state_size));
 }

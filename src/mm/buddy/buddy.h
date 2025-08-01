@@ -22,21 +22,17 @@
 #define next_exp_of_2(i) (sizeof(i) * CHAR_BIT - intrinsics_clz(i))
 #define buddy_allocation_block_compute(req_size) next_exp_of_2(max(req_size, 1U << B_BLOCK_EXP) - 1);
 
-#define buddy_left_child(i) (((i) << 1U) + 1U)
-#define buddy_right_child(i) (((i) << 1U) + 2U)
-#define buddy_parent(i) ((((i) + 1) >> 1U) - 1U)
-
 /// The checkpointable memory context of a single buddy system
 struct buddy_state {
 	/// The checkpointed binary tree representing the buddy system
 	/** the last char is actually unused */
-	alignas(16) uint8_t longest[(1U << (B_TOTAL_EXP - B_BLOCK_EXP + 1))];
+	alignas(16) uint8_t longest[1U << (B_TOTAL_EXP - B_BLOCK_EXP)];
 	/// The memory buffer served to the model
 	alignas(16) unsigned char base_mem[1U << B_TOTAL_EXP];
 	/// Keeps track of memory blocks which have been dirtied by a write
 	block_bitmap dirty[bitmap_required_size(
 	    // this tracks writes to the allocation tree
-	    (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1)) +
+	    (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP)) +
 	    // while this tracks writes to the actual memory buffer
 	    (1 << (B_TOTAL_EXP - B_BLOCK_EXP)))];
 };

@@ -15,9 +15,9 @@
 /// The checkpointable memory context assigned to a single LP
 struct mm_state {
 	/// The array of pointers to the allocated buddy systems for the LP
-	dyn_array(struct buddy_state *) buddies;
+	array_declare(struct buddy_state *) buddies;
 	/// The array of checkpoints
-	dyn_array(struct mm_log) logs;
+	array_declare(struct mm_log) logs;
 	/// The total count of allocated bytes
 	uint_fast32_t full_ckpt_size;
 };

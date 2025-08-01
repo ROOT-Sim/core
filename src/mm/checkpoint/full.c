@@ -54,11 +54,11 @@ void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_id
  */
 array_count_t model_allocator_checkpoint_restore(struct mm_state *self, const array_count_t ref_idx)
 {
-	array_count_t index = array_count(self->logs) - 1;
-	while(array_get_at(self->logs, index).ref_idx > ref_idx)
-		index--;
+	array_count_t idx = array_count(self->logs) - 1;
+	while(array_get_at(self->logs, idx).ref_idx > ref_idx)
+		--idx;
 
-	const struct mm_checkpoint *ckp = array_get_at(self->logs, index).ckpt;
+	const struct mm_checkpoint *ckp = array_get_at(self->logs, idx).ckpt;
 	self->full_ckpt_size = ckp->ckpt_size;
 	const struct buddy_checkpoint *buddy_ckpt = (struct buddy_checkpoint *)ckp->chkps;
 
@@ -75,9 +75,9 @@ array_count_t model_allocator_checkpoint_restore(struct mm_state *self, const ar
 		}
 	}
 
-	for(array_count_t j = array_count(self->logs) - 1; j > index; --j)
+	for(array_count_t j = array_count(self->logs) - 1; j > idx; --j)
 		mm_free(array_get_at(self->logs, j).ckpt);
 
-	array_count(self->logs) = index + 1;
-	return array_get_at(self->logs, index).ref_idx;
+	array_count(self->logs) = idx + 1;
+	return array_get_at(self->logs, idx).ref_idx;
 }
