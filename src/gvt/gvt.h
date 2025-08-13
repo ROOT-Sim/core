@@ -11,57 +11,67 @@
 #include <core/core.h>
 #include <lp/msg.h>
 
+extern _Thread_local bool gvt_color;
+extern _Thread_local uint64_t remote_msg_seq;
+extern _Thread_local int64_t remote_msg_balance[2];
+
 extern void gvt_global_init(void);
-extern simtime_t gvt_phase_run(void);
 extern void gvt_on_msg_extraction(simtime_t msg_t);
-
-extern _Thread_local _Bool gvt_phase;
-extern _Thread_local uint32_t remote_msg_seq[2][MAX_NODES];
-extern _Thread_local uint32_t remote_msg_received[2];
-
-extern void gvt_start_processing(void);
 extern void gvt_on_done_ctrl_msg(void);
-extern void gvt_msg_drain(void);
+extern void gvt_start_processing(void);
+extern simtime_t gvt_run(void);
+extern void gvt_handling_done(void);
+extern void gvt_msg_barrier(void);
 
 /**
- * Registers an outgoing remote message in the GVT subsystem
+ * @brief Generate a new unique ID meant to be used for remote messages
+ *
+ * Used internally in this header, do not call outside if you don't know what you are doing!
+ * IDs generated with this macro will be waited for during the GVT algorithm!
+ */
+#define gvt_remote_id_next()                                                                                           \
+	(((uint64_t)(nid + 1) << 2) | ((uint64_t)rid << (2 + MAX_NODES_BITS)) |                                        \
+	    (remote_msg_seq++ << (2 + MAX_NODES_BITS + MAX_THREADS_BITS)))
+
+/**
+ * @brief Register an outgoing remote message in the GVT subsystem
  * @param msg the remote message to register
  * @param dest_nid the destination node id of the message
  */
-static inline void gvt_remote_msg_send(struct lp_msg *msg, nid_t dest_nid)
+static inline void gvt_remote_msg_send(struct lp_msg *msg)
 {
-	msg->m_seq = (remote_msg_seq[gvt_phase][dest_nid]++ << 1) | gvt_phase;
-	msg->raw_flags = (nid << (MAX_THREADS_EXP + 2)) | ((rid + 1) << 2) | gvt_phase;
+	--remote_msg_balance[gvt_color];
+	msg->raw_flags = (gvt_color << 1U) | gvt_remote_id_next();
 }
 
 /**
- * Registers an outgoing remote anti-message in the GVT subsystem
+ * @brief Register an outgoing remote anti-message in the GVT subsystem
  * @param msg the remote anti-message to register
  * @param dest_nid the destination node id of the anti-message
  */
-static inline void gvt_remote_anti_msg_send(struct lp_msg *msg, nid_t dest_nid)
+static inline void gvt_remote_anti_msg_send(struct lp_msg *msg)
 {
-	++remote_msg_seq[gvt_phase][dest_nid];
-	msg->raw_flags |= gvt_phase << 1U;
+	--remote_msg_balance[gvt_color];
+	msg->raw_flags |= gvt_color;
 }
 
 /**
- * Registers an incoming remote message in the GVT subsystem
+ * @brief Register an incoming remote message in the GVT subsystem
  * @param msg the remote message to register
  */
 static inline void gvt_remote_msg_receive(struct lp_msg *msg)
 {
-	++remote_msg_received[msg->raw_flags & 1U];
-	msg->raw_flags &= ~((uint32_t)3U);
+	++remote_msg_balance[(msg->raw_flags >> 1U) & 1U];
+	msg->raw_flags &= ~(uint64_t)(MSG_FLAG_PROCESSED | MSG_FLAG_ANTI);
 }
 
 /**
- * Registers an incoming remote anti-message in the GVT subsystem
+ * @brief Register an incoming remote anti-message in the GVT subsystem
  * @param msg the remote anti-message to register
  */
 static inline void gvt_remote_anti_msg_receive(struct lp_msg *msg)
 {
-	++remote_msg_received[(msg->raw_flags >> 1U) & 1U];
-	msg->raw_flags &= ~((uint32_t)3U);
+	++remote_msg_balance[msg->raw_flags & 1U];
+	msg->raw_flags &= ~(uint64_t)MSG_FLAG_PROCESSED;
 	msg->raw_flags |= MSG_FLAG_ANTI;
 }

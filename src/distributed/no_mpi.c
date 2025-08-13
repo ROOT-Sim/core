@@ -58,24 +58,17 @@ void mpi_control_msg_send_to(enum msg_ctrl_code ctrl, nid_t dest)
 
 void mpi_remote_msg_handle(void) {}
 
-void mpi_remote_msg_drain(void) {}
-
-void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
+void mpi_reduce_min(double node_min[1])
 {
-	*result = values[0];
+	(void)node_min;
 }
 
-bool mpi_reduce_sum_scatter_done(void)
+void mpi_reduce_sum(int64_t node_sum[1])
 {
-	return true;
+	(void)node_sum;
 }
 
-void mpi_reduce_min(double *node_min_p)
-{
-	(void)node_min_p;
-}
-
-bool mpi_reduce_min_done(void)
+bool mpi_collective_done(void)
 {
 	return true;
 }
