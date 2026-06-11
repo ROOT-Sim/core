@@ -11,13 +11,14 @@
 #include <mm/model_allocator.h>
 #include <inttypes.h>
 
-#ifdef ROOTSIM_INCREMENTAL
-/// Tells whether a checkpoint is incremental or not.
-#define is_log_incremental(l) ((uintptr_t)(l).c & 0x1)
-#else
-/// Tells whether a checkpoint is incremental or not.
-#define is_log_incremental(l) false
-#endif
+/// Tells whether a log entry holds an incremental checkpoint (pointer tag on bit 0).
+#define is_log_incremental(l) ((uintptr_t)(l).ckpt & 0x1)
+
+/// Tag a checkpoint pointer as incremental.
+#define log_mark_incremental(ptr) ((struct mm_checkpoint *)((uintptr_t)(ptr) | 0x1))
+
+/// Strip the incremental tag from a log entry and return the real checkpoint pointer.
+#define log_get_ckpt(l) ((struct mm_checkpoint *)((uintptr_t)(l).ckpt & ~(uintptr_t)0x1))
 
 
 /// The checkpoint for the multiple buddy system allocator

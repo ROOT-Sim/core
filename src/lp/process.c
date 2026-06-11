@@ -64,6 +64,11 @@ static inline void checkpoint_take(struct lp_ctx *lp)
 	const timer_uint t = timer_hr_new();
 	model_allocator_checkpoint_take(&lp->mm_state, array_count(lp->p.pes));
 	stats_take(STATS_CKPT_SIZE, lp->mm_state.full_ckpt_size);
+	if(global_config.incremental_ckpt) {
+		struct mm_log last = array_peek(lp->mm_state.logs);
+		if(is_log_incremental(last))
+			stats_take(STATS_CKPT_INCR_SIZE, log_get_ckpt(last)->ckpt_size);
+	}
 	stats_take(STATS_CKPT, 1);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));
 }

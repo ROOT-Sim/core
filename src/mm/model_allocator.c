@@ -10,6 +10,7 @@
 
 #include <mm/buddy/buddy.h>
 #include <mm/buddy/checkpoint.h>
+#include <mm/checkpoint/checkpoint.h>
 #include <core/core.h>
 #include <log/log.h>
 #include <lp/lp.h>
@@ -49,7 +50,7 @@ void model_allocator_lp_fini(const struct mm_state *self)
 {
 	array_count_t index = array_count(self->logs);
 	while(index--)
-		mm_free(array_get_at(self->logs, index).ckpt);
+		mm_free(log_get_ckpt(array_get_at(self->logs, index)));
 
 	array_fini(self->logs);
 
@@ -209,7 +210,7 @@ array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, const arr
 	}
 
 	while(j--)
-		mm_free(array_get_at(self->logs, j).ckpt);
+		mm_free(log_get_ckpt(array_get_at(self->logs, j)));
 
 	array_truncate_first(self->logs, log_i);
 	return ref_i;

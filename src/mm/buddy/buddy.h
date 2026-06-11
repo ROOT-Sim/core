@@ -48,6 +48,8 @@ static_assert(offsetof(struct buddy_state, longest) ==
 extern void buddy_init(struct buddy_state *self);
 extern void *buddy_malloc(struct buddy_state *self, uint_fast8_t req_blks_exp);
 extern uint_fast32_t buddy_free(struct buddy_state *self, void *ptr);
+extern void buddy_dirty_reset(struct buddy_state *self);
+extern void buddy_dirty_mark(const struct buddy_state *self, const void *ptr, size_t size);
 
 /**
  * @brief Represents the result of a best-effort reallocation in the buddy system.

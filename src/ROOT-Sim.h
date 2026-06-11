@@ -193,6 +193,11 @@ struct simulation_configuration {
 	const char *stats_file;
 	/// The checkpointing interval
 	unsigned ckpt_interval;
+	/// If set, incremental checkpointing is enabled
+	bool incremental_ckpt;
+	/// Period (in number of checkpoints) at which a full checkpoint is forced when incremental
+	/// checkpointing is enabled. If zero, full checkpoints are only taken at LP initialization.
+	unsigned full_ckpt_period;
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
 	/// Specify what synchronization algorithm we are using

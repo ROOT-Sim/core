@@ -3,6 +3,12 @@
  *
  * @brief Buddy system checkpointing capabilities
  *
+ * Provides both full and incremental checkpointing of individual buddy systems.
+ * Full checkpoints save the entire allocation tree and all allocated memory blocks.
+ * Incremental checkpoints save only blocks that have been dirtied since
+ * the last checkpoint, as tracked by the dirty bitmap in @a buddy_state.
+ * Building-block restore functions support chain-walking during incremental restore.
+ *
  * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
  */
@@ -52,93 +58,181 @@
 		}                                                                                                      \
 	})
 
-// TODO: fix incremental checkpointing
-#ifdef ROOTSIM_INCREMENTAL
-
-struct buddy_checkpoint *checkpoint_incremental_take(const struct buddy_state *self)
+/**
+ * @brief Computes the size in bytes required for an incremental checkpoint of this buddy system.
+ *
+ * The incremental checkpoint stores:
+ *  - the buddy_checkpoint header fields (orig, dirty[])
+ *  - one block of (1 << B_BLOCK_EXP) bytes per dirty bit in the bitmap
+ *
+ * @param self A pointer to the buddy system state.
+ * @return The number of bytes needed.
+ */
+size_t buddy_checkpoint_incremental_size(const struct buddy_state *self)
 {
-	uint_fast32_t bset = bitmap_count_set(self->dirty, sizeof(self->dirty));
-
-	struct buddy_checkpoint *ret = mm_alloc(offsetof(struct buddy_checkpoint, longest) + bset * (1 << B_BLOCK_EXP));
-
-	unsigned char *ptr = ret->longest;
-	const unsigned char *src = self->longest;
-
-#define copy_block_to_ckp(i)                                                                                           \
-	__extension__({                                                                                                \
-		memcpy(ptr, src + ((i) << B_BLOCK_EXP), 1 << B_BLOCK_EXP);                                             \
-		ptr += 1 << B_BLOCK_EXP;                                                                               \
-	})
-
-	bitmap_foreach_set(self->dirty, sizeof(self->dirty), copy_block_to_ckp);
-#undef copy_block_to_ckp
-
-	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
-	return ret;
+	uint_fast32_t dirty_count = bitmap_count_set(self->dirty, sizeof(self->dirty));
+	return offsetof(struct buddy_checkpoint, longest) + ((size_t)dirty_count << B_BLOCK_EXP);
 }
 
-void checkpoint_incremental_restore(struct buddy_state *self, const struct buddy_checkpoint *ckp)
+/**
+ * @brief Takes an incremental checkpoint of a buddy system.
+ *
+ * Saves only the dirty blocks (tracked via the dirty bitmap) into the checkpoint buffer.
+ * Dirty blocks from the contiguous longest[]+base_mem[] region are packed sequentially
+ * into the space normally occupied by longest[] and base_mem[].
+ * After saving, the dirty bitmap is cleared.
+ *
+ * @param self A pointer to the buddy system state.
+ * @param ret  A pointer to the destination checkpoint buffer (caller-allocated).
+ * @return A pointer past the last written byte (for chaining multiple buddy checkpoints).
+ */
+struct buddy_checkpoint *buddy_checkpoint_incremental_take(const struct buddy_state *self, struct buddy_checkpoint *ret)
 {
-	array_count_t i = array_count(self->logs) - 1;
-	const struct buddy_checkpoint *cur_ckp = array_get_at(self->logs, i).c;
+	ret->orig = self;
+	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
 
-	while(cur_ckp != ckp) {
-		bitmap_merge_or(self->dirty, cur_ckp->dirty, sizeof(self->dirty));
-		cur_ckp = array_get_at(self->logs, --i).c;
-	}
+	/* Pack dirty blocks sequentially into ret->longest (longest and base_mem are contiguous). */
+	unsigned char *dst = ret->longest;
+	const unsigned char *src = self->longest; /* longest[] and base_mem[] are contiguous */
 
-#define copy_dirty_block(i)                                                                                            \
+#define incr_copy_block_to_ckp(i)                                                                                      \
 	__extension__({                                                                                                \
-		if(bitmap_check(self->dirty, i)) {                                                                     \
-			memcpy(self->longest + (i << B_BLOCK_EXP), ptr, 1 << B_BLOCK_EXP);                             \
-			bitmap_reset(self->dirty, i);                                                                  \
-			--r;                                                                                           \
+		memcpy(dst, src + ((size_t)(i) << B_BLOCK_EXP), 1U << B_BLOCK_EXP);                                    \
+		dst += 1U << B_BLOCK_EXP;                                                                              \
+	})
+
+	bitmap_foreach_set(self->dirty, sizeof(self->dirty), incr_copy_block_to_ckp);
+#undef incr_copy_block_to_ckp
+
+	// Reset dirty bitmap: blocks saved, start fresh for next checkpoint.
+	buddy_dirty_reset((struct buddy_state *)self);
+
+	return (struct buddy_checkpoint *)dst;
+}
+
+/**
+ * @brief Restores dirty blocks from an incremental checkpoint (full restore, single checkpoint).
+ *
+ * Intended for the simple case of restoring exactly one incremental checkpoint when
+ * no chain walk is needed. For chain-based restore, use
+ * buddy_checkpoint_incremental_restore_partial() instead.
+ *
+ * @param self A pointer to the buddy system state to restore into.
+ * @param ckp  A pointer to the incremental checkpoint.
+ * @return A pointer past the consumed checkpoint data, or NULL if ckp doesn't match self.
+ */
+const struct buddy_checkpoint *buddy_checkpoint_incremental_restore(struct buddy_state *self,
+    const struct buddy_checkpoint *ckp)
+{
+	if(ckp->orig != self)
+		return NULL;
+
+	const unsigned char *src = ckp->longest;
+	unsigned char *dst = self->longest; /* longest[] and base_mem[] are contiguous */
+
+#define incr_copy_block_from_ckp(i)                                                                                    \
+	__extension__({                                                                                                \
+		memcpy(dst + ((size_t)(i) << B_BLOCK_EXP), src, 1U << B_BLOCK_EXP);                                    \
+		src += 1U << B_BLOCK_EXP;                                                                              \
+	})
+
+	bitmap_foreach_set(ckp->dirty, sizeof(ckp->dirty), incr_copy_block_from_ckp);
+#undef incr_copy_block_from_ckp
+
+	return (const struct buddy_checkpoint *)src;
+}
+
+/**
+ * @brief Restores dirty blocks from an incremental checkpoint for blocks still in `remaining`.
+ *
+ * Used during backward chain traversal for incremental restore. For each dirty block in `ckp`
+ * that is also set in `remaining`, the block is copied into the live buddy state and cleared
+ * from `remaining`. Blocks already restored from more recent logs are skipped.
+ *
+ * @param self      Live buddy system to restore into.
+ * @param ckp       Incremental checkpoint to restore from.
+ * @param remaining Bitmap of blocks still needing restoration (modified in place).
+ * @return Pointer past the consumed checkpoint data, or NULL if ckp doesn't match self.
+ */
+const struct buddy_checkpoint *buddy_checkpoint_incremental_restore_partial(struct buddy_state *self,
+    const struct buddy_checkpoint *ckp, block_bitmap *remaining)
+{
+	if(ckp->orig != self)
+		return NULL;
+
+	const unsigned char *src = ckp->longest;
+	unsigned char *dst = self->longest;
+	uint_fast32_t block_count = bitmap_count_set(ckp->dirty, sizeof(ckp->dirty));
+
+#define incr_partial_restore(i)                                                                                        \
+	__extension__({                                                                                                \
+		if(bitmap_check(remaining, (i))) {                                                                     \
+			memcpy(dst + ((size_t)(i) << B_BLOCK_EXP), src, 1U << B_BLOCK_EXP);                            \
+			bitmap_reset(remaining, (i));                                                                  \
 		}                                                                                                      \
-		ptr += 1 << B_BLOCK_EXP;                                                                               \
+		src += 1U << B_BLOCK_EXP;                                                                              \
 	})
 
-#define copy_block_from_ckp(i)                                                                                         \
-	__extension__({                                                                                                \
-		memcpy(self->longest + (i << B_BLOCK_EXP), cur_ckp->longest + (i << B_BLOCK_EXP), 1 << B_BLOCK_EXP);   \
-		--r;                                                                                                   \
-	})
+	bitmap_foreach_set(ckp->dirty, sizeof(ckp->dirty), incr_partial_restore);
+	(void)block_count;
+#undef incr_partial_restore
 
-#define buddy_block_dirty_from_ckp(offset, len)                                                                        \
-	__extension__({                                                                                                \
-		uint_fast32_t i = (offset >> B_BLOCK_EXP) + (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));                \
-		uint_fast32_t b_len = len;                                                                             \
-		do {                                                                                                   \
-			copy_dirty_block(i);                                                                           \
-			i++;                                                                                           \
-			b_len -= 1U << B_BLOCK_EXP;                                                                    \
-		} while(b_len);                                                                                        \
-	})
+	return (const struct buddy_checkpoint *)src;
+}
 
-	uint_fast32_t r = bitmap_count_set(self->dirty, sizeof(self->dirty));
-	const unsigned char *ptr = cur_ckp->longest;
+/**
+ * @brief Restores blocks still needed (`remaining`) from a full checkpoint.
+ *
+ * Used as the final step of backward chain traversal. Restores only the blocks
+ * still set in `remaining` — blocks already restored from incremental logs are skipped.
+ *
+ * For the tree portion (longest[]), blocks are copied directly by index.
+ * For the base_mem portion, the full checkpoint uses buddy_tree_visit to find
+ * allocated blocks; only those also set in `remaining` are copied.
+ *
+ * @param self      Live buddy system to restore into.
+ * @param ckp       Full checkpoint to restore from.
+ * @param remaining Bitmap of blocks still needing restoration (read-only).
+ * @return Pointer past the consumed checkpoint data, or NULL if ckp doesn't match self.
+ */
+const struct buddy_checkpoint *buddy_checkpoint_full_restore_remaining(struct buddy_state *self,
+    const struct buddy_checkpoint *ckp, const block_bitmap *remaining)
+{
+	if(ckp->orig != self)
+		return NULL;
 
-	bitmap_foreach_set(cur_ckp->dirty, sizeof(cur_ckp->dirty), copy_dirty_block);
+	const unsigned int tree_blocks = (1U << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
 
-	const unsigned tree_bit_size = bitmap_required_size(1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
-
-	while(r) {
-		cur_ckp = array_get_at(self->logs, --i).c;
-		if(cur_ckp->is_incremental) {
-			ptr = cur_ckp->longest;
-			bitmap_foreach_set(cur_ckp->dirty, sizeof(cur_ckp->dirty), copy_dirty_block);
-		} else {
-			bitmap_foreach_set(self->dirty, tree_bit_size, copy_block_from_ckp);
-			ptr = cur_ckp->base_mem;
-			buddy_tree_visit(cur_ckp->longest, buddy_block_dirty_from_ckp);
+	// Restore tree portion: copy only blocks set in remaining
+	for(unsigned int i = 0; i < tree_blocks; i++) {
+		if(bitmap_check(remaining, i)) {
+			memcpy(self->longest + ((size_t)i << B_BLOCK_EXP), ckp->longest + ((size_t)i << B_BLOCK_EXP),
+			    1U << B_BLOCK_EXP);
 		}
 	}
 
-#undef copy_dirty_block
-#undef copy_block_from_ckp
-#undef buddy_block_dirty_from_ckp
-}
+	// Restore base_mem portion via tree visit (full ckp stores only allocated blocks)
+	const unsigned char *ptr = ckp->base_mem;
 
-#endif
+#define full_restore_remaining_block(offset, len)                                                                      \
+	__extension__({                                                                                                \
+		uint_fast32_t _off = (offset);                                                                         \
+		uint_fast32_t _len = (len);                                                                            \
+		do {                                                                                                   \
+			uint_fast32_t _bi = (_off >> B_BLOCK_EXP) + tree_blocks;                                       \
+			if(bitmap_check(remaining, _bi))                                                               \
+				memcpy(self->base_mem + _off, ptr, 1U << B_BLOCK_EXP);                                 \
+			ptr += 1U << B_BLOCK_EXP;                                                                      \
+			_off += 1U << B_BLOCK_EXP;                                                                     \
+			_len -= 1U << B_BLOCK_EXP;                                                                     \
+		} while(_len);                                                                                         \
+	})
+
+	buddy_tree_visit(ckp->longest, full_restore_remaining_block);
+#undef full_restore_remaining_block
+
+	return (const struct buddy_checkpoint *)ptr;
+}
 
 /**
  * @brief Takes a full checkpoint.
@@ -153,9 +247,8 @@ void checkpoint_incremental_restore(struct buddy_state *self, const struct buddy
 struct buddy_checkpoint *buddy_checkpoint_full_take(const struct buddy_state *self, struct buddy_checkpoint *ret)
 {
 	ret->orig = self;
-#ifdef ROOTSIM_INCREMENTAL
-	memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
-#endif
+	if(global_config.incremental_ckpt)
+		memcpy(ret->dirty, self->dirty, sizeof(self->dirty));
 	memcpy(ret->longest, self->longest, sizeof(ret->longest));
 
 #define buddy_block_copy_to_ckp(offset, len)                                                                           \

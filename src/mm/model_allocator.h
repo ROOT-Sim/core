@@ -20,6 +20,12 @@ struct mm_state {
 	array_declare(struct mm_log) logs;
 	/// The total count of allocated bytes
 	uint_fast32_t full_ckpt_size;
+	/// When set, the next checkpoint will be forced to be a full one
+	bool force_full;
+	/// Counter of checkpoints taken since the last full checkpoint (for full_ckpt_period)
+	unsigned ckpt_since_last_full;
+	/// Cache of the last buddy found by __write_mem() to avoid repeated binary searches
+	struct buddy_state *last_dirty_buddy;
 };
 
 extern struct buddy_state *buddy_find_by_address(const struct mm_state *self, const void *ptr);

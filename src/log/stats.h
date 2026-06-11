@@ -51,6 +51,8 @@ enum stats_thread_type {
 	STATS_CKPT_TIME,
 	/// The size of LPs checkpoints
 	STATS_CKPT_SIZE,
+	/// The actual size of incremental checkpoints (smaller than full_ckpt_size)
+	STATS_CKPT_INCR_SIZE,
 	/// The count of messages processed in coasting forward, i.e. silently executed messages
 	STATS_MSG_SILENT,
 	/// The time taken to carry out silent processing activities
