@@ -80,6 +80,7 @@ void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt)
 {
 	memset(auto_ckpt, 0, sizeof(*auto_ckpt));
 	auto_ckpt->ckpt_interval = global_config.ckpt_interval ? global_config.ckpt_interval : 256;
+	auto_ckpt->ckpt_rem = auto_ckpt->ckpt_interval; // forces the first checkpoint
 	auto_ckpt->inv_bad_p = 64.0;
 }
 

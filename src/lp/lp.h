@@ -12,7 +12,6 @@
 
 #include <arch/platform.h>
 #include <core/core.h>
-#include <lp/msg.h>
 #include <lp/process.h>
 #include <mm/checkpoint/checkpoint.h>
 #include <mm/model_allocator.h>
@@ -55,16 +54,6 @@ extern _Thread_local uint64_t lid_thread_end;
 
 extern _Thread_local struct lp_ctx *current_lp;
 extern struct lp_ctx *lps;
-
-#ifndef NDEBUG
-/// Indicates whether LPs have been initialized. Prevents calling SetState() outside of LP_INIT
-extern bool lp_initialized;
-
-/// Macro to set the LP initialization flag to true
-#define lp_initialized_set() (lp_initialized = true)
-#else
-#define lp_initialized_set()
-#endif
 
 extern void lp_global_init(void);
 extern void lp_global_fini(void);

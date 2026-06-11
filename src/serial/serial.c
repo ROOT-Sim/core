@@ -12,7 +12,6 @@
 #include <datatypes/heap.h>
 #include <log/stats.h>
 #include <lp/common.h>
-#include <mm/msg_allocator.h>
 
 /// The messages queue of the serial runtime
 static heap_declare(struct lp_msg *) queue;
@@ -43,18 +42,17 @@ static void serial_simulation_init(void)
 
 		lp->state_pointer = NULL;
 
-		struct lp_msg *msg = msg_allocator_pack(i, 0.0, LP_INIT, NULL, 0);
+		struct lp_msg *msg = common_msg_pack(i, 0.0, LP_INIT, NULL, 0);
 		heap_insert(queue, msg_is_before, msg);
 
 		common_msg_process(lp, msg);
 
 		msg_allocator_free(heap_extract(queue, msg_is_before));
 	}
-	lp_initialized_set();
 }
 
 /**
- * @brief Finalizes the serial simulation environment
+ * @brief Finalize the serial simulation environment
  */
 static void serial_simulation_fini(void)
 {
@@ -76,7 +74,7 @@ static void serial_simulation_fini(void)
 }
 
 /**
- * @brief Runs the serial simulation
+ * @brief Run the serial simulation
  */
 static int serial_simulation_run(void)
 {
@@ -127,7 +125,7 @@ static int serial_simulation_run(void)
 void ScheduleNewEvent_serial(const lp_id_t receiver, const simtime_t timestamp, const unsigned event_type,
     const void *payload, const unsigned payload_size)
 {
-	struct lp_msg *msg = msg_allocator_pack(receiver, timestamp, event_type, payload, payload_size);
+	struct lp_msg *msg = common_msg_pack(receiver, timestamp, event_type, payload, payload_size);
 
 #ifndef NDEBUG
 	if(unlikely(msg_is_before(msg, heap_min(queue)))) {
@@ -140,7 +138,7 @@ void ScheduleNewEvent_serial(const lp_id_t receiver, const simtime_t timestamp, 
 }
 
 /**
- * @brief Handles a full serial simulation runs
+ * @brief Handle a full serial simulation runs
  */
 int serial_simulation(void)
 {
