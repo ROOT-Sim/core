@@ -56,7 +56,7 @@ void model_allocator_lp_fini(const struct mm_state *self)
 
 	index = array_count(self->buddies);
 	while(index--)
-		mm_free(array_get_at(self->buddies, index));
+		mm_aligned_free(array_get_at(self->buddies, index));
 
 	array_fini(self->buddies);
 }
@@ -112,7 +112,9 @@ void *rs_malloc(size_t req_size)
 			return ret;
 	}
 
-	struct buddy_state *new_buddy = mm_alloc(sizeof(*new_buddy));
+	static_assert(sizeof(struct buddy_state) % alignof(struct buddy_state) == 0,
+	    "sizeof(struct buddy_state) must be a multiple of its alignment for aligned_alloc");
+	struct buddy_state *new_buddy = mm_aligned_alloc(alignof(struct buddy_state), sizeof(*new_buddy));
 	buddy_init(new_buddy);
 
 	for(index = 0; index < array_count(self->buddies); ++index)
