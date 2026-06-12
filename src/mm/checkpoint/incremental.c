@@ -28,9 +28,9 @@
  * @param self A pointer to the `mm_state` structure representing the memory
  *             management state of the logical process.
  */
-void model_allocator_checkpoint_next_force_full(const struct mm_state *self)
+void model_allocator_checkpoint_next_force_full(struct mm_state *self)
 {
-	((struct mm_state *)self)->force_full = true;
+	self->force_full = true;
 }
 
 

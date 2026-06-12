@@ -93,6 +93,6 @@ extern void auto_ckpt_init(void);
 extern void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt);
 extern void auto_ckpt_on_gvt(void);
 extern void auto_ckpt_recompute(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size);
-extern void model_allocator_checkpoint_next_force_full(const struct mm_state *self);
+extern void model_allocator_checkpoint_next_force_full(struct mm_state *self);
 extern void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_idx);
 extern array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_count_t ref_idx);

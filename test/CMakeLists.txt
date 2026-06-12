@@ -16,7 +16,7 @@ test_program_link_libraries(load rscore)
 
 # Test data structures and subsystems
 test_program(bitmap datatypes/bitmap.c)
-test_program(mm mm/buddy.c mm/buddy_hard.c mm/parallel.c mm/incremental.c mm/main.c mock.c)
+test_program(mm mm/buddy.c mm/buddy_hard.c mm/parallel.c mm/incremental.c mm/model_allocator.c mm/main.c mock.c)
 target_include_directories(test_mm PRIVATE .)
 test_program_link_libraries(mm rscore)
 test_program(termination gvt/termination.c)

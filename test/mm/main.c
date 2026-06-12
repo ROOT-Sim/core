@@ -16,6 +16,7 @@ extern int model_allocator_test(void *);
 extern int model_allocator_test_hard(void *);
 extern int parallel_malloc_test(void *);
 extern int incremental_checkpoint_test(void *);
+extern int model_allocator_full_test(void *);
 
 int main(void)
 {
@@ -25,4 +26,5 @@ int main(void)
 	test("Testing buddy system (hard test)", model_allocator_test_hard, NULL);
 	test("Testing parallel memory operations", parallel_malloc_test, NULL);
 	test("Testing incremental checkpointing", incremental_checkpoint_test, NULL);
+	test("Testing model allocator (full + incremental)", model_allocator_full_test, NULL);
 }
