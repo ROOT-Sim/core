@@ -17,6 +17,9 @@
 
 #include <errno.h>
 
+/* Declared in mm/checkpoint/incremental.c — marks a model-memory region dirty. */
+extern void __write_mem(const void *ptr, size_t size);
+
 /**
  * @brief Initializes the memory management state for a logical process.
  *
@@ -33,6 +36,9 @@ void model_allocator_lp_init(struct mm_state *self)
 	array_init(self->buddies);
 	array_init(self->logs);
 	self->full_ckpt_size = offsetof(struct mm_checkpoint, chkps) + sizeof(struct buddy_state *);
+	self->force_full = false;
+	self->ckpt_since_last_full = 0;
+	self->last_dirty_buddy = NULL;
 }
 
 
@@ -132,8 +138,11 @@ void *rs_calloc(const size_t nmemb, const size_t size)
 	const size_t tot = nmemb * size;
 	void *ret = rs_malloc(tot);
 
-	if(likely(ret))
+	if(likely(ret)) {
+		/* Mark base_mem dirty before the bulk write. */
+		__write_mem(ret, tot);
 		memset(ret, 0, tot);
+	}
 
 	return ret;
 }
@@ -172,6 +181,8 @@ void *rs_realloc(void *ptr, size_t req_size)
 	if(unlikely(new_buffer == NULL))
 		return NULL;
 
+	/* Mark the destination dirty before copying into model-allocated memory. */
+	__write_mem(new_buffer, min(req_size, ret.original));
 	memcpy(new_buffer, ptr, min(req_size, ret.original));
 	rs_free(ptr);
 

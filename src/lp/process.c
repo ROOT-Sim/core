@@ -67,7 +67,7 @@ static inline void checkpoint_take(struct lp_ctx *lp)
 	if(global_config.incremental_ckpt) {
 		struct mm_log last = array_peek(lp->mm_state.logs);
 		if(is_log_incremental(last))
-			stats_take(STATS_CKPT_INCR_SIZE, log_get_ckpt(last)->ckpt_size);
+			stats_take(STATS_CKPT_INCR_SIZE, log_get_ckpt(last)->incr_ckpt_size);
 	}
 	stats_take(STATS_CKPT, 1);
 	stats_take(STATS_CKPT_TIME, timer_hr_value(t));

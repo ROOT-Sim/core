@@ -105,7 +105,8 @@ void model_allocator_checkpoint_take_incremental(struct mm_state *self, array_co
 	total += offsetof(struct buddy_checkpoint, longest);
 
 	struct mm_checkpoint *ckpt = mm_alloc(total);
-	ckpt->ckpt_size = self->full_ckpt_size; // restore cost reference stays full size
+	ckpt->ckpt_size = self->full_ckpt_size;
+	ckpt->incr_ckpt_size = (uint_fast32_t)total;
 
 	struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckpt->chkps;
 	for(array_count_t i = n; i--;)

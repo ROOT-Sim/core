@@ -23,8 +23,14 @@
 
 /// The checkpoint for the multiple buddy system allocator
 struct mm_checkpoint {
-	/// The total count of allocated bytes at the moment of the checkpoint
+	/// The total count of allocated bytes at the moment of the checkpoint.
+	/// For both full and incremental checkpoints this stores the full (uncompressed)
+	/// state size, used to track full_ckpt_size across restores.
 	uint_fast32_t ckpt_size;
+	/// The actual number of bytes written for this checkpoint.
+	/// For full checkpoints this equals ckpt_size; for incremental checkpoints it is
+	/// smaller (only dirty blocks are saved).
+	uint_fast32_t incr_ckpt_size;
 	/// The sequence of checkpoints of the allocated buddy systems (see @a buddy_checkpoint)
 	unsigned char chkps[];
 };

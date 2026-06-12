@@ -29,6 +29,7 @@ void buddy_init(struct buddy_state *self)
 		self->longest[idx] = node_size;
 		node_size -= is_power_of_2(idx + 2);
 	}
+	memset(self->dirty, 0, sizeof(self->dirty));
 }
 
 

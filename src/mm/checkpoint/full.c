@@ -31,6 +31,7 @@ static void checkpoint_take_full(struct mm_state *self, array_count_t ref_idx)
 {
 	struct mm_checkpoint *ckpt = mm_alloc(self->full_ckpt_size);
 	ckpt->ckpt_size = self->full_ckpt_size;
+	ckpt->incr_ckpt_size = self->full_ckpt_size;
 
 	const struct mm_log mm_log = {.ref_idx = ref_idx, .ckpt = ckpt};
 	array_push(self->logs, mm_log);
@@ -167,14 +168,18 @@ array_count_t model_allocator_checkpoint_restore(struct mm_state *self, const ar
 		}
 
 		/*
-		 * After forward application, restore full_ckpt_size from the target
-		 * checkpoint. Each checkpoint (full and incremental) stores the correct
-		 * full_ckpt_size at that point in time, reflecting all live allocations.
-		 * The restore_from_full() call above only set full_ckpt_size to the full
-		 * checkpoint's value; re-applying allocs/frees via incremental patches
-		 * changes the buddy trees but NOT full_ckpt_size — so we update it here.
+		 * Adjust full_ckpt_size by the net change in live allocation between
+		 * the full baseline and the target incremental checkpoint.
+		 * restore_from_full() already set full_ckpt_size to the full checkpoint's
+		 * ckpt_size and may have added offsetof(buddy_checkpoint, base_mem) for
+		 * each buddy that exists now but was absent from the full checkpoint (those
+		 * buddies are still live but empty, and they DO occupy space in the next
+		 * checkpoint). Adding the delta between the target and the full preserves
+		 * that per-buddy overhead while correctly reflecting the net alloc/free
+		 * activity that occurred between the full checkpoint and the target.
 		 */
-		self->full_ckpt_size = log_get_ckpt(array_get_at(self->logs, index))->ckpt_size;
+		self->full_ckpt_size += log_get_ckpt(array_get_at(self->logs, index))->ckpt_size -
+		                        log_get_ckpt(array_get_at(self->logs, full_i))->ckpt_size;
 	}
 
 	for(array_count_t j = array_count(self->logs) - 1; j > index; --j)
