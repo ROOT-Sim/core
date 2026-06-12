@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "test_rng.h"
+
 #ifndef NUM_LPS
 #define NUM_LPS 8192
 #endif
@@ -25,9 +27,6 @@
 
 #define EVENT 1
 
-struct phold_state {
-	__uint128_t seed;
-};
 
 struct phold_message {
 	long int dummy_data;
@@ -38,37 +37,27 @@ static simtime_t mean = 1.0;
 static simtime_t lookahead = 0.0;
 static int start_events = 1;
 
-static double Random(struct phold_state *state)
+
+
+static double Expent(struct test_rng_state *state)
 {
-	const __uint128_t multiplier = (((__uint128_t)0x0fc94e3bf4e9ab32ULL) << 64) + 0x866458cd56f5e605ULL;
-	state->seed *= multiplier;
-	const uint64_t ret = state->seed >> 64u;
-	return (double)ret / (double)UINT64_MAX;
+	return mean * (-log(1. - test_rng_random(state)));
 }
 
-static double Expent(struct phold_state *state)
-{
-	return mean * (-log(1. - Random(state)));
-}
-
-static void set_seed(const __uint128_t seed, struct phold_state *state)
-{
-	state->seed = ((seed) << 1u) | 1u;
-}
 
 void ProcessEvent(const lp_id_t me, const simtime_t now, const unsigned event_type, _unused const void *content,
 	_unused const unsigned size, void *s)
 {
 	const struct phold_message new_event = {0};
 	lp_id_t dest;
-	struct phold_state *state = s;
+	struct test_rng_state *state = s;
 
 	switch(event_type) {
 		case LP_INIT:
 			state = rs_malloc(sizeof(*state));
 			if(state == NULL)
 				abort();
-			set_seed(me, state);
+			test_rng_set_seed(me, state);
 			SetState(state);
 
 			for(int i = 0; i < start_events; i++)
@@ -80,8 +69,8 @@ void ProcessEvent(const lp_id_t me, const simtime_t now, const unsigned event_ty
 
 		case EVENT:
 			dest = me;
-			if(Random(state) <= p_remote)
-				dest = (lp_id_t)(Random(state) * NUM_LPS);
+			if(test_rng_random(state) <= p_remote)
+				dest = (lp_id_t)(test_rng_random(state) * NUM_LPS);
 
 			ScheduleNewEvent(dest, now + Expent(state) + lookahead, EVENT, &new_event, sizeof(new_event));
 			break;
