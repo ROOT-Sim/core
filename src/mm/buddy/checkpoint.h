@@ -10,9 +10,12 @@
 
 #include <mm/buddy/buddy.h>
 
-/// A restorable checkpoint of the memory context of a single buddy system
-struct buddy_checkpoint { // todo only log longest[] if changed, or incrementally
-	/// The buddy system to which this checkpoint applies. TODO: reengineer the multi-checkpointing approach
+/// A restorable checkpoint of the memory context of a single buddy system.
+/// For a full checkpoint, both `longest[]` and `base_mem[]` are populated.
+/// For an incremental checkpoint, only dirty blocks (as tracked by `dirty[]`) are stored
+/// in packed form starting at `longest[]`.
+struct buddy_checkpoint {
+	/// The buddy system to which this checkpoint applies
 	const struct buddy_state *orig;
 	/// The checkpoint of the dirty bitmap
 	block_bitmap dirty[bitmap_required_size(
@@ -34,9 +37,20 @@ extern struct buddy_checkpoint *buddy_checkpoint_full_take(const struct buddy_st
 extern const struct buddy_checkpoint *buddy_checkpoint_full_restore(struct buddy_state *self,
     const struct buddy_checkpoint *data);
 
-#ifdef ROOTSIM_INCREMENTAL
-extern struct buddy_checkpoint *checkpoint_incremental_take(const struct buddy_state *self,
+extern struct buddy_checkpoint *buddy_checkpoint_incremental_take(const struct buddy_state *self,
     struct buddy_checkpoint *data);
-extern const struct buddy_checkpoint *checkpoint_incremental_restore(struct buddy_state *self,
+extern const struct buddy_checkpoint *buddy_checkpoint_incremental_restore(struct buddy_state *self,
     const struct buddy_checkpoint *ckp);
-#endif
+
+/// Restores dirty blocks from an incremental checkpoint for blocks still set in `remaining`.
+/// Clears restored bits from `remaining`. Returns pointer past consumed data, or NULL if no match.
+extern const struct buddy_checkpoint *buddy_checkpoint_incremental_restore_partial(struct buddy_state *self,
+    const struct buddy_checkpoint *ckp, block_bitmap *remaining);
+
+/// Restores blocks still set in `remaining` from a full checkpoint.
+/// Returns pointer past consumed data, or NULL if no match.
+extern const struct buddy_checkpoint *buddy_checkpoint_full_restore_remaining(struct buddy_state *self,
+    const struct buddy_checkpoint *ckp, const block_bitmap *remaining);
+
+/// Computes the size in bytes needed for an incremental checkpoint of this buddy system.
+extern size_t buddy_checkpoint_incremental_size(const struct buddy_state *self);

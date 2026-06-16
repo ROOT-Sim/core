@@ -16,7 +16,7 @@ test_program_link_libraries(load rscore)
 
 # Test data structures and subsystems
 test_program(bitmap datatypes/bitmap.c)
-test_program(mm mm/buddy.c mm/buddy_hard.c mm/parallel.c mm/main.c mock.c)
+test_program(mm mm/buddy.c mm/buddy_hard.c mm/parallel.c mm/incremental.c mm/model_allocator.c mm/main.c mock.c)
 target_include_directories(test_mm PRIVATE .)
 test_program_link_libraries(mm rscore)
 test_program(termination gvt/termination.c)
@@ -43,5 +43,9 @@ test_program(correctness_serial integration/correctness/serial.c integration/cor
 test_program_link_libraries(correctness_serial rscore)
 test_program(correctness_parallel integration/correctness/timewarp.c integration/correctness/application.c integration/correctness/functions.c integration/correctness/output_256.c)
 test_program_link_libraries(correctness_parallel rscore)
+test_program(correctness_incremental integration/correctness/timewarp_incremental.c integration/correctness/application_incremental.c integration/correctness/output_256.c)
+test_program_link_libraries(correctness_incremental rscore)
 test_program(phold integration/phold.c)
 test_program_link_libraries(phold rscore)
+test_program(phold_incremental integration/phold_incremental.c)
+test_program_link_libraries(phold_incremental rscore)

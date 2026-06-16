@@ -29,6 +29,7 @@ void buddy_init(struct buddy_state *self)
 		self->longest[idx] = node_size;
 		node_size -= is_power_of_2(idx + 2);
 	}
+	memset(self->dirty, 0, sizeof(self->dirty));
 }
 
 
@@ -61,19 +62,16 @@ void *buddy_malloc(struct buddy_state *self, const uint_fast8_t req_blks_exp)
 
 	/* update the *longest* value back */
 	self->longest[idx] = 0;
-#ifdef ROOTSIM_INCREMENTAL
-	bitmap_set(self->dirty, idx >> B_BLOCK_EXP);
-#endif
+	if(global_config.incremental_ckpt)
+		bitmap_set(self->dirty, idx >> B_BLOCK_EXP);
 
 	const uint_fast32_t offset = ((idx + 1) << node_size) - (1 << B_TOTAL_EXP);
 
 	while(idx) {
 		idx = buddy_parent(idx);
-		self->longest[idx] =
-		    max(self->longest[buddy_left_child(idx)], self->longest[buddy_right_child(idx)]);
-#ifdef ROOTSIM_INCREMENTAL
-		bitmap_set(self->dirty, idx >> B_BLOCK_EXP);
-#endif
+		self->longest[idx] = max(self->longest[buddy_left_child(idx)], self->longest[buddy_right_child(idx)]);
+		if(global_config.incremental_ckpt)
+			bitmap_set(self->dirty, idx >> B_BLOCK_EXP);
 	}
 
 	return ((char *)self->base_mem) + offset;
@@ -102,16 +100,16 @@ uint_fast32_t buddy_free(struct buddy_state *self, void *ptr)
 
 	self->longest[idx] = node_size;
 	const uint_fast32_t ret = (uint_fast32_t)1U << node_size;
-#ifdef ROOTSIM_INCREMENTAL
-	bitmap_set(self->dirty, idx >> B_BLOCK_EXP);
+	if(global_config.incremental_ckpt) {
+		bitmap_set(self->dirty, idx >> B_BLOCK_EXP);
 
-	uint_fast32_t bitmap_idx = (1 << (node_size - B_BLOCK_EXP)) - 1;
-	offset += (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
-	// Track freed blocks content because full checkpoints don't
-	do {
-		bitmap_set(self->dirty, offset + bitmap_idx);
-	} while(bitmap_idx--);
-#endif
+		uint_fast32_t bitmap_idx = (1 << (node_size - B_BLOCK_EXP)) - 1;
+		offset += (1 << (B_TOTAL_EXP - 2 * B_BLOCK_EXP + 1));
+		// Track freed blocks content because full checkpoints don't
+		do {
+			bitmap_set(self->dirty, offset + bitmap_idx);
+		} while(bitmap_idx--);
+	}
 
 	while(idx) {
 		idx = buddy_parent(idx);
@@ -124,9 +122,8 @@ uint_fast32_t buddy_free(struct buddy_state *self, void *ptr)
 		} else {
 			self->longest[idx] = max(left_long, right_long);
 		}
-#ifdef ROOTSIM_INCREMENTAL
-		bitmap_set(self->dirty, i >> B_BLOCK_EXP);
-#endif
+		if(global_config.incremental_ckpt)
+			bitmap_set(self->dirty, idx >> B_BLOCK_EXP);
 		++node_size;
 	}
 	return ret;
@@ -176,6 +173,21 @@ struct buddy_realloc_res buddy_best_effort_realloc(const struct buddy_state *sel
 	}
 
 	return ret;
+}
+
+/**
+ * @brief Resets the dirty bitmap of a buddy system.
+ *
+ * Clears all dirty-tracking bits so that the next incremental checkpoint
+ * will only record blocks dirtied after this call. This should be called
+ * after every checkpoint (full or incremental) when incremental checkpointing
+ * is enabled.
+ *
+ * @param self Pointer to the `buddy_state` structure.
+ */
+void buddy_dirty_reset(struct buddy_state *self)
+{
+	memset(self->dirty, 0, sizeof(self->dirty));
 }
 
 /**

@@ -10,11 +10,15 @@
 
 #include <mm/buddy/buddy.h>
 #include <mm/buddy/checkpoint.h>
+#include <mm/checkpoint/checkpoint.h>
 #include <core/core.h>
 #include <log/log.h>
 #include <lp/lp.h>
 
 #include <errno.h>
+
+/* Declared in mm/checkpoint/incremental.c — marks a model-memory region dirty. */
+extern void WriteMemory(const void *ptr, size_t size);
 
 /**
  * @brief Initializes the memory management state for a logical process.
@@ -32,6 +36,9 @@ void model_allocator_lp_init(struct mm_state *self)
 	array_init(self->buddies);
 	array_init(self->logs);
 	self->full_ckpt_size = offsetof(struct mm_checkpoint, chkps) + sizeof(struct buddy_state *);
+	self->force_full = false;
+	self->ckpt_since_last_full = 0;
+	self->last_dirty_buddy = NULL;
 }
 
 
@@ -49,7 +56,7 @@ void model_allocator_lp_fini(const struct mm_state *self)
 {
 	array_count_t index = array_count(self->logs);
 	while(index--)
-		mm_free(array_get_at(self->logs, index).ckpt);
+		mm_free(log_get_ckpt(array_get_at(self->logs, index)));
 
 	array_fini(self->logs);
 
@@ -131,8 +138,11 @@ void *rs_calloc(const size_t nmemb, const size_t size)
 	const size_t tot = nmemb * size;
 	void *ret = rs_malloc(tot);
 
-	if(likely(ret))
+	if(likely(ret)) {
+		/* Mark base_mem dirty before the bulk write. */
+		WriteMemory(ret, tot);
 		memset(ret, 0, tot);
+	}
 
 	return ret;
 }
@@ -171,6 +181,8 @@ void *rs_realloc(void *ptr, size_t req_size)
 	if(unlikely(new_buffer == NULL))
 		return NULL;
 
+	/* Mark the destination dirty before copying into model-allocated memory. */
+	WriteMemory(new_buffer, min(req_size, ret.original));
 	memcpy(new_buffer, ptr, min(req_size, ret.original));
 	rs_free(ptr);
 
@@ -211,7 +223,7 @@ array_count_t model_allocator_fossil_lp_collect(struct mm_state *self, const arr
 	}
 
 	while(j--)
-		mm_free(array_get_at(self->logs, j).ckpt);
+		mm_free(log_get_ckpt(array_get_at(self->logs, j)));
 
 	array_truncate_first(self->logs, log_i);
 	return ref_i;

@@ -92,6 +92,24 @@ extern void ScheduleNewEvent(lp_id_t receiver, simtime_t timestamp, unsigned eve
 extern void SetState(void *new_state);
 
 /**
+ * @brief Marks a memory region as dirty for incremental checkpointing.
+ *
+ * This function is injected at compile time by the software instrumentation
+ * tool before every memory-write instruction in the model code. It marks the
+ * corresponding blocks in the buddy system's dirty bitmap, so that only the
+ * dirtied blocks are saved in the next incremental checkpoint.
+ *
+ * LP-visible memory lives in the buddy system's base_mem[] buffer; writes to
+ * the longest[] allocation tree are tracked separately by buddy_malloc() and
+ * buddy_free() via direct bitmap_set() calls. Therefore, this function only
+ * needs to handle writes whose addresses fall within base_mem[].
+ *
+ * @param ptr  A pointer to the start of the memory region being written to.
+ * @param size The size of the memory region being written to, in bytes.
+ */
+extern void WriteMemory(const void *ptr, const size_t size);
+
+/**
  * @brief Allocates rollbackable memory
  *
  * This function is part of the custom memory management system and is used to allocate
@@ -193,6 +211,11 @@ struct simulation_configuration {
 	const char *stats_file;
 	/// The checkpointing interval
 	unsigned ckpt_interval;
+	/// If set, incremental checkpointing is enabled
+	bool incremental_ckpt;
+	/// Period (in number of checkpoints) at which a full checkpoint is forced when incremental
+	/// checkpointing is enabled. If zero, full checkpoints are only taken at LP initialization.
+	unsigned full_ckpt_period;
 	/// If set, worker threads are bound to physical cores
 	bool core_binding;
 	/// Specify what synchronization algorithm we are using

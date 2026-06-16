@@ -3,7 +3,9 @@
  *
  * @brief Incremental checkpointing routines
  *
- * This unit contains the implementation of incremental checkpointing routines for the LP memory management
+ * This unit contains the implementation of incremental checkpointing routines for the LP memory management.
+ * Incremental checkpointing saves only the memory blocks that have been dirtied since the last checkpoint,
+ * using the dirty bitmap maintained in each buddy system.
  *
  * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -11,48 +13,91 @@
 #include <datatypes/array.h>
 #include <lp/lp.h>
 #include <mm/buddy/buddy.h>
+#include <mm/buddy/checkpoint.h>
 #include <mm/checkpoint/checkpoint.h>
+#include <mm/model_allocator.h>
 
 /**
  * @brief Forces the next checkpoint to be a full checkpoint.
  *
- * This function is a placeholder for enabling full checkpointing when
- * incremental state saving is active. Currently, it does nothing as
- * incremental checkpointing is disabled.
+ * Sets the force_full flag on the mm_state so that the next call to
+ * model_allocator_checkpoint_take() will take a full checkpoint regardless
+ * of whether incremental mode is enabled. The flag is reset by the full
+ * checkpoint routine after it completes.
  *
  * @param self A pointer to the `mm_state` structure representing the memory
  *             management state of the logical process.
  */
-void model_allocator_checkpoint_next_force_full(const struct mm_state *self)
+void model_allocator_checkpoint_next_force_full(struct mm_state *self)
 {
-	(void)self;
-	// TODO: force full checkpointing when incremental state saving is enabled
+	self->force_full = true;
 }
 
 
-/**
- * @brief Marks a memory region as dirty for incremental checkpointing.
- *
- * This function is intended to be an entry point for the model's code, injected at compile time,
- * to mark a memory region as dirty whenever a write operation is performed. It updates the
- * corresponding buddy system to track the modified memory region.
- *
- * @note This function is currently unused because the incremental checkpointing subsystem
- *       is disabled.
- *
- * @param ptr A pointer to the start of the memory region being written to.
- * @param size The size of the memory region being written to, in bytes.
- */
-void __write_mem(const void *ptr, const size_t size)
+void WriteMemory(const void *ptr, const size_t size)
 {
+	if(unlikely(!global_config.incremental_ckpt))
+		return;
+
 	struct mm_state *self = &current_lp->mm_state;
 	if(unlikely(!size || array_is_empty(self->buddies)))
 		return;
 
-	if(unlikely(ptr < (void *)array_get_at(self->buddies, 0) || ptr > (void *)(array_peek(self->buddies) + 1)))
+	/*
+	 * Fast path: check cached buddy first. This avoids the binary search in
+	 * buddy_find_by_address() for consecutive writes to the same buddy, which
+	 * is the common case (e.g., repeated rng_state writes within one LP event).
+	 */
+	struct buddy_state *buddy = self->last_dirty_buddy;
+	if(likely(buddy != NULL && ptr >= (void *)buddy && ptr < (void *)(buddy + 1))) {
+		buddy_dirty_mark(buddy, ptr, size);
+		return;
+	}
+
+	/*
+	 * Preliminary bounds check: is ptr within any buddy at all? Maybe this could be unneeded if
+	 * we relax the requirements in the contract, but I cannot let this check go.
+	 */
+	if(unlikely(ptr < (void *)array_get_at(self->buddies, 0) || ptr >= (void *)(array_peek(self->buddies) + 1)))
 		return;
 
-	struct buddy_state *buddy = buddy_find_by_address(self, ptr);
-
+	buddy = buddy_find_by_address(self, ptr);
+	self->last_dirty_buddy = buddy;
 	buddy_dirty_mark(buddy, ptr, size);
+}
+
+/**
+ * @brief Takes an incremental checkpoint of the memory management state.
+ *
+ * Computes the total size needed to store only the dirty blocks across all buddy
+ * systems. Allocates one contiguous mm_checkpoint buffer, fills it by calling
+ * buddy_checkpoint_incremental_take() for each buddy, tags the pointer as
+ * incremental (bit 0 set), and pushes it onto the log.
+ *
+ * @param self    A pointer to the mm_state structure.
+ * @param ref_idx The reference index (PES position) for this checkpoint.
+ */
+void model_allocator_checkpoint_take_incremental(struct mm_state *self, array_count_t ref_idx)
+{
+	// Compute total size needed.
+	size_t total = offsetof(struct mm_checkpoint, chkps);
+	array_count_t n = array_count(self->buddies);
+	for(array_count_t i = 0; i < n; i++)
+		total += buddy_checkpoint_incremental_size(array_get_at(self->buddies, i));
+
+	// Sentinel buddy_checkpoint with orig == NULL.
+	total += offsetof(struct buddy_checkpoint, longest);
+
+	struct mm_checkpoint *ckpt = mm_alloc(total);
+	ckpt->ckpt_size = self->full_ckpt_size;
+	ckpt->incr_ckpt_size = (uint_fast32_t)total;
+
+	struct buddy_checkpoint *buddy_ckp = (struct buddy_checkpoint *)ckpt->chkps;
+	for(array_count_t i = n; i--;)
+		buddy_ckp = buddy_checkpoint_incremental_take(array_get_at(self->buddies, i), buddy_ckp);
+	buddy_ckp->orig = NULL; // sentinel
+
+	// Tag as incremental and push to log
+	const struct mm_log entry = {.ref_idx = ref_idx, .ckpt = log_mark_incremental(ckpt)};
+	array_push(self->logs, entry);
 }

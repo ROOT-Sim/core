@@ -11,19 +11,26 @@
 #include <mm/model_allocator.h>
 #include <inttypes.h>
 
-#ifdef ROOTSIM_INCREMENTAL
-/// Tells whether a checkpoint is incremental or not.
-#define is_log_incremental(l) ((uintptr_t)(l).c & 0x1)
-#else
-/// Tells whether a checkpoint is incremental or not.
-#define is_log_incremental(l) false
-#endif
+/// Tells whether a log entry holds an incremental checkpoint (pointer tag on bit 0).
+#define is_log_incremental(l) ((uintptr_t)(l).ckpt & 0x1)
+
+/// Tag a checkpoint pointer as incremental.
+#define log_mark_incremental(ptr) ((struct mm_checkpoint *)((uintptr_t)(ptr) | 0x1))
+
+/// Strip the incremental tag from a log entry and return the real checkpoint pointer.
+#define log_get_ckpt(l) ((struct mm_checkpoint *)((uintptr_t)(l).ckpt & ~(uintptr_t)0x1))
 
 
 /// The checkpoint for the multiple buddy system allocator
 struct mm_checkpoint {
-	/// The total count of allocated bytes at the moment of the checkpoint
+	/// The total count of allocated bytes at the moment of the checkpoint.
+	/// For both full and incremental checkpoints this stores the full (uncompressed)
+	/// state size, used to track full_ckpt_size across restores.
 	uint_fast32_t ckpt_size;
+	/// The actual number of bytes written for this checkpoint.
+	/// For full checkpoints this equals ckpt_size; for incremental checkpoints it is
+	/// smaller (only dirty blocks are saved).
+	uint_fast32_t incr_ckpt_size;
 	/// The sequence of checkpoints of the allocated buddy systems (see @a buddy_checkpoint)
 	unsigned char chkps[];
 };
@@ -86,6 +93,6 @@ extern void auto_ckpt_init(void);
 extern void auto_ckpt_lp_init(struct auto_ckpt *auto_ckpt);
 extern void auto_ckpt_on_gvt(void);
 extern void auto_ckpt_recompute(struct auto_ckpt *auto_ckpt, uint_fast32_t state_size);
-extern void model_allocator_checkpoint_next_force_full(const struct mm_state *self);
+extern void model_allocator_checkpoint_next_force_full(struct mm_state *self);
 extern void model_allocator_checkpoint_take(struct mm_state *self, array_count_t ref_idx);
 extern array_count_t model_allocator_checkpoint_restore(struct mm_state *self, array_count_t ref_idx);

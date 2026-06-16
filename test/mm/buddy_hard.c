@@ -46,7 +46,7 @@ static void allocation_init(struct alc *alc)
 		abort();
 	}
 	alc->c = c;
-	//	__write_mem(alc->ptr, alc->c * sizeof(unsigned));
+	//	WriteMemory(alc->ptr, alc->c * sizeof(unsigned));
 
 	while(c--) {
 		const unsigned v = test_random_u();
@@ -95,7 +95,7 @@ static void allocation_partial_write(struct alc *alc, const unsigned p)
 		const unsigned e = test_random_range(c + 1);
 		const unsigned l = test_random_range(e + 1);
 
-		//		__write_mem(alc[i].ptr + l, (e - l) * sizeof(unsigned));
+		//		WriteMemory(alc[i].ptr + l, (e - l) * sizeof(unsigned));
 
 		for(unsigned j = l; j < e; ++j) {
 			const unsigned v = test_random_u();
