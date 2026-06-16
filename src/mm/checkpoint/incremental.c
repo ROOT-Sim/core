@@ -34,23 +34,7 @@ void model_allocator_checkpoint_next_force_full(struct mm_state *self)
 }
 
 
-/**
- * @brief Marks a memory region as dirty for incremental checkpointing.
- *
- * This function is injected at compile time by the software instrumentation
- * tool before every memory-write instruction in the model code. It marks the
- * corresponding blocks in the buddy system's dirty bitmap, so that only the
- * dirtied blocks are saved in the next incremental checkpoint.
- *
- * LP-visible memory lives in the buddy system's base_mem[] buffer; writes to
- * the longest[] allocation tree are tracked separately by buddy_malloc() and
- * buddy_free() via direct bitmap_set() calls. Therefore, this function only
- * needs to handle writes whose addresses fall within base_mem[].
- *
- * @param ptr  A pointer to the start of the memory region being written to.
- * @param size The size of the memory region being written to, in bytes.
- */
-void __write_mem(const void *ptr, const size_t size)
+void WriteMemory(const void *ptr, const size_t size)
 {
 	if(unlikely(!global_config.incremental_ckpt))
 		return;

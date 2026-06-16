@@ -5,7 +5,7 @@
  *
  * Verifies that incremental checkpointing produces bit-identical LP state to a
  * reference serial execution. The model (application_incremental.c) calls
- * __write_mem() explicitly before every write to model-allocated memory,
+ * WriteMemory() explicitly before every write to model-allocated memory,
  * exactly as a compiler instrumentation pass would inject automatically.
  * The CRC checksum computed at LP_FINI is compared against the reference output
  * from the serial run.

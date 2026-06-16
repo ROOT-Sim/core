@@ -4,14 +4,14 @@
  * @brief Instrumented model for incremental checkpointing correctness tests
  *
  * This file provides the same model logic as application.c + functions.c combined,
- * but with explicit __write_mem() calls before every write to model-allocated memory.
+ * but with explicit WriteMemory() calls before every write to model-allocated memory.
  * This simulates the effect of compiler-level software instrumentation (which would
  * normally be injected by a source-to-source transformation pass before every store
  * to model-allocated memory).
  *
- * The WRMEM(lval) macro encapsulates the pattern: call __write_mem() with the address
+ * The WRMEM(lval) macro encapsulates the pattern: call WriteMemory() with the address
  * and size of the destination, then perform the assignment. For bulk writes (memcpy,
- * memset, loops), __write_mem() is called with the full region before the operation.
+ * memset, loops), WriteMemory() is called with the full region before the operation.
  *
  * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
  * SPDX-License-Identifier: GPL-3.0-only
@@ -23,24 +23,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
- * __write_mem() is declared in mm/checkpoint/incremental.c and linked from rscore.
- * It is normally injected by the instrumentation pass; here we call it explicitly.
- */
-extern void __write_mem(const void *ptr, size_t size);
-
 /**
  * WRMEM(lval) — instrument a scalar write.
  * Usage: WRMEM(ptr->field) = value;
  * Expands to: notify dirty-tracking, then yield lval as an lvalue.
  */
-#define WRMEM(lval) (*(__write_mem(&(lval), sizeof(lval)), &(lval)))
+#define WRMEM(lval) (*(WriteMemory(&(lval), sizeof(lval)), &(lval)))
 
 /**
  * WRMEM_BUF(ptr, size) — instrument a bulk write (memcpy/memset/loop).
  * Call once before performing any bulk write to model-allocated memory.
  */
-#define WRMEM_BUF(ptr, size) (__write_mem((ptr), (size)))
+#define WRMEM_BUF(ptr, size) (WriteMemory((ptr), (size)))
 
 /* -----------------------------------------------------------------------
  * Instrumented helper functions. Replaces functions.c for this test.
@@ -69,7 +63,7 @@ buffer *allocate_buffer(lp_state *state, const unsigned *data, const unsigned co
 	/*
 	 * buf->next, buf->count, and buf->data[] are freshly allocated memory.
 	 * They will be tracked automatically if instrumentation marks the entire
-	 * allocated block; but since we are explicit, call __write_mem for each
+	 * allocated block; but since we are explicit, call WriteMemory for each
 	 * field we write before writing it.
 	 */
 	WRMEM(buf->next) = state->head;
@@ -113,7 +107,7 @@ buffer *deallocate_buffer(buffer *head, const unsigned i)
 	return prev;
 }
 
-// CRC table, in static storage, not model-allocated, no __write_mem needed.
+// CRC table, in static storage, not model-allocated, no WriteMemory needed.
 static uint32_t crc_table[256];
 
 void crc_table_init(void)
@@ -150,7 +144,7 @@ uint32_t crc_update(const uint64_t *buf, size_t n, const uint32_t crc)
  * Maybe here a refactor will be useful.
  * -------------------------------------------------------------------- */
 
-#define do_random() (__write_mem(&state->rng_state, sizeof(state->rng_state)), rng_random(&state->rng_state))
+#define do_random() (WriteMemory(&state->rng_state, sizeof(state->rng_state)), rng_random(&state->rng_state))
 
 void ProcessEvent(const lp_id_t me, const simtime_t now, const unsigned event_type, const void *event_content,
     const unsigned event_size, void *const st)
@@ -181,7 +175,7 @@ void ProcessEvent(const lp_id_t me, const simtime_t now, const unsigned event_ty
 				exit(-1);
 
 			/*
-			 * memset writes the entire lp_state — notify __write_mem first.
+			 * memset writes the entire lp_state, notify WriteMemory first.
 			 * After this, rng_init writes only rng_state (also inside state).
 			 */
 			WRMEM_BUF(state, sizeof(lp_state));

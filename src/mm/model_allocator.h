@@ -24,7 +24,7 @@ struct mm_state {
 	bool force_full;
 	/// Counter of checkpoints taken since the last full checkpoint (for full_ckpt_period)
 	unsigned ckpt_since_last_full;
-	/// Cache of the last buddy found by __write_mem() to avoid repeated binary searches
+	/// Cache of the last buddy found by WriteMemory() to avoid repeated binary searches
 	struct buddy_state *last_dirty_buddy;
 };
 

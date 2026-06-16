@@ -1,10 +1,10 @@
 /**
  * @file test/mm/incremental.c
  *
- * @brief Test: Incremental checkpointing at buddy-system and __write_mem level
+ * @brief Test: Incremental checkpointing at buddy-system and WriteMemory level
  *
  * Tests cover two groups:
- *   Group A: __write_mem dirty-bitmap marking — verifies that the compiler-injected
+ *   Group A: WriteMemory dirty-bitmap marking — verifies that the compiler-injected
  *            instrumentation hook correctly marks dirty blocks in the bitmap.
  *   Group B: Buddy-level incremental checkpoint take/restore — verifies the full
  *            checkpoint chain: full → incremental → incremental → restore.
@@ -25,13 +25,11 @@
 #include <stdint.h>
 
 /* -------------------------------------------------------------------------
- * Group A: __write_mem dirty-bitmap marking tests
+ * Group A: WriteMemory dirty-bitmap marking tests
  * ---------------------------------------------------------------------- */
 
-extern void __write_mem(const void *ptr, size_t size);
-
 /**
- * Test that __write_mem is a no-op when incremental_ckpt is disabled.
+ * Test that WriteMemory is a no-op when incremental_ckpt is disabled.
  */
 static int test_write_mem_disabled(void *_)
 {
@@ -40,7 +38,7 @@ static int test_write_mem_disabled(void *_)
 	current_lp = lp;
 	model_allocator_lp_init(&lp->mm_state);
 
-	/* Incremental disabled: __write_mem must be a no-op. */
+	/* Incremental disabled: WriteMemory must be a no-op. */
 	global_config.incremental_ckpt = false;
 
 	unsigned char *buf = rs_malloc(128);
@@ -53,8 +51,8 @@ static int test_write_mem_disabled(void *_)
 	/* Clear dirty bits (they may have been set by malloc in incremental mode). */
 	buddy_dirty_reset(buddy);
 
-	/* Call __write_mem: should NOT set any dirty bits. */
-	__write_mem(buf, 128);
+	/* Call WriteMemory: should NOT set any dirty bits. */
+	WriteMemory(buf, 128);
 
 	int errs = 0;
 	for(size_t i = 0; i < sizeof(buddy->dirty); i++)
@@ -67,7 +65,7 @@ static int test_write_mem_disabled(void *_)
 }
 
 /**
- * Test that __write_mem correctly marks dirty bits when enabled.
+ * Test that WriteMemory correctly marks dirty bits when enabled.
  * Writes to a known address and verifies the corresponding bitmap bits are set.
  */
 static int test_write_mem_marks_dirty(void *_)
@@ -88,8 +86,8 @@ static int test_write_mem_marks_dirty(void *_)
 	/* Reset dirty bitmaps. */
 	buddy_dirty_reset(buddy);
 
-	/* Mark as dirty via __write_mem. */
-	__write_mem(buf, 1U << B_BLOCK_EXP);
+	/* Mark as dirty via WriteMemory. */
+	WriteMemory(buf, 1U << B_BLOCK_EXP);
 
 	/* At least one dirty bit in the base_mem region must be set. */
 	int errs = 1;
@@ -108,7 +106,7 @@ static int test_write_mem_marks_dirty(void *_)
 }
 
 /**
- * Test that __write_mem is a no-op for pointers outside the buddy range.
+ * Test that WriteMemory is a no-op for pointers outside the buddy range.
  */
 static int test_write_mem_out_of_range(void *_)
 {
@@ -126,7 +124,7 @@ static int test_write_mem_out_of_range(void *_)
 	buddy_dirty_reset(buddy);
 
 	/* Pointer before the first buddy: should be ignored. */
-	__write_mem((char *)array_get_at(lp->mm_state.buddies, 0) - 1, 64);
+	WriteMemory((char *)array_get_at(lp->mm_state.buddies, 0) - 1, 64);
 
 	int errs = 0;
 	for(size_t i = 0; i < sizeof(buddy->dirty); i++)
@@ -211,8 +209,8 @@ static int test_incremental_single(void *_)
 	model_allocator_checkpoint_next_force_full(&lp->mm_state);
 	model_allocator_checkpoint_take(&lp->mm_state, 0);
 
-	/* Modify b with pattern B, mark dirty via __write_mem. */
-	__write_mem(b, 64);
+	/* Modify b with pattern B, mark dirty via WriteMemory. */
+	WriteMemory(b, 64);
 	memset(b, 0xBB, 64);
 
 	/* Take incremental checkpoint at index 1. */
@@ -267,12 +265,12 @@ static int test_incremental_chain(void *_)
 	model_allocator_checkpoint_take(&lp->mm_state, 0);
 
 	/* Modify a → incremental checkpoint at index 1. */
-	__write_mem(a, 64);
+	WriteMemory(a, 64);
 	memset(a, 0xBB, 64);
 	model_allocator_checkpoint_take(&lp->mm_state, 1);
 
 	/* Modify b → incremental checkpoint at index 2. */
-	__write_mem(b, 64);
+	WriteMemory(b, 64);
 	memset(b, 0xCC, 64);
 	model_allocator_checkpoint_take(&lp->mm_state, 2);
 
@@ -342,7 +340,7 @@ int incremental_checkpoint_test(_unused void *_)
 {
 	int errs = 0;
 
-	/* Group A: __write_mem */
+	/* Group A: WriteMemory */
 	errs += test_write_mem_disabled(NULL);
 	errs += test_write_mem_marks_dirty(NULL);
 	errs += test_write_mem_out_of_range(NULL);

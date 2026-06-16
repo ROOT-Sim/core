@@ -29,7 +29,6 @@
 #include <errno.h>
 #include <stdint.h>
 
-extern void __write_mem(const void *ptr, size_t size);
 #define BUDDY_CAPACITY (1U << B_TOTAL_EXP)
 #define BLOCK_SIZE (1U << B_BLOCK_EXP)
 
@@ -370,7 +369,7 @@ static int test_realloc_copy_path(void *_)
 	unsigned char *p = rs_malloc(BLOCK_SIZE);
 	test_assert(p != NULL);
 	memset(p, 0xCD, BLOCK_SIZE);
-	__write_mem(p, BLOCK_SIZE);
+	WriteMemory(p, BLOCK_SIZE);
 
 	const size_t new_size = BLOCK_SIZE * 4;
 	unsigned char *q = rs_realloc(p, new_size);
@@ -527,7 +526,7 @@ static int test_incremental_smaller_than_full(void *_)
 	model_allocator_checkpoint_take(&lp->mm_state, 0);
 
 	// Dirty only one word
-	__write_mem(&buf[0], sizeof(uint64_t));
+	WriteMemory(&buf[0], sizeof(uint64_t));
 	buf[0] = 0xDEADBEEFCAFEBABEULL;
 	model_allocator_checkpoint_take(&lp->mm_state, 1);
 
@@ -562,7 +561,7 @@ static int test_full_ckpt_period(void *_)
 	test_assert(lp->mm_state.ckpt_since_last_full == 0);
 
 	for(int i = 1; i <= 3; i++) {
-		__write_mem(p, BLOCK_SIZE);
+		WriteMemory(p, BLOCK_SIZE);
 		model_allocator_checkpoint_take(&lp->mm_state, (array_count_t)i);
 	}
 
@@ -593,11 +592,11 @@ static int test_incremental_restore_mid_chain(void *_)
 	model_allocator_checkpoint_next_force_full(&lp->mm_state);
 	model_allocator_checkpoint_take(&lp->mm_state, 0);
 
-	__write_mem(a, sizeof(uint64_t) * 8);
+	WriteMemory(a, sizeof(uint64_t) * 8);
 	memset(a, 0xBB, sizeof(uint64_t) * 8);
 	model_allocator_checkpoint_take(&lp->mm_state, 1);
 
-	__write_mem(b, sizeof(uint64_t) * 8);
+	WriteMemory(b, sizeof(uint64_t) * 8);
 	memset(b, 0xCC, sizeof(uint64_t) * 8);
 	model_allocator_checkpoint_take(&lp->mm_state, 2);
 
@@ -645,11 +644,11 @@ static int test_incremental_restore_to_full(void *_)
 	model_allocator_checkpoint_next_force_full(&lp->mm_state);
 	model_allocator_checkpoint_take(&lp->mm_state, 0);
 
-	__write_mem(buf, sizeof(uint64_t) * 8);
+	WriteMemory(buf, sizeof(uint64_t) * 8);
 	memset(buf, 0xBB, sizeof(uint64_t) * 8);
 	model_allocator_checkpoint_take(&lp->mm_state, 1);
 
-	__write_mem(buf, sizeof(uint64_t) * 8);
+	WriteMemory(buf, sizeof(uint64_t) * 8);
 	memset(buf, 0xCC, sizeof(uint64_t) * 8);
 	model_allocator_checkpoint_take(&lp->mm_state, 2);
 
@@ -682,13 +681,13 @@ static int test_restore_resets_incremental_state(void *_)
 	model_allocator_checkpoint_take(&lp->mm_state, 0);
 
 	for(int i = 1; i <= 3; i++) {
-		__write_mem(p, BLOCK_SIZE);
+		WriteMemory(p, BLOCK_SIZE);
 		model_allocator_checkpoint_take(&lp->mm_state, (array_count_t)i);
 	}
 	test_assert(lp->mm_state.ckpt_since_last_full > 0);
 
 	// Warm the last_dirty_buddy pointer
-	__write_mem(p, BLOCK_SIZE);
+	WriteMemory(p, BLOCK_SIZE);
 	test_assert(lp->mm_state.last_dirty_buddy != NULL);
 
 	model_allocator_checkpoint_restore(&lp->mm_state, 2);
@@ -760,9 +759,9 @@ static int test_fossil_collect_incremental_anchor(void *_)
 	model_allocator_checkpoint_next_force_full(&lp->mm_state);
 	model_allocator_checkpoint_take(&lp->mm_state, 10);
 
-	__write_mem(p, BLOCK_SIZE);
+	WriteMemory(p, BLOCK_SIZE);
 	model_allocator_checkpoint_take(&lp->mm_state, 20);
-	__write_mem(p, BLOCK_SIZE);
+	WriteMemory(p, BLOCK_SIZE);
 	model_allocator_checkpoint_take(&lp->mm_state, 30);
 
 	test_assert(array_count(lp->mm_state.logs) == 3);
@@ -800,13 +799,13 @@ static int test_fossil_then_restore(void *_)
 	model_allocator_checkpoint_take(&lp->mm_state, 10);
 
 	// Incremental at 20 (BB)
-	__write_mem(buf, sizeof(uint64_t) * 4);
+	WriteMemory(buf, sizeof(uint64_t) * 4);
 	memset(buf, 0xBB, sizeof(uint64_t) * 4);
 	model_allocator_checkpoint_take(&lp->mm_state, 20);
 
 	// Full at 30 (CC)
 	model_allocator_checkpoint_next_force_full(&lp->mm_state);
-	__write_mem(buf, sizeof(uint64_t) * 4);
+	WriteMemory(buf, sizeof(uint64_t) * 4);
 	memset(buf, 0xCC, sizeof(uint64_t) * 4);
 	model_allocator_checkpoint_take(&lp->mm_state, 30);
 

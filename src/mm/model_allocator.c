@@ -18,7 +18,7 @@
 #include <errno.h>
 
 /* Declared in mm/checkpoint/incremental.c — marks a model-memory region dirty. */
-extern void __write_mem(const void *ptr, size_t size);
+extern void WriteMemory(const void *ptr, size_t size);
 
 /**
  * @brief Initializes the memory management state for a logical process.
@@ -140,7 +140,7 @@ void *rs_calloc(const size_t nmemb, const size_t size)
 
 	if(likely(ret)) {
 		/* Mark base_mem dirty before the bulk write. */
-		__write_mem(ret, tot);
+		WriteMemory(ret, tot);
 		memset(ret, 0, tot);
 	}
 
@@ -182,7 +182,7 @@ void *rs_realloc(void *ptr, size_t req_size)
 		return NULL;
 
 	/* Mark the destination dirty before copying into model-allocated memory. */
-	__write_mem(new_buffer, min(req_size, ret.original));
+	WriteMemory(new_buffer, min(req_size, ret.original));
 	memcpy(new_buffer, ptr, min(req_size, ret.original));
 	rs_free(ptr);
 
