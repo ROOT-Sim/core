@@ -11,16 +11,14 @@
 #include <ROOT-Sim.h>
 #include <core/core.h>
 #include <core/output.h>
+#include <lp/common.h>
 #include <lp/msg.h>
 #include <lp/process.h>
-
-extern __thread bool silent_processing;
-extern __thread struct lp_msg *current_msg;
 
 void ScheduleOutput(unsigned output_type, const void *output_content, unsigned output_size)
 {
 	if(unlikely(global_config.serial)) {
-		global_config.perform_output(current_msg->dest, output_type, output_content, output_size);
+		global_config.output_callback(current_msg->dest, output_type, output_content, output_size);
 		return;
 	}
 
@@ -50,7 +48,7 @@ void execute_outputs(struct lp_msg *msg)
 
 	for(array_count_t i = 0; i < array_count(*outputs); ++i) {
 		struct output_data data = array_get_at(*outputs, i);
-		global_config.perform_output(msg->dest, data.type, data.content, data.size);
+		global_config.output_callback(msg->dest, data.type, data.content, data.size);
 		mm_free(data.content);
 	}
 
@@ -85,16 +83,3 @@ void committed_output_on_rollback(struct lp_msg *msg)
 	array_count(*outputs) = 0; // Necessary to avoid double freeing the array elements.
 }
 
-void execute_outputs_batch(struct lp_msg **msg_array, array_count_t size)
-{
-	// Since dyn_arrays are unnamed structs, we work with the items element
-	for(array_count_t i = 0; i < size; i++) {
-		struct lp_msg *marked_msg = msg_array[i];
-		struct lp_msg *msg = unmark_msg(marked_msg);
-		if(msg->dest_t > global_config.termination_time) {
-			return;
-		}
-		if(is_msg_past(marked_msg))
-			execute_outputs(msg);
-	}
-}

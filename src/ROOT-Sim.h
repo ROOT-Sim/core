@@ -81,7 +81,7 @@ typedef bool (*CanEnd_t)(lp_id_t me, const void *snapshot);
  * freed by the simulation kernel after the function returns.
  * @warning The function shall not perform any memory-managed allocation (e.g. using rs_malloc).
  */
-typedef void (*PerformOutput_t)(lp_id_t me, unsigned output_type, const void *output_content, unsigned output_size);
+typedef void (*OutputCallback_t)(lp_id_t me, unsigned output_type, const void *output_content, unsigned output_size);
 
 /// @brief Internal event types used by the simulation kernel.
 ///
@@ -237,7 +237,7 @@ struct simulation_configuration {
 	/// Function pointer to the termination detection function
 	CanEnd_t committed;
 	/// Function pointer to the output handling function
-	PerformOutput_t perform_output;
+	OutputCallback_t output_callback;
 };
 
 extern int RootsimInit(const struct simulation_configuration *conf);

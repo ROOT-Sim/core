@@ -10,21 +10,29 @@
  */
 #include <mm/msg_allocator.h>
 
-#include <core/core.h>
 #include <datatypes/array.h>
 #include <gvt/gvt.h>
 
-/// Cache of message structs used to avoid frequent allocations/deallocations
-static _Thread_local dyn_array(struct lp_msg *) free_list = {0};
-/// Cache of message structs free'd upon GVT reduction
-static _Thread_local dyn_array(struct lp_msg *) at_gvt_list = {0};
+#define MSG_ARRAY_FREE(msg_array)                                                                                      \
+	__extension__({                                                                                                \
+		for(array_count_t i = array_count(msg_array); i--;)                                                    \
+			mm_free(array_get_at(msg_array, i));                                                           \
+		array_fini(msg_array);                                                                                 \
+	})
+
+static _Thread_local array_declare(struct lp_msg *) free_list;
+static _Thread_local array_declare(struct lp_msg *) free_at_gvt[2];
+static _Thread_local array_declare(struct lp_msg *) free_at_gvt_large[2];
 
 /**
  * @brief Initialize the message allocator thread-local data structures
  */
 void msg_allocator_init(void)
 {
-	array_init(at_gvt_list);
+	array_init_explicit(free_at_gvt_large[0], 4U);
+	array_init_explicit(free_at_gvt_large[1], 4U);
+	array_init(free_at_gvt[0]);
+	array_init(free_at_gvt[1]);
 	array_init(free_list);
 }
 
@@ -33,13 +41,11 @@ void msg_allocator_init(void)
  */
 void msg_allocator_fini(void)
 {
-	while(!array_is_empty(free_list))
-		mm_free(array_pop(free_list));
-	array_fini(free_list);
-
-	while(!array_is_empty(at_gvt_list))
-		mm_free(array_pop(at_gvt_list));
-	array_fini(at_gvt_list);
+	MSG_ARRAY_FREE(free_list);
+	MSG_ARRAY_FREE(free_at_gvt[1]);
+	MSG_ARRAY_FREE(free_at_gvt[0]);
+	MSG_ARRAY_FREE(free_at_gvt_large[1]);
+	MSG_ARRAY_FREE(free_at_gvt_large[0]);
 }
 
 /**
@@ -79,37 +85,28 @@ void msg_allocator_free(struct lp_msg *msg)
 }
 
 /**
- * @brief Free a message after its destination time is committed
+ * @brief Free a message after it has been remotely received
  * @param msg a pointer to the message to release
  */
-void msg_allocator_free_at_gvt(struct lp_msg *msg)
+void msg_allocator_deferred_free(struct lp_msg *msg)
 {
-	array_push(at_gvt_list, msg);
+	if(likely(msg->pl_size <= MSG_PAYLOAD_BASE_SIZE))
+		array_push(free_at_gvt[gvt_color], msg);
+	else
+		array_push(free_at_gvt_large[gvt_color], msg);
 }
 
 /**
  * @brief Free the committed messages after a new GVT has been computed
  * @param current_gvt the latest value of the GVT
  */
-void msg_allocator_on_gvt(const simtime_t current_gvt)
+void msg_allocator_on_gvt(void)
 {
-	for(array_count_t i = array_count(at_gvt_list); i-- > 0;) {
-		struct lp_msg *msg = array_get_at(at_gvt_list, i);
-		if(msg->dest_t < current_gvt) {
-			msg_allocator_free(msg);
-			array_lazy_remove_at(at_gvt_list, i);
-		}
-	}
-}
+	bool last_color = !gvt_color;
+	for(array_count_t i = array_count(free_at_gvt_large[last_color]); i--;)
+		mm_free(array_get_at(free_at_gvt_large[last_color], i));
+	array_clear(free_at_gvt_large[last_color]);
 
-/**
- * @brief Allocate a new message and populate it
- * @param receiver the id of the LP which must receive this message
- * @param timestamp the logical time at which this message must be processed
- * @param event_type a field which can be used by the model to distinguish them
- * @param payload the payload to copy into the message
- * @param payload_size the size in bytes of the payload to copy into the message
- * @return A new populated message
- */
-extern struct lp_msg *msg_allocator_pack(lp_id_t receiver, simtime_t timestamp, unsigned event_type,
-    const void *payload, unsigned payload_size);
+	array_extend(free_list, free_at_gvt[last_color]);
+	array_clear(free_at_gvt[last_color]);
+}

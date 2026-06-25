@@ -62,7 +62,7 @@ struct simulation_configuration conf = {
     .synchronization = TIME_WARP,
     .dispatcher = ProcessEvent,
     .committed = CanEnd,
-    .perform_output = PerformOutput,
+    .output_callback = PerformOutput,
 };
 
 #define lp0_max_count 20
@@ -107,7 +107,7 @@ void Handler1(lp_id_t me, simtime_t now, unsigned event_type, const void *conten
 	(void)content;
 	(void)size;
 
-	struct lp_state *state = (struct lp_state *)s;
+	struct lp_state *state = s;
 
 	if(state->count >= lp1_max_count || event_type == LP_FINI) {
 		return;
@@ -133,7 +133,7 @@ void Handler1(lp_id_t me, simtime_t now, unsigned event_type, const void *conten
 
 void ProcessEvent(lp_id_t me, simtime_t now, unsigned event_type, const void *content, unsigned size, void *s)
 {
-	struct lp_state *state = (struct lp_state *)s;
+	struct lp_state *state = s;
 
 	if(event_type != LP_FINI && now > conf.termination_time)
 		return;
@@ -177,7 +177,7 @@ void PerformOutput(lp_id_t me, unsigned output_type, const void *output_content,
 			id = data->id;
 			count = data->count;
 			// printf("[Normal output] %lu,%lu,%lu\n", me, id, count);
-			snprintf(lp_outs[me][lp_outs_count[me]], OUT_SZ, "N%lu,%lu,%lu", me, id, count);
+			snprintf(lp_outs[me][lp_outs_count[me]], OUT_SZ, "N%llu,%llu,%lu", me, id, count);
 			lp_outs_count[me]++;
 			break;
 
@@ -186,7 +186,7 @@ void PerformOutput(lp_id_t me, unsigned output_type, const void *output_content,
 			id = data->id;
 			count = data->count;
 			// printf("[Straggler output] %lu,%lu,%lu\n", me, id, count);
-			snprintf(lp_outs[me][lp_outs_count[me]], OUT_SZ, "S%lu,%lu,%lu", me, id, count);
+			snprintf(lp_outs[me][lp_outs_count[me]], OUT_SZ, "S%llu,%llu,%lu", me, id, count);
 			lp_outs_count[me]++;
 			break;
 
@@ -208,8 +208,10 @@ bool check_output(const char *output, const char *expected, size_t expected_len,
 
 #define chk_out(output, expected, expected_len) check_output(output, expected, expected_len, __FILE__, __LINE__)
 
-int perform_exec()
+
+int perform_exec(void *arg)
 {
+	(void)arg;
 	RootsimInit(&conf);
 
 	for(size_t lp = 0; lp < 2; lp++) {

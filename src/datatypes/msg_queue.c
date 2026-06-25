@@ -24,10 +24,10 @@
 #include <stdatomic.h>
 
 /// Determine an ordering between two elements in a queue
-#define q_elem_is_before(ma, mb) ((ma).t < (mb).t)
+#define msg_queue_elem_is_before(ma, mb) ((ma).t < (mb).t)
 
 /// An element in the message queue
-struct q_elem {
+struct msg_queue_elem {
 	/// The timestamp of the message
 	simtime_t t;
 	/// The message enqueued
@@ -43,7 +43,7 @@ struct msg_buffer {
 /// The buffers vector
 static struct msg_buffer *queues;
 /// The private thread queue
-static _Thread_local heap_declare(struct q_elem) mqp;
+static _Thread_local heap_declare(struct msg_queue_elem) mqp;
 
 void msg_queue_global_init(void)
 {
@@ -51,7 +51,7 @@ void msg_queue_global_init(void)
 }
 
 /**
- * @brief Initializes the message queue for the current thread
+ * @brief Initialize the message queue for the current thread
  */
 void msg_queue_init(void)
 {
@@ -60,7 +60,7 @@ void msg_queue_init(void)
 }
 
 /**
- * @brief Finalizes the message queue for the current thread
+ * @brief Finalize the message queue for the current thread
  */
 void msg_queue_fini(void)
 {
@@ -78,7 +78,7 @@ void msg_queue_fini(void)
 }
 
 /**
- * @brief Finalizes the message queue at the node level
+ * @brief Finalize the message queue at the node level
  */
 void msg_queue_global_fini(void)
 {
@@ -92,14 +92,14 @@ static inline void msg_queue_insert_queued(void)
 {
 	struct lp_msg *m = atomic_exchange_explicit(&queues[rid].list, NULL, memory_order_acquire);
 	while(m != NULL) {
-		const struct q_elem qe = {.t = m->dest_t, .m = m};
-		heap_insert(mqp, q_elem_is_before, qe);
+		const struct msg_queue_elem qe = {.t = m->dest_t, .m = m};
+		heap_insert(mqp, msg_queue_elem_is_before, qe);
 		m = m->next;
 	}
 }
 
 /**
- * @brief Extracts the next message from the queue
+ * @brief Extract the next message from the queue
  * @returns a pointer to the message to be processed or NULL if there isn't one
  *
  * The extracted message is a best effort lowest timestamp for the current thread. Guaranteeing the lowest timestamp may
@@ -108,11 +108,11 @@ static inline void msg_queue_insert_queued(void)
 struct lp_msg *msg_queue_extract(void)
 {
 	msg_queue_insert_queued();
-	return likely(heap_count(mqp)) ? heap_extract(mqp, q_elem_is_before).m : NULL;
+	return likely(heap_count(mqp)) ? heap_extract(mqp, msg_queue_elem_is_before).m : NULL;
 }
 
 /**
- * @brief Inserts a message in the queue
+ * @brief Insert a message in the queue
  * @param msg the message to insert in the queue
  */
 void msg_queue_insert(struct lp_msg *msg)
@@ -125,12 +125,12 @@ void msg_queue_insert(struct lp_msg *msg)
 }
 
 /**
- * @brief Inserts a message in the queue, knowing it is destined for the current thread
+ * @brief Insert a message in the queue, knowing it is destined for the current thread
  * @param msg the message to insert in the queue
  */
 void msg_queue_insert_self(struct lp_msg *msg)
 {
 	assert(lid_to_rid(msg->dest) == rid);
-	const struct q_elem qe = {.t = msg->dest_t, .m = msg};
-	heap_insert(mqp, q_elem_is_before, qe);
+	const struct msg_queue_elem qe = {.t = msg->dest_t, .m = msg};
+	heap_insert(mqp, msg_queue_elem_is_before, qe);
 }

@@ -5,7 +5,6 @@ set(rscore_srcs
         arch/mem.c
         arch/thread.c
         core/core.c
-        init.c
         core/sync.c
         core/output.c
         datatypes/msg_queue.c
@@ -13,9 +12,11 @@ set(rscore_srcs
         gvt/fossil.c
         gvt/gvt.c
         gvt/termination.c
+        init.c
         log/file.c
         log/log.c
         log/stats.c
+        lp/common.c
         lp/lp.c
         lp/process.c
         mm/checkpoint/autonomic.c

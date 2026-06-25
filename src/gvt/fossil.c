@@ -32,39 +32,34 @@ void fossil_on_gvt(simtime_t this_gvt)
  */
 void fossil_lp_collect(struct lp_ctx *lp)
 {
-	struct process_ctx *proc_p = &lp->p;
+	lp->fossil_epoch = fossil_epoch_current;
 
-	array_count_t past_i = array_count(proc_p->p_msgs);
+	struct process_ctx *proc_ctx = &lp->p;
+
+	array_count_t past_i = array_count(proc_ctx->pes);
 	if(past_i == 0)
 		return;
 
-	const simtime_t gvt = fossil_gvt_current;
-	for(const struct lp_msg *msg = array_get_at(proc_p->p_msgs, --past_i); msg->dest_t >= gvt;) {
+	simtime_t gvt = fossil_gvt_current;
+	for(struct pes_entry e = array_get_at(proc_ctx->pes, --past_i); pes_entry_msg_received(e)->dest_t >= gvt;) {
 		do {
 			if(!past_i)
 				return;
-			msg = array_get_at(proc_p->p_msgs, --past_i);
-		} while(!is_msg_past(msg));
+			e = array_get_at(proc_ctx->pes, --past_i);
+		} while(!pes_entry_is_received(e));
 	}
 
 	past_i = model_allocator_fossil_lp_collect(&lp->mm_state, past_i + 1);
 
-	array_count_t k = 0;
-	while(k < past_i) {
-		struct lp_msg *msg = array_get_at(proc_p->p_msgs, k);
-		bool past = is_msg_past(msg);
-		bool local_sent = is_msg_local_sent(msg);
-		msg = unmark_msg(msg);
+	for(array_count_t k = past_i; k;) {
+		struct pes_entry e = array_get_at(proc_ctx->pes, --k);
+		execute_outputs(pes_entry_msg(e));
 
-		if(past)
-			execute_outputs(msg);
+		if(pes_entry_is_sent_local(e))
+			continue;
 
-		if(!local_sent)
-			msg_allocator_free(msg);
-
-		k++;
+		struct lp_msg *m = pes_entry_msg(e);
+		msg_allocator_free(m);
 	}
-	array_truncate_first(proc_p->p_msgs, past_i);
-
-	lp->fossil_epoch = fossil_epoch_current;
+	array_truncate_first(proc_ctx->pes, past_i);
 }

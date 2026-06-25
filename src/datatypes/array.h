@@ -24,7 +24,7 @@ typedef uint_least32_t array_count_t;
  * @brief Declares a dynamic array
  * @param type The type of the contained elements
  */
-#define dyn_array(type)                                                                                                \
+#define array_declare(type)                                                                                            \
 	struct {                                                                                                       \
 		type *items;                                                                                           \
 		array_count_t count;                                                                                   \
@@ -78,21 +78,28 @@ typedef uint_least32_t array_count_t;
 #define array_is_empty(self) (array_count(self) == 0)
 
 /**
- * @brief Initializes a dynamic array
+ * @brief Initializes a dynamic array with a user supplied initial capacity
  * @param self The target dynamic array
+ * @param capacity The initial capacity of the dynamic array
  */
-#define array_init(self)                                                                                               \
+#define array_init_explicit(self, capacity)                                                                            \
 	__extension__({                                                                                                \
-		array_capacity(self) = INIT_SIZE_ARRAY;                                                                \
+		array_capacity(self) = capacity;                                                                       \
 		array_items(self) = mm_alloc(array_capacity(self) * sizeof(*array_items(self)));                       \
 		array_count(self) = 0;                                                                                 \
 	})
 
 /**
+ * @brief Initializes a dynamic array
+ * @param self The target dynamic array
+ */
+#define array_init(self) array_init_explicit(self, INIT_SIZE_ARRAY)
+
+/**
  * @brief Releases the memory used by a dynamic array
  * @param self The target dynamic array
  */
-#define array_fini(self) __extension__({ mm_free(array_items(self)); })
+#define array_fini(self) mm_free(array_items(self))
 
 /**
  * @brief Push an element to the end of a dynamic array
@@ -125,8 +132,10 @@ typedef uint_least32_t array_count_t;
 #define array_add_at(self, i, elem)                                                                                    \
 	__extension__({                                                                                                \
 		array_expand(self);                                                                                    \
-		memmove(&(array_items(self)[(i) + 1]), &(array_items(self)[(i)]),                                      \
-		    sizeof(*array_items(self)) * (array_count(self) - (i)));                                           \
+		__typeof__(array_count(self)) tcnt = array_count(self) - (i);                                          \
+		if(tcnt)                                                                                               \
+			memmove(&(array_items(self)[(i) + 1]), &(array_items(self)[(i)]),                              \
+			    sizeof(*array_items(self)) * tcnt);                                                        \
 		array_items(self)[(i)] = (elem);                                                                       \
 		array_count(self)++;                                                                                   \
 	})
@@ -143,7 +152,6 @@ typedef uint_least32_t array_count_t;
 		__rmval = array_items(self)[(i)];                                                                      \
 		memmove(&(array_items(self)[(i)]), &(array_items(self)[(i) + 1]),                                      \
 		    sizeof(*array_items(self)) * (array_count(self) - (i)));                                           \
-		array_shrink(self);                                                                                    \
 		__rmval;                                                                                               \
 	})
 
@@ -162,32 +170,12 @@ typedef uint_least32_t array_count_t;
  * @brief Reduce the size of the dynamic array
  * @param self The target dynamic array
  *
- * The size of the dinamic array is halved if the number of elements is less than a third of the capacity.
+ * The size of the dynamic array is reduced to the possible minimum: the count of its elements.
  */
-#define array_shrink(self)                                                                                             \
+#define array_shrink_to_fit(self)                                                                                      \
 	__extension__({                                                                                                \
-		if(unlikely(array_count(self) > INIT_SIZE_ARRAY && array_count(self) * 3 <= array_capacity(self))) {   \
-			array_capacity(self) /= 2;                                                                     \
-			array_items(self) =                                                                            \
-			    mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));          \
-		}                                                                                                      \
-	})
-
-/**
- * @brief Expand the size of the dynamic array to have at least the requested capacity
- * @param self The target dynamic array
- * @param n The requested capacity
- */
-#define array_reserve(self, n)                                                                                         \
-	__extension__({                                                                                                \
-		__typeof__(array_count(self)) tcnt = array_count(self) + (n);                                          \
-		if(unlikely(tcnt >= array_capacity(self))) {                                                           \
-			do {                                                                                           \
-				array_capacity(self) *= 2;                                                             \
-			} while(unlikely(tcnt >= array_capacity(self)));                                               \
-			array_items(self) =                                                                            \
-			    mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));          \
-		}                                                                                                      \
+		array_capacity(self) = array_count(self);                                                              \
+		array_items(self) = mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));  \
 	})
 
 /**
@@ -210,3 +198,40 @@ typedef uint_least32_t array_count_t;
  */
 #define array_lazy_remove_at(self, i)                                                                                  \
 	__extension__({ array_items(self)[(i)] = array_items(self)[--array_count(self)]; })
+
+/**
+ * @brief Expand the size of the dynamic array to have at least the requested capacity
+ * @param self The target dynamic array
+ * @param n The requested capacity
+ */
+#define array_reserve(self, n)                                                                                         \
+	__extension__({                                                                                                \
+		__typeof__(array_count(self)) required_cnt = array_count(self) + (n);                                  \
+		if(unlikely(required_cnt > array_capacity(self))) {                                                    \
+			do {                                                                                           \
+				array_capacity(self) *= 2;                                                             \
+			} while(unlikely(required_cnt > array_capacity(self)));                                        \
+			array_items(self) =                                                                            \
+			    mm_realloc(array_items(self), array_capacity(self) * sizeof(*array_items(self)));          \
+		}                                                                                                      \
+	})
+
+/**
+ * @brief Clear an array
+ * @param self The dynamic array to clear
+ */
+#define array_clear(self) __extension__({ array_count(self) = 0; })
+
+/**
+ * @brief Push the elements of another array to the end of self
+ * @param self The dynamic array to insert elements to
+ * @param other The dynamic array to insert elements from
+ */
+#define array_extend(self, other)                                                                                      \
+	__extension__({                                                                                                \
+		_Static_assert(sizeof(*array_items(self)) == sizeof(*array_items(other)), "Incompatible arrays!");     \
+		array_count_t c = array_count(other);                                                                  \
+		array_reserve(self, c);                                                                                \
+		memcpy(array_items(self) + array_count(self), array_items(other), sizeof(*array_items(other)) * c);    \
+		array_count(self) += c;                                                                                \
+	})

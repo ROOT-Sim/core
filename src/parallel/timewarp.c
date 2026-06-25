@@ -9,6 +9,7 @@
 #include <parallel/parallel.h>
 
 #include <arch/thread.h>
+#include <arch/timer.h>
 #include <core/core.h>
 #include <core/sync.h>
 #include <datatypes/msg_queue.h>
@@ -59,10 +60,8 @@ static void worker_thread_init(const rid_t this_rid)
 	sync_thread_barrier();
 	lp_init();
 
-	if(sync_thread_barrier()) {
+	if(sync_thread_barrier())
 		mpi_node_barrier();
-		lp_initialized_set();
-	}
 
 	if(sync_thread_barrier()) {
 		logger(LOG_INFO, "Starting simulation");
@@ -75,7 +74,7 @@ static void worker_thread_init(const rid_t this_rid)
  */
 static void worker_thread_fini(void)
 {
-	gvt_msg_drain();
+	gvt_msg_barrier();
 
 	if(sync_thread_barrier()) {
 		stats_dump();
@@ -106,17 +105,22 @@ static thrd_ret_t THREAD_CALL_CONV parallel_thread_run(void *rid_arg)
 	while(likely(termination_cant_end())) {
 		mpi_remote_msg_handle();
 
-		unsigned i = 64;
-		while(i--)
-			process_msg();
+		for(unsigned i = 64; i--;) {
+			timer_uint t = timer_hr_new();
+			struct lp_msg *msg = msg_queue_extract();
+			stats_take(STATS_MSG_EXTRACTION, timer_hr_value(t));
+			if(likely(msg))
+				process_msg(msg);
+		}
 
-		const simtime_t current_gvt = gvt_phase_run();
-		if(unlikely(current_gvt != 0.0)) {
+		const simtime_t current_gvt = gvt_run();
+		if(unlikely(current_gvt >= 0.0)) {
 			termination_on_gvt(current_gvt);
 			auto_ckpt_on_gvt();
+			msg_allocator_on_gvt();
 			fossil_on_gvt(current_gvt);
-			msg_allocator_on_gvt(current_gvt);
 			stats_on_gvt(current_gvt);
+			gvt_handling_done();
 		}
 	}
 

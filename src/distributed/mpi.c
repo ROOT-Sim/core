@@ -10,36 +10,29 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 #include <distributed/mpi.h>
-#include <mm/mm.h>
 
 #include <datatypes/msg_queue.h>
 #include <mm/msg_allocator.h>
 
 #include <mpi.h>
 
-enum {
-	RS_MSG_TAG = 0,
-	RS_DATA_TAG
-};
+enum { RS_MSG_TAG = 0, RS_DATA_TAG };
 
 /// Array of control codes values to be able to get their address for MPI_Send()
 static const enum msg_ctrl_code ctrl_msgs[] = {
-	[MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
-	[MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
-	[MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION
+    [MSG_CTRL_GVT_START] = MSG_CTRL_GVT_START,
+    [MSG_CTRL_GVT_DONE] = MSG_CTRL_GVT_DONE,
+    [MSG_CTRL_TERMINATION] = MSG_CTRL_TERMINATION,
 };
 
-/// The MPI request associated with the non blocking scatter gather collective
-static MPI_Request reduce_sum_scatter_req = MPI_REQUEST_NULL;
-/// The MPI request associated with the non blocking all reduce collective
-static MPI_Request reduce_min_req = MPI_REQUEST_NULL;
+/// The MPI request used to keep track of the currently running non-blocking MPI collective
+static MPI_Request mpi_nb_collective_request = MPI_REQUEST_NULL;
 
 /**
  * @brief Handles a MPI error
  * @param comm the MPI communicator involved in the error
  * @param err_code_p a pointer to the error code
- * @param ... an implementation specific list of additional arguments in which
- *            we are not interested
+ * @param ... an implementation specific list of additional arguments in which we are not interested
  *
  * This is registered in mpi_global_init() to print meaningful MPI errors
  */
@@ -110,7 +103,7 @@ void mpi_global_fini(void)
  */
 void mpi_remote_msg_send(struct lp_msg *msg, const nid_t dest_nid)
 {
-	gvt_remote_msg_send(msg, dest_nid);
+	gvt_remote_msg_send(msg);
 
 	MPI_Request req;
 	MPI_Isend(msg_remote_data(msg), msg_remote_size(msg), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
@@ -129,7 +122,7 @@ void mpi_remote_msg_send(struct lp_msg *msg, const nid_t dest_nid)
  */
 void mpi_remote_anti_msg_send(struct lp_msg *msg, const nid_t dest_nid)
 {
-	gvt_remote_anti_msg_send(msg, dest_nid);
+	gvt_remote_anti_msg_send(msg);
 
 	MPI_Request req;
 	MPI_Isend(msg_remote_data(msg), msg_remote_anti_size(), MPI_BYTE, dest_nid, RS_MSG_TAG, MPI_COMM_WORLD, &req);
@@ -142,10 +135,8 @@ void mpi_remote_anti_msg_send(struct lp_msg *msg, const nid_t dest_nid)
  */
 void mpi_control_msg_broadcast(const enum msg_ctrl_code ctrl)
 {
-	nid_t i = n_nodes;
-	while(i--) {
+	for(nid_t i = n_nodes; i--;)
 		mpi_control_msg_send_to(ctrl, i);
-	}
 }
 
 /**
@@ -205,101 +196,44 @@ void mpi_remote_msg_handle(void)
 }
 
 /**
- * @brief Empties the queue of incoming MPI messages, ignoring them
+ * @brief Compute the min-reduction collective operation across all nodes.
+ * @param node_min a pointer to the value from the calling node which will also be used to store the computed minimum.
  *
- * This routine checks, using the MPI probing mechanism, for new remote messages and it discards them. It is used at
- * simulation completion to clear MPI state.
+ * Each node supplies a single simtime_t value. The minimum of all these values is computed and stored in @a node_min
+ * itself. It is expected that only a single thread calls this function at a time. Each rank has to call this function
+ * else the result can't be computed. It is possible to have a single MPI collective operation pending at a time.
+ * @a node_min must point to a valid memory region until mpi_collective_done() returns true.
  */
-void mpi_remote_msg_drain(void)
+void mpi_reduce_min(double node_min[1])
 {
-	struct lp_msg *msg = NULL;
-	int msg_size = 0;
-
-	while(1) {
-		int pending;
-		MPI_Message mpi_msg;
-		MPI_Status status;
-
-		MPI_Improbe(MPI_ANY_SOURCE, RS_MSG_TAG, MPI_COMM_WORLD, &pending, &mpi_msg, &status);
-
-		if(!pending)
-			break;
-
-		int size;
-		MPI_Get_count(&status, MPI_BYTE, &size);
-
-		if(unlikely(size == sizeof(enum msg_ctrl_code))) {
-			enum msg_ctrl_code c;
-			MPI_Mrecv(&c, sizeof(c), MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-			control_msg_process(c);
-			continue;
-		}
-
-		if(size > msg_size) {
-			msg = mm_realloc(msg, size + msg_preamble_size());
-			msg_size = size;
-		}
-		MPI_Mrecv(msg_remote_data(msg), size, MPI_BYTE, &mpi_msg, MPI_STATUS_IGNORE);
-
-		if(size == msg_remote_anti_size())
-			gvt_remote_anti_msg_receive(msg);
-		else
-			gvt_remote_msg_receive(msg);
-	}
-
-	mm_free(msg);
+	MPI_Iallreduce(MPI_IN_PLACE, node_min, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD, &mpi_nb_collective_request);
 }
 
 /**
- * @brief Computes the sum-reduction-scatter operation across all nodes.
- * @param values a flexible array implementing the addendum vector from the calling node.
- * @param result a pointer where the nid-th component of the sum will be stored.
+ * @brief Compute the sum-reduction collective operation across all nodes.
+ * @param node_sum a pointer to the value from the calling node which will also be used to store the computed sum.
  *
- * Each node supplies a n_nodes components vector. The sum of all these vector is computed and the nid-th component of
- * this vector is stored in @a result. It is expected that only a single thread calls this function at a time. Each node
- * has to call this function else the result can't be computed. It is possible to have a single mpi_reduce_sum_scatter()
- * operation pending at a time. Both arguments must point to valid memory regions until mpi_reduce_sum_scatter_done()
- * returns true.
+ * Each node supplies a single int64_t value. The sum of all these values is computed and stored in @a node_sum
+ * itself. It is expected that only a single thread calls this function at a time. Each rank has to call this function
+ * else the result can't be computed. It is possible to have a single MPI collective operation pending at a time.
+ * @a node_sum must point to a valid memory region until mpi_collective_done() returns true.
  */
-void mpi_reduce_sum_scatter(const uint32_t values[n_nodes], uint32_t *result)
+void mpi_reduce_sum(int64_t node_sum[1])
 {
-	MPI_Ireduce_scatter_block(values, result, 1, MPI_UINT32_T, MPI_SUM, MPI_COMM_WORLD, &reduce_sum_scatter_req);
+	MPI_Iallreduce(MPI_IN_PLACE, node_sum, 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD, &mpi_nb_collective_request);
 }
 
 /**
- * @brief Checks if a previous mpi_reduce_sum_scatter() operation has completed.
+ * @brief Checks if the previous collective operation has completed.
  * @return true if the previous operation has been completed, false otherwise.
+ *
+ * For the moment, there has been no need to concurrently run multiple MPI collective operations. As such, this single
+ * method can be used to track the progress of the only collective operation that may be running.
  */
-bool mpi_reduce_sum_scatter_done(void)
+bool mpi_collective_done(void)
 {
 	int flag = 0;
-	MPI_Test(&reduce_sum_scatter_req, &flag, MPI_STATUS_IGNORE);
-	return flag;
-}
-
-/**
- * @brief Computes the min-reduction operation across all nodes.
- * @param node_min_p a pointer to the value from the calling node which will
- *                   also be used to store the computed minimum.
- *
- * Each node supplies a single simtime_t value. The minimum of all these values is computed and stored in @a node_min_p
- * itself. It is expected that only a single thread calls this function at a time. Each node has to call this function
- * else the result can't be computed. It is possible to have a single mpi_reduce_min() operation pending at a time.
- * Both arguments must point to valid memory regions until mpi_reduce_min_done() returns true.
- */
-void mpi_reduce_min(double *node_min_p)
-{
-	MPI_Iallreduce(MPI_IN_PLACE, node_min_p, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD, &reduce_min_req);
-}
-
-/**
- * @brief Checks if a previous mpi_reduce_min() operation has completed.
- * @return true if the previous operation has been completed, false otherwise.
- */
-bool mpi_reduce_min_done(void)
-{
-	int flag = 0;
-	MPI_Test(&reduce_min_req, &flag, MPI_STATUS_IGNORE);
+	MPI_Test(&mpi_nb_collective_request, &flag, MPI_STATUS_IGNORE);
 	return flag;
 }
 

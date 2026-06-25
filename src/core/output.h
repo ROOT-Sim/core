@@ -18,7 +18,7 @@ struct output_data {
 	unsigned size;
 };
 
-typedef dyn_array(struct output_data) output_array_t;
+typedef array_declare(struct output_data) output_array_t;
 
 /**
  * @brief Free the outputs stored for later from a message
