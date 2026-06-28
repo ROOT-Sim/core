@@ -1,5 +1,5 @@
 /**
- * @file coure/output.h
+ * @file core/output.h
  *
  * @brief Committed output management functions
  *

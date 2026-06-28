@@ -1,5 +1,5 @@
 /**
- * @file output.c
+ * @file core/output.c
  *
  * @brief Committed output management functions
  *
@@ -17,13 +17,13 @@
 
 void ScheduleOutput(unsigned output_type, const void *output_content, unsigned output_size)
 {
-	if(unlikely(global_config.serial)) {
+	if(unlikely(silent_processing))
+		return;
+
+	if(unlikely(global_config.synchronization == SERIAL)) {
 		global_config.output_callback(current_msg->dest, output_type, output_content, output_size);
 		return;
 	}
-
-	if(unlikely(silent_processing))
-		return;
 
 	char *content = mm_alloc(output_size);
 	memcpy(content, output_content, output_size);
@@ -52,7 +52,11 @@ void execute_outputs(struct lp_msg *msg)
 		mm_free(data.content);
 	}
 
-	array_count(*outputs) = 0; // Necessary to avoid double freeing the array elements.
+	/* Use array_clear() rather than array_fini(): the message buffer remains alive in the
+	 * system and will eventually reach free_msg_outputs(), which performs the final
+	 * array_fini() + mm_free(). When called right before msg_allocator_free() (e.g. from
+	 * fossil_lp_collect()), the array_clear() is redundant but harmless. */
+	array_clear(*outputs);
 }
 
 void free_msg_outputs(output_array_t *output_array)
@@ -80,6 +84,5 @@ void committed_output_on_rollback(struct lp_msg *msg)
 		mm_free(data.content);
 	}
 
-	array_count(*outputs) = 0; // Necessary to avoid double freeing the array elements.
+	array_clear(*outputs);
 }
-

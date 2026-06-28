@@ -67,6 +67,7 @@ struct lp_msg *msg_allocator_alloc(const unsigned payload_size)
 		ret = array_pop(free_list);
 	}
 	ret->pl_size = payload_size;
+	ret->outputs = NULL;
 	return ret;
 }
 

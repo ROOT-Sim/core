@@ -53,12 +53,12 @@ void fossil_lp_collect(struct lp_ctx *lp)
 
 	for(array_count_t k = past_i; k;) {
 		struct pes_entry e = array_get_at(proc_ctx->pes, --k);
-		execute_outputs(pes_entry_msg(e));
 
 		if(pes_entry_is_sent_local(e))
 			continue;
 
 		struct lp_msg *m = pes_entry_msg(e);
+		execute_outputs(m);
 		msg_allocator_free(m);
 	}
 	array_truncate_first(proc_ctx->pes, past_i);
