@@ -51,8 +51,8 @@ void fossil_lp_collect(struct lp_ctx *lp)
 
 	past_i = model_allocator_fossil_lp_collect(&lp->mm_state, past_i + 1);
 
-	for(array_count_t k = past_i; k;) {
-		struct pes_entry e = array_get_at(proc_ctx->pes, --k);
+	for(array_count_t k = 0; k < past_i; ++k) {
+		struct pes_entry e = array_get_at(proc_ctx->pes, k);
 
 		if(pes_entry_is_sent_local(e))
 			continue;
