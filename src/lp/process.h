@@ -97,6 +97,8 @@ struct process_ctx {
 
 struct lp_ctx; // forward declaration
 
+extern _Thread_local bool silent_processing;
+
 extern void process_lp_init(struct lp_ctx *lp);
 extern void process_lp_fini(struct lp_ctx *lp);
 

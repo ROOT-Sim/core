@@ -21,10 +21,9 @@
 #include <lp/lp.h>
 #include <mm/checkpoint/checkpoint.h>
 #include <mm/msg_allocator.h>
-#include <serial/serial.h>
 
 /// The flag used in ScheduleNewEvent() to keep track of silent execution
-static _Thread_local bool silent_processing = false;
+_Thread_local bool silent_processing = false;
 
 /**
  * @brief Schedule a new event. Parallel (Time Warp) version.
@@ -96,6 +95,8 @@ void process_lp_fini(struct lp_ctx *lp)
 		if(pes_entry_is_sent_local(e))
 			continue;
 
+		execute_outputs(pes_entry_msg(e));
+
 		if(pes_entry_is_sent_remote(e) ||
 		    !(atomic_load_explicit(&pes_entry_msg_received(e)->flags, memory_order_relaxed) & MSG_FLAG_ANTI))
 			msg_allocator_free(pes_entry_msg(e));
@@ -166,6 +167,7 @@ static inline void send_anti_messages(struct process_ctx *msg_processing, const 
 
 		struct lp_msg *msg = pes_entry_msg_received(e);
 		const uint64_t f = atomic_fetch_add_explicit(&msg->flags, -MSG_FLAG_PROCESSED, memory_order_relaxed);
+		committed_output_on_rollback(msg);
 		if(!(f & MSG_FLAG_ANTI))
 			msg_queue_insert_self(msg);
 

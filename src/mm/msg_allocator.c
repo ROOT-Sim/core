@@ -67,6 +67,7 @@ struct lp_msg *msg_allocator_alloc(const unsigned payload_size)
 		ret = array_pop(free_list);
 	}
 	ret->pl_size = payload_size;
+	ret->outputs = NULL;
 	return ret;
 }
 
@@ -76,6 +77,7 @@ struct lp_msg *msg_allocator_alloc(const unsigned payload_size)
  */
 void msg_allocator_free(struct lp_msg *msg)
 {
+	free_msg_outputs(msg->outputs);
 	if(likely(msg->pl_size <= MSG_PAYLOAD_BASE_SIZE))
 		array_push(free_list, msg);
 	else

@@ -10,6 +10,7 @@
 #include <gvt/fossil.h>
 
 #include <mm/msg_allocator.h>
+#include <core/output.h>
 
 _Thread_local unsigned fossil_epoch_current;
 /// The value of the last GVT, kept here for easier fossil collection operations
@@ -50,12 +51,14 @@ void fossil_lp_collect(struct lp_ctx *lp)
 
 	past_i = model_allocator_fossil_lp_collect(&lp->mm_state, past_i + 1);
 
-	for(array_count_t k = past_i; k;) {
-		struct pes_entry e = array_get_at(proc_ctx->pes, --k);
+	for(array_count_t k = 0; k < past_i; ++k) {
+		struct pes_entry e = array_get_at(proc_ctx->pes, k);
+
 		if(pes_entry_is_sent_local(e))
 			continue;
 
 		struct lp_msg *m = pes_entry_msg(e);
+		execute_outputs(m);
 		msg_allocator_free(m);
 	}
 	array_truncate_first(proc_ctx->pes, past_i);

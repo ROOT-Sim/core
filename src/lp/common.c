@@ -1,21 +1,19 @@
 /**
-* @file lp/common.c
-*
-* @brief Common LP and message functionalities
-*
-* SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
-* SPDX-License-Identifier: GPL-3.0-only
-*/
+ * @file lp/common.c
+ *
+ * @brief Common LP and message functionalities
+ *
+ * SPDX-FileCopyrightText: 2008-2025 HPCS Group <rootsim@googlegroups.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 #include <lp/common.h>
 
 #include <serial/serial.h>
 
-#ifndef NDEBUG
-_Thread_local const struct lp_msg *current_msg;
-#endif
+_Thread_local struct lp_msg *current_msg;
 
-void ScheduleNewEvent(const lp_id_t receiver, const simtime_t timestamp, const unsigned event_type,
-    const void *payload, const unsigned payload_size)
+void ScheduleNewEvent(const lp_id_t receiver, const simtime_t timestamp, const unsigned event_type, const void *payload,
+    const unsigned payload_size)
 {
 #ifndef NDEBUG
 	if(unlikely(event_type >= LP_INIT)) {

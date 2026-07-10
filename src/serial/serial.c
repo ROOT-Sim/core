@@ -82,7 +82,7 @@ static int serial_simulation_run(void)
 	lp_id_t to_terminate = global_config.lps;
 
 	while(likely(!heap_is_empty(queue))) {
-		const struct lp_msg *msg = heap_min(queue);
+		struct lp_msg *msg = heap_min(queue);
 		struct lp_ctx *lp = &lps[msg->dest];
 		current_lp = lp;
 

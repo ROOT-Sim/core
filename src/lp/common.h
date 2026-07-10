@@ -15,11 +15,8 @@
 #include <log/stats.h>
 #include <mm/msg_allocator.h>
 
-#ifndef NDEBUG
 /// The currently processed message
-/** This is not necessary for normal operation, but it's useful in debug */
-extern __thread const struct lp_msg *current_msg;
-#endif
+extern _Thread_local struct lp_msg *current_msg;
 
 /**
  * @brief Process a message for a given LP (Logical Process)
@@ -30,16 +27,12 @@ extern __thread const struct lp_msg *current_msg;
  * @param lp A pointer to the LP associated with the message.
  * @param msg A pointer to the message to be processed.
  */
-static inline void common_msg_process(const struct lp_ctx *lp, const struct lp_msg *msg)
+static inline void common_msg_process(const struct lp_ctx *lp, struct lp_msg *msg)
 {
 	timer_uint t = timer_hr_new();
-#ifndef NDEBUG
 	current_msg = msg;
-#endif
 	global_config.dispatcher(msg->dest, msg->dest_t, msg->m_type, msg->pl, msg->pl_size, lp->state_pointer);
-#ifndef NDEBUG
 	current_msg = NULL;
-#endif
 	stats_take(STATS_MSG_PROCESSED_TIME, timer_hr_value(t));
 	stats_take(STATS_MSG_PROCESSED, 1);
 }

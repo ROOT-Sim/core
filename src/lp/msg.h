@@ -11,6 +11,7 @@
 #pragma once
 
 #include <core/core.h>
+#include <core/output.h>
 
 #include <limits.h>
 #include <stdatomic.h>
@@ -59,6 +60,8 @@
 struct lp_msg {
 	/// The next element in the message list (used in the message queue)
 	struct lp_msg *next;
+	/// Data for committed output — kept in the preamble so it is not transmitted over MPI
+	output_array_t *outputs;
 	/// The id of the recipient LP
 	lp_id_t dest;
 	/// The intended destination logical time of this message
