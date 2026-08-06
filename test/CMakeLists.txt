@@ -16,6 +16,10 @@ test_program_link_libraries(load rscore)
 
 # Test data structures and subsystems
 test_program(bitmap datatypes/bitmap.c)
+test_program(msg_queue datatypes/msg_queue.c)
+test_program_link_libraries(msg_queue rscore)
+test_program(retractable_heap datatypes/retractable_heap.c)
+test_program_link_libraries(retractable_heap rscore)
 test_program(mm mm/buddy.c mm/buddy_hard.c mm/parallel.c mm/main.c mock.c)
 target_include_directories(test_mm PRIVATE .)
 test_program_link_libraries(mm rscore)
